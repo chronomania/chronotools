@@ -41,19 +41,19 @@
 
 
 ; Params from the caller - must be set:
-#define W_TILENUM  $6200
-#define W_VRAMADDR $6202
+#define W_TILENUM  $FE00
+#define W_VRAMADDR $FE02
 
 ; Tilebuf is maximally 11*64 bytes
-#define W_ONESIZE  $6204
-#define W_ENDX     $6206
-#define B_PIXOFFS  $6208
-#define B_LENGTH   $6209
-#define B_WIDTH    $620A
-#define W_CLOCKW1  $620C
-#define W_CLOCKW2  $620E
-#define W_CLOCKW3  $6210
-#define TILEBUF    $6212
+#define W_ONESIZE  $FE04
+#define W_ENDX     $FE06
+#define B_PIXOFFS  $FE08
+#define B_LENGTH   $FE09
+#define B_WIDTH    $FE0A
+#define W_CLOCKW1  $FE0C
+#define W_CLOCKW2  $FE0E
+#define W_CLOCKW3  $FE10
+#define TILEBUF    $FE12
 
 ; External symbols - defined by the linker:
 ;   Font address:
