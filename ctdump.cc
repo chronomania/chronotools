@@ -162,6 +162,9 @@ static void Disp16Char(unsigned char k)
     
     if(k == 0x0D) { printf("[num8]"); return; }
     if(k == 0x0E) { printf("[num16]"); return; }
+    if(k == 0x0F) { printf("[num32]"); return; }
+    if(k == 0x11) { printf("[member]"); return; }
+    if(k == 0x12) { printf("[tech]"); return; }
     
     // 13..19 are the character names
 
@@ -435,77 +438,113 @@ int main(void)
     substrings[0x20] = revtrans("Epoch");
 
     // 
-    DumpFStrings(0x0C0B5E, 11, 242);   // items
-    DumpZStrings(0x0C2EB1, 242, false);// item descs
+    puts(";items");
+    DumpFStrings(0x0C0B5E, 11, 242);
+    puts(";item descriptions");
+    DumpZStrings(0x0C2EB1, 242, false);
     
-    DumpFStrings(0x0C15C4, 11);        // techs
-    DumpZStrings(0x0C3A09, 117, false);// tech descs
-
-    DumpZStrings(0x0C3AF3, 4, false);  // tech related
+    puts(";techs");
+    DumpFStrings(0x0C15C4, 11);
+    puts(";tech descs");
+    DumpZStrings(0x0C3A09, 117, false);
     
+    puts(";tech related");
+    DumpZStrings(0x0C3AF3, 4, false);
+    
+    puts(";monsters");
     DumpFStrings(0x0C6500, 11); // monsters
 
-    // Weapon Helmet Armor Accessory
+    puts(";Weapon Helmet Armor Accessory");
     DumpFStrings(0x02A3BA, 10);
 
-    // Location titles
+    puts(";Location titles");
     DumpZStrings(0x06F400, 112, false);
     
+    puts(";Battle announcements");
+    DumpZStrings(0x0EEF11, 14, false);
     
-    // Battle messages
+    puts(";Battle messages");
     DumpZStrings(0x0CCBC9, 227, false);
     
-    // ?
+    puts(";600ad (castle, masa+mune, naga-ette)");
+    puts(";12kbc daltonstuff");
     DumpZStrings(0x18D000, 78);
     
-    // ?
+    puts(";65Mbc");
     DumpZStrings(0x18DD80, 254);
     
-    // ?
+    puts(";2300ad (factory, sewer, belthasar)");
+    puts(";65Mbc azalastuff");
+    puts(";slideshow-ending");
     DumpZStrings(0x1EC000, 187);
     
-    // ?
+    puts(";1000ad (towns, castle)");
+    puts(";600ad (towns)");
+    puts(";2300ad (factory)");
     DumpZStrings(0x1EE300, 145);
     
-    // ?
-    DumpZStrings(0x1EFF00, 3);
+    puts(";Treasure box messages");
+    DumpZStrings(0x1EFF00, 3, false);
 
-    // ?
+    puts(";1000ad (Lucca's home)");
+    puts(";2300ad (factory)");
+    puts(";1000ad (rainbow shell trial)    ");
     DumpZStrings(0x36A000, 106);
 
-    // ?
+    puts(";no Crono -ending");
+    puts(";happy ending (castle)");
     DumpZStrings(0x36B230, 144);
 
-    // ?
+    puts(";1000ad (various indoors)");
+    puts(";600ad (various indoors)");
+    puts(";2300ad (various indoors)");
     DumpZStrings(0x370000, 456);
 
-    // ?
+    puts(";2300ad (various indoors)");
+    puts(";end of time (gaspar's stories, Spekkio etc)");
+    puts(";600ad (Ozzie's scenes, Magus battle, castle)");
+    puts(";1999ad Lavos scenes");
+    puts(";12kbc various scenes");
+    puts(";1000ad castle scenes");
     DumpZStrings(0x374900, 1203);
 
-    // ?
+    puts(";1000ad jail scenes");
+    puts(";600ad bridge battle stuff");
+    puts(";1000ad (melchior, medina village)");
+    puts(";65Mbc");
+    puts(";12kbc");
+    puts(";600ad (Toma stuff, Marco&Fiona stuff)");
+    puts(";1000ad (Cyrus stuff)");
+    puts(";Black Omen");
     DumpZStrings(0x384650, 678);
 
-    // ?
+    puts(";600ad (Cathedral, other indoors)");
+    puts(";12kbc (out- and indoors)");
     DumpZStrings(0x39B000, 444);
 
-    // ?
+    puts(";1000ad (fair, the trial, castle)");
+    puts(";600ad (Frog scenes)");
+    puts(";12kbc");
+    puts(";2300ad (death's peak)");
     DumpZStrings(0x3CBA00, 399);
 
-    // Dreamteam etc
+    puts(";Dreamteam etc");
+    puts(";Forest scene");
     DumpZStrings(0x3F4460, 81);
     
-    // Enhasa
+    puts(";12kbc cities");
     DumpZStrings(0x3F5860, 85);
 
-    // ?
+    puts(";?");
     DumpZStrings(0x3F6B00, 186);
 
-    // Battle tutorials, Zeal stuff, party stuff
+    puts(";Battle tutorials, Zeal stuff, party stuff");
     DumpZStrings(0x3F8400, 39);
     
+    puts(";Item types");
     DumpStrings(0x3FB310, 242);
 
-    // Status screen string
+    puts(";Status screen string");
     //FIXME: These are not correctly dumped yet!
     //DumpStrings(0x3FC457, 64);
     //DumpStrings(0x3F158D, 1);
@@ -513,13 +552,14 @@ int main(void)
     
     DumpZStrings(0x3FCF3B, 7);
     
-    // Era list
+    puts(";Era list");
     DumpStrings(0x3FD396);
     
-    // Episode list
+    puts(";Episode list");
     DumpStrings(0x3FD03E);
     
     if(TryFindExtraSpace)
         FindEndSpaces();
+
     ListSpaces();
 }

@@ -16,8 +16,8 @@ using namespace std;
 #include "ctcset.hh"
 #include "miscfun.hh"
 
-static const bool rebuild_dict             = !false;
-static const bool sort_dictionary          = false;
+static const bool rebuild_dict             = false;
+static const bool sort_dictionary          = true;
 static const unsigned MaxDictWordLen       = 20;
 static const unsigned MaxDictRecursLen     = 3;
 static const unsigned DictMaxSpacesPerWord = 4;
@@ -715,6 +715,9 @@ void insertor::LoadSymbols()
     defbsym(pause3,      0x0C)
     defbsym(num8,        0x0D)
     defbsym(num16,       0x0E)
+    defbsym(num32,       0x0F)
+    defbsym(member,      0x11)
+    defbsym(tech,        0x12)
     defsym(Crono,        0x13)
     defsym(Marle,        0x14)
     defsym(Lucca,        0x15)

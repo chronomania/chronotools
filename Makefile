@@ -8,7 +8,8 @@ LDFLAGS=-L/usr/lib/graphics
 # VERSION 1.0.5 found item descriptions
 # VERSION 1.0.6 compressed better
 # VERSION 1.0.7 compressed more carefully
-VERSION=1.0.7
+# VERSION 1.0.8 documented the script
+VERSION=1.0.8
 ARCHFILES=xray.c xray.h \
           viewer.c \
           ctcset.cc \
@@ -16,7 +17,8 @@ ARCHFILES=xray.c xray.h \
           ctdump.cc ctinsert.cc \
           makeips.cc unmakeips.cc \
           README \
-          dictionary1 dictionary2 dictionary3
+          dictionary1 dictionary2 dictionary3 dictionary4 \
+          ct_eng.txt
 
 ARCHNAME=chronotools-$(VERSION)
 ARCHDIR=archives/
