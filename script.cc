@@ -6,6 +6,7 @@
 #include "ctinsert.hh"
 #include "wstring.hh"
 #include "ctcset.hh"
+#include "compress.hh"
 #include "miscfun.hh"
 #include "symbols.hh"
 #include "config.hh"
@@ -234,6 +235,8 @@ const ctstring insertor::ParseScriptEntry(const wstring &input, const stringdata
                 case stringdata::item:
                 case stringdata::tech:
                 case stringdata::monster:
+                case stringdata::compressed7E:
+                case stringdata::compressed7F:
                     chronoc = getctchar(c, cset_8pix);
                     break;
             }
@@ -357,7 +360,14 @@ const ctstring insertor::ParseScriptEntry(const wstring &input, const stringdata
         else
         {
             result += (ctchar)atoi(code.c_str()+1, 16);
-            rawcodes.insert(code);
+            
+            if(model.type != stringdata::compressed7E
+            && model.type != stringdata::compressed7F)
+            {
+                /* raw codes are only allowed in compressed data. */
+                /* for others, remember the warning. */
+                rawcodes.insert(code);
+            }
         }
     }
     
@@ -526,6 +536,11 @@ void insertor::LoadFile(FILE *fp)
             {
                 MessageSSection(header);
             }
+            else if(header.size() >= 1 && header[0] == 'c')
+            {
+                model.type = stringdata::compressed7E;
+                MessageC8Section(header);
+            }
             else
             {
                 MessageUnknownHeader(header);
@@ -689,6 +704,7 @@ void insertor::LoadFile(FILE *fp)
             //   'i' (relocatable item)
             //   't' (relocatable tech)
             //   'm' (relocatable monster)
+            //   'c' (compressed data)
 
             if(model.type == stringdata::item
             || model.type == stringdata::tech
@@ -987,6 +1003,35 @@ void insertor::WriteStringTable(stringdata::strtype type,
     if(index) tmp.Create(*this, what, tablename);
 }
 
+void insertor::WriteCompressedStrings()
+{
+    unsigned counter = 0;
+    for(stringlist::const_iterator i=strings.begin(); i!=strings.end(); ++i)
+    {
+        MessageWorking();
+        if(i->type == stringdata::compressed7E)
+        {
+            const string s = GetString(i->str);
+            const unsigned char* ptr = (const unsigned char*)s.data();
+            vector<unsigned char> data = Compress(ptr, s.size(), 0x7E);
+            
+            std::string name = format("compr_data7E_%u", counter);
+            objects.AddLump(data, name, name);
+            objects.AddReference(name, LongPtrFrom(i->address));
+        }
+        else if(i->type == stringdata::compressed7F)
+        {
+            const string s = GetString(i->str);
+            const unsigned char* ptr = (const unsigned char*)s.data();
+            vector<unsigned char> data = Compress(ptr, s.size(), 0x7F);
+            
+            std::string name = format("compr_data7F_%u", counter);
+            objects.AddLump(data, name, name);
+            objects.AddReference(name, LongPtrFrom(i->address));
+        }
+    }
+}
+
 void insertor::WriteRelocatedStrings()
 {
     WriteStringTable(stringdata::item,    "ITEMTABLE", "Items");
@@ -1000,5 +1045,6 @@ void insertor::WriteStrings()
     WriteFixedStrings();
     WriteOtherStrings();
     WriteRelocatedStrings();
+    WriteCompressedStrings();//anywhere in the world.
     MessageDone();
 }

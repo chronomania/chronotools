@@ -204,7 +204,12 @@ Copypaste from the Makefile:
 # VERSION 1.14.0 is a new \"stable\" release, at least for posix.
 # VERSION 1.14.1 fixes the checksum generator problem and stabilizes the windows port.
 # VERSION 1.14.2 fixes a bug related to Lucca's SightScope with long monster names.
+# VERSION 1.14.3 supports changing the character names! Do a redump with ctdump and see.
 </pre>
+
+To use the character name changing feature, do a redump with ctdump
+and copypaste the <code>*c</code> and <code>*s1B</code> blocks to your
+script.
 
 <!--Users of previous versions are advised to do the following:
 <ul>

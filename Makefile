@@ -129,6 +129,7 @@ DEPDIRS = utils/
 # VERSION 1.14.0 is a new "stable" release, at least for posix.
 # VERSION 1.14.1 fixes the checksum generator problem and stabilizes the windows port.
 # VERSION 1.14.2 fixes a bug related to Lucca's SightScope with long monster names.
+# VERSION 1.14.3 supports changing the character names! Do a redump with ctdump and see.
 
 #OPTIM=-Os
 # -fshort-enums
@@ -144,7 +145,7 @@ CFLAGS += -I/usr/include/slang
 LDFLAGS += -L/usr/lib/slang
 
 
-VERSION=1.14.2
+VERSION=1.14.3
 ARCHFILES=utils/xray.cc utils/xray.h \
           utils/viewer.c \
           utils/vwftest.cc \
@@ -256,7 +257,10 @@ PROGS=\
 	utils/deasm \
 	utils/base62 \
 	utils/viewer \
-	utils/xray
+	utils/xray \
+	utils/facegenerator \
+	utils/o65test \
+	utils/dumpo65
 
 all: $(PROGS)
 
@@ -351,7 +355,7 @@ utils/ctxtview: utils/ctxtview.o settings.o rommap.o
 	$(CXX) $(LDOPTS) $(CXXFLAGS)  -o $@ $^ $(LDFLAGS)
 
 # Compression tests (not generic, obsolete)
-utils/comprtest: utils/comprtest.o rommap.o compress.o
+utils/comprtest: utils/comprtest.o compress.o
 	$(CXX) $(LDOPTS) $(CXXFLAGS)  -o $@ $^ $(LDFLAGS)
 utils/comprtest2: utils/comprtest2.o compress.o
 	$(CXX) $(LDOPTS) $(CXXFLAGS)  -o $@ $^ $(LDFLAGS)

@@ -18,6 +18,7 @@ void MessageRSection(const std::string& header);
 void MessageLSection(const std::string& header);
 void MessageDSection(const std::string& header);
 void MessageSSection(const std::string& header);
+void MessageC8Section(const std::string& header);
 void MessageUnknownHeader(const std::string& header);
 void MessageInvalidLabelChar(wchar_t c, unsigned label, const std::string& header);
 void MessageInvalidLabelChar(wchar_t c, const std::string& label, const std::string& header);

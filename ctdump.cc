@@ -466,6 +466,17 @@ namespace
         
         BlockComment(L";configuration screen strings\n");
         DumpZStrings(0x3FD3FE, L"cfg", 50, false);
+        
+        BlockComment(L";This block initializes some of the game RAM.\n"
+                     L";It is compressed as whole, and thus requires the whole\n"
+                     L";data... The important bit you may want to edit is the\n"
+                     L";character names. If you edit them, please keep them\n"
+                     L";exactly 6 bytes long, last byte being [0].\n"
+                     L";Imaginary examples:\n"
+                     L";   Robo[0][0]    ->  Macho[0]\n"
+                     L";   Magus[0]      ->  Ma[0][0][0][0]\n"
+                    );
+        DumpC8String(0x3CFA35, L"statusram");
     }
 
     void DumpFonts()
@@ -537,6 +548,7 @@ int main(int argc, const char* const* argv)
         L";          same meaning as *l\n"
         L";  *mNN  = relocatable monster table (original width = NN)\n"
         L";          same meaning as *l\n"
+        L";  *c    = compressed blob, may contain 8pix text\n"
         L"\n"
           );
     

@@ -1,6 +1,5 @@
 #include <vector>
 
-#include "rommap.hh"
 #include "compress.hh"
 #include "scriptfile.hh"
 
@@ -10,21 +9,51 @@ typedef unsigned short Word;
 typedef unsigned char Byte;
 typedef unsigned int Ptr;
 
-
-//dummy, used by rommap.o
-void StartBlock(const char*, const string&, unsigned){}
-void PutAscii(const string&){}
-void EndBlock(){}
-FILE *GetLogFile(const char *sect, const char *key){return NULL;}
-void MessageWorking() { fprintf(stderr, "."); }
-
+unsigned char *ROM;
 
 static vector<Byte> Data(65536);
 static unsigned lastsize;
 
+void MessageWorking() {}
+
+static void LoadROM(FILE *fp)
+{
+    fprintf(stderr, "Loading ROM...");
+    unsigned hdrskip = 0;
+
+    char HdrBuf[512];
+    fread(HdrBuf, 1, 512, fp);
+    if(HdrBuf[1] == 2)
+    {
+        hdrskip = 512;
+    }
+    fseek(fp, 0, SEEK_END);
+    unsigned romsize = ftell(fp)-hdrskip;
+    fprintf(stderr, " $%X bytes...", romsize);
+    ROM = NULL;
+#ifdef USE_MMAP
+    /* This takes about 0.0001s on my computer over nfs */
+    ROM = (unsigned char *)mmap(NULL, romsize, PROT_READ, MAP_PRIVATE, fileno(fp), hdrskip);
+#endif
+    /* mmap could have failed, so revert to reading */
+    if(ROM == NULL || ROM == (unsigned char*)(-1))
+    {
+        /* This takes about 5s on my computer over nfs */
+        ROM = new unsigned char [romsize];
+        fseek(fp, hdrskip, SEEK_SET);
+        fread(ROM, 1, romsize, fp);
+    }
+    else
+        fprintf(stderr, " memmap succesful (%p),", (const void *)ROM);
+    fprintf(stderr, " done");
+    
+    fprintf(stderr, "\n");
+}
+
+
 static unsigned Decompress(unsigned addr)
 {
-    unsigned origsize = Uncompress(ROM+(addr&0x3FFFFF), Data);
+    unsigned origsize = Uncompress(ROM+(addr&0x3FFFFF), Data, ROM+0x400000);
     unsigned resultsize = Data.size();
     fprintf(stderr, "Original size: %u\n", origsize);
     lastsize = origsize;
@@ -133,6 +162,7 @@ static void DumpGFX(unsigned addr)
     
     FILE *fp = fopen(Buf, "wb");
     
+/*
     vector<unsigned char> data2(65536);
     
     for(unsigned n=0; n<0x40; ++n)
@@ -144,14 +174,14 @@ static void DumpGFX(unsigned addr)
     {
         fwrite(&data2[ROM[0x03E7D0+n]*32],1,32, fp);
     }
-
+*/
     fwrite(&Data[0], 1, n, fp);
     fclose(fp);
 }
 
 int main(void)
 {
-    FILE *fp = fopen("chronofin-nohdr.smc", "rb");
+    FILE *fp = fopen("FIN/chrono-nohdr.smc", "rb");
     LoadROM(fp);
     fclose(fp);
     
@@ -199,7 +229,7 @@ int main(void)
     PerformanceTest(0x7F, n);
 #endif
     
-#if 1
+#if 0
     /*
     
     Time gauge:
@@ -223,6 +253,9 @@ int main(void)
     */
     DumpGFX(0xC38000);
 #endif
+
+    /* Character names and other miscellaneous data: */
+    DumpGFX(0xDB0000);
 
 #if 0
     fprintf(stderr, "Uncompressed %u bytes.\n", n);

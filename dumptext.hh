@@ -30,6 +30,9 @@ void Dump8Strings(const unsigned offs,
                   const std::wstring& what,
                   unsigned len);
 
+void DumpC8String(const unsigned offs,
+                   const std::wstring& what);
+
 void DumpFStrings(unsigned offs,
                   const std::wstring& what,
                   unsigned len,

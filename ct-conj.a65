@@ -14,6 +14,16 @@
 #define MEMBER_TABLE            $7E2980 ; Table of current member numbers
 #define EPOCH_NAME_ADDRESS      $7E2C4D ; Where Epoch name is
 #define CHAR_NAME_ADDRESS_TABLE $C25FD8 ; Table of character name addresses
+; In English ROM, contents are:
+;  2C23
+;  2C29
+;  2C2F
+;  2C35
+;  2C3B
+;  2C41
+;  2C47
+; Epoch's name is:
+;  2C4D
 
 #define RTL_ADDR_C2             $5841   ; Where RTL can be found in page $C2
 

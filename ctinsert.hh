@@ -51,7 +51,7 @@ private:
     struct stringdata
     {
         ctstring str;
-        typedef enum { zptr8, zptr12, fixed, item, tech, monster } strtype;
+        typedef enum { zptr8, zptr12, fixed, item, tech, monster, compressed7E, compressed7F } strtype;
         strtype type;
         unsigned width; // used if type==fixed;
         unsigned address;
@@ -99,7 +99,8 @@ private:
     void WriteDictionary();
     void WriteStrings();
     void WriteFixedStrings();
-    void WriteOtherStrings();
+    void WriteOtherStrings(); //relocated item,monster,tech.
+    void WriteCompressedStrings();
     void WriteRelocatedStrings();
     void WriteStringTable(stringdata::strtype type,
                           const string& tablename,

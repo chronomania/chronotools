@@ -173,6 +173,10 @@ void MessageSSection(const std::string& header)
 {
     SectionMessage(header);
 }
+void MessageC8Section(const std::string& header)
+{
+    SectionMessage(header);
+}
 void MessageUnknownHeader(const std::string& header)
 {
     Error();

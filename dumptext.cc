@@ -1,4 +1,5 @@
 #include "scriptfile.hh"
+#include "compress.hh"
 #include "strload.hh"
 #include "symbols.hh"
 #include "msgdump.hh"
@@ -62,7 +63,7 @@ const std::wstring Disp8Char(ctchar k)
     wchar_t tmp = getwchar_t(k, cset_8pix);
     if(tmp == ilseq)
     {
-        return wformat(L"%02X", k);
+        return wformat(L"[%02X]", k);
     }
     
     std::wstring result;
@@ -520,6 +521,67 @@ void DumpRZStrings(const std::wstring& what,
     }
     
     EndBlock();
+    MessageDone();
+}
+
+void DumpC8String(const unsigned ptroffs,
+                  const std::wstring& what)
+{
+    unsigned offs = (ROM[ptroffs+2 ] << 16)
+                  | (ROM[ptroffs+1 ] << 8)
+                  | (ROM[ptroffs+0 ]);
+    offs = SNES2ROMaddr(offs);
+    
+    MessageBeginDumpingStrings(offs);
+    
+    vector<unsigned char> Buffer(65536);
+    unsigned orig_bytes = Uncompress(ROM+offs, Buffer, ROM+GetROMsize());
+    unsigned new_bytes = Buffer.size();
+    
+    MarkFree(offs, orig_bytes, what);
+    
+    MessageBeginDumpingStrings(offs);
+    
+    StartBlock(L"c", what);
+    
+    /* The hardcoded numbers between 8A..B8
+     * are for the character names that are
+     * in the compressed block that comes
+     * originally from address DB0000.
+     */
+    
+    PutBase62Label(ptroffs);
+    std::wstring line;
+    unsigned l=0;
+    for(unsigned a=0; a<new_bytes; ++a)
+    {
+        unsigned l0 = line.size();
+        
+        ctchar k = Buffer[a];
+        
+        bool special_region = a >= 0x89 && a <= 0xB9;
+        
+        wchar_t tmp = ilseq;
+        if(special_region) tmp = getwchar_t(k, cset_8pix);
+        if(tmp == ilseq)
+        {
+            if(k < 10 && special_region)
+                line += wformat(L"[%X]", k);
+            else
+                line += wformat(L"[%02X]", k);
+        }
+        else
+            line += tmp;
+
+        l += line.size()-l0;
+        bool wrap = l>=64;
+        if(special_region && (a%6 == 5)) wrap=true;
+        if(wrap) { line += L"\n"; l=0; }
+    }
+    PutContent(line, true);
+    
+    EndBlock();
+
     MessageDone();
 }
 

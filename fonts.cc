@@ -759,6 +759,8 @@ void insertor::ReorganizeFonts()
             case stringdata::item:
             case stringdata::tech:
             case stringdata::monster:
+            case stringdata::compressed7E:
+            case stringdata::compressed7F:
             {
                 for(unsigned a=0; a<str.size(); ++a)
                 {
@@ -899,6 +901,8 @@ void insertor::ReorganizeFonts()
             case stringdata::tech:
             case stringdata::monster:
             case stringdata::fixed:
+            case stringdata::compressed7E:
+            case stringdata::compressed7F:
             {
                 for(unsigned a=0; a<str.size(); ++a)
                 {
