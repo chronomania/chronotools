@@ -16,7 +16,13 @@ static vector<string> substrings;
 static void LoadROM()
 {
     unsigned hdrskip = 0;
-    FILE *fp = fopen("chrono-uncompressed.smc", "rb");
+    const char *fn = "chrono-uncompressed.smc";
+    FILE *fp = fopen(fn, "rb");
+    if(!fp)
+    {
+        perror(fn);
+        return;
+    }
     char HdrBuf[512];
     fread(HdrBuf, 1, 512, fp);
     if(HdrBuf[1] == 2)
@@ -61,11 +67,13 @@ static const vector<string> LoadPStrings(unsigned offset, unsigned count)
         
         markspace(stringptr, strings[a].size()+1);
 
+        /*
         for(unsigned freebyte = stringptr + strings[a].size()+1;
             ROM[freebyte] == 0x00 //zero
          || ROM[freebyte] == 0xFF //space
          || ROM[freebyte] == 0xEF //also space
          ; space[freebyte++]=true);
+        */
     }
     if(col)printf("\n");
     return strings;
@@ -107,11 +115,13 @@ static const vector<string> LoadZStrings(unsigned offset, unsigned count=0)
             lastoffs=  stringptr;
             lastlen = foundstring.size();
         }
+        /*
         for(unsigned freebyte = stringptr + base + foundstring.size();
             ROM[freebyte] == 0x00 //zero
          || ROM[freebyte] == 0xFF //space
          || ROM[freebyte] == 0xEF //also space
          ; space[freebyte++]=true);
+        */
         
         if(count)
             strings[a] = foundstring;
@@ -500,6 +510,6 @@ int main(void)
     // Episode list
     DumpStrings(0x3FD03E);
     
-    FindEndSpaces();
+    //FindEndSpaces();
     ListSpaces();
 }

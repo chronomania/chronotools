@@ -3,15 +3,21 @@ CXX=g++
 CPPFLAGS=-Wall -W -pedantic -g
 LDFLAGS=-L/usr/lib/graphics
 
-VERSION=1.0.0
+VERSION=1.0.1
 ARCHFILES=xray.c xray.h \
           viewer.c \
-          ctcset.cc ctcset.hh miscfun.cc miscfun.hh \
-          ctdump.cc ctinsert.cc
+          ctcset.cc \
+          ctcset.hh miscfun.cc miscfun.hh \
+          ctdump.cc ctinsert.cc \
+          makeips.cc unmakeips.cc \
+          README
+
 ARCHNAME=chronotools-$(VERSION)
 ARCHDIR=archives/
 
-all: xray viewer ctdump ctinsert
+PROGS=xray viewer ctdump ctinsert makeips unmakeips
+
+all: $(PROGS)
 
 xray: xray.o
 	$(CC) -o $@ $^ $(LDFLAGS) -lggi
@@ -25,8 +31,14 @@ ctdump: ctdump.o ctcset.o miscfun.o
 ctinsert: ctinsert.o ctcset.o miscfun.o
 	$(CXX) -o $@ $^ $(LDFLAGS) -lm
 
+makeips: makeips.cc
+	$(CXX) -o $@ $^
+unmakeips: unmakeips.cc
+	$(CXX) -g -O -Wall -W -pedantic -o $@ $^
+
+
 clean:
-	rm -f *.o ctdump ctinsert viewer xray
+	rm -f *.o $(PROGS)
 distclean: clean
 	rm -f *~
 realclean: distclean

@@ -1,0 +1,87 @@
+USAGE NOTES
+
+   You need the Chrono Trigger English
+   uncompressed ROM as chrono-uncompressed.smc.
+   It should be either 4194816 or 4194304 bytes,
+   depending on whether it has the header or not.
+
+   To generate the script file:
+
+   ctdump > ct_eng.txt
+   
+   To generate the patch file:
+   
+   ctinsert
+   
+   The insertor writes its runtime messages to stderr.
+   
+   You can toggle the value of rebuild_dict bool constant
+   if you want to change whether the program generates
+   the dictionary or not.
+
+COPYING NOTES
+
+   You have got these files from Bisqwit confidentially.
+   Do not distribute them!
+   If I want to publish these, I'll publish them as GPL.
+   But that's just an "if".
+
+THE REST OF THIS FILE IS MY NOTES
+
+[1EFA00]
+4AFB57FB38FCADFB18FC5FFC05FB9DFB0DFCB7FB44FCCBFC40FC07FCBDFC34FC
+2FFC2BFB62FCE2FB90FC0AFCFEFBB0FB76FB15FB2CFC6EFC09FB5BFC58FC41FB
+8BFCE8FBE5FB24FCADFC72FB93FBB0FC87FB6DFBC7FC4EFBD2FCDFFBE7FC31FB
+82FBFEFC1BFCDEFCBAFB45FBD5FC5DFB4BFC79FB04FC5AFB85FC9CFC67FBEBFC
+C0FCA0FBEEFC6BFCEFFBEBFBB3FBB3FC71FCB6FC3CFBA7FC68FC55FCF5FB96FB
+8BFB7CFBBEFB53FB47FCCEFCA3FB28FC1EFB36FB8FFB3BFCA4FCDAFCFAFB11FB
+94FC01FC1BFB65FC7CFCE2FC18FBDCFB2EFB20FC98FCA0FC80FC61FBCEFB24FB
+C1FB21FB0CFB99FB00FB77FCA7FBAAFCC8FBBAFCD1FB4FFCD7FBC3FC11FCFAFC
+Tämä pointteritaulu kertoo tavujen 0x21..0x9F merkityksen.
+
+[1B0000]
+0000: D200 1001 2000 F102 D0B8 00BA 00FC 4AA1 027E 004A 1020 0100 014A 1105 0000 1600
+0020: 6101 0003 101A 1660 0000 000E 5600 ED01 5680 0062 00E0 B103 0019 0000 0000 98C8
+0040: 414A 7E02 1000 004A 7F05 004E 8F02 007E 1200 00A0 00A0 0104 8000 0130 4E80 297E
+0060: 0B08 0000 8001 204E 232C 7E00 3200
+006E: Crono0000Marle00Lu00cca00Robo400000Frog4200y08la001E00gus0000Epoch00
+
+Miten tämä taulu toimii, on täysin mysteeri.
+
+[0C0B69]
+20WoodFFSword20IronFFBlade20SteelSaber20LodeFFSword20RedFFKatana20FlintFFEdge20DarkFFSaber20AeonFFBlade20DemonFFEdge2
+0AlloyBlade20StarFFSword20VedicBlade20KaliFFBlade20ShivaFFEdge20BoltFFSword20Slasher   21BronzeFFBow21IronFFBow  21Lo
+deFFBow  21RobinFFBow 21SageFFBow  21DreamFFBow 21CometArrow21SonicArrow21Valkerye  21Siren     21          21
+   21          21          22AirFFGun   22DartFFGun  22AutoFFGun  22PicoMagnum22PlasmaFFGun22RubyFFGun  22DreamFFGun
+22Megablast 22ShockFFWave22WonderShot22Graedus   22          22          22          22          23TinFFArm   23Hamme
+rFFArm23MirageHand23StoneFFArm 23DoomFinger23MagmaFFHand23MegatonArm23BigFFHand  23KaiserFFArm23GigaFFArm  23TerraFFA
+rm 23CrisisFFArm23          24BronzeEdge24IronFFSword24Masamune  24FlashBlade24PearlFFEdge24RuneFFBlade24BraveSword24
+jne jne.
+Item listing selvästi. Selvitä, missä on pointterit.
+
+[0C3A00]
+Tässä on taulu hyökkäysten selityksistä.
+Ensin on tällainen: 02F9BB1233ED01DA00
+Sitten on pointer-table (alkaa 3A09:stä),
+ja itse stringit. Stringit alkavat 0C3B0D:stä,
+eli taulun koko on 130 stringiä.
+
+[0C6500]
+Nu         Reptite    Terrasaur  Kilwala    Krawlie    Hench      Omicrone   Martello   Bellbird   Panel      
+Mammon M.             Blue Imp   Green Imp  Stone Imp  Mud Imp    Roly       Poly       Rolypoly   Roly Rider 
+           Blue EagletGold EagletRed Eaglet            Avian ChaosImp Ace    Bantam Imp Gnasher    Gnawer     
+Naga&ette             Ruminator             Octopod    Octoblush  Octobino   Zeal       Fly Trap   Meat Eater!
+jne.
+Tyystin pakkaamaton lista monster-nimistä. 11-merkkisiä merkkijonoja,
+spacepadded.
+
+[0CCD00]
+Tässä näkyy ruutu, jossa on repliikkejä.
+Taitavat olla taistelunaikaisia repliikkejä.
+
+[18D000]
+Jälleen lyhyt pätkä repliikkejä.
+Alkaa pointterilistalla!
+18D09C:stä alkaa itse repliikit.
+Pointtereita on siis 78 kpl.
+D09C, D0B4, D106, D146, jne.

@@ -1,7 +1,7 @@
 # This is Bisqwit's generic depfun.mak, included from Makefile.
 # The same file is used in many different projects.
 #
-# depfun.mak version 1.3.4
+# depfun.mak version 1.3.5
 #
 # Required vars:
 #
@@ -27,7 +27,8 @@
 
 
 .depend: ${ARCHFILES}
-	rm -f $@.tmp && for s in *.c *.cc *.cpp;do if echo "$$s"|grep -vq '^\*';then ${CPP} ${CPPFLAGS} -MM -MG $$s;fi;done >$@.tmp && rm -f $@ && cp -p $@.tmp $@ && sed 's/\.o:/.lo:/' <$@.tmp >>$@ && rm -f $@.tmp
+	@echo "(Re-)checking dependencies..."
+	@rm -f $@.tmp && for s in *.c *.cc *.cpp;do if echo "$$s"|grep -vq '^\*';then ${CPP} ${CPPFLAGS} -MM -MG $$s;fi;done >$@.tmp && rm -f $@ && cp -p $@.tmp $@ && sed 's/\.o:/.lo:/' <$@.tmp >>$@ && rm -f $@.tmp
 depend dep: .depend
 
 

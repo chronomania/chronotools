@@ -5,6 +5,8 @@
 #include <utility>
 #include <ctime>
 #include <cmath>
+#include <vector>
+#include <algorithm>
 #include <list>
 #include <set>
 #include <map>
@@ -13,6 +15,8 @@ using namespace std;
 
 #include "ctcset.hh"
 #include "miscfun.hh"
+
+static const bool rebuild_dict = false;
 
 class insertor
 {
@@ -27,10 +31,14 @@ class insertor
         unsigned width; // used if type==fixed;
     } stringdata;
 
-    map<unsigned/*page*/, set<pair<unsigned/*pos*/,unsigned/*len*/> > > freespace;
-    map<unsigned, stringdata> strings;
+    typedef pair<unsigned/*pos*/,unsigned/*len*/> freespacerec;
+    typedef set<freespacerec> freespaceset;
+    typedef map<unsigned/*page*/, freespaceset> freespacemap;
+    freespacemap freespace;
+    typedef map<unsigned, stringdata> stringmap;
+    stringmap strings;
 
-    list<string> dict;
+    vector<string> dict;
     unsigned dictaddr, dictsize;
 
 public:
@@ -38,100 +46,393 @@ public:
     void LoadSymbols();
     void LoadFile(FILE *fp);
 
-    void DispString(const string &s)
+    string DispString(const string &s);
+    void MakeDictionary();
+    
+    unsigned FindFreeSpace(unsigned page, unsigned length)
     {
-        string result;
-        for(unsigned a=0; a<s.size(); ++a)
+        freespacemap::iterator mapi = freespace.find(page);
+        if(mapi == freespace.end())
         {
-            unsigned char c = characterset[(unsigned char)s[a]];
-            if((char)c != '∂')
+            fprintf(stderr,
+                "Can't find %u bytes of free space in page %02X - no space there at all!\n",
+                length, page);
+            return 0x10000;
+        }
+        freespaceset &spaceset = mapi->second;
+        freespaceset::const_iterator reci;
+
+        unsigned biggest = 0;
+        freespaceset::const_iterator best = spaceset.end();
+        
+        for(reci = spaceset.begin(); reci != spaceset.end(); ++reci)
+        {
+            if(reci->second == length)
             {
-                result += c;
+                unsigned pos = reci->first;
+                // Found exact match!
+                spaceset.erase(reci);
+                return pos;
             }
-            else
+            if(reci->second < length)
+                continue;
+            
+            if(reci->second > biggest)
             {
-                c = (unsigned char)s[a];
-                char Buf[64];
-                if(c == 5) result += "[nl]";
-                else if(c == 6) result += "[nl3]";
-                else if(c == 11) result += "[pause]";
-                else if(c == 12) result += "[pause3]";
-                //else if(c == 0) result += "[end]";
-                else { sprintf(Buf, "[%d]", c); result += Buf; }
+                biggest = reci->second;
+                best = reci;
+                //break;
             }
         }
-        fprintf(stderr, "%s", result.c_str());
+        if(biggest < length)
+        {
+            fprintf(stderr,
+                "Can't find %u bytes of free space in page %02X - biggest continuous space is only %u bytes!\n",
+                length, page, biggest);
+            return 0x10000;
+        }
+        unsigned bestpos = best->first;
+        freespacerec tmp(bestpos + length, biggest - length);
+        spaceset.erase(best);
+        spaceset.insert(tmp);
+        return bestpos;
     }
     
-    void Dump()
+    void WritePPtr(vector<unsigned char> &ROM,
+                   vector<bool> &Touched,
+                   unsigned pointeraddr,
+                   const string &string)
     {
-        map<string, unsigned> substringtable;
+        unsigned page = pointeraddr >> 16;
+        unsigned spaceptr = FindFreeSpace(page, string.size() + 1);
+        if(spaceptr == 0x10000)
+            return;
         
-        list<string> stringlist;
+        Touched[pointeraddr] = true;
+        Touched[pointeraddr+1] = true;
         
-        map<unsigned, stringdata>::const_iterator i;
-        for(i=strings.begin(); i!=strings.end(); ++i)
+        ROM[pointeraddr  ] = spaceptr & 255;
+        ROM[pointeraddr+1] = spaceptr >> 8;
+        
+        //fprintf(stderr, "Wrote %u bytes at %06X->%04X\n", string.size()+1, pointeraddr, spaceptr);
+        
+        spaceptr += page;
+        for(unsigned a=0; a<=string.size(); ++a)
         {
-        	if(i->second.type != stringdata::zptr16)
-        	    continue;
-            stringlist.push_back(i->second.str);
+            if(!a)ROM[spaceptr] = string.size();
+            else ROM[spaceptr+a] = string[a-1];
+            Touched[spaceptr+a] = true;
+        }
+    }
+
+    unsigned WriteZPtr(vector<unsigned char> &ROM,
+                       vector<bool> &Touched,
+                       unsigned pointeraddr,
+                       const string &string,
+                       unsigned spaceptr=0x10000)
+    {
+        unsigned page = pointeraddr >> 16;
+        
+        if(spaceptr == 0x10000)
+        {
+            spaceptr = FindFreeSpace(page, string.size() + 1);
+            if(spaceptr == 1)
+                return 0x10000;
         }
         
-        unsigned origsize=0;
-        for(list<string>::iterator l = stringlist.begin(); l != stringlist.end(); ++l)
-        	origsize += l->size();
+        Touched[pointeraddr] = true;
+        Touched[pointeraddr+1] = true;
         
+        ROM[pointeraddr  ] = spaceptr & 255;
+        ROM[pointeraddr+1] = spaceptr >> 8;
+        
+        /*
+        fprintf(stderr, "Wrote %u bytes at %06X->%04X: ", string.size()+1, pointeraddr, spaceptr);
+        fprintf(stderr, DispString(string).c_str());
+        fprintf(stderr, "\n");*/
+        
+        spaceptr += page;
+        for(unsigned a=0; a<=string.size(); ++a)
+        {
+            if(a==string.size()) ROM[spaceptr+a]=0;
+            else ROM[spaceptr+a] = string[a];
+            Touched[spaceptr+a] = true;
+        }
+        return spaceptr & 0xFFFF;
+    }
+    
+    void WriteROM()
+    {
+        vector<unsigned char> ROM(4194304,        0);
+        vector<bool>      Touched(ROM.size(), false);
+        
+        fprintf(stderr, "Writing dictionary...\n");
+        for(unsigned a=0; a<dictsize; ++a)
+            WritePPtr(ROM, Touched, dictaddr + a*2, dict[a]);
+        
+        stringmap::const_iterator i;
+
+        vector<string>   pagestrings;
+        vector<unsigned> pageoffs;
+        unsigned prevpage = 0xFFFF;
+        for(i=strings.begin(); ; ++i)
+        {
+            if(i == strings.end()) goto Flush16;
+
+            if(i->second.type != stringdata::zptr16
+            && i->second.type != stringdata::zptr8)continue;
+            
+            if((i->first >> 16) != prevpage)
+            {
+        Flush16:;
+                // terminology: potilas=needle, tohtori=haystack
+
+                multimap<unsigned/*potilas*/, unsigned/*tohtori*/> belong1;
+                multimap<unsigned/*tohtori*/, unsigned/*potilas*/> belong2;
+                
+                fprintf(stderr, "Writing %u strings...\n", pagestrings.size());
+                for(unsigned potilasnum=0; potilasnum<pagestrings.size(); ++potilasnum)
+                {
+                    const string &potilas = pagestrings[potilasnum];
+                    unsigned longest=0, tohtoribest=0;
+                    for(unsigned tohtorinum=potilasnum+1;
+                                 tohtorinum<pagestrings.size();
+                                 ++tohtorinum)
+                    {
+                        const string &tohtori = pagestrings[tohtorinum];
+                        if(tohtori.size() < potilas.size())
+                            continue;
+                        
+                        unsigned extralen = tohtori.size()-potilas.size();
+                        if(potilas == tohtori.substr(extralen))
+                            if(extralen > longest)
+                            {
+                                longest = extralen;
+                                tohtoribest = tohtorinum;
+                            }
+                    }
+                    if(longest)
+                    {
+                        fprintf(stderr, "String %u(",potilasnum);
+                        fprintf(stderr, DispString(pagestrings[potilasnum]).c_str());
+                        fprintf(stderr, ") depends on string %u(",tohtoribest);
+                        fprintf(stderr, DispString(pagestrings[tohtoribest]).c_str());
+                        fprintf(stderr, ")\n");
+                        
+                        belong1.insert(pair<unsigned,unsigned> (potilasnum, tohtoribest));
+                        belong2.insert(pair<unsigned,unsigned> (tohtoribest, potilasnum));
+                    }
+                }
+                /* Nyt noissa mapeissa on listattu, kuka
+                 * tarvitsee ket‰kin. Tarvitsemisketjut
+                 * eiv‰t voi muodostaa ympyr‰‰, joten nyt
+                 * pit‰‰ vain asettaa elementit siihen
+                 * j‰rjestykseen, miss‰ ensinn‰ ovat ne,
+                 * ketk‰ eiv‰t tarvitse mit‰‰n. Sen j‰lkeen
+                 * ne, jotka tarvitsevat, lis‰t‰‰n erikseen
+                 * muokaten pointtereita.
+                 */
+                
+                set<unsigned> done;
+                while(done.size() != pagestrings.size())
+                    for(unsigned a=0; a<pagestrings.size(); ++a)
+                    {
+                        if(done.find(a) != done.end())continue;
+                        multimap<unsigned,unsigned>::const_iterator i = belong1.find(a);
+                        // If this string does not require any other string
+                        if(i == belong1.end())
+                        {
+                            pageoffs[a] = WriteZPtr(ROM, Touched, pageoffs[a], pagestrings[a]);
+                            done.insert(a);
+                        }
+                        else
+                        {
+                            set<unsigned>::const_iterator p = done.find(i->second);
+                            if(p != done.end()) /* The depending string has already been dumped */
+                            {
+                                unsigned b = i->second;
+                                //fprintf(stderr, "Reusing pointer!\n");
+                                pageoffs[a] = WriteZPtr(ROM, Touched, pageoffs[a], pagestrings[a],
+                                                        pageoffs[b] + pagestrings[b].size()-pagestrings[a].size());
+                                done.insert(a);
+                            }
+                        }
+                    }
+                
+                if(i == strings.end())break;
+                pagestrings.clear();
+                pageoffs.clear();
+            }
+            prevpage = i->first >> 16;
+            
+            string s = i->second.str;
+            
+            if(i->second.type == stringdata::zptr16)
+            {
+                unsigned char Buf[2];
+                Buf[0] = 0x21;
+                Buf[1] = 0;
+
+                vector<string>::const_iterator l;
+                for(l = dict.begin(); l != dict.end(); ++l)
+                {
+                    s = str_replace(*l, (const char *)Buf, s);
+                    ++Buf[0];
+                    if(Buf[0] == 0xA0)Buf[0] = 0xF1;
+                }
+            }
+            
+            pagestrings.push_back(s);
+            pageoffs.push_back(i->first);
+        }
+        
+        FILE *fp = fopen("ctpatch.ips", "wb");
+        fwrite("PATCH", 1, 5, fp);
+        /* Format:   24bit offset, 16-bit size, then data; repeat */
+        for(unsigned a=0; a<Touched.size(); ++a)
+        {
+        	if(!Touched[a])continue;
+        	putc( (a>>16)&255, fp);
+        	putc( (a>> 8)&255, fp);
+        	putc( (a    )&255, fp);
+        	unsigned c=0;
+        	while(a < Touched.size() && Touched[a])
+        		++c, ++a;
+        	putc( (c>> 8)&255, fp);
+        	putc( (c    )&255, fp);
+        }
+        fwrite("EOF",   1, 5, fp);
+        fclose(fp);
+    }
+};
+
+string insertor::DispString(const string &s)
+{
+    string result;
+    for(unsigned a=0; a<s.size(); ++a)
+    {
+        unsigned char c = characterset[(unsigned char)s[a]];
+        if((char)c != '∂')
+        {
+            result += c;
+        }
+        else
+        {
+            c = (unsigned char)s[a];
+            char Buf[64];
+            if(c == 5) result += "[nl]";
+            else if(c == 6) result += "[nl3]";
+            else if(c == 11) result += "[pause]";
+            else if(c == 12) result += "[pause3]";
+            //else if(c == 0) result += "[end]";
+            else { sprintf(Buf, "[%02X]", c); result += Buf; }
+        }
+    }
+    return result;
+}
+
+static bool dictsorter(const string &a, const string &b)
+{
+    if(a.size() > b.size())return true;
+    if(a.size() < b.size())return false;
+    if(a < b)return true;
+    return false;
+}
+
+/* This is DarkForce's hashing code */
+static unsigned hashstr(const char *s, unsigned len)
+{
+    unsigned h = 0;
+    for(unsigned a=0; a<len; ++a)
+    {
+    	unsigned char c = s[a];
+        c = h ^ c;
+        h ^= (c * 707106);
+    }
+    return (h&0x0000FF00) | ((h>>16)&0xFF);
+}
+
+/* Build the dictionary. */
+void insertor::MakeDictionary()
+{
+    list<string> stringlist;
+    
+    map<unsigned, stringdata>::const_iterator i;
+    for(i=strings.begin(); i!=strings.end(); ++i)
+    {
+        if(i->second.type != stringdata::zptr16)
+            continue;
+        stringlist.push_back(i->second.str);
+    }
+    
+    unsigned origsize=0, dictbytes=0;
+    for(list<string>::iterator l = stringlist.begin(); l != stringlist.end(); ++l)
+        origsize += l->size();
+    
+    if(rebuild_dict)
+    {
+        dict.clear();
         time_t begin = time(NULL);
-        list<string> substrlist;
-        #if 0
         for(unsigned substrcount=0; substrcount<dictsize; ++substrcount)
         {
-            map<string, unsigned>::const_iterator bestj = substringtable.end();
+		    //map<unsigned, unsigned> substringtable;
+		    //map<unsigned, string>   hashtable;
+		    map<string, unsigned> substringtable;
             
             fprintf(stderr, "Finding substrings... %u/%u", substrcount+1, dictsize);
+
+            unsigned tickpos=0;
             
-            substringtable.clear();
-
-			unsigned tickpos=0;
-
+			/* For each string */
             list<string>::iterator l;
             unsigned stringcounter=0;
             for(l = stringlist.begin(); l != stringlist.end(); ++l, ++stringcounter)
             {
-            	if(tickpos)
-            		--tickpos;
-            	else
-            	{
-            		tickpos=256;
-            		double totalpos = substrcount;
-            		totalpos += stringcounter / (double)stringlist.size();
-            		totalpos /= (double)dictsize;
-            		if(totalpos==0.0)totalpos=1e-10;
-            		//totalpos = pow(totalpos, 0.3);
-            		
-            		time_t now = time(NULL);
-            		double diff = difftime(now, begin);
-            		double total = diff/totalpos;
-            		double left = total-diff;
-            		char Buf[64];
-            		sprintf(Buf, " - about %.2f minutes left...", left/60.0);
-            		fputs(Buf, stderr);
-            		for(unsigned a=0; Buf[a]; ++a)putc(8, stderr);
-            	}
-            	
+                if(tickpos)
+                    --tickpos;
+                else
+                {
+                	/* Just tell where we are */
+                    tickpos=256;
+                    double totalpos = substrcount;
+                    totalpos += stringcounter / (double)stringlist.size();
+                    totalpos /= (double)dictsize;
+                    if(totalpos==0.0)totalpos=1e-10;
+                    //totalpos = pow(totalpos, 0.3);
+                    
+                    time_t now = time(NULL);
+                    double diff = difftime(now, begin);
+                    double total = diff/totalpos;
+                    double left = total-diff;
+                    char Buf[64];
+                    sprintf(Buf, " - about %.2f minutes left...", left/60.0);
+                    fputs(Buf, stderr);
+                    for(unsigned a=0; Buf[a]; ++a)putc(8, stderr);
+                }
+                
                 const string &s = *l;
+                /* Substrings start from each position in the string */
                 for(unsigned a=0; a<s.size(); ++a)
                 {
                     unsigned c=0;
+                    /* And are each length */
                     for(unsigned b=a; b<s.size(); ++b)
                     {
                         unsigned char ch = s[b];
+                        /* But can't contain all possible bytes */
                         if(ch < 0xA0) // || ch == 0xEF)
                             break;
                         if(++c >= 2)
                         {
-                        	const string substr = s.substr(a, c);
-                            substringtable[substr] += c;
+                        	/* Cumulate the substring usage counter by its length */
+                        	substringtable[s.substr(a,c)] += c; /*
+                            unsigned hash = hashstr(s.c_str()+a, c);
+                            substringtable[hash] += c;
+                            if(hashtable.find(hash) == hashtable.end())
+                            {
+                            	const string substr = s.substr(a, c);
+                                hashtable.insert(pair<unsigned,string> (hash,substr));
+                            } */
                         }
                         if(c >= 16)break;
                     }
@@ -140,13 +441,17 @@ public:
             
             fprintf(stderr, "\r%8u substrings; ", substringtable.size());
             
+            //map<unsigned, unsigned>::const_iterator bestj = substringtable.end();
+            map<string, unsigned>::const_iterator j,bestj = substringtable.end();
+            
+            /* Now find the substring that has the biggest score */
             int bestscore=0;
-            for(map<string, unsigned>::const_iterator
-                j = substringtable.begin();
+            for(j = substringtable.begin();
                 j != substringtable.end();
                 ++j)
             {
-            	int realscore = j->second - (j->second / j->first.size());
+            	const string &word = j->first;//hashtable[j->first];
+                int realscore = j->second - (j->second / word.size());
                 if(realscore > bestscore)
                 {
                     bestj = j;
@@ -154,43 +459,57 @@ public:
                 }
             }
             
-            const string bestword = bestj->first;
-
-            fprintf(stderr, "%4u: '", bestscore);
-            DispString(bestword);
-            fprintf(stderr, "'%30c", '\n');
+            /* Add it to dictionary */
+            const string &bestword = bestj->first; //hashtable[bestj->first];
             
-            substrlist.push_back(bestword);
+            printf("$%u:\t%s; score: %u\n", dict.size(), DispString(bestword).c_str(), bestscore);
+            /*fprintf(stderr, "%4u: '", bestscore);
+            fprintf(stderr, DispString(bestword).c_str());
+            fprintf(stderr, "'%30c", '\n');*/
+            fflush(stdout);
             
+            dictbytes += bestword.size()+1;
+            dict.push_back(bestword);
+            
+            /* Remove the selected substring from the source strings,
+             * so that it won't be used in any other substrings.
+             * It would mess up the statistics otherwise.
+             */
             for(l = stringlist.begin(); l != stringlist.end(); ++l)
-            	*l = str_replace(bestword, "?", *l);
+                *l = str_replace(bestword, "?", *l);
         }
-        #else
-        list<string>::iterator d;
+    }
+    else
+    {
+        //sort(dict.begin(), dict.end(), dictsorter);
+        unsigned col=0;
+        vector<string>::iterator d;
         for(d=dict.begin(); d!=dict.end(); ++d)
         {
-        	const string &bestword = *d;
+            const string &bestword = *d;
 
-            fprintf(stderr, "%4u: '", 0);
-            DispString(bestword);
-            fprintf(stderr, "'%30c", '\n');
+            fprintf(stderr, "'%s%*c",
+                DispString(bestword).c_str(),
+                bestword.size()-12, '\'');
+            if(++col==6){col=0;putc('\n',stderr);}
             
-        	list<string>::iterator l;
+            dictbytes += bestword.size()+1;
+            
+            list<string>::iterator l;
             for(l = stringlist.begin(); l != stringlist.end(); ++l)
-            	*l = str_replace(bestword, "?", *l);
+                *l = str_replace(bestword, "?", *l);
         }
-        #endif
-
-        unsigned resultsize=0;
-        for(list<string>::iterator l = stringlist.begin(); l != stringlist.end(); ++l)
-        	resultsize += l->size();
-        
-        fprintf(stderr, "Original script size: %u bytes; new script size: %u bytes\nSaved: %u bytes\n",
-        	origsize, resultsize, origsize-resultsize);
-        
-        /* FIXME: Write the dictionary (dictsize pointers) at dictaddr. */
+        if(col)putc('\n', stderr);
     }
-};
+
+    unsigned resultsize=0;
+    for(list<string>::iterator l = stringlist.begin(); l != stringlist.end(); ++l)
+        resultsize += l->size();
+    
+    fprintf(stderr, "Original script size: %u bytes; new script size: %u bytes\n"
+                    "Saved: %u bytes; dictionary size: %u bytes\n",
+        origsize, resultsize, origsize-resultsize, dictbytes);
+}
 
 void insertor::LoadCharSet()
 {
@@ -357,20 +676,20 @@ void insertor::LoadFile(FILE *fp)
                     fprintf(stderr, "$%u: Got char '%c', tab expected!\n", label, c);
             }
             string content;
-            string spaces;
+            /*string spaces;*/
             for(;;)
             {
                 const bool beginning = (c == '\n');
                 cget(c);
                 if(c == EOF)break;
                 if(beginning && (c == '*' || c == '$'))break;
-                if(c == '\n') { spaces = ""; continue; }
-                if(c == ' ') { spaces += c; continue; }
+                if(c == '\n') { /*spaces = "";*/ continue; }
+                /*if(c == ' ') { spaces += c; continue; }
                 if(spaces.size())
                 {
                     content += spaces;
                     spaces="";
-                }
+                }*/
                 if(c == '[')
                 {
                     content += c;
@@ -399,9 +718,9 @@ void insertor::LoadFile(FILE *fp)
 
             if(header.size() >= 9 && header[8] == 'D')
             {
-            	string newcontent;
-            	for(unsigned a=0; a<content.size(); ++a)
-            	    newcontent += revcharset[(unsigned char)content[a]];
+                string newcontent;
+                for(unsigned a=0; a<content.size(); ++a)
+                    newcontent += revcharset[(unsigned char)content[a]];
                 dict.push_back(newcontent);
                 continue;
             }
@@ -489,7 +808,9 @@ int main(void)
     ins.LoadFile(fp);
     fclose(fp);
     
-    ins.Dump();
+    ins.MakeDictionary();
+    
+    ins.WriteROM();
     
     return 0;
 }
