@@ -21,7 +21,9 @@ struct ins
 {
     const char *token;
     const char *opcodes;
-    bool operator< (const std::string &s) const { return s > token; }
+    
+    /* It is intentional that the operator works in a reverse way here. */
+    bool operator< (const ins& b) const { return std::string(b.token) > token; }
 };
 extern const struct ins ins[];
 extern const unsigned InsCount;

@@ -1,4 +1,5 @@
 #include <string>
+#include <algorithm>
 
 using std::string;
 
@@ -302,26 +303,34 @@ unsigned CalcSize(const ctstring &word)
     return result;
 }
 
-const string GetString(const ctstring &word)
+const std::string GetString(const ctstring &word)
 {
-    string result;
+    std::string result;
 
     for(unsigned a=0; a<word.size(); ++a)
     {
         unsigned c = word[a];
         if(c >= 0x100) result += (char)(c >> 8);
-        result += (char)(c & 255);
+        result += (char)(c & 0xFF);
     }
     return result;
 }
 
-ctstring getctstring(const std::wstring& s, cset_class cl)
+const ctstring getctstring(const std::wstring& s, cset_class cl)
 {
     ctstring result(s.size(), 0);
     for(unsigned a=0; a<s.size(); ++a)
         result[a] = getctchar(s[a], cl);
     return result;
 }
+
+const ctstring getctstring(const vector<unsigned char>& blob)
+{
+    ctstring result(blob.size(), 0);
+    std::copy(blob.begin(), blob.end(), &result[0]);
+    return result;
+}
+
 
 void RearrangeCharset(cset_class cl, const Rearrangemap_t& rearrange)
 {

@@ -207,11 +207,14 @@ Copypaste from the Makefile:
 # VERSION 1.14.3 supports changing the character names! Do a redump with ctdump and see.
 # VERSION 1.15.0.0 preliminary support for location events.
 # VERSION 1.15.0.1 improved compression. Configuration file changes.
+# VERSION 1.15.0.2 improved support for location events.
+# VERSION 1.15.0.3 improved location event decompiler.
+# VERSION 1.15.1 location event support - preliminary release.
 </pre>
 
 To use the character name changing feature, do a redump with ctdump
-and copypaste the <code>*c</code> and <code>*s1B</code> blocks to your
-script.
+and copypaste the <code>*e</code> and <code>*s1B</code> blocks to
+your script.
  <p>
 Users of versions prior to 1.15.0.1: Note the changed format of
 <code>packedimage</code> and <code>add_image</code> settings in
@@ -544,6 +547,28 @@ Things that should be documented some day but currently are not:
   technical document</a>
   (a very modest document that got me started in this whole thing)</li>
 </ul>
+
+<hr>
+<h3>Help needed!</h3>
+
+Sorry, there is no Windows version of 1.15.1 until someone can work around
+a way to get this code to compile under <code>mingw</code> running in Linux:
+<pre>#include &lt;cstdio>
+#include &lt;string>
+#include &lt;boost/regex.hpp>
+using namespace std;
+void RegexReplace(const wstring& pattern, const wstring& replacement, wstring& subject)
+{
+    boost::basic_regex&lt;wchar_t> exp(pattern);
+    subject = boost::regex_replace(subject, exp, replacement, boost::format_sed);
+}
+int main(void)
+{
+    wstring s(L\"abc\");
+    RegexReplace(L\"a(.)c\", L\"a\\\\1\\\\x{33}c\", s);
+    printf(\"'%ls'\\n\", s.c_str());
+}</pre>
+It compiles fine with normal gcc, provided that libboost is installed.
 
 ");
 

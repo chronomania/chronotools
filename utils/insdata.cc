@@ -194,7 +194,10 @@ unsigned GetOperandSize(unsigned modenum)
 
 bool IsReservedWord(const std::string& s)
 {
-    const struct ins *insdata = std::lower_bound(ins, ins+InsCount, s);
+    struct ins tmp;
+    tmp.token = s.c_str();
+    
+    const struct ins *insdata = std::lower_bound(ins, ins+InsCount, tmp);
     return (insdata < ins+InsCount && s == insdata->token)
          || s == ".byt"
          || s == ".word";

@@ -17,6 +17,7 @@ using namespace std;
 #include "dumpgfx.hh"
 #include "msgdump.hh"
 #include "miscfun.hh"
+#include "config.hh"
 
 static const char scriptoutfile[] = "ctdump.out";
 
@@ -335,7 +336,7 @@ namespace
         // REFERRED FROM:
         // $CD:01B6 A2 11 EF    LDX #$EF11
         // $CD:01BC A9 CE       LDA #$CE
-        // AND **FIXME**
+        // AND:
         // $CD:02F0 A2 11 EF    LDX #$EF11
         // $CD:02F9 A9 CE       LDA #$CE
         DumpRZStrings(L"bat", 14, false,
@@ -496,24 +497,24 @@ namespace
     
     void DumpEvents()
     {
-        for(unsigned a=0; a<=0x200; ++a)
+        const ConfParser::ElemVec& elems = GetConf("dumper", "dump_events").Fields();
+        for(unsigned a=0; a<elems.size(); a += 1)
         {
-            /* TESTING - ignore everything but millenial fair */
-            if(a != 0x1B && a != 0x1C && a != 0x17) continue;
+            unsigned evno = elems[a];
             
             /* Ignore non-existing events */
-            if(a >= 0x66 && a <= 0x6E) continue;
-            if(a >= 0xE7 && a <= 0xEB) continue;
-            if(a >=0x140 && a <=0x142) continue;
+            if(evno >= 0x66 && evno <= 0x6E) continue;
+            if(evno >= 0xE7 && evno <= 0xEB) continue;
+            if(evno >=0x140 && evno <=0x142) continue;
             /* Ignore broken event (can not be dumped) */
-            if(a == 0x176) continue;
+            if(evno == 0x176) continue;
             
-            std::string comment = format(";*** Event %s\n", LocationEventNames[a]);
-            std::string evname  = format("event_%03X", a);
+            std::string comment = format(";*** Event %s\n", LocationEventNames[evno]);
+            std::string evname  = format("event_%03X", evno);
             
             BlockComment(AscToWstr(comment));
-            MessageBeginDumpingEvent(a);
-            DumpEvent(GetConst(EVENT_TABLE_ADDR) + a*3, AscToWstr(evname));
+            MessageBeginDumpingEvent(evno);
+            DumpEvent(GetConst(EVENT_TABLE_ADDR) + evno*3, AscToWstr(evname));
             MessageDone();
         }
     }
@@ -597,6 +598,7 @@ int main(int argc, const char* const* argv)
     fprintf(stderr, "Creating %s (all text content)...\n", scriptoutfile);
     
     BlockComment(L";dictionary, used for compression. don't try to translate it.\n");
+
     DumpDict();
     DumpFonts();
     DumpGFX();

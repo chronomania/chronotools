@@ -6,7 +6,7 @@
 
 extern const char* LocationEventNames[0x201];
 extern const char* MapNames[0x200];
-extern const char* Emotion[0x1B];
+extern const char* Emotion[0x20];
 extern const char* ActorNames[0x100];
 extern const char* SoundEffectNames[0x100];
 extern const char* SongNames[0x53];
@@ -46,27 +46,29 @@ public:
     {
         std::vector<unsigned char> result;
         
-        /* If the code contained a label, these fields
-         * tell what the label was called (for table lookup),
-         * what byte position it's compiled to
-         * and whether the value should be incremented or decremented.
+        /* If the code contained a goto of some kind, this field
+         * tells which byte position should the goto be poked in.
+         * The caller should know whether there is a goto or not.
          */
-        std::wstring label_name;
-        unsigned     label_position;
-        bool         label_forward;
+        unsigned goto_position;
     };
     
     const DecodeResult
     DecodeBytes(unsigned offset, const unsigned char* data, unsigned maxlength);
     
     const EncodeResult
-    EncodeCommand(const std::wstring& cmd);
+    EncodeCommand(const std::wstring& cmd, bool goto_backward=false);
 
 public:
     struct DecodingState
     {
         unsigned dialogbegin;
     } DecodeState;
+
+    struct EncodingState
+    {
+        unsigned dialogbegin;
+    } EncodeState;
 private:
     EventCode(const EventCode& );
     void operator=(const EventCode& );

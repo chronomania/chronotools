@@ -25,7 +25,7 @@ SMALL    {font-size:70%}
   <h1>Chrono Trigger translation development system</h1>
   <h2 class=level2> 0. Contents </h2>
   
-  This is the documentation of chronotools-1.15.0.2.
+  This is the documentation of chronotools-1.15.1.
 <div class=toc><table cellspacing=0 cellpadding=0 class=toc><tr><td width="50%" valign=middle align=left nowrap class=toc>&nbsp;&nbsp;&nbsp;1. <a href="#what">Purpose</a><br>&nbsp;&nbsp;&nbsp;2. <a href="#how">How to begin?</a><br>&nbsp;&nbsp;&nbsp;3. <a href="#status">Current status</a><br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;3.1. <a href="#changes">Version history</a><br>&nbsp;&nbsp;&nbsp;4. <a href="#h0">Program list</a><br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;4.1. <a href="#ctdump">ctdump</a><br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;4.2. <a href="#ctinsert">ctinsert</a><br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;4.3. <a href="#h1">other</a><br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;4.3.1. <a href="#h2">makeips</a><br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;4.3.2. <a href="#h3">unmakeips</a><br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;4.3.3. <a href="#h4">xray</a><br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;4.3.4. <a href="#h5">viewer</a><br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;4.3.5. <a href="#h6">sramdump</a><br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;4.3.6. <a href="#h7">base62</a><br></td>
 <td width="50%" valign=middle align=left nowrap class=toc>&nbsp;&nbsp;&nbsp;5. <a href="#h8">Useful features</a><br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;5.1. <a href="#conj">Player name inflection</a><br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;5.2. <a href="#skew">Font/dictionary skew</a><br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;5.3. <a href="#wrap">Automatic paragraph wrapping</a><br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;5.4. <a href="#vwf8">Variable width 8pix font</a><br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;5.5. <a href="#expand">Expansion to 48 Mbit or 64 Mbit</a><br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;5.6. <a href="#h9">Very configurable</a><br>&nbsp;&nbsp;&nbsp;6. <a href="#h10">Summary of extra features</a><br>&nbsp;&nbsp;&nbsp;7. <a href="#req">Requirements</a><br>&nbsp;&nbsp;&nbsp;8. <a href="#copying">Copying</a><br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;8.1. <a href="#parts">If you only are interested in some features/parts</a><br>&nbsp;&nbsp;&nbsp;9. <a href="#docs">Documentation</a><br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;9.1. <a href="#undocs">Undocumented things</a><br>&nbsp;&nbsp;&nbsp;10. <a href="#h11">See also</a><br>&nbsp;&nbsp;&nbsp;11. <a href="#download">Downloading</a><br></td>
 </tr></table></div><H2 id="what" class="level2"><a name="what"></a>1. Purpose</H2><div class="level2" id="divwhat">
@@ -86,7 +86,7 @@ you might have about translating/hacking Chrono Trigger.<br>
 Chronotools is under active development.
 Here's the current situation.<br>
 Last updated:
-2005-01-02
+2005-01-15
 
 <p>
 <table>
@@ -228,11 +228,14 @@ Copypaste from the Makefile:
 # VERSION 1.14.3 supports changing the character names! Do a redump with ctdump and see.
 # VERSION 1.15.0.0 preliminary support for location events.
 # VERSION 1.15.0.1 improved compression. Configuration file changes.
+# VERSION 1.15.0.2 improved support for location events.
+# VERSION 1.15.0.3 improved location event decompiler.
+# VERSION 1.15.1 location event support - preliminary release.
 </pre>
 
 To use the character name changing feature, do a redump with ctdump
-and copypaste the <code>*c</code> and <code>*s1B</code> blocks to your
-script.
+and copypaste the <code>*e</code> and <code>*s1B</code> blocks to
+your script.
  <p>
 Users of versions prior to 1.15.0.1: Note the changed format of
 <code>packedimage</code> and <code>add_image</code> settings in
@@ -513,7 +516,7 @@ and is distributed under the terms of the
 If you have questions or just want to talk about
 Chrono Trigger hacking, throw me email.
 <p>
-My email address:<span id=eml26><b id=eml12 class=nonmail>a.neK</b><span id=eml13 class=ismail>Joel</span><span id=eml14 class=nonmail><b>t5guid1pz</b></span><span id=eml15 class=ismail> Yli</span><b id=eml16 class=nonmail>y3t</b><span id=eml17 class=ismail>luom</span><span id=eml18 class=nonmail><b>iubikqdm</b></span><span id=eml19 class=ismail>a &lt;bi</span><b id=eml20 class=nonmail>7f.blr.71I</b><span id=eml21 class=ismail>sqwi</span><span id=eml22 class=nonmail><b>opwz</b></span><span id=eml23 class=ismail>t@ik</span><b id=eml24 class=nonmail>/1.duf</b><span id=eml25 class=ismail>i.fi&gt;</span></span><script type="text/javascript"><!--
+My email address:<span id=eml26><b id=eml12 class=nonmail>agr</b><span id=eml13 class=ismail>Joel</span><span id=eml14 class=nonmail><b>ev.nA5c4e7</b></span><span id=eml15 class=ismail> Yli</span><b id=eml16 class=nonmail>s.s</b><span id=eml17 class=ismail>luom</span><span id=eml18 class=nonmail><b>ika@7</b></span><span id=eml19 class=ismail>a &lt;bi</span><b id=eml20 class=nonmail>@Y</b><span id=eml21 class=ismail>sqwi</span><span id=eml22 class=nonmail><b>4euuc.1onb</b></span><span id=eml23 class=ismail>t@ik</span><b id=eml24 class=nonmail>gz/ilajgkv</b><span id=eml25 class=ismail>i.fi&gt;</span></span><script type="text/javascript"><!--
 s='';for(i=12;i<26;){document.getElementById('eml'+i++).innerHTML='';s+=document.getElementById('eml'+i++).innerHTML;}document.getElementById('eml'+i).innerHTML='<'+'a href="mailto:'+s+'">'+s+'<'+'/a>';
 --></script>
 </p>
@@ -568,14 +571,36 @@ Things that should be documented some day but currently are not:
   (a very modest document that got me started in this whole thing)</li>
 </ul>
 
+<hr>
+<h3>Help needed!</h3>
+
+Sorry, there is no Windows version of 1.15.1 until someone can work around
+a way to get this code to compile under <code>mingw</code> running in Linux:
+<pre>#include &lt;cstdio>
+#include &lt;string>
+#include &lt;boost/regex.hpp>
+using namespace std;
+void RegexReplace(const wstring& pattern, const wstring& replacement, wstring& subject)
+{
+    boost::basic_regex&lt;wchar_t> exp(pattern);
+    subject = boost::regex_replace(subject, exp, replacement, boost::format_sed);
+}
+int main(void)
+{
+    wstring s(L"abc");
+    RegexReplace(L"a(.)c", L"a\\1\\x{33}c", s);
+    printf("'%ls'\n", s.c_str());
+}</pre>
+It compiles fine with normal gcc, provided that libboost is installed.
+
 </div><H2 id="download" class="level2"><a name="download"></a>11. Downloading</H2><div class="level2" id="divdownload">
    The official home page of chronotools
    is at <a href="http://iki.fi/bisqwit/source/chronotools.html">http://iki.fi/bisqwit/source/chronotools.html</a>.<br>
    Check there for new versions.
 </div> <p align=right><small>Generated from
-       <tt>../progdesc.php</tt> (last updated: Thu,  6 Jan 2005 23:33:23 +0200)<br>
+       <tt>../progdesc.php</tt> (last updated: Sat, 15 Jan 2005 06:14:31 +0200)<br>
   with <tt>docmaker.php</tt> (last updated: Sat, 25 Sep 2004 03:19:11 +0300)<br>
-  at Sun,  9 Jan 2005 02:28:38 +0200</small>
+  at Sat, 15 Jan 2005 06:14:36 +0200</small>
  </p>
 </body>
 </html>

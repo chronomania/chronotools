@@ -7,7 +7,13 @@
 #include "miscfun.hh"
 #include "romaddr.hh"
 #include "base62.hh"
+#include "base16.hh"
 #include "ctcset.hh"
+
+#include "autoptr"
+
+#undef DEBUG_SCAN
+#undef DEBUG_FORMAT
 
 typedef unsigned char Byte;
 
@@ -37,7 +43,7 @@ const char* LocationEventNames[0x201] =
 "014)",
 "015) Sun Palace",
 "016)",
-"017)",
+"017) Game initialization",
 "018)",
 "019)",
 "01A) Lucca's Workshop",
@@ -338,7 +344,7 @@ const char* LocationEventNames[0x201] =
 "141)",
 "142)",
 "143) Crono's Kitchen",
-"144) Chrono's Room",
+"144) Crono's Room",
 "145)",
 "146)",
 "147)",
@@ -1044,7 +1050,7 @@ const char* MapNames[0x200] =
     "{1FE} (empty map)",
     "{1FF} (empty map)"
 };
-const char* Emotion[0x1B] =
+const char* Emotion[0x20] =
 {
 "{00} Standing",
 "{01} Walking",
@@ -1072,7 +1078,12 @@ const char* Emotion[0x1B] =
 "{17} Shake Head",
 "{18} Unknown",
 "{19} D'oh!",
-"{1A} Laugh     "
+"{1A} Laugh",
+"{1B} ?",
+"{1C} ?",
+"{1D} ?",
+"{1E} Right hand",
+"{1F} Left hand",
 };
 const char* NPCNames[0x100] =
 {
@@ -1693,12 +1704,13 @@ namespace
     };
     typedef std::map<std::string, paramholder> parammap;
 
+
     /* Prints the string using the format, filling in the parameters. */
-    static const std::wstring FormatString
-        (const char*const format, const parammap& params)
+    static const std::wstring
+        FormatString(const char*const opformat, const parammap& params)
     {
         std::wstring result;
-        const char* fmtptr = format;
+        const char* fmtptr = opformat;
         while(*fmtptr)
         {
             if(*fmtptr == '%')
@@ -1721,36 +1733,127 @@ namespace
         return result;
     }
 
-    /* Formatting functions */
-    static const std::wstring FormatNumeric(unsigned n, unsigned bits)
+    /* Attempts to scan the parameters from the string. Return false if fail. */
+    static bool
+        ScanParams(const char*const opformat, const std::wstring& string, parammap& params)
     {
-        // Vars starting with Object are related to the actor.
-        // Vars starting with Sprite are related to the GFX sprite.
-        switch(n)
+        unsigned strpos=0;
+        const char* fmtptr = opformat;
+        while(strpos < string.size())
         {
-            case 0x7E016D: return L"{ObjectID}";
-            case 0x7E01BD: return L"{NumActors}";
-            case 0x7E011F: return L"{ExploreMode}";
-            case 0x7E0154: return L"{Unknown54}";
-            case 0x7E016B: return L"{Unknown6B}";
-            case 0x7E0197: return L"{Member1ObjectNo}";
-            case 0x7E0199: return L"{Member2ObjectNo}";
-            case 0x7E019B: return L"{Member3ObjectNo}";
-            case 0x7E01F8: return L"{RandomCounter}";
-            case 0x7E0520: return L"{Sprite520}";
-            case 0x7E0521: return L"{Sprite521}"; // related to palette
-            case 0x7E0522: return L"{Sprite522}";
-            case 0x7E0523: return L"{Sprite523}";
-            case 0x7E0524: return L"{Sprite524}";
-            case 0x7E0525: return L"{Sprite525}";
-            case 0x7E0526: return L"{Sprite526}";
-            case 0x7E0527: return L"{Sprite527}";
-            case 0x7E0528: return L"{Sprite528}";
+            /* Ignore spaces in the input */
+            if(string[strpos] == L' ')
+            {
+                ++strpos; continue;
+            }
+            
+            /* Ignore spaces in the format string */
+            while(*fmtptr == ' ') ++fmtptr;
+            
+            if(*fmtptr == '%')
+            {
+                /* REad the parameter name */
+                std::string paramname;
+                while(std::isalnum(*++fmtptr)) paramname += *fmtptr;
+                
+                unsigned param_begin = strpos;
+                
+                enum { mode_unknown,
+                       mode_number,
+                       mode_operator,
+                       mode_dialogaddr,
+                       mode_identifier,
+                       mode_string } mode = mode_unknown;
+                
+                for(; strpos < string.size(); ++strpos)
+                {
+                    wchar_t ch = string[strpos];
+                    
+                    bool ok=true;
+                    switch(mode)
+                    {
+                        case mode_number:
+                            if(!std::isxdigit(WcharToAsc(ch))) ok=false;
+                            break;
+                        case mode_dialogaddr:
+                            if(!std::isalnum(WcharToAsc(ch))) ok=false;
+                            break;
+                        case mode_identifier:
+                            if(ch==L'}') {++strpos;ok=false; }
+                            break;
+                        case mode_operator: operator_check:
+                            if(ch!=L'&' && ch!=L'|'
+                            && ch!=L'<' && ch!=L'>'
+                            && ch!=L'=' && ch!=L'!')
+                                ok=false;
+                            break;
+                        case mode_string:
+                            if(ch==L'"') {++strpos;ok=false; }
+                            break;
+                        case mode_unknown:
+                            if(ch==L'"') {mode=mode_string;break;}
+                            if(ch==L'$') {mode=mode_dialogaddr;break;}
+                            if(ch==L'{') {mode=mode_identifier;break;}
+                            if(std::isxdigit(WcharToAsc(ch))) {mode=mode_number; break;}
+                            mode=mode_operator;
+                            goto operator_check;
+                    }
+                    if(!ok) break;
+                }
+                params[paramname] = string.substr(param_begin, strpos-param_begin);
+                continue;
+            }
+            
+            if(*fmtptr != WcharToAsc(string[strpos]))
+                return false;
+            ++fmtptr;
+            ++strpos;
+        }
+        /* Ignore spaces in the end of the format string */
+        while(*fmtptr == ' ') ++fmtptr;
+        /* Return 'true' (ok) if the format is now complete (end) */
+        return *fmtptr == '\0';
+    }
+    
+    class MemoryAddressConstants
+    {
+        std::map<unsigned, std::wstring> per_addr;
+        std::multimap<std::wstring, unsigned> per_name;
+    private:
+        void Define(unsigned n, const std::wstring& s)
+        {
+            per_addr.insert(std::make_pair(n, s));
+            per_name.insert(std::make_pair(s, n));
+        }
+    public:
+        MemoryAddressConstants()
+        {
+            // Vars starting with Object are related to the actor.
+            // Vars starting with Sprite are related to the GFX sprite.
+            Define(0x7E016D, L"{ObjectID}");
+            Define(0x7E01BD, L"{NumActors}");
+            Define(0x7E011F, L"{ExploreMode}");
+            Define(0x7E0154, L"{Unknown54}");
+            Define(0x7E016B, L"{Unknown6B}");
+            Define(0x7E0197, L"{Member1ObjectNo}");
+            Define(0x7E0199, L"{Member2ObjectNo}");
+            Define(0x7E019B, L"{Member3ObjectNo}");
+            Define(0x7E01F8, L"{RandomCounter}");
+            Define(0x7E0520, L"{Sprite520}");
+            Define(0x7E0521, L"{Sprite521}");
+            // ^related to palette
+            Define(0x7E0522, L"{Sprite522}");
+            Define(0x7E0523, L"{Sprite523}");
+            Define(0x7E0524, L"{Sprite524}");
+            Define(0x7E0525, L"{Sprite525}");
+            Define(0x7E0526, L"{Sprite526}");
+            Define(0x7E0527, L"{Sprite527}");
+            Define(0x7E0528, L"{Sprite528}");
             // 7E0F00: ?
-            case 0x7E0F81: return L"{ObjectPaletteNumber}";
+            Define(0x7E0F81, L"{ObjectPaletteNumber}");
             // 1000: bitmask of unknown purpose (#$80 is a bit, lower bits are value)
             // 1001: maybe a copy of 1000 (see op 87)
-            case 0x7E1100: return L"{ObjectMemberIdentity}";
+            Define(0x7E1100, L"{ObjectMemberIdentity}");
             // 1100: Identity as a party member
             //         If bit $80 is set, the object is dead
             //         and its code will not be interpreted.
@@ -1760,18 +1863,18 @@ namespace
             //         #3: out-party PC
             //         #4: NPC
             //         #5: monster
-            case 0x7E1101: return L"{ObjectPlayerIdentity}";
+            Define(0x7E1101, L"{ObjectPlayerIdentity}");
             // 1101: Identity as a player character
             //         #0: crono
             //         #1: marle
             //         and so on
-            case 0x7E1180: return L"{ObjectCodePointer}";
+            Define(0x7E1180, L"{ObjectCodePointer}");
             // 1180: object's current code pointer
             // 1301: static animation? (like sleeping)
-            case 0x7E1400: return L"{ObjectPalettePointer}";
+            Define(0x7E1400, L"{ObjectPalettePointer}");
             // 1400: Pointer to palette in ROM (offset only, page E4)
             // 7E15C0: ?
-            case 0x7E1600: return L"{ObjectFacing}";
+            Define(0x7E1600, L"{ObjectFacing}");
             // 1600: facing
             // 1601: possibly a L"facing is up to date" flag
             // 1680: current animation
@@ -1779,74 +1882,100 @@ namespace
             // 1780: ?flag
             // 1781: ?
             // 1800: ?flag for x-coord
-            case 0x7E1801: return L"{ObjectXCoord}";
+            Define(0x7E1801, L"{ObjectXCoord}");
             // 1801: X-coordinate
             // 1880: ?flag for y-coord
-            case 0x7E1881: return L"{ObjectYCoord}";
+            Define(0x7E1881, L"{ObjectYCoord}");
             // 1881: Y-coordinate
             // 1900: ?
             // 1980: ?
-            case 0x7E1A00: return L"{ObjectSpeed}";
+            Define(0x7E1A00, L"{ObjectSpeed}");
             // 1A00: NpcSpeed
-            case 0x7E1A01: return L"{ObjectMovementLength}";
+            Define(0x7E1A01, L"{ObjectMovementLength}");
             // 1A01: Length of movement
             // 1A80: Appears to be a L"is moving?" flag
-            case 0x7E1A81: return L"{ObjectDrawingMode}";
+            Define(0x7E1A81, L"{ObjectDrawingMode}");
             // 1A81: Allocated? Drawing mode? 1=on, 0=off, $80=hide
-            case 0x7E1B01: return L"{ObjectSolidProps}";
+            Define(0x7E1B01, L"{ObjectSolidProps}");
             // 1B01: NpcSolidProps
             // 1B80: ?flag
             // 1B81: ?
-            case 0x7E1C00: return L"{ObjectPriorityNumber}";
+            Define(0x7E1C00, L"{ObjectPriorityNumber}");
             // 1C00: Current Priority number
-            case 0x7E1C01: return L"{ObjectEventFlag}";
+            Define(0x7E1C01, L"{ObjectEventFlag}");
             // 1C01: EventFlag
-            case 0x7E1C80: return L"{ObjectMoveProps}";
+            Define(0x7E1C80, L"{ObjectMoveProps}");
             // 1C80: NpcMoveProps
             // 1C81: ?
-            //case 0x7F0200: return L"{DialogTextParam0}";
-            //case 0x7F0201: return L"{DialogTextParam1}";
-            //case 0x7F0202: return L"{DialogTextParam2}";
-            //case 0x7F0203: return L"{DialogTextParam3}";
-            //case 0x7F0204: return L"{DialogTextParam4}";
-            //case 0x7F0205: return L"{DialogTextParam5}";
+            //Define(0x7F0200, L"{DialogTextParam0}");
+            //Define(0x7F0201, L"{DialogTextParam1}");
+            //Define(0x7F0202, L"{DialogTextParam2}");
+            //Define(0x7F0203, L"{DialogTextParam3}");
+            //Define(0x7F0204, L"{DialogTextParam4}");
+            //Define(0x7F0205, L"{DialogTextParam5}");
             // These may be used for dialog params, but
             // they are also used for various other purposes
             // as temporary variables.
             
-            case 0x7F0580: return L"{ObjectPriority0Ptr}";
+            Define(0x7F0580, L"{ObjectPriority0Ptr}");
             // 7F0580: Priority 0 code pointer (begins as 0)
-            case 0x7F0600: return L"{ObjectPriority1Ptr}";
+            Define(0x7F0600, L"{ObjectPriority1Ptr}");
             // 7F0600: Priority 1 code pointer (begins as 0)
-            case 0x7F0680: return L"{ObjectPriority2Ptr}";
+            Define(0x7F0680, L"{ObjectPriority2Ptr}");
             // 7F0680: Priority 2 code pointer (begins as 0)
-            case 0x7F0700: return L"{ObjectPriority3Ptr}";
+            Define(0x7F0700, L"{ObjectPriority3Ptr}");
             // 7F0700: Priority 3 code pointer (begins as 0)
-            case 0x7F0780: return L"{ObjectPriority4Ptr}";
+            Define(0x7F0780, L"{ObjectPriority4Ptr}");
             // 7F0780: Priority 4 code pointer (begins as 0)
-            case 0x7F0800: return L"{ObjectPriority5Ptr}";
+            Define(0x7F0800, L"{ObjectPriority5Ptr}");
             // 7F0800: Priority 5 code pointer (begins as 0)
-            case 0x7F0880: return L"{ObjectPriority6Ptr}";
+            Define(0x7F0880, L"{ObjectPriority6Ptr}");
             // 7F0880: Priority 6 code pointer (begins as 0)
-            case 0x7F0900: return L"{ObjectPriority7Ptr}";
+            Define(0x7F0900, L"{ObjectPriority7Ptr}");
             // 7F0900: Priority 7 code pointer (begins as 0)
             // 7F0980: flag used by opcode $04
-            case 0x7E2980: return L"{Member1ID}";
-            case 0x7E2981: return L"{Member2ID}";
-            case 0x7E2982: return L"{Member3ID}";
-            case 0x7E2983: return L"{Member4ID}";
-            case 0x7E2984: return L"{Member5ID}";
-            case 0x7E2985: return L"{Member6ID}";
-            case 0x7E2986: return L"{Member7ID}";
-            case 0x7E2987: return L"{Member8ID}";
-            case 0x7E2988: return L"{Member9ID}";
-            case 0x7F0000: return L"{StoryLineCounter}";
-            case 0x7F0A80: return L"{Result}";
+            Define(0x7E2980, L"{Member1ID}");
+            Define(0x7E2981, L"{Member2ID}");
+            Define(0x7E2982, L"{Member3ID}");
+            Define(0x7E2983, L"{Member4ID}");
+            Define(0x7E2984, L"{Member5ID}");
+            Define(0x7E2985, L"{Member6ID}");
+            Define(0x7E2986, L"{Member7ID}");
+            Define(0x7E2987, L"{Member8ID}");
+            Define(0x7E2988, L"{Member9ID}");
+            Define(0x7F0000, L"{StoryLineCounter}");
+            Define(0x7F0A80, L"{Result}");
             // 7F0A80: "Result" of various tests
             // 7F0B01: Used by op B7
             // 7F0B80: Current pose number
         }
-        return wformat(L"%0*X", bits/4, n);
+        const std::wstring& Find(unsigned n)
+        {
+            std::map<unsigned, std::wstring>::const_iterator
+                i = per_addr.find(n);
+            if(i == per_addr.end()) throw false;
+            return i->second;
+        }
+        unsigned Find(const std::wstring& name) const
+        {
+            std::multimap<std::wstring, unsigned>::const_iterator
+                i = per_name.find(name);
+            if(i == per_name.end()) throw false;
+            return i->second;
+        }
+    } MemoryAddressConstants;
+
+    /* Formatting functions */
+    static const std::wstring FormatNumeric(unsigned n, unsigned bits)
+    {
+        try
+        {
+            return MemoryAddressConstants.Find(n);
+        }
+        catch(bool)
+        {
+            return wformat(L"%0*X", bits/4, n);
+        }
     }
 
     static const std::wstring FormatDialogBegin(unsigned n, unsigned& save_begin)
@@ -1879,12 +2008,8 @@ namespace
             unsigned int byte = data[a];
             if(has_text)
             {
-                if((byte == 1 || byte == 2) && (a+1 < data.size()))
-                {
-                    byte = byte*256 + data[++a];
-                }
                 wchar_t c = getwchar_t((ctchar)byte, cset_8pix);
-                if(c != ilseq)
+                if(c != ilseq && c != L'\0')
                 {
                     result += c;
                     continue;
@@ -1895,79 +2020,53 @@ namespace
         result += '"';
         return result;
     }
-}
 
-#if 0
-/* EV Parameter Handling Functions */
-class EvParameterHandler
-{
-public:
-    struct labeldata
-    {
-        std::wstring label_name;
-        /* Decoding: */
-        unsigned    label_value;
-        /* Encoding: */
-        unsigned    label_position;
-        bool        label_forward;
-    };
-
-private:
-    const char* opformat;
-    unsigned    dataptr;
-    labeldata label;
-    unsigned    dialog_begin;
-    
-    struct structure
-    {
-        unsigned size;
-        typedef std::map<std::wstring, elemdata> elemmap;
-        elemmap elems;
-    } structure;
-    
-protected:
-    typedef std::map<std::string, paramholder> parammap;
-    
     /* Throws a dummy exception if fails. */
-    static unsigned ScanInt(const std::wstring& n, long max=0xFFFFFF)
+    static unsigned ScanNumeric(const std::wstring& n)
     {
-        unsigned offset=0;
-        int base=16;
-        if(n.substr(0, 2) == L"0x") { offset=2; base=16; }
-        else if(n.substr(0, 1) == L"$") { offset=1; base=16; }
-        char* endptr;
-        long retval = std::strtol(n.c_str()+offset, &endptr, base);
-        if(*endptr || retval < 0 || retval > max) throw false;
-        return retval;
+        try
+        {
+            return MemoryAddressConstants.Find(n);
+        }
+        catch(bool)
+        {
+            unsigned offset=0;
+            if(n.substr(0, 2) == L"0x") { offset=2; }
+            else if(n.substr(0, 1) == L"$") { offset=1; }
+            
+            unsigned result=0;
+            while(offset < n.size())
+                if(!CumulateBase16(result, n[offset++]))
+                    throw false;
+            return result;
+        }
     }
-    static const std::vector<Byte> ScanData(const std::wstring& n)
+    
+    static const std::vector<Byte> ScanBlob(const std::wstring& n)
     {
         std::vector<Byte> result;
         if(n.size() < 2) throw false;
-        if(n[0] != '"' || n[n.size()-1] != '"') throw false;
-        
-        for(unsigned a=1; a<n.size(); ++a)
+        unsigned endpos = n.size()-1;
+        if(n[0] != L'"' || n[endpos] != L'"') throw false;
+        for(unsigned a=1; a<endpos; ++a)
         {
-            if(n[a] == '[')
+            if(n[a] == L'[')
             {
                 ++a;
-                if(a+2 >= n.size())throw false;
-                if(n[a+2] != ']') throw false;
-                unsigned char code = ScanInt(n.substr(a+1,2), 0xFF);
+                if(a+2 >= endpos || n[a+2] != L']') throw false;
+                unsigned code = ScanNumeric(n.substr(a,2));
+                if(code > 0xFF) throw false;
                 result.push_back(code);
+                a += 2;
             }
-            else // Plain characters not yet handled.
-                throw false;
+            else
+            {
+                ctchar c = getctchar(n[a], cset_8pix);
+                if(c == 0 || c >= 0x100) throw false;
+                result.push_back(c & 0xFF);
+            }
         }
         return result;
-    }
-    const int ScanGoto(const std::wstring& n, unsigned bytepos, unsigned offset, int sign)
-    {
-        label.label_name     = n;
-        label.label_position = bytepos;
-        label.label_forward  = sign>0;
-        
-        return -offset;
     }
     static unsigned ScanOperator(const std::wstring& n)
     {
@@ -1981,19 +2080,19 @@ protected:
         if(n == L"|") return 7;
         throw false;
     }
-    const unsigned ScanDialogBegin(const std::wstring& n)
+    static unsigned ScanDialogBegin(const std::wstring& n, unsigned& dialog_begin)
     {
-        if(n.size() != 5 || n[0] != '$') throw false;
+        if(n.size() != 5 || n[0] != L'$') throw false;
         unsigned result=0;
         for(unsigned a=1; a<n.size(); ++a)
             if(!CumulateBase62(result, n[a])) throw false;
         
         dialog_begin = result;
-        return SNES2ROMaddr(result);
+        return ROM2SNESaddr(result);
     }
-    const unsigned ScanDialogAddr(const std::wstring& n)
+    static unsigned ScanDialogAddr(const std::wstring& n, unsigned dialog_begin)
     {
-        if(n.size() != 5 || n[0] != '$') throw false;
+        if(n.size() != 5 || n[0] != L'$') throw false;
         unsigned result=0;
         for(unsigned a=1; a<n.size(); ++a)
             if(!CumulateBase62(result, n[a]))
@@ -2005,101 +2104,27 @@ protected:
         if(result > 0xFF) throw false;
         return result;
     }
+}
 
-public:
-    /* Tests if the given string matches the given format. Returns true if ok. */
-    bool CompareFormat(const std::string& string) const
-    {
-        parammap dummy;
-        return ScanParams(string, dummy);
-    }
-    
-    /* Attempts to scan the parameters from the string. Return false if fail. */
-    bool ScanParams(const std::string& string, parammap& params) const
-    {
-        unsigned strpos=0;
-        const char* fmtptr = opformat;
-        while(strpos < string.size())
-        {
-            if(string[strpos] == ' ') { ++strpos; continue; }
-            while(*fmtptr == ' ') ++fmtptr;
-            if(*fmtptr == '%')
-            {
-                std::wstring paramname;
-                while(std::isalnum(*++fmtptr)) paramname += *fmtptr;
-                unsigned param_begin = strpos;
-                
-                enum { mode_unknown,
-                       mode_number,
-                       mode_operator,
-                       mode_dialogaddr,
-                       mode_identifier,
-                       mode_string } mode = mode_unknown;
-                
-                for(; strpos < string.size(); ++strpos)
-                {
-                    char ch = string[strpos];
-                    
-                    bool ok=true;
-                    switch(mode)
-                    {
-                        case mode_number:
-                            if(!std::isxdigit(ch)) ok=false;
-                            break;
-                        case mode_dialogaddr:
-                        case mode_identifier:
-                            if(!std::isalnum(ch)) ok=false;
-                            break;
-                        case mode_operator: operator_check:
-                            if(ch!='&' && ch!='|' && ch!='<' && ch!='>' && ch!='=' && ch!='!')
-                                ok=false;
-                            break;
-                        case mode_string:
-                            if(ch=='"') {++strpos;ok=false; }
-                            break;
-                        case mode_unknown:
-                            if(ch=='"') {mode=mode_string;break;}
-                            if(ch=='$') {mode=mode_dialogaddr;break;}
-                            if(std::isxdigit(ch)) {mode=mode_number; break;}
-                            if(std::isalpha(ch)) {mode=mode_identifier; break; }
-                            mode=mode_operator;
-                            goto operator_check;
-                    }
-                    if(!ok) break;
-                }
-                params[paramname] = string.substr(param_begin, strpos-param_begin);
-                continue;
-            }
-            if(*fmtptr != string[strpos]) return false;
-        }
-        while(*fmtptr == ' ') ++fmtptr;
-        return *fmtptr == '\0';
-    }
-};
-#endif
 
 namespace
 {
+    /* Implementing a map type that allows containing ranges
+     * of keys.
+     * It is simple because we don't worry about overlapping
+     * ranges, range extending or range contracting.
+     */
     template<typename keytype>
     struct range
     {
-        keytype lower, upper;
+        keytype lower, upper; /* Both are inclusive. */
         
-        //range(keytype v): lower(v),upper(v) {}
         range(keytype l,keytype u): lower(l),upper(u) {}
         
-        /*bool operator< (keytype b) const
-        {
-            return upper < b;
-        }*/
         bool operator< (const range& b) const
         {
             return lower < b.lower;
         }
-        /*bool operator== (keytype b) const
-        {
-            return Contains(b);
-        }*/
         bool operator== (const range& b) const
         {
             return lower==b.lower && upper==b.upper;
@@ -2228,7 +2253,7 @@ private:
                 throw false;
             }
             
-            return FormatNumeric(add, n_bytes*8);
+            return FormatNumeric(min, n_bytes*8);
         }
         
         struct FormatResult
@@ -2242,7 +2267,16 @@ private:
         public:
             FormatResult() : maxoffs(0),goto_target(0),goto_type(EventCode::goto_none) { }
         };
-            
+        struct ScanResult
+        {
+            std::vector<unsigned char> bytes;
+            unsigned targetpos;
+            bool is_goto;
+
+        public:
+            explicit ScanResult(unsigned pos): targetpos(pos), is_goto(false) { }
+        };
+        
         FormatResult Format
             (unsigned offs, const unsigned char* data, unsigned maxlen,
              EventCode::DecodingState& state) const
@@ -2251,7 +2285,9 @@ private:
             
             if(maxlen < bytepos)
             {
+#ifdef DEBUG_FORMAT
                 fprintf(stderr, "maxlen(%u) bytepos(%u)\n", maxlen, bytepos);
+#endif
                 throw false;
             }
             maxlen -= bytepos; data += bytepos;
@@ -2263,7 +2299,9 @@ private:
                     /* First, read the integer value. */
                     if(maxlen < n_bytes)
                     {
+#ifdef DEBUG_FORMAT
                         fprintf(stderr, "maxlen(%u) < n_bytes(%u)\n", maxlen, n_bytes);
+#endif
                         throw false;
                     }
                     unsigned value = 0;
@@ -2278,7 +2316,9 @@ private:
                         unsigned mask = 1 << (n_bytes * 8 - 1);
                         if(!(value & mask))
                         {
+#ifdef DEBUG_FORMAT
                             fprintf(stderr, "value(%X) & mask(%X)\n", value, mask);
+#endif
                             throw false;
                         }
                         value &= ~mask;
@@ -2287,7 +2327,9 @@ private:
                     /* Check ranges. */
                     if(value < min || value > max)
                     {
-                        fprintf(stderr, "value(%u) min(%u) max(%u)\n", value, min, max);
+#ifdef DEBUG_FORMAT
+                        fprintf(stderr, "value(%X) min(%X) max(%X)\n", value, min, max);
+#endif
                         throw false;
                     }
                     /* Adjust for formatting. */
@@ -2302,7 +2344,9 @@ private:
                 {
                     if(maxlen < 1)
                     {
+#ifdef DEBUG_FORMAT
                         fprintf(stderr, "maxlen(%u) < n_bytes(%u)\n", maxlen, n_bytes);
+#endif
                         throw false;
                     }
                     unsigned value = data[0] >> 4;
@@ -2314,7 +2358,9 @@ private:
                 {
                     if(maxlen < 1)
                     {
+#ifdef DEBUG_FORMAT
                         fprintf(stderr, "maxlen(%u) < n_bytes(%u)\n", maxlen, n_bytes);
+#endif
                         throw false;
                     }
                     unsigned value = data[0] & 15;
@@ -2326,7 +2372,9 @@ private:
                 {
                     if(maxlen < 1)
                     {
+#ifdef DEBUG_FORMAT
                         fprintf(stderr, "maxlen(%u) < n_bytes(%u)\n", maxlen, n_bytes);
+#endif
                         throw false;
                     }
                     unsigned value = 1 << (data[0]&7);
@@ -2338,7 +2386,9 @@ private:
                 {
                     if(maxlen < 1)
                     {
+#ifdef DEBUG_FORMAT
                         fprintf(stderr, "maxlen(%u) < n_bytes(%u)\n", maxlen, n_bytes);
+#endif
                         throw false;
                     }
                     unsigned value = (1 << (data[0]&7)) ^ 0xFF;
@@ -2352,7 +2402,9 @@ private:
                 {
                     if(maxlen < 1)
                     {
+#ifdef DEBUG_FORMAT
                         fprintf(stderr, "maxlen(%u) < n_bytes(%u)\n", maxlen, n_bytes);
+#endif
                         throw false;
                     }
                     
@@ -2369,7 +2421,9 @@ private:
                 {
                     if(maxlen < 1)
                     {
+#ifdef DEBUG_FORMAT
                         fprintf(stderr, "maxlen(%u) < n_bytes(%u)\n", maxlen, n_bytes);
+#endif
                         throw false;
                     }
                     unsigned value = data[0];
@@ -2382,7 +2436,9 @@ private:
                 {
                     if(maxlen < 2)
                     {
+#ifdef DEBUG_FORMAT
                         fprintf(stderr, "maxlen(%u) < n_bytes(%u)\n", maxlen, n_bytes);
+#endif
                         throw false;
                     }
                     unsigned length = data[0] | (data[1] << 8);
@@ -2391,7 +2447,9 @@ private:
                     length -= 2;
                     if(maxlen < length)
                     {
+#ifdef DEBUG_FORMAT
                         fprintf(stderr, "blob: maxlen(%u) < length(%u)\n", maxlen, length);
+#endif
                         throw false;
                     }
                     std::vector<Byte> buf(data, data+length);
@@ -2403,7 +2461,9 @@ private:
                 {
                     if(maxlen < 3)
                     {
+#ifdef DEBUG_FORMAT
                         fprintf(stderr, "maxlen(%u) < n_bytes(%u)\n", maxlen, n_bytes);
+#endif
                         throw false;
                     }
                     unsigned offs = data[0] | (data[1] << 8) | (data[2] << 16);
@@ -2415,13 +2475,260 @@ private:
                 {
                     if(maxlen < 1)
                     {
+#ifdef DEBUG_FORMAT
                         fprintf(stderr, "maxlen(%u) < n_bytes(%u)\n", maxlen, n_bytes);
+#endif
                         throw false;
                     }
                     unsigned offs = data[0];
                     result.text    = FormatDialogAddr(offs, state.dialogbegin);
                     result.maxoffs = bytepos + 1;
                     break;
+                }
+            }
+            return result;
+        }
+
+        unsigned Scan(const std::wstring& s, bool goto_backward) const
+        {
+            // Scanning function for params with no byte representation
+            // Also doubles as parameter verifier.
+
+            switch(type)
+            {
+                case t_trivial:
+                {
+                    /* First, read the integer value. */
+                    unsigned value = ScanNumeric(s);
+                    const unsigned saved_value = value;
+                    if(value < add) goto trivial_err;
+
+                    /* Unadjust the formatting. */
+                    value -= add;
+                    /* FIXME: Erased bits should be 0. */
+                    if(shift < 0)
+                    {
+                        // undo right-shifting
+                        value <<= -shift;
+                    }
+                    else if(shift > 0)
+                    {
+                        unsigned tmp_value = value;
+                        value >>= shift;
+                        if(tmp_value != (value << shift))
+                        {
+#ifdef DEBUG_SCAN
+                            fprintf(stderr, "low bits shouldn't be set.\n");
+#endif
+                            throw false;
+                        }
+                    }
+                    
+                    /* Check ranges. */
+                    if(value < min || value > max)
+                    { trivial_err:
+#ifdef DEBUG_SCAN
+                        fprintf(stderr,
+                            "value(%X,%X) add(%X) shift(%d) min(%X) max(%X)\n",
+                            saved_value, value, add, shift, min, max);
+#endif
+                        throw false;
+                    }
+
+                    /* When highbit trick is used, there are two rules:
+                     * - The input must _not_ have high bit set
+                     * - The encoded value _must_ have it.
+                     */
+                    if(highbit_trick)
+                    {
+                        unsigned mask = 1 << (n_bytes * 8 - 1);
+                        if(value & mask)
+                        {
+#ifdef DEBUG_SCAN
+                            fprintf(stderr, "value(%X) & mask(%X)\n", value, mask);
+#endif
+                            throw false;
+                        }
+                        value |= mask;
+                    }
+                    return value;
+                }
+                case t_nibble_hi:
+                case t_nibble_lo:
+                {
+                    long value = ScanNumeric(s);
+                    /* Check ranges. */
+                    if(value < 0 || value > 15)
+                    {
+#ifdef DEBUG_SCAN
+                        fprintf(stderr, "nibble value %ld out of range\n", value);
+#endif
+                        throw false;
+                    }
+                    return value;
+                }
+                case t_orbit:
+                case t_andbit:
+                {
+                    long value = ScanNumeric(s);
+                    if(type == t_andbit) value ^= 0xFF;
+                    unsigned bit=0;
+                    while(value != 1)
+                    {
+                        if(bit>=7 || !value || (value&1)) throw false;
+                        value >>= 1; ++bit;
+                    }
+                    return bit;
+                }
+                case t_else:
+                case t_loop:
+                case t_if:
+                {
+                    if((type == t_loop) != goto_backward)
+                        throw false;
+                    return 0;
+                }
+                case t_operator:
+                {
+                    return ScanOperator(s);
+                }
+                case t_textblob:
+                case t_blob:
+                case t_dialogbegin:
+                case t_dialogaddr:
+                {
+                    // Unhandled
+                    break;
+                }
+            }
+            fprintf(stderr, "Internal Error: Unreachable code reached in handling of '%s'\n",
+                WstrToAsc(s).c_str());
+            throw true;
+        }
+
+        ScanResult Scan(bool goto_backward) const
+        {
+            // Scanning function for values that don't appear in param list
+
+            switch(type)
+            {
+                case t_trivial:
+                {
+                    ScanResult result(bytepos);
+                    unsigned value = min;
+                    for(unsigned n=0; n<n_bytes; ++n)
+                        result.bytes.push_back((value >> (n*8)) & 0xFF);
+                    return result;
+                }
+                case t_else:
+                case t_loop:
+                case t_if:
+                {
+                    ScanResult result(bytepos);
+                    if((type == t_loop) != goto_backward)
+                        throw false;
+                    result.bytes.push_back(0);
+                    result.is_goto = true;
+                    return result;
+                }
+                case t_nibble_hi:
+                case t_nibble_lo:
+                case t_orbit:
+                case t_andbit:
+                case t_operator:
+                case t_textblob:
+                case t_blob:
+                case t_dialogbegin:
+                case t_dialogaddr:
+                    // Unhandled
+                    break;
+            }
+            fprintf(stderr, "Internal Error: Unreachable code reached\n");
+            throw true;
+        }
+        
+        ScanResult Scan
+            (const std::wstring& s,
+             bool goto_backward,
+             EventCode::EncodingState& state) const
+        {
+            // Scanning function for params that
+            // have a byte representation and appear in param list
+            
+            ScanResult result(bytepos);
+            
+            switch(type)
+            {
+                case t_trivial:
+                {
+                    unsigned value = Scan(s, goto_backward);
+                    for(unsigned n=0; n<n_bytes; ++n)
+                        result.bytes.push_back((value >> (n*8)) & 0xFF);
+                    break;
+                }
+                case t_nibble_hi:
+                case t_nibble_lo:
+                {
+                    unsigned value = Scan(s, goto_backward);
+                    if(type == t_nibble_hi) value <<= 4;
+                    result.bytes.push_back(value);
+                    break;
+                }
+                case t_orbit:
+                case t_andbit:
+                {
+                    unsigned bit = Scan(s, goto_backward);
+                    result.bytes.push_back(bit);
+                    break;
+                }
+                case t_operator:
+                {
+                    unsigned op = Scan(s, goto_backward);
+                    result.bytes.push_back(op);
+                    break;
+                }
+                case t_textblob:
+                case t_blob:
+                {
+                    try
+                    {
+                        std::vector<unsigned char> blob = ScanBlob(s);
+                        unsigned length = blob.size() + 2;
+                        result.bytes.push_back(length & 0xFF);
+                        result.bytes.push_back(length >> 8);
+                        result.bytes.insert(result.bytes.end(), blob.begin(), blob.end());
+                    }
+                    catch(bool)
+                    {
+//#ifdef DEBUG_SCAN
+                        fprintf(stderr, "'%s' is not a good blob\n", WstrToAsc(s).c_str());
+//#endif
+                        throw false;
+                    }
+                    break;
+                }
+                case t_dialogbegin:
+                {
+                    unsigned value = ScanDialogBegin(s, state.dialogbegin);
+                    for(unsigned n=0; n<3; ++n)
+                        result.bytes.push_back((value >> (n*8)) & 0xFF);
+                    break;
+                }
+                case t_dialogaddr:
+                {
+                    unsigned value = ScanDialogAddr(s, state.dialogbegin);
+                    result.bytes.push_back(value);
+                    break;
+                }
+
+                case t_else:
+                case t_loop:
+                case t_if:
+                {
+                    // Unhandled
+                    fprintf(stderr, "Internal Error: Unreachable code reached in handling of '%s'\n",
+                        WstrToAsc(s).c_str());
+                    throw true;
                 }
             }
             return result;
@@ -2451,6 +2758,7 @@ private:
     
 private:
     class OpcodeTree;
+    class StringTree;
     
     class Command
     {
@@ -2491,13 +2799,13 @@ private:
                     OpcodeTree::maptype::iterator i = tree.data.find(r);
                     if(i == tree.data.end())
                     {
-                        OpcodeTree subtree;
-                        PutInto(subtree, bytepos+1);
+                        OpcodeTree *subtree = new OpcodeTree;
+                        PutInto(*subtree, bytepos+1);
                         tree.data.insert(std::make_pair(r, subtree));
                     }
                     else
                     {
-                        OpcodeTree& subtree = i->second;
+                        OpcodeTree& subtree = *i->second;
                         PutInto(subtree, bytepos+1);
                     }
                     found=true;
@@ -2506,11 +2814,14 @@ private:
             // If there were no specialisations, use the current node.
             if(!found) tree.choices.push_back(*this);
         }
+        void PutInto(StringTree& tree)
+        {
+            tree.choices.push_back(*this);
+        }
         
         const EventCode::DecodeResult
-        Scan
-            (unsigned offset, const unsigned char* data, unsigned length,
-             EventCode::DecodingState& state) const
+        Format(unsigned offset, const unsigned char* data, unsigned length,
+               EventCode::DecodingState& state) const
         {
             parammap params;
             
@@ -2554,6 +2865,64 @@ private:
             return result;
         }
         
+        const EventCode::EncodeResult
+        Scan(const std::wstring& cmd, bool goto_backward,
+             EventCode::EncodingState& state) const
+        {
+            parammap params;
+            if(!ScanParams(format, cmd, params))
+            {
+                throw false;
+            }
+            
+            EventCode::EncodeResult result;
+            
+            /* For the parameters which have no byte representation,
+             * verify the values of the parameters match.
+             */
+
+            for(unsigned a=0; a<other_data.size(); ++a)
+            {
+                const char* name     = other_data[a].first;
+                const ElemData& elem = other_data[a].second;
+                
+                if(!name)
+                {
+                    fprintf(stderr, "No name on 'other_data'?\n");
+                    throw false;
+                }
+                elem.Scan(params[name], goto_backward);
+            }
+            
+            /* Encode all parameters that contribute to the
+             * byte representation.
+             */
+            for(unsigned a=0; a<pos_data.size(); ++a)
+            {
+                const char* name     = pos_data[a].first;
+                const ElemData& elem = pos_data[a].second;
+                
+                ElemData::ScanResult tmp = name
+                    ? elem.Scan(params[name], goto_backward, state)
+                    : elem.Scan(goto_backward);
+                
+                if(tmp.is_goto)
+                {
+                    result.goto_position = tmp.targetpos;
+                }
+                unsigned needed_size = tmp.targetpos + tmp.bytes.size();
+                if(result.result.size() < needed_size)
+                {
+                    result.result.resize(needed_size);
+                }
+                
+                for(unsigned a=0; a<tmp.bytes.size(); ++a)
+                    result.result[tmp.targetpos+a] |= tmp.bytes[a];
+            }
+            
+            return result;
+        }
+        
     private:
         const char* format;
         std::vector<std::pair<const char*, ElemData> > pos_data;
@@ -2561,12 +2930,13 @@ private:
     };
     
 private:
-    class OpcodeTree
+    typedef autoptr<class OpcodeTree> OpcodeTreePtr;
+    class OpcodeTree: public ptrable
     {
     public:
         OpcodeTree() { }
     
-        typedef simple_rangemap<unsigned char, OpcodeTree> maptype;
+        typedef simple_rangemap<unsigned char, OpcodeTreePtr> maptype;
         maptype data;
         std::vector<Command> choices;
         
@@ -2583,13 +2953,21 @@ private:
                 ++i)
             {
                 int lower = i->first.lower, upper = i->first.upper;
-                const OpcodeTree& subtree = i->second;
+                const OpcodeTreePtr& p = i->second;
+                const OpcodeTree& subtree = *p;
                 
                 std::fprintf(stderr, "%*s", indent, "");
                 std::fprintf(stderr, "subtree %02X-%02X:\n", lower,upper);
                 subtree.Dump(indent+2);
             }
         }
+    };
+    class StringTree
+    {
+    public:
+        StringTree() { }
+        
+        std::vector<Command> choices;
     };
     
 private:
@@ -2765,12 +3143,12 @@ private:
         static NamedElem DeclareConst(const char* name, unsigned value)
         {
             if(value <= 0xFF)
-                return NamedElem(name, ElemData(1,value,value,value,0));
+                return NamedElem(name, ElemData(1,value,value,0,0));
             if(value <= 0xFFFF)
-                return NamedElem(name, ElemData(2,value,value,value,0));
+                return NamedElem(name, ElemData(2,value,value,0,0));
             if(value <= 0xFFFFFF)
-                return NamedElem(name, ElemData(3,value,value,value,0));
-            return NamedElem(name, ElemData(4,value,value,value,0));
+                return NamedElem(name, ElemData(3,value,value,0,0));
+            return NamedElem(name, ElemData(4,value,value,0,0));
         }
 
         static NamedElem DeclareProp(const char* name, unsigned address)
@@ -2794,6 +3172,11 @@ private:
         static ElemData DeclareIf()
         {
             // conditional goto
+            //   Declares a condition - if the condition
+            //   matches, goto is NOT performed
+            
+            // FIXME: Verify the polarity of each "if"
+            
             ElemData result(1, 0x00,0xFF, 0,0);
             return result.SetType(ElemData::t_if);
         }
@@ -3444,42 +3827,42 @@ private:
 
 << "[LetB:%addr:%long]"
     << 0 >> 0x48
-    << 1 >> DeclareLong("long")
+    << 1 >> DeclareLong("long", 0x000100,0xFFFFFF)
     << 4 >> Declare7F0200_2("addr")
 
 << "[LetW:%addr:%long]"
     << 0 >> 0x49
-    << 1 >> DeclareLong("long")
+    << 1 >> DeclareLong("long", 0x000100,0xFFFFFF)
     << 4 >> Declare7F0200_2("addr")
 
 << "[LetB:%long:%byte]"
     << 0 >> 0x4A
-    << 1 >> DeclareLong("long")
+    << 1 >> DeclareLong("long", 0x000100,0x7FFFFF)
     << 4 >> DeclareByte("byte")
 
 << "[LetW:%long:%word]"
     << 0 >> 0x4B
-    << 1 >> DeclareLong("long")
+    << 1 >> DeclareLong("long", 0x000100,0x7FFFFF)
     << 4 >> DeclareWord("word")
 
 << "[LetB:%long:%addr]"
     << 0 >> 0x4C
-    << 1 >> DeclareLong("long")
+    << 1 >> DeclareLong("long", 0x000100,0x7FFFFF)
     << 4 >> Declare7F0200_2("addr")
 
 << "[LetW:%long:%addr]"
     << 0 >> 0x4D
-    << 1 >> DeclareLong("long")
+    << 1 >> DeclareLong("long", 0x000100,0x7FFFFF)
     << 4 >> Declare7F0200_2("addr")
 
 << "[StringStore:%long:%data]"
     << 0 >> 0x4E
-    << 1 >> DeclareLong("long", 0x7E2C23) // show the character name table in plaintext.
+    << 1 >> DeclareLong("long", 0x7E2C23,0x7E2C23) // show the character name table in plaintext.
     << 4 >> DeclareTextBlob("data")
 
 << "[StringStore:%long:%data]"
     << 0 >> 0x4E
-    << 1 >> DeclareLong("long", 0x7E0000, 0x7FFFFF)
+    << 1 >> DeclareLong("long", 0x000100,0x7FFFFF)
     << 4 >> DeclareBlob("data")
 
 << "[LetB:%addr:%byte]"
@@ -4946,17 +5329,23 @@ private:
             if(!cur_command) return;
             
             cur_command->PutInto(target);
+            cur_command->PutInto(strings);
             
             delete cur_command;
             cur_command = NULL;
         }
 
     public:
-        Initialize(OpcodeTree& t) : target(t), cur_command(NULL) { Init(); }
+        Initialize(OpcodeTree& t, StringTree& s)
+           : target(t), strings(s), cur_command(NULL)
+        {
+            Init();
+        }
         ~Initialize() { Flush(); }
         
     private:
         OpcodeTree& target;
+        StringTree& strings;
         Command* cur_command;
         unsigned curpos;
     };
@@ -4974,7 +5363,7 @@ private:
             for(i = tree.data.begin(); i != tree.data.end(); ++i)
             {
                 if(!i->first.Contains(opcode)) continue;
-                FindChoices(i->second, choices, data+1, length-1);
+                FindChoices(*i->second, choices, data+1, length-1);
             }
         }
         choices.insert(choices.begin(), tree.choices.begin(), tree.choices.end());
@@ -4987,39 +5376,89 @@ private:
         FindChoices(OPTree, choices, data, length);
         return choices;
     }
+
+    const std::list<Command> FindChoices
+        (const std::wstring& cmd, bool goto_backward) const
+    {
+        /* No screening happens for now. TODO: Improve. */
+        std::list<Command> choices(STRTree.choices.begin(), STRTree.choices.end());
+        return choices;
+    }
     
 public:
     EvCommands()
     {
-        Initialize tmp(OPTree);
+        Initialize tmp(OPTree, STRTree);
         //OPTree.Dump();
     }
     
     const EventCode::DecodeResult
-    Scan(unsigned offset, const unsigned char* data, unsigned length,
-         EventCode::DecodingState& State) const
+    Format(unsigned offset, const unsigned char* data, unsigned maxlength,
+           EventCode::DecodingState& State) const
     {
-        std::list<Command> choices = FindChoices(data, length);
+        std::list<Command> choices = FindChoices(data, maxlength);
         std::list<Command>::const_iterator i;
-        
-        //fprintf(stderr, "%u choices for %02X\n", choices.size(), data[0]);
         
         for(i=choices.begin(); i!=choices.end(); ++i)
         {
             try
             {
-                return i->Scan(offset, data, length, State);
+                return i->Format(offset, data, maxlength, State);
             }
             catch(bool)
             {
             }
         }
-        fprintf(stderr, "No choices for %02X\n", data[0]);
+        std::string eep;
+        for(unsigned a=0; a<6 && a<maxlength; ++a)
+            eep += format(" %02X", data[a]);
+        
+        fprintf(stderr, "No choices for %s\n", eep.c_str());
         throw false;
+    }
+    
+    const EventCode::EncodeResult
+    Scan(const std::wstring& cmd, bool goto_backward,
+         EventCode::EncodingState& State) const
+    {
+        std::list<Command> choices = FindChoices(cmd, goto_backward);
+        std::list<Command>::const_iterator i;
+        
+        /* FIXME: Instead of giving the first choice that works,
+         * should attempt to find the shortest one.
+         */
+        
+        EventCode::EncodeResult result;
+        bool first=true;
+        
+        for(i=choices.begin(); i!=choices.end(); ++i)
+        {
+            try
+            {
+                EventCode::EncodeResult tmp = i->Scan(cmd, goto_backward, State);
+                //fprintf(stderr, "'%s' ok\n", WstrToAsc(cmd).c_str());
+                
+                if(first || tmp.result.size() < result.result.size())
+                {
+                    result = tmp;
+                    first  = false;
+                }
+            }
+            catch(bool)
+            {
+            }
+        }
+        if(first)
+        {
+            fprintf(stderr, "No choices for '%s'\n", WstrToAsc(cmd).c_str());
+            throw false;
+        }
+        return result;
     }
     
 private:
     OpcodeTree OPTree;
+    StringTree STRTree;
 };
 
 namespace
@@ -5039,7 +5478,7 @@ EventCode::DecodeBytes(unsigned offset, const unsigned char* data, unsigned maxl
 {
     try
     {
-        return evdata.Scan(offset, data, maxlength, DecodeState);
+        return evdata.Format(offset, data, maxlength, DecodeState);
     }
     catch(bool)
     {
@@ -5048,4 +5487,10 @@ EventCode::DecodeBytes(unsigned offset, const unsigned char* data, unsigned maxl
         result.nbytes = 1;
         return result;
     }
+}
+
+const EventCode::EncodeResult
+EventCode::EncodeCommand(const std::wstring& cmd, bool goto_backward)
+{
+    return evdata.Scan(cmd, goto_backward, EncodeState);
 }

@@ -15,6 +15,7 @@ include Makefile.sets
 
 # Building for native:
 HOST=
+LDFLAGS += -lboost_regex
 
 
 # Which compiler to use
@@ -134,22 +135,23 @@ DEPDIRS = utils/
 # VERSION 1.15.0.1 improved compression. Configuration file changes.
 # VERSION 1.15.0.2 improved support for location events.
 # VERSION 1.15.0.3 improved location event decompiler.
+# VERSION 1.15.1 location event support - preliminary release.
 
 #OPTIM=-Os
 # -fshort-enums
 # -fpack-struct
-OPTIM=-O0
+#OPTIM=-O0
 #OPTIM=-O1 -pg
 #OPTIM=-O3 -pg
 #LDFLAGS += -pg
-#OPTIM=-O3
+OPTIM=-O3
 
 CXXFLAGS += -I.
 CFLAGS += -I/usr/include/slang
 LDFLAGS += -L/usr/lib/slang
 
 
-VERSION=1.15.0.3
+VERSION=1.15.1
 ARCHFILES=utils/xray.cc utils/xray.h \
           utils/viewer.c \
           utils/vwftest.cc \
@@ -173,12 +175,15 @@ ARCHFILES=utils/xray.cc utils/xray.h \
           autoptr \
           \
           base62.cc base62.hh \
+          base16.cc base16.hh \
           ctcset.cc ctcset.hh \
           miscfun.hh miscfun.tcc \
+          match.hh match.tcc \
           compress.cc compress.hh \
           scriptfile.cc scriptfile.hh \
           pageptrlist.cc pageptrlist.hh \
           eventdata.cc eventdata.hh \
+          eventcompiler.cc eventcompiler.hh \
           dataarea.cc dataarea.hh \
           rangemap.hh rangemap.tcc \
           rangeset.hh rangeset.tcc \
@@ -278,9 +283,9 @@ ctdump: \
 		ctdump.o scriptfile.o \
 		rommap.o strload.o \
 		dumptext.o dumpfont.o dumpgfx.o msgdump.o \
-		dumpevent.o \
-		 eventdata.o romaddr.o base62.o refer.o \
-		 tgaimage.o extras.o compress.o \
+		dumpevent.o eventdata.o \
+		 romaddr.o base62.o base16.o \
+		 refer.o tgaimage.o extras.o compress.o \
 		 symbols.o logfiles.o settings.o \
 		 config.o confparser.o ctcset.o wstring.o
 	$(CXX) $(LDOPTS) -o $@ $^ $(LDFLAGS)
@@ -288,12 +293,13 @@ ctdump: \
 # Chrono Trigger patch generator program
 ctinsert: \
 		ctinsert.o script.o wrap.o msginsert.o \
-		space.o writeout.o scriptfile.o base62.o \
+		space.o writeout.o scriptfile.o \
 		dictionary.o images.o fonts.o typefaces.o \
+		eventcompiler.o eventdata.o \
 		rom.o dataarea.o snescode.o pageptrlist.o \
 		conjugate.o o65.o o65linker.o rommap.o refer.o \
 		 tgaimage.o extras.o compress.o romaddr.o \
-		 symbols.o logfiles.o settings.o \
+		 symbols.o logfiles.o settings.o base62.o base16.o \
 		 config.o confparser.o ctcset.o wstring.o
 	$(CXX) $(LDOPTS) -o $@ $^ $(LDFLAGS) -lm
 

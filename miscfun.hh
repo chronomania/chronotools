@@ -46,6 +46,8 @@ str_replace_inplace(std::wstring& a, const std::wstring& b, const std::wstring& 
 /* sprintf() */
 inline const std::string format(const char* fmt, ...);
 
+
+
 #include "miscfun.tcc"
 
 #endif

@@ -340,15 +340,6 @@ long atoi(const wchar_t *p, int base)
 #endif
 }
 
-int Whex(wchar_t p)
-{
-    char c = WcharToAsc(p);
-    if(c >= '0' && c <= '9') return (c-'0');
-    if(c >= 'A' && c <= 'Z') return (c+10-'A');
-    if(c >= 'a' && c <= 'z') return (c+10-'a');
-    return -1;
-}
-
 const std::wstring wformat(const wchar_t* fmt, ...)
 {
     wchar_t Buf[4096];
@@ -361,4 +352,13 @@ const std::wstring wformat(const wchar_t* fmt, ...)
 #endif
     va_end(ap);
     return Buf;
+}
+
+int Whex(wchar_t p)
+{
+    char c = WcharToAsc(p);
+    if(c >= '0' && c <= '9') return (c-'0');
+    if(c >= 'A' && c <= 'Z') return (c+10-'A');
+    if(c >= 'a' && c <= 'z') return (c+10-'a');
+    return -1;
 }

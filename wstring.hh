@@ -73,11 +73,11 @@ extern const std::wstring AscToWstr(const std::string &s);
 extern const std::string WstrToAsc(const std::wstring &s);
 extern char WcharToAsc(wchar_t c);
 
-/* atoi() for wchar_t pointers */
-extern long atoi(const wchar_t *p, int base=10);
-
 /* Converts the given hex digit, to integer */
 extern int Whex(wchar_t p);
+
+/* atoi() for wchar_t pointers */
+extern long atoi(const wchar_t *p, int base=10);
 
 /* swprintf() */
 const std::wstring wformat(const wchar_t* fmt, ...);

@@ -105,7 +105,7 @@ void DumpGFX_Compressed_4bit(unsigned addr,
     if(!origsize)
     {
         fprintf(stderr, "Can't create %s (%s) - broken\n",
-            fn.c_str(), what.c_str());
+            fn.c_str(), WstrToAsc(what).c_str());
         return;
     }
     

@@ -7,16 +7,18 @@
 #include "wstring.hh"
 #include "ctcset.hh"
 #include "compress.hh"
-#include "miscfun.hh"
 #include "symbols.hh"
 #include "config.hh"
 #include "conjugate.hh"
 #include "typefaces.hh"
 #include "msginsert.hh"
 #include "pageptrlist.hh"
+#include "eventcompiler.hh"
 #include "base62.hh"
-#include "rommap.hh"
+#include "base16.hh"
 #include "romaddr.hh"
+#include "miscfun.hh"
+#include "match.hh"
 
 using namespace std;
 
@@ -56,9 +58,6 @@ namespace
                                  fp(f), cacheptr(0),
                                  cache()
         {
-        /* - nobody cares
-            fprintf(stderr, "Built script character set converter\n");
-        */
         }
         wchar_t getc()
         {
@@ -94,13 +93,7 @@ namespace
     
     bool CumulateBase16(unsigned& label, const string& header, char c)
     {
-        if(isdigit(c))
-            label = label * 16 + c - '0';
-        else if(c >= 'A' && c <= 'z')
-            label = label * 16 + c + 10 - 'A';
-        else if(c >= 'A' && c <= 'z')
-            label = label * 16 + c + 10 - 'a';
-        else
+        if(!::CumulateBase16(label, c))
         {
             MessageInvalidLabelChar(c, label, header);
             return false;
@@ -143,36 +136,18 @@ const ctstring insertor::ParseScriptEntry(const wstring &input, const stringdata
     
     if(is_dialog)
     {
-        str_replace_inplace
-        (
-          content,
-          L" [pause]",
-          L"[pause]"
-        );
-        str_replace_inplace
-        (
-          content,
-          L"[nl]   ",
-          L"[nl3]"
-        );
-        str_replace_inplace
-        (
-          content,
-          L"[pause]   ",
-          L"[pause3]"
-        );
-        str_replace_inplace
-        (
-          content,
-          L"[pausenl]   ",
-          L"[pausenl3]"
-        );
-        str_replace_inplace
-        (
-          content,
-          L"[cls]   ",
-          L"[cls3]"
-        );
+#ifndef WIN32
+        RegexReplace(L" +\\[(pause|nl)\\]", L"[\\1]", content);
+        RegexReplace(L"\\[(nl|pause|pausenl|cls)\\]   ", L"[\\1\\x{33}]", content);
+        // \x{33} is a clumsy syntax to specify "3" without
+        // it being interpreted as \13.
+#else
+        str_replace_inplace(content, " [pause]",     "[pause]");
+        str_replace_inplace(content,      "[nl]   ",      "[nl3]");
+        str_replace_inplace(content,   "[pause]   ",   "[pause3]");
+        str_replace_inplace(content, "[pausenl]   ", "[pausenl3]");
+        str_replace_inplace(content,     "[cls]   ",     "[cls3]");
+#endif
     }
 
     ctstring result;
@@ -407,6 +382,7 @@ void insertor::LoadFile(FILE *fp)
 
     MessageLoadingDialog();
     
+    EventCompiler EvCom;
     for(;;)
     {
         MessageWorking();
@@ -737,6 +713,7 @@ void insertor::LoadFile(FILE *fp)
             
             if(model.type == stringdata::locationevent)
             {
+                EvCom.AddData(model.address, slabel, content);
                 // handle content.
                 // label: slabel
             }
@@ -745,12 +722,21 @@ void insertor::LoadFile(FILE *fp)
                 model.str = ParseScriptEntry(content, model);
                 model.address = label;
 
-                strings.push_back(model);
+                strings.push_back(model); 
             }
             continue;
         }
         
         UNEXPECTED(c);
+    }
+    
+    for(unsigned a=0; a<EvCom.events.size(); ++a)
+    {
+        stringdata tmp;
+        tmp.type    = stringdata::locationevent;
+        tmp.address = EvCom.events[a].ptr_addr;
+        tmp.str     = getctstring(EvCom.events[a].data);
+        strings.push_back(tmp);
     }
     
     MessageDone();
@@ -812,7 +798,7 @@ const list<pair<unsigned, ctstring> > insertor::GetScriptByPage() const
     
     list<pair<unsigned, ctstring> > result;
 
-    unsigned size = 0;
+    //unsigned size = 0;
     for(map<unsigned, PagePtrList>::iterator
         i = tmp.begin(); i != tmp.end(); ++i)
     {
@@ -1042,7 +1028,18 @@ void insertor::WriteCompressedStrings()
             const unsigned char* ptr = (const unsigned char*)s.data();
             vector<unsigned char> data = Compress(ptr, s.size());
             
-            std::string name = format("compr_data_%u", counter);
+            std::string name = format("compr_data_%u", counter++);
+            objects.AddLump(data, name, name);
+            objects.AddReference(name, LongPtrFrom(i->address));
+        }
+        if(i->type == stringdata::locationevent)
+        {
+            const string s = GetString(i->str);
+            const unsigned char* ptr = (const unsigned char*)s.data();
+            vector<unsigned char> data = Compress(ptr, s.size());
+            
+            /* FIXME: Name the location events some other way to avoid confusion */
+            std::string name = format("loc_event_%u", counter++);
             objects.AddLump(data, name, name);
             objects.AddReference(name, LongPtrFrom(i->address));
         }

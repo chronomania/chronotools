@@ -14,6 +14,8 @@
 #include "base62.hh"  // base62 functions
 #include "scriptfile.hh"
 
+//#define SIMPLE_DUMP
+
 class EventRecord
 {
 public:
@@ -221,6 +223,7 @@ private:
                 
                 case EventCode::goto_loopbegin:
                 {
+#ifndef SIMPLE_DUMP
                     /* If the loop extends beyond the bounds
                      * of the current scope, it's too difficult
                      * to handle. In that case, turn it into gotos.
@@ -264,7 +267,7 @@ private:
                         }
                         else
                         {
-                            OutputLine(L"[LoopBegin]", front.indent);
+                            OutputLine(L"[LoopBegin]"+line.Command, front.indent);
                         }
                         
                         /*  FIXME: turn ifX { ifY {a} } else {b}
@@ -274,6 +277,7 @@ private:
                         stack.push_front(child);
                         continue;
                     }
+#endif
                     /* Ok, bad thing. */
                     linemap::iterator i = lines.find(line.goto_target);
                     --i;
@@ -281,7 +285,7 @@ private:
                     
                     std::wstring label = CreateLabel(addr);
                     OutputLabel(label);
-                    OutputLine(L";loop begin", front.indent);
+                    OutputLine(L";loop begin"+line.Command, front.indent);
                     
                     break;
                 }
@@ -292,6 +296,7 @@ private:
                     
                     // But mark it a "terminal".
                     front_ref.was_terminal = true;
+                    OutputLine(L";loop end"+line.Command, front.indent);
                     break;
                 }
                     
@@ -299,6 +304,7 @@ private:
                 {
                     front_ref.was_terminal = true;
                     
+#ifndef SIMPLE_DUMP
                     /* Find out if we're inside a loop
                      * and the target is the end position
                      * of the said loop */
@@ -319,7 +325,7 @@ private:
                     }
                     if(found_loop)
                     {
-                        OutputLine(L"[Break]", front.indent);
+                        OutputLine(L"[Break]"+line.Command, front.indent);
                         break;
                     }
                     enum { not_else, is_else, is_redundant_else,
@@ -393,7 +399,7 @@ private:
                             StackType::const_iterator i = stack.begin(); ++i;
                             const DepthData& parent = *i;
                             
-                            OutputLine(L"[Else]", parent.indent);
+                            OutputLine(L"[Else]"+line.Command, parent.indent);
                             
                             /* Extend the "end" of the "if". */
                             front_ref.endpos = line.goto_target;
@@ -431,6 +437,7 @@ private:
                             break;
                         }
                         case not_else:
+#endif
                         {
                             /* Still don't know what was it.
                              * Treat it as a goto.
@@ -438,12 +445,14 @@ private:
                              * find it eventually.
                              */
                             std::wstring label = CreateLabel(line.goto_target);
-                            OutputLine(L"[Goto:"+label+L"]", front.indent);
+                            OutputLine(L"[Goto:"+label+L"]"+line.Command, front.indent);
                             front_ref.was_terminal = true;
                             break;
                         }
+#ifndef SIMPLE_DUMP
                     }
                     break;
+#endif
                 }
                     
                 case EventCode::goto_if:
@@ -455,6 +464,7 @@ private:
                     {
                         std::swap(posi_if, nega_if);
                     }
+#ifndef SIMPLE_DUMP
                     /* Find out if we're inside a loop
                      * and the target is the end position
                      * of the said loop */
@@ -500,7 +510,7 @@ private:
                         stack.push_front(child);
                         continue;
                     }
-                    
+#endif
                     /* Still don't know what was it.
                      * Treat it as a goto.
                      * Since it is a forward goto, we'll definitely
@@ -634,7 +644,7 @@ void DumpEvent(const unsigned ptroffs, const std::wstring& what)
 
     std::vector<unsigned char> Data;
     unsigned orig_bytes = Uncompress(ROM+romaddr, Data, ROM+GetROMsize());
-    unsigned new_bytes  = Data.size();
+    //unsigned new_bytes  = Data.size();
     
     if(Data.empty()) return;
 
@@ -657,11 +667,15 @@ void DumpEvent(const unsigned ptroffs, const std::wstring& what)
     
     const unsigned max_loops = 10;
 
+    PutAscii(wformat(L"; Number of objects: %u - size: %04X\n", n_actors, Data.size()));
+    
     for(unsigned a=0; a<n_actors; ++a)
         for(unsigned b=0; b<16; ++b)
-            pointers[a*16+b] = GetWord()*max_loops;
-    
-    PutAscii(wformat(L"; Number of objects: %u - size: %04X\n", n_actors, Data.size()));
+        {
+            unsigned val = GetWord();
+            pointers[a*16+b] = val*max_loops;
+            //PutAscii(wformat(L"; obj %u pointer %u: %04X\n", a, b, val));
+        }
     
     while(offs < Data.size())
     {
@@ -676,10 +690,10 @@ void DumpEvent(const unsigned ptroffs, const std::wstring& what)
         offs += tmp.nbytes;
         
         /*
-        text += "(*";
-        text += wformat(L"{%04X}", address);
+        text += L"(*";
+        //text += wformat(L"{%04X}", address);
         for(unsigned a=0; a<tmp.nbytes; ++a) text += wformat(L" %02X", Data[address+a]);
-        text += " *)";
+        text += L" *)";
         */
         
         EventRecord::LineRecord& line = record.lines[address*max_loops];
