@@ -9,6 +9,8 @@
 
 const ctstring insertor::WrapDialogLines(const ctstring &dialog) const
 {
+    static Conjugatemap Conjugatemap(*this);
+    
     ctstring input = dialog;
     Conjugatemap.Work(input);
     
@@ -32,12 +34,10 @@ const ctstring insertor::WrapDialogLines(const ctstring &dialog) const
     unsigned space3width = (GetFont12width( spacechar ) ) * 3;
     unsigned num8width   = (GetFont12width( eightchar ) );
     unsigned w5width     = (GetFont12width( dblw_char ) ) * 5;
-    // Be pessimistic: assume conjugation always adds 4 wide characters
-    // Better would be to calculate width of "ksesta" and subtract "s"
-    // Or whichever is widest: "lle", "lla"...
-    // FIXME: Get correct number somehow
-    unsigned conjwidth   = (GetFont12width( dblw_char ) ) * 4;
     
+    const unsigned dictend   = 0x100 - get_num_chronochars();
+    const unsigned fontbegin = dictend;
+
     unsigned wrappos = 0;
     unsigned wrapcol = 0;
     
@@ -125,20 +125,17 @@ const ctstring insertor::WrapDialogLines(const ctstring &dialog) const
                 break;
             }
             default:
-                bool was_conj = false;
-                for(unsigned a=0; a<ConjugateBytes.size(); ++a)
-                    if(c == ConjugateBytes[a])
-                    {
-                        col += conjwidth;
-                        was_conj = true;
-                        break;
-                    }
-                if(!was_conj && c >= (0x100-get_num_chronochars()))
+            {
+                if(Conjugatemap.IsConjChar(c))
                 {
-                    unsigned width = GetFont12width(c);
-                    col += width;
-                    break;
+                    col += Conjugatemap.GetMaxWidth(c);
                 }
+                else if(c >= fontbegin)
+                {
+                    col += GetFont12width(c);
+                }
+                break;
+            }
         }
         if(col >= MaxTextWidth)
         {

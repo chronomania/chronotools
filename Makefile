@@ -42,13 +42,14 @@ include Makefile.sets
 # VERSION 1.2.3  lots of more translation
 # VERSION 1.2.4  8pix system deciphered, more bugs introduced
 # VERSION 1.2.5  characterset enlarged by 512, only vwf8 bugs still
+# VERSION 1.2.6  using nonstandard hash_map for greatly improved performance
 
 OPTIM=-O3
 #OPTIM=-O0
 #OPTIM=-O0 -pg -fprofile-arcs
 #LDFLAGS += -pg -fprofile-arcs
 
-VERSION=1.2.5
+VERSION=1.2.6
 ARCHFILES=xray.c xray.h \
           viewer.c \
           ctcset.cc ctcset.hh \
@@ -77,6 +78,7 @@ ARCHFILES=xray.c xray.h \
           progdesc.php \
           spacefind.cc base62.cc sramdump.cc \
           binpacker.tcc binpacker.hh \
+          hash.hh \
           README transnotes.txt Makefile.sets
 
 EXTRA_ARCHFILES=\

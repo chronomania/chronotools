@@ -18,9 +18,9 @@ namespace
         wstringIn conv;
         FILE *fp;
         unsigned cacheptr;
-        wstring cache;
+        ucs4string cache;
         
-        wstring Comment;
+        ucs4string Comment;
 
         ucs4 getc_priv()
         {
@@ -63,18 +63,18 @@ namespace
             }
             return c;
         }
-        const wstring &getcomment() const { return Comment; }
+        const ucs4string &getcomment() const { return Comment; }
     };
 }
 
 namespace
 {
-    set<wstring> rawcodes;
+    set<ucs4string> rawcodes;
 }
 
-const ctstring insertor::ParseScriptEntry(const wstring &input, const stringdata &model) const
+const ctstring insertor::ParseScriptEntry(const ucs4string &input, const stringdata &model) const
 {
-    wstring content = input;
+    ucs4string content = input;
     
     const bool is_dialog = model.type == stringdata::zptr12;
     const bool is_8pix   = model.type == stringdata::zptr8;
@@ -128,8 +128,8 @@ const ctstring insertor::ParseScriptEntry(const wstring &input, const stringdata
         {
             bool foundsym = false;
             
-            wstring bs; bs += content[a];
-            wstring us = content.substr(a);
+            ucs4string bs; bs += content[a];
+            ucs4string us = content.substr(a);
             
             Symbols::type::const_iterator
                 i,
@@ -160,7 +160,7 @@ const ctstring insertor::ParseScriptEntry(const wstring &input, const stringdata
             continue;
         }
         
-        wstring code;
+        ucs4string code;
         for(code += c; ++a < content.size(); )
         {
             c = content[a];
@@ -169,24 +169,24 @@ const ctstring insertor::ParseScriptEntry(const wstring &input, const stringdata
         }
         
         // Codes used by dialog engine
-        static const wstring delay = AscToWstr("[delay ");
-        static const wstring tech  = AscToWstr("[tech]");
-        static const wstring monster=AscToWstr("[monster]");
+        static const ucs4string delay = AscToWstr("[delay ");
+        static const ucs4string tech  = AscToWstr("[tech]");
+        static const ucs4string monster=AscToWstr("[monster]");
         
         // Codes used by status screen engine
-        static const wstring code1 = AscToWstr("[next");
-        static const wstring code2 = AscToWstr("[goto,");
-        static const wstring code3 = AscToWstr("[func1,");
-        static const wstring code4 = AscToWstr("[substr,");
-        static const wstring code5 = AscToWstr("[member,");
-        static const wstring code6 = AscToWstr("[attrs,");
-        static const wstring code7 = AscToWstr("[out,");
-        static const wstring code8 = AscToWstr("[spc,");
-        static const wstring code9 = AscToWstr("[len,");
-        static const wstring code10= AscToWstr("[attr,");
-        static const wstring code11= AscToWstr("[func2,");
-        static const wstring code12= AscToWstr("[stat,");
-        static const wstring code0 = AscToWstr("[gfx");
+        static const ucs4string code1 = AscToWstr("[next");
+        static const ucs4string code2 = AscToWstr("[goto,");
+        static const ucs4string code3 = AscToWstr("[func1,");
+        static const ucs4string code4 = AscToWstr("[substr,");
+        static const ucs4string code5 = AscToWstr("[member,");
+        static const ucs4string code6 = AscToWstr("[attrs,");
+        static const ucs4string code7 = AscToWstr("[out,");
+        static const ucs4string code8 = AscToWstr("[spc,");
+        static const ucs4string code9 = AscToWstr("[len,");
+        static const ucs4string code10= AscToWstr("[attr,");
+        static const ucs4string code11= AscToWstr("[func2,");
+        static const ucs4string code12= AscToWstr("[stat,");
+        static const ucs4string code0 = AscToWstr("[gfx");
         
         if(false) {} // for indentation...
         else if(is_dialog && code.compare(0, delay.size(), delay) == 0)
@@ -381,7 +381,7 @@ void insertor::LoadFile(FILE *fp)
                     }
                 }
             }
-            wstring content;
+            ucs4string content;
             bool ignore_space=false;
             for(;;)
             {
@@ -455,8 +455,9 @@ void insertor::LoadFile(FILE *fp)
             // Either 'z' (dialog), 'l' (fixed) or 'r' (8pix)
             
             model.str = ParseScriptEntry(content, model);
+            model.address = label;
             
-            strings[label] = model;
+            strings.push_back(model);
             
             static char cursbuf[]="-/|\\",curspos=0;
             if(!(curspos%4)) fprintf(stderr,"%c\010",cursbuf[curspos/4]);
@@ -472,7 +473,7 @@ void insertor::LoadFile(FILE *fp)
     if(!rawcodes.empty())
     {
         fprintf(stderr, "Warning: Raw codes encountered:");
-        for(set<wstring>::const_iterator i=rawcodes.begin(); i!=rawcodes.end(); ++i)
+        for(set<ucs4string>::const_iterator i=rawcodes.begin(); i!=rawcodes.end(); ++i)
             fprintf(stderr, " %s", WstrToAsc(*i).c_str());
         fprintf(stderr, "\n");
     }

@@ -97,6 +97,11 @@ const string DispString(const ctstring &s)
     return result;
 }
 
+void insertor::ReportFreeSpace()
+{
+    freespace.Report();
+}
+
 int main(void)
 {
     std::set_terminate (__gnu_cxx::__verbose_terminate_handler);
@@ -127,14 +132,14 @@ int main(void)
     
     /////////ins->GenerateCode();
     
-    ins->freespace.Report();
+    ins->ReportFreeSpace();
 
     fprintf(stderr, "Creating a virtual ROM...\n");
     ROM ROM(4194304);
     
     ins->PatchROM(ROM);
 
-    ins->freespace.Report();
+    ins->ReportFreeSpace();
     
     fprintf(stderr, "Unallocating insertor data...\n");
     delete ins; ins = NULL;

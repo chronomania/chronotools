@@ -13,6 +13,9 @@ const ConfParser::Field& GetConf(const char *sect, const char *var)
 
 namespace
 {
+    /* Can't be embedded as static in GetConf,
+     * because "characterset" must be loaded in start.
+     */
     class ConfigLoader
     {
     public:
@@ -24,7 +27,7 @@ namespace
 
             config.Parse(fp);
 
-            wstring cset = GetConf("general", "characterset");
+            ucs4string cset = GetConf("general", "characterset");
             setcharset(WstrToAsc(cset).c_str());
 
             rewind(fp);

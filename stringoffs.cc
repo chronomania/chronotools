@@ -100,10 +100,10 @@ void stringoffsmap::DumpNeederList() const
 const set<unsigned> insertor::GetZStringPageList() const
 {
     set<unsigned> result;
-    for(stringmap::const_iterator i=strings.begin(); i!=strings.end(); ++i)
+    for(stringlist::const_iterator i=strings.begin(); i!=strings.end(); ++i)
     {
-        unsigned page = i->first >> 16;
-        switch(i->second.type)
+        unsigned page = i->address >> 16;
+        switch(i->type)
         {
             case stringdata::fixed:
                 // This is not a pointer
@@ -122,11 +122,11 @@ const set<unsigned> insertor::GetZStringPageList() const
 const stringoffsmap insertor::GetZStringList(unsigned pagenum) const
 {
     stringoffsmap result;
-    for(stringmap::const_iterator i=strings.begin(); i!=strings.end(); ++i)
+    for(stringlist::const_iterator i=strings.begin(); i!=strings.end(); ++i)
     {
-        unsigned page = i->first >> 16;
+        unsigned page = i->address >> 16;
         if(page != pagenum) continue;
-        switch(i->second.type)
+        switch(i->type)
         {
             case stringdata::fixed:
                 // This is not a pointer
@@ -138,8 +138,8 @@ const stringoffsmap insertor::GetZStringList(unsigned pagenum) const
             // If we omitted something, compiler should warn
         }
         stringoffsdata tmp;
-        tmp.str  = i->second.str;
-        tmp.offs = i->first;
+        tmp.str  = i->str;
+        tmp.offs = i->address;
         result.push_back(tmp);
     }
     return result;

@@ -46,12 +46,12 @@ void wstringOut::SetSet(const char *setname)
 
 const string wstringOut::putc(ucs4 p) const
 {
-    wstring tmp;
+    ucs4string tmp;
     tmp += p;
     return puts(tmp);
 }
 
-const string wstringOut::puts(const wstring &s) const
+const string wstringOut::puts(const ucs4string &s) const
 {
     const char *input = (const char *)(s.data());
     size_t left = s.size() * sizeof(ucs4);
@@ -127,18 +127,18 @@ void wstringIn::SetSet(const char *setname)
     }
 }
 
-const wstring wstringIn::putc(char p) const
+const ucs4string wstringIn::putc(char p) const
 {
     string tmp;
     tmp += p;
     return puts(tmp);
 }
 
-const wstring wstringIn::puts(const string &s) const
+const ucs4string wstringIn::puts(const string &s) const
 {
     const char *input = (const char *)(s.data());
     size_t left = s.size();
-    wstring result;
+    ucs4string result;
     while(left > 0)
     {
         char OutBuf[4096], *outptr = OutBuf;
@@ -151,7 +151,7 @@ const wstring wstringIn::puts(const string &s) const
         
         //unsigned bytes = (sizeof OutBuf) - outsize;
         unsigned bytes = outptr-OutBuf;
-        wstring tmp((const ucs4 *)(&OutBuf), bytes / (sizeof(ucs4)));
+        ucs4string tmp((const ucs4 *)(&OutBuf), bytes / (sizeof(ucs4)));
         result += tmp;
         
         if(retval == (size_t)-1)
@@ -175,15 +175,15 @@ const wstring wstringIn::puts(const string &s) const
     return result;
 }
 
-wstring AscToWstr(const string &s)
+ucs4string AscToWstr(const string &s)
 {
-    wstring result;
+    ucs4string result;
     for(unsigned a=0; a<s.size(); ++a)
         result += AscToWchar(s[a]);
     return result;
 }
 
-string WstrToAsc(const wstring &s)
+string WstrToAsc(const ucs4string &s)
 {
     string result;
     for(unsigned a=0; a<s.size(); ++a)

@@ -11,18 +11,23 @@
 
 using namespace std;
 
-void Conjugatemap::Load()
+void Conjugatemap::Load(const insertor &ins)
 {
     const ConfParser::ElemVec& elems = GetConf("conjugator", "setup").Fields();
-    for(unsigned a=0; a<elems.size(); a += 2)
+    for(unsigned a=0; a<elems.size(); a += 3)
     {
         form tmp;
-        const wstring &func = elems[a];
-        const wstring &data = elems[a+1];
+        const ucs4string &func  = elems[a];
+        const ucs4string &data  = elems[a+1];
+        const ucs4string &width = elems[a+2];
         
         tmp.func   = func;
         tmp.used   = false;
         tmp.prefix = 0;
+        
+        tmp.maxwidth = 0;
+        for(unsigned b=0; b<width.size(); ++b)
+            tmp.maxwidth += 1 + ins.GetFont12width(getchronochar(width[b]));
         
         for(unsigned b=0; b<data.size(); ++b)
         {
@@ -49,9 +54,9 @@ void Conjugatemap::Load()
             unsigned c = ++b;
             while(b < data.size() && WcharToAsc(data[b]) != ',') ++b;
             
-            wstring s = data.substr(c, b-c);
+            ucs4string s = data.substr(c, b-c);
             
-            const wstring &name = Symbols.GetRev(16).find(person)->second;
+            const ucs4string &name = Symbols.GetRev(16).find(person)->second;
             
             ctstring key;
             for(unsigned a=0; a<s.size(); ++a)
@@ -70,10 +75,12 @@ void Conjugatemap::Load()
     }
 }
 
-void Conjugatemap::Work(ctstring &s, form &form)
+void Conjugatemap::Work(ctstring &s, formit fit)
 {
     static const vector<ctchar> AllowedBytes = GetConjugateBytesList();
     
+    form &form = *fit;
+
     datamap_t::const_iterator i;
     for(i=form.data.begin(); i!=form.data.end(); ++i)
     {
@@ -105,6 +112,8 @@ void Conjugatemap::Work(ctstring &s, form &form)
                 fprintf(stderr, "  Assigned 0x%04X for %s\n",
                     form.prefix,
                     WstrToAsc(form.func).c_str());
+                
+                charmap[form.prefix] = fit;
             }
             
             ctstring tmp;
@@ -120,32 +129,40 @@ void Conjugatemap::Work(ctstring &s, form &form)
     }
 }
 
-Conjugatemap::Conjugatemap()
+bool Conjugatemap::IsConjChar(ctchar c) const
 {
-    Load();
+    charmap_t::const_iterator i = charmap.find(c);
+    return i != charmap.end();
+}
+
+unsigned Conjugatemap::GetMaxWidth(ctchar c) const
+{
+    charmap_t::const_iterator i = charmap.find(c);
+    if(i == charmap.end())return 0;
+    return i->second->maxwidth;
+}
+
+Conjugatemap::Conjugatemap(const insertor &ins)
+{
+    Load(ins);
     fprintf(stderr, "Built conjugator-map\n");
 }
 
 void Conjugatemap::Work(ctstring &s)
 {
-    for(formlist::iterator
-        i = forms.begin();
-        i != forms.end();
-        ++i)
-    {
-        Work(s, *i);
-    }
+    for(formit i = forms.begin(); i != forms.end(); ++i)
+        Work(s, i);
 }
-
-class Conjugatemap Conjugatemap;
 
 #include "ctinsert.hh"
 #include "compiler.hh"
 
 namespace
 {
-    const SubRoutine GetConjugateCode()
+    const SubRoutine GetConjugateCode(const insertor &ins)
     {
+        Conjugatemap Conjugatemap(ins);
+        
         SubRoutine result;
         SNEScode &code = result.code;
 
@@ -169,7 +186,7 @@ namespace
             
             if(true)
             {
-                const wstring &funcname = i->func;
+                const ucs4string &funcname = i->func;
 
                 code.EmitCode(0x22, 0,0,0);
                 result.requires[funcname].insert(code.size() - 3);
@@ -222,7 +239,7 @@ namespace
 void insertor::GenerateConjugatorCode()
 {
     string functionfn = WstrToAsc(GetConf("conjugator", "codefn"));
-    wstring ConjFuncName  = GetConf("conjugator", "funcname");
+    ucs4string ConjFuncName  = GetConf("conjugator", "funcname");
     
     FILE *fp = fopen(functionfn.c_str(), "rt");
     if(!fp) return;
@@ -231,7 +248,7 @@ void insertor::GenerateConjugatorCode()
     FunctionList Functions = Compile(fp);
     fclose(fp);
     
-    SubRoutine conjugator = GetConjugateCode();
+    SubRoutine conjugator = GetConjugateCode(*this);
     Functions.Define(ConjFuncName, conjugator);
 
     Functions.RequireFunction(ConjFuncName);

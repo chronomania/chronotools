@@ -5,8 +5,8 @@
 
 namespace
 {
-    wstring VWF8_DrawS[5]; // Draw string
-    wstring VWF8_Write[5]; // Write out
+    ucs4string VWF8_DrawS[5]; // Draw string
+    ucs4string VWF8_Write[5]; // Write out
     
     #define OSOITE   0x10 //long
     
@@ -996,10 +996,10 @@ void insertor::GenerateVWF8code(unsigned widthtab_addr, unsigned tiletab_addr)
     VWF8_DrawS[4] = GetConf("vwf8", "b4_draws").SField();
     VWF8_Write[4] = GetConf("vwf8", "b4_write").SField();
     
-    wstring VWF8_I1 = GetConf("vwf8", "i1").SField();
-    wstring VWF8_I2 = GetConf("vwf8", "i2").SField();
-    wstring VWF8_I3 = GetConf("vwf8", "i3").SField();
-    wstring VWF8_T1 = GetConf("vwf8", "t1").SField();
+    ucs4string VWF8_I1 = GetConf("vwf8", "i1").SField();
+    ucs4string VWF8_I2 = GetConf("vwf8", "i2").SField();
+    ucs4string VWF8_I3 = GetConf("vwf8", "i3").SField();
+    ucs4string VWF8_T1 = GetConf("vwf8", "t1").SField();
     
     FunctionList Functions;
 

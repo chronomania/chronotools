@@ -45,11 +45,10 @@ void Font12data::Load(const string &filename)
         unsigned width=0;
         while(box[width] != 5 && width < 12)++width;
         
-#if 1
+#if 0
         fprintf(stderr, "box %03X: %u(+%u) - width=%u:\n",
             a + (0x100-get_num_chronochars()),
-            a,
-            boxstart, width);
+            a, boxstart, width);
         for(unsigned y=0; y<12; ++y)
         {
             fprintf(stderr, "   ");

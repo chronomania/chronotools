@@ -3,12 +3,12 @@
 
 #include <cstdio>
 #include <string>
-#include <map>
 #include <vector>
 
 using std::FILE;
 
 #include "wstring.hh"
+#include "hash.hh"
 
 class ConfParser
 {
@@ -26,21 +26,21 @@ class ConfParser
         struct Element
         {
             unsigned IField;
-            wstring SField;
+            ucs4string SField;
 
             operator bool() const { return IField; }
             operator unsigned() const { return IField; }
-            operator const wstring& () const { return SField; }
+            operator const ucs4string& () const { return SField; }
         };
 
         unsigned IField() const;
-        const wstring& SField() const;
+        const ucs4string& SField() const;
 
         const std::vector<Element>& Fields() const { return elements; }
         
         operator bool() const { return IField(); }
         operator unsigned() const { return IField(); }
-        operator const wstring& () const { return SField(); }
+        operator const ucs4string& () const { return SField(); }
 
      private:
         friend class ConfParser;
@@ -59,7 +59,7 @@ class ConfParser
      private:
         friend class ConfParser;
         std::string SectName;
-        typedef std::map<std::string, Field> FieldMap;
+        typedef hash_map<std::string, Field> FieldMap;
         FieldMap fields;
     };
 
@@ -72,7 +72,7 @@ class ConfParser
     void ParseSection(class CharIStream& is, const std::string& secName);
     bool ParseField(class CharIStream& is, Field& field, bool);
 
-    typedef std::map<std::string, Section> SecMap;
+    typedef hash_map<std::string, Section> SecMap;
     SecMap sections;
 };
 

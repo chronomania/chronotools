@@ -1,4 +1,6 @@
-#include <map>
+#ifndef bqtCTinsertHH
+#define bqtCTinsertHH
+
 #include <list>
 #include <string>
 #include <vector>
@@ -15,27 +17,7 @@ const string DispString(const ctstring &s);
 
 class insertor
 {
-    struct stringdata
-    {
-        ctstring str;
-        enum { zptr8, zptr12, fixed } type;
-        unsigned width; // used if type==fixed;
-    };
-    // Address -> string
-    typedef map<unsigned, stringdata> stringmap;
-    stringmap strings;
-    
-    list<SNEScode> codes;
-    
-    vector<ctstring> dict;
-    
-    Font8data Font8;
-    Font8data Font8v;
-    Font12data Font12;
-
 public:
-    freespacemap freespace;
-    
     void LoadFile(FILE *fp);
     void LoadFont8(const string &fn) { Font8.Load(fn); }
     void LoadFont8v(const string &fn) { Font8v.Load(fn); }
@@ -49,7 +31,35 @@ public:
     
     void PatchROM(class ROM &ROM);
 
+    void ReportFreeSpace();
+    
 private:
+    struct stringdata
+    {
+        ctstring str;
+        enum { zptr8, zptr12, fixed } type;
+        unsigned width; // used if type==fixed;
+        unsigned address;
+    };
+    
+    typedef list<stringdata> stringlist;
+    // strings: used in:
+    //     LoadFile()
+    //     GetZStringPageList()
+    //     GetZStringList()
+    //     WriteStrings()
+    stringlist strings;
+    
+    list<SNEScode> codes;
+    
+    vector<ctstring> dict;
+    
+    Font8data Font8;
+    Font8data Font8v;
+    Font12data Font12;
+
+    freespacemap freespace;
+    
     void WriteDictionary(class ROM &ROM);
     void WriteStrings(class ROM &ROM);
     void Write8pixfont(class ROM &ROM) const;
@@ -63,7 +73,7 @@ private:
     void ApplyDictionary();
     void RebuildDictionary();
     
-    const ctstring ParseScriptEntry(const wstring &input, const stringdata &model) const;
+    const ctstring ParseScriptEntry(const ucs4string &input, const stringdata &model) const;
     const ctstring WrapDialogLines(const ctstring &dialog) const;
     
     // Get list of pages having zstrings
@@ -75,3 +85,5 @@ private:
     
     void LinkAndLocate(class FunctionList& functions);
 };
+
+#endif

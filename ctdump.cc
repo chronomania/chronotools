@@ -16,9 +16,9 @@ using namespace std;
 #include "symbols.hh"
 #include "config.hh"
 
-static wstring dict[256];
+static ucs4string dict[256];
 
-static const wstring Disp8Char(ctchar k)
+static const ucs4string Disp8Char(ctchar k)
 {
     const Symbols::revtype &symbols = Symbols.GetRev(2);
     
@@ -37,12 +37,12 @@ static const wstring Disp8Char(ctchar k)
         return AscToWstr(Buf);
     }
     
-    wstring result;
+    ucs4string result;
     result += tmp;
     return result;
 }
 
-static const wstring Disp12Char(ctchar k)
+static const ucs4string Disp12Char(ctchar k)
 {
     // Override these special ones to get proper formatting:
     switch(k)
@@ -81,7 +81,7 @@ static const wstring Disp12Char(ctchar k)
         return AscToWstr(Buf);
     }
 
-    wstring result;
+    ucs4string result;
     result += tmp;
     return result;
 }
@@ -403,7 +403,7 @@ static void LoadDict(unsigned offs, unsigned len)
     for(unsigned a=0; a<strings.size(); ++a)
     {
         const ctstring &s = strings[a];
-        wstring tmp;
+        ucs4string tmp;
         for(unsigned b=0; b<s.size(); ++b)tmp += getucs4(s[b]);
         dict[a + 0x21] = tmp;
     }

@@ -8,14 +8,12 @@
 
 using namespace std;
 
-#define OPTIMIZE_A
-
 namespace
 {
     class Assembler
     {
         SubRoutine *cursub;
-        wstring CurSubName;
+        ucs4string CurSubName;
         
         struct variable
         {
@@ -29,7 +27,7 @@ namespace
             }
         };
         
-        typedef map<wstring, variable> vars_t;
+        typedef map<ucs4string, variable> vars_t;
         vars_t vars;
 
         // code begun?
@@ -48,39 +46,47 @@ namespace
         typedef list<pair<unsigned, Branch> > branchlist_t;
         branchlist_t openbranches;
         
-#ifdef OPTIMIZE_A
-        class aConstState
+        class ConstState
         {
             bool known;
             unsigned value;
         public:
-            aConstState() : known(false),value(0) {}
+            ConstState() : known(false),value(0) {}
             void Invalidate() { known=false; }
             bool Known() const { return known; }
             void Set(unsigned v) { known=true; value=v; }
             bool Is(unsigned v) const { return known && value==v; }
             void Inc() { if(known) ++value; }
             void Dec() { if(known) --value; }
-        } aConstState;
+        };
 
-        class aVarState
+        class VarState
         {
             bool known;
-            wstring var;
+            ucs4string var;
         public:
-            aVarState() : known(false) {}
+            VarState() : known(false) {}
             void Invalidate() { known=false; }
             bool Known() const { return known; }
-            void Set(const wstring &v) { known=true; var=v; }
-            bool Is(const wstring &v) const { return known && var==v; }
-        } aVarState;
+            void Set(const ucs4string &v) { known=true; var=v; }
+            bool Is(const ucs4string &v) const { return known && var==v; }
+        };
+        
+        struct regstate
+        {
+            ConstState Const;
+            VarState Var;
+            
+            void Invalidate() { Const.Invalidate(); Var.Invalidate(); }
+        };
+        
+        regstate ALstate, AHstate;
         
         void Invalidate_A()
         {
-            aVarState.Invalidate();
-            aConstState.Invalidate();
+            ALstate.Invalidate();
+            AHstate.Invalidate();
         }
-#endif
         
         void AddBranch(const Branch &b, unsigned ind)
         {
@@ -106,10 +112,10 @@ namespace
                 varcount -= 1;
             }
             endbranch = new Branch(CODE.PrepareRelativeLongBranch());
-#ifdef OPTIMIZE_A
-            aVarState.Set(MagicVarName);
-            aConstState.Invalidate();
-#endif
+
+            Invalidate_A();
+            ALstate.Var.Set(MagicVarName);
+            ALstate.Const.Invalidate();
         }
         void FRAME_END()
         {
@@ -183,12 +189,13 @@ namespace
             FRAME_BEGIN();
             started = true;
         }
-        unsigned char GetStackOffset(const wstring &varname) const
+        unsigned char GetStackOffset(const ucs4string &varname) const
         {
             vars_t::const_iterator i = vars.find(varname);
             if(i == vars.end())
             {
-                fprintf(stderr, "ERROR: In function '%s': Undefined variable '%s'\n",
+                fprintf(stderr, "ERROR: In function '%s': "
+                                "Undefined variable '%s'\n",
                     WstrToAsc(CurSubName).c_str(), WstrToAsc(varname).c_str());
                 return 0;
             }
@@ -204,9 +211,9 @@ namespace
         }
 
     public:
-        const wstring LoopHelperName;
-        const wstring OutcHelperName;
-        const wstring MagicVarName;
+        const ucs4string LoopHelperName;
+        const ucs4string OutcHelperName;
+        const ucs4string MagicVarName;
         
         Assembler()
         : cursub(NULL),
@@ -226,15 +233,14 @@ namespace
             {
                 if(a->first != 999 && indent <= a->first)
                 {
-#ifdef OPTIMIZE_A
                     Invalidate_A();
-#endif
+
                     a->second.ToHere();
                     a->first = 999; // prevent being reassigned
                 }
             }
         }
-        void START_FUNCTION(const wstring &name)
+        void START_FUNCTION(const ucs4string &name)
         {
             CurSubName = name;
             started = false;
@@ -242,9 +248,7 @@ namespace
 
             cursub = new SubRoutine;
             
-#ifdef OPTIMIZE_A
             Invalidate_A();
-#endif
         }
         void END_FUNCTION()
         {
@@ -257,7 +261,7 @@ namespace
             delete cursub;
             cursub = NULL;
         }
-        void DECLARE_VAR(const wstring &name)
+        void DECLARE_VAR(const ucs4string &name)
         {
             if(vars.find(name) == vars.end())
             {
@@ -275,7 +279,7 @@ namespace
                 vars[name].stackpos = stackpos;
             }
         }
-        void DECLARE_REGVAR(const wstring &name)
+        void DECLARE_REGVAR(const ucs4string &name)
         {
             vars[name].is_regvar = true;
         }
@@ -297,7 +301,7 @@ namespace
                 CODE.EmitCode(0x38); // SEC - carry set = false
             VOID_RETURN();
         }
-        void LOAD_VAR(const wstring &name)
+        void LOAD_VAR(const ucs4string &name)
         {
             CheckCodeStart();
             // load var to A
@@ -305,12 +309,9 @@ namespace
             if(vars.find(name) != vars.end())
             {
                 vars[name].read = true;
-#ifdef OPTIMIZE_A
-                if(aVarState.Is(name)) return;
 
-                aVarState.Set(name);
-                aConstState.Invalidate();
-#endif
+                if(ALstate.Var.Is(name)) return;
+
                 unsigned stackpos = GetStackOffset(name);
                 vars[name].loaded = true;
                 if(!vars[name].written)
@@ -319,7 +320,25 @@ namespace
                         "  Warning: In function '%s', variable '%s' was read before written.\n",
                         WstrToAsc(CurSubName).c_str(), WstrToAsc(name).c_str());
                 }
+                
+                if(!AHstate.Const.Is(0))
+                {
+                    if(!ALstate.Const.Is(0))
+                    {
+                        CODE.Set8bit_M();
+                        CODE.EmitCode(0xA9, 0);
+                        AHstate.Const.Set(0);
+                        AHstate.Var.Invalidate();
+                    }
+                    CODE.EmitCode(0xEB); // XBA
+                    AHstate = ALstate;
+                }
+                
+                CODE.Set8bit_M();
                 CODE.EmitCode(0xA3, stackpos); // LDA [00:s+n]
+
+                ALstate.Var.Set(name);
+                ALstate.Const.Invalidate();
                 
                 return;
             }
@@ -338,21 +357,31 @@ namespace
                     WstrToAsc(CurSubName).c_str(), val);
             }
             
-#ifdef OPTIMIZE_A
-            if(aConstState.Is(val)) return;
+            unsigned lo = val&255;
+            unsigned hi = val>>8;
             
-            aConstState.Set(val);
-            aVarState.Invalidate();
-#endif
+            if(!AHstate.Const.Is(hi))
+            {
+                CODE.Set16bit_M();
+                CODE.EmitCode(0xA9, val&255, val>>8); // LDA A, imm16
+                ALstate.Const.Set(lo);
+                ALstate.Var.Invalidate();
+                AHstate.Const.Set(hi);
+                AHstate.Var.Invalidate();
+                return;
+            }
             
-            CODE.Set16bit_M();
-            CODE.EmitCode(0xA9, val&255, val>>8); // LDA A, imm16
+            if(!ALstate.Const.Is(lo))
+            {
+                CODE.Set8bit_M();
+                CODE.EmitCode(0xA9, lo); // LDA A, imm8
+                ALstate.Const.Set(lo);
+                ALstate.Var.Invalidate();
+            }
         }
-        void STORE_VAR(const wstring &name)
+        void STORE_VAR(const ucs4string &name)
         {
-#ifdef OPTIMIZE_A
-            if(aVarState.Is(name)) return;
-#endif
+            if(ALstate.Var.Is(name)) return;
 
             if(vars.find(name) == vars.end()
             || !vars.find(name)->second.is_regvar)
@@ -365,37 +394,35 @@ namespace
             }
             vars[name].written = true;
             
-#ifdef OPTIMIZE_A
-            aVarState.Set(name);
-#endif
+            ALstate.Var.Set(name);
         }
-        void INC_VAR(const wstring &name)
+        void INC_VAR(const ucs4string &name)
         {
             CheckCodeStart();
             // inc var
             LOAD_VAR(name);
             CODE.Set8bit_M();
             CODE.EmitCode(0x1A); // INC A
-#ifdef OPTIMIZE_A
-            aVarState.Invalidate();
-            aConstState.Inc();
-#endif
+
+            ALstate.Var.Invalidate();
+            ALstate.Const.Inc();
+
             STORE_VAR(name);
         }
-        void DEC_VAR(const wstring &name)
+        void DEC_VAR(const ucs4string &name)
         {
             CheckCodeStart();
             // dec var
             LOAD_VAR(name);
             CODE.Set8bit_M();
             CODE.EmitCode(0x3A); // DEC A
-#ifdef OPTIMIZE_A
-            aVarState.Invalidate();
-            aConstState.Dec();
-#endif
+
+            ALstate.Var.Invalidate();
+            ALstate.Const.Dec();
+
             STORE_VAR(name);
         }
-        void CALL_FUNC(const wstring &name)
+        void CALL_FUNC(const ucs4string &name)
         {
             CheckCodeStart();
             
@@ -407,9 +434,8 @@ namespace
             
             CODE.Set16bit_X();
             CODE.EmitCode(0xFA); // PLX
-#ifdef OPTIMIZE_A
+
             Invalidate_A();
-#endif
         }
         void COMPARE_BOOL(unsigned indent)
         {
@@ -424,14 +450,17 @@ namespace
             CODE.BitnessAnything();
             AddBranch(b, indent);
         }
-        void COMPARE_EQUAL(const wstring &name, unsigned indent)
+        void COMPARE_EQUAL(const ucs4string &name, unsigned indent)
         {
             CheckCodeStart();
             
             unsigned stackpos = GetStackOffset(name);
             vars[name].read = vars[name].loaded = true;
             
+            CODE.Set8bit_M();
+            
             // process subblock if A is equal to given var
+            // Note: we're not checking ALstate here, would be mostly useless check
             CODE.EmitCode(0xC3, stackpos); // CMP [00:s+n]
 
             Branch b = CODE.PrepareRelativeLongBranch();
@@ -441,12 +470,14 @@ namespace
             CODE.BitnessAnything();
             AddBranch(b, indent);
         }
-        void COMPARE_ZERO(const wstring &name, unsigned indent)
+        void COMPARE_ZERO(const ucs4string &name, unsigned indent)
         {
             CheckCodeStart();
             
             // process subblock if var is zero
             LOAD_VAR(name);
+
+            // Note: we're not checking ALstate here, would be mostly useless check
 
             Branch b = CODE.PrepareRelativeLongBranch();
             CODE.EmitCode(0xF0, 3);   // BEQ- Jump to if zero
@@ -455,13 +486,15 @@ namespace
             CODE.BitnessAnything();
             AddBranch(b, indent);
         }
-        void COMPARE_GREATER(const wstring &name, unsigned indent)
+        void COMPARE_GREATER(const ucs4string &name, unsigned indent)
         {
             CheckCodeStart();
 
             unsigned stackpos = GetStackOffset(name);
             vars[name].read = vars[name].loaded = true;
 
+            CODE.Set8bit_M();
+            
             // process subblock if A is greater than given var
             CODE.EmitCode(0xC3, stackpos); // CMP [00:s+n]
             
@@ -477,7 +510,7 @@ namespace
             
             AddBranch(b, indent);
         }
-        void SELECT_CASE(const wstring &cset, unsigned indent)
+        void SELECT_CASE(const ucs4string &cset, unsigned indent)
         {
             if(cset.empty()) return;
             
@@ -491,6 +524,9 @@ namespace
             {
                 // FIXME: Ensure we won't mess up with extrachars here.
                 // Names can only contain 8bit chars!
+
+                // Note: we're not checking ALstate here, would be mostly useless check
+                
                 ctchar c = getchronochar(cset[a]);
                 CODE.Set8bit_M();
                 CODE.EmitCode(0xC9, c);   // CMP A, imm8            
@@ -575,19 +611,19 @@ namespace
             CODE.EmitCode(0x9B); // TXY
             
             // Hakee merkin hahmon nimestä
-            CODE.Set8bit_M();
-            CODE.EmitCode(0xB7,0x37);  // lda [long[$00:D+$37]+y]
-#ifdef OPTIMIZE_A
+            CODE.Set16bit_M();
+            CODE.EmitCode(0xB7,0x37);              //LDA [long[$00:D+$37]+Y]
+            CODE.EmitCode(0x29, 0xFF, 0x00);       //AND A, $00FF
+
             Invalidate_A();
-#endif
+            AHstate.Const.Set(0);
+            AHstate.Var.Invalidate();
         }
         void OUTBYTE_BIG_CODE()
         {
             CODE.Set16bit_X();
             CODE.Set16bit_M();
             
-            // FIXME: tulostetaan vain 8-bittisiä...
-            CODE.EmitCode(0x29, 0xFF, 0x00);       //AND A, $00FF
             CODE.EmitCode(0xDA);                   //PHX
             
              // Tässä välissä eivät muuttujaviittaukset toimi.
@@ -600,9 +636,8 @@ namespace
 
             CODE.Set16bit_X();
             CODE.EmitCode(0xFA); // PLX
-#ifdef OPTIMIZE_A
+
             Invalidate_A();
-#endif
         }
         
         void START_CHARNAME_LOOP()
@@ -625,9 +660,8 @@ namespace
             CODE.EmitCode(0x82, 0,0);  // brl - jump pois loopista.
             loopend->FromHere();
             CODE.BitnessAnything();
-#ifdef OPTIMIZE_A
+
             Invalidate_A();
-#endif
 
             STORE_VAR(MagicVarName);// save in "c".
             // mark read, because it indeed has been
@@ -645,9 +679,8 @@ namespace
             
             // loop end is here.        
             loopend->ToHere();
-#ifdef OPTIMIZE_A
+
             Invalidate_A();
-#endif
             
             loopbegin->Proceed();
             loopend->Proceed();
@@ -662,9 +695,7 @@ namespace
             
             cursub->CallSub(OutcHelperName);
 
-#ifdef OPTIMIZE_A
             Invalidate_A();
-#endif
         }
         #undef CODE
         
@@ -676,9 +707,9 @@ const FunctionList Compile(FILE *fp)
 {
     Assembler Asm;
     
-    wstring file;
+    ucs4string file;
     
-    if(1) // Read file to wstring
+    if(1) // Read file to ucs4string
     {
         wstringIn conv;
         conv.SetSet(getcharset());
@@ -693,7 +724,7 @@ const FunctionList Compile(FILE *fp)
     
     for(unsigned a=0; a<file.size(); )
     {
-        wstring Buf;
+        ucs4string Buf;
         if(1)
         {
             // Get line
@@ -704,14 +735,14 @@ const FunctionList Compile(FILE *fp)
         if(Buf.empty()) continue;
         
         unsigned indent=0;
-        vector<wstring> words;
+        vector<ucs4string> words;
         
         if(1) // Initialize indent, words
         {
             const ucs4 *s = Buf.data();
             while(*s == ' ') { ++s; ++indent; }
 
-            wstring rest = s;
+            ucs4string rest = s;
             for(;;)
             {
                 unsigned spacepos = rest.find(' ');

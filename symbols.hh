@@ -8,13 +8,15 @@ using std::map;
 class Symbols
 {
 public:
-    typedef map<wstring, ctchar> type;
-    typedef map<ctchar, wstring> revtype;
+    // upper_bound, lower_bound needed; thus hash_map doesn't qualify
+    typedef map<ucs4string, ctchar> type;
+    // no benefit using hash_map here
+    typedef map<ctchar, ucs4string> revtype;
 private:
     type symbols2, symbols8, symbols16;
     revtype rev2, rev8, rev16;
 
-    void AddSym(const wstring& sym, ctchar c, int targets);
+    void AddSym(const ucs4string& sym, ctchar c, int targets);
     void Load();
 public:
     Symbols();

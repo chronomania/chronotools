@@ -34,7 +34,7 @@ public:
         if(i != data.end()) return i->second;
         
         FILE *result = 0;
-        wstring fn = GetConf(sect, key);
+        ucs4string fn = GetConf(sect, key);
         if(!fn.empty())
         {
             string fn2 = WstrToAsc(fn);

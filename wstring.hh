@@ -17,6 +17,8 @@
 
 #if WSTRING_METHOD==0
 #define __ENABLE_WSTRING 1
+#else
+#undef __ENABLE_WSTRING
 #endif
 #include <string>
 
@@ -24,11 +26,11 @@ using namespace std;
 
 #if WSTRING_METHOD == 0
 typedef wchar_t ucs4;
+#define wstring ucs4string
 #endif
 #if WSTRING_METHOD >= 1
-#define wstring ucs4string
 typedef unsigned int ucs4;
-typedef basic_string<ucs4> wstring;
+typedef basic_string<ucs4> ucs4string;
 #endif
 
 // Note: address of ilseq must be available
@@ -38,8 +40,8 @@ static const ucs4 ucsig = 0xFEFF;
 
 #if CLEARSTR_METHOD==0
 /* libstdc++ 2 way */
-static const wstring emptywstring;
-#define CLEARSTR(x) x=emptywstring
+static const ucs4string emptyucs4string;
+#define CLEARSTR(x) x=emptyucs4string
 #endif
 #if CLEARSTR_METHOD==1
 /* libstdc++ 3 way */
@@ -67,7 +69,7 @@ public:
     void SetSet(const char *setname);
     
     const string putc(ucs4 p) const;
-    const string puts(const wstring &s) const;
+    const string puts(const ucs4string &s) const;
     bool isok(ucs4 p) const;
 };
 
@@ -83,12 +85,12 @@ public:
     
     void SetSet(const char *setname);
 
-    const wstring putc(char p) const;
-    const wstring puts(const string &s) const;
+    const ucs4string putc(char p) const;
+    const ucs4string puts(const string &s) const;
 };
 
-extern wstring AscToWstr(const string &s);
-extern string WstrToAsc(const wstring &s);
+extern ucs4string AscToWstr(const string &s);
+extern string WstrToAsc(const ucs4string &s);
 extern char WcharToAsc(ucs4 c);
 extern ucs4 AscToWchar(char c);
 extern long atoi(const ucs4 *p, int base=10);

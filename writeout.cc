@@ -421,24 +421,24 @@ void insertor::WriteDictionary(ROM &ROM)
 void insertor::WriteStrings(ROM &ROM)
 {
     fprintf(stderr, "Writing fixed-length strings...\n");
-    for(stringmap::const_iterator i=strings.begin(); i!=strings.end(); ++i)
+    for(stringlist::const_iterator i=strings.begin(); i!=strings.end(); ++i)
     {
-        switch(i->second.type)
+        switch(i->type)
         {
             case stringdata::fixed:
             {
-                unsigned pos = i->first;
-                const ctstring &s = i->second.str;
+                unsigned pos = i->address;
+                const ctstring &s = i->str;
                 
                 unsigned size = CalcSize(s);
                 
-                if(size > i->second.width)
+                if(size > i->width)
                 {
 #if 0
                     fprintf(stderr, "  Warning: Fixed string at %06X: len(%u) > space(%u)... '%s'\n",
-                        pos, size, i->second.width, DispString(s).c_str());
+                        pos, size, i->width, DispString(s).c_str());
 #endif
-                    size = i->second.width;
+                    size = i->width;
                 }
                 
                 // Filler must be 255, or otherwise following problems occur:
@@ -447,8 +447,8 @@ void insertor::WriteStrings(ROM &ROM)
 
                 unsigned a;
                 // These shouldn't contain extrachars.
-                for(a=0; a<size; ++a)          ROM.Write(pos++, s[a]);
-                for(; a < i->second.width; ++a)ROM.Write(pos++, 255);
+                for(a=0; a<size; ++a)   ROM.Write(pos++, s[a]);
+                for(; a < i->width; ++a)ROM.Write(pos++, 255);
                 break;
             }
             case stringdata::zptr8:

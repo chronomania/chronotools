@@ -18,6 +18,7 @@ const char *mempos(const char *haystack,unsigned haysize,
 }
 
 /* This is DarkForce's hashing code */
+/* UNUSED */
 unsigned hashstr(const char *s, unsigned len)
 {
     unsigned h = 0;

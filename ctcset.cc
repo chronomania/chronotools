@@ -1,4 +1,3 @@
-#include <map>
 #include <string>
 
 #include "ctcset.hh"
@@ -6,6 +5,7 @@
 /* These are language-specific settings! */
 
 #include "config.hh"
+#include "hash.hh"
 
 /* Language-specific settings end here. */
 namespace
@@ -14,8 +14,8 @@ namespace
 
     class CharacterSet
     {
-        wstring cset;
-        std::map<ucs4, ctchar> revmap;
+        ucs4string cset;
+        hash_map<ucs4, ctchar> revmap;
         vector<ctchar> revmapfirst;
     public:
         CharacterSet()
@@ -81,7 +81,7 @@ namespace
             revmapfirst.clear();
             revmapfirst.resize(GetConf("font", "charcachesize"), 0);
              
-            wstring noncharstr = GetConf("font", "nonchar");
+            ucs4string noncharstr = GetConf("font", "nonchar");
             ucs4 nonchar = noncharstr[0];
             
             for(unsigned a = 0; a < cset.size(); ++a)
@@ -106,7 +106,7 @@ namespace
             
             if((unsigned)p < revmapfirst.size()) return revmapfirst[(unsigned)p];
             
-            map<ucs4, ctchar>::const_iterator i;
+            hash_map<ucs4, ctchar>::const_iterator i;
             i = revmap.find(p);
             if(i == revmap.end())return 0;
             return i->second;

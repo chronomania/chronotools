@@ -264,6 +264,7 @@ Copypaste from the Makefile:
 # VERSION 1.2.3  lots of more translation
 # VERSION 1.2.4  8pix system deciphered, more bugs introduced
 # VERSION 1.2.5  characterset enlarged by 512, only vwf8 bugs still
+# VERSION 1.2.6  using nonstandard hash_map for greatly improved performance
 </pre>
 
 ", '1. See also' => "
