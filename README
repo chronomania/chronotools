@@ -366,8 +366,17 @@ $C2:5B14 60          RTS
 
 
 
-// T‰nne p‰‰dyt‰‰n, kun on jokin merkki,
-// joka selv‰sti voidaan tulostaa.
+// T‰nne p‰‰dyt‰‰n, kun on jokin 12pix-merkki, joka selv‰sti voidaan tulostaa.
+// Syˆte:
+//   $0237[long] = pointteri merkkijonoon
+//   $023A[byte] = merkkijonon pituus MERKKEINƒ (ei tavuina)
+//   $0213[byte] = Joku laskuri
+// K‰ytt‰‰:
+//   $0235[word] = merkki
+// Tuote:
+//   $0215[byte] = Joku status-lippu: arvo voi olla $10
+//   $0230[byte] = 0 jos skripti loppui, muuten ei muuteta
+
 // Haetaan merkki.
 $C2:5BF5 A7 37       LDA [long[D+37]]     ;$DE:FB4C     A:0001 X:0038 Y:001F D:0200 DB:00 PB:C2
 // Kasvatetaan pointteria
@@ -381,15 +390,14 @@ $C2:5BFF F0 04       BEQ $5C05                          A:00C8 X:0038 Y:001F D:0
 $C2:5C01 C9 02       CMP A, $02                         A:00C8 X:0038 Y:001F D:0200 DB:00 PB:C2
 $C2:5C03 D0 07       BNE $5C0C                          A:00C8 X:0038 Y:001F D:0200 DB:00 PB:C2
 
-;Oli $01
+;Oli $01 tai $02
 $C2:5C05 EB          XBA                                A:0001 X:0002 Y:001F D:0200 DB:00 S:06F2 P:envMxdi
 ;Hakee lowbyten
 $C2:5C06 A7 37       LDA [long[D+$37]]                  A:0100 X:0002 Y:001F D:0200 DB:00 S:06F2 P:envMxdi
 $C2:5C08 C2 20       REP #$20                           A:0102 X:0002 Y:001F D:0200 DB:00 S:06F2 P:envMxdi
 ;Kasvattaa pointteria
 $C2:5C0A E6 37       INC [$00:D+$37]                    A:0102 X:0002 Y:001F D:0200 DB:00 S:06F2 P:envmxdi
-
-// Ei ollut 1 tai 2. Merkki talteen.
+// Nyt merkki on 16-bittinen. Talteen se.
 $C2:5C0C C2 20       REP $20                            A:00C8 X:0038 Y:001F D:0200 DB:00 PB:C2
 $C2:5C0E 85 35       STA [$00:D+$35]      ;$00:0235     A:00C8 X:0038 Y:001F D:0200 DB:00 PB:C2
 $C2:5C10 E2 20       SEP $20                            A:00C8 X:0038 Y:001F D:0200 DB:00 PB:C2
@@ -403,14 +411,15 @@ $C2:5C17 C6 3A       DEC [$00:D+$3A]      ;$00:023A     A:0000 X:0028 Y:0050 D:0
 $C2:5C19 F0 02       BEQ $5C1D                          A:0000 X:0028 Y:0050 D:0200 DB:00 PB:C2
 // Ei loppunut.
 $C2:5C1B 09 01       ORA A, $01                         A:0000 X:0028 Y:0050 D:0200 DB:00 PB:C2
-// Onko merkkej‰ j‰ljell‰ jonossa?
+// Onko merkkej‰ j‰ljell‰ jonossa? ????
 $C2:5C1D C6 13       DEC [$00:D+$13]      ;$00:0213     A:0001 X:0028 Y:0050 D:0200 DB:00 PB:C2
 $C2:5C1F F0 02       BEQ $5C23                          A:0001 X:0028 Y:0050 D:0200 DB:00 PB:C2
+$C2:5C21 09 02       ORA A, $02
 // Ei ole.
 $C2:5C23 0A          ASL A                              A:0001 X:0028 Y:0050 D:0200 DB:00 PB:C2
 $C2:5C24 AA          TAX                                A:0002 X:0028 Y:0050 D:0200 DB:00 PB:C2
 // Taulun 5C28 sis‰ltˆ:
-//   5C30 5C32
+//   5C30 5C32 5C37 5C64
 $C2:5C25 7C 28 5C    JMP [PB:word[PB:$5C28+x]]  ;$C2:5C32 A:0002 X:0002 Y:0050 D:0200 DB:00 PB:
 // Merkit‰‰n lippu "seuraava merkki pit‰‰ hakea"
 $C2:5C30 64 30       STZ [$00:D+$30]      ;$00:0230     A:0000 X:0000 Y:00A0 D:0200 DB:00 PB:C2
@@ -418,6 +427,12 @@ $C2:5C30 64 30       STZ [$00:D+$30]      ;$00:0230     A:0000 X:0000 Y:00A0 D:0
 $C2:5C32 A9 10       LDA A, $10                         A:0000 X:0000 Y:00A0 D:0200 DB:00 PB:C2
 $C2:5C34 85 15       STA [$00:D+$15]      ;$00:0215     A:0010 X:0000 Y:00A0 D:0200 DB:00 PB:C2
 $C2:5C36 60          RTS                                A:0010 X:0000 Y:00A0 D:0200 DB:00 PB:C2
+// ?
+$C2:5C37 64 30       STZ [$00:D+$30]      ;$00:0230
+$C2:5C39 4C B2 58    JMP DB:$58B2         ;$C2:58B2
+// ?
+$C2:5C64 5C 70 5C 75 JMP $75:$5C70
+
 
 
 // 5DC4: piirt‰‰ merkin, joka on osoitteessa $00:0235.
@@ -1447,24 +1462,6 @@ Miten t‰m‰ taulu toimii, on t‰ysin mysteeri.
 
 
 
-[0CCD00]
-T‰ss‰ n‰kyy ruutu, jossa on repliikkej‰.
-Taitavat olla taistelunaikaisia repliikkej‰.
-
-[18D000]
-J‰lleen lyhyt p‰tk‰ repliikkej‰.
-Alkaa pointterilistalla!
-18D09C:st‰ alkaa itse repliikit.
-Pointtereita on siis 78 kpl.
-D09C, D0B4, D106, D146, jne.
-
-Kuvia:
-
-[3FF488]
-T‰ss‰ on neliv‰rinen "Active Time Battle ver. 2" -logo.
-Pituus: 6 tile‰ (eka rivi) + 6 tile‰ (toka rivi).
-[3FF008]
-T‰ss‰ on jotain; onko battle logo?
 
 http://www.uct2.net/epoch/Zeal-Mouser_X-1024x768.gif
 http://www.uct2.net/epoch/MagusCT%20-%20CT%20Cast.gif

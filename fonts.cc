@@ -7,9 +7,14 @@
 #include "config.hh"
 #include "hash.hh"
 
+#define NO_GAINLESS_SHUFFLING_AROUND 1
+#define FONT12_DEBUG_LOADING         0
+#define DISPLAY_REARRANGE_DETAILS    1
+#define DUMP_FREE_MAPS               0
+
 namespace
 {
-    unsigned font12_end = 0x300;
+    unsigned font12_end = 0x3000;
 
 #if 0
     unsigned get_num_normal_chars() // Get num of characters < 0x100
@@ -64,7 +69,7 @@ void Font12data::LoadBoxAs(unsigned boxno, unsigned tileno, class TGAimage &imag
 
     widths[tileno] = width;
 
-#if 0
+#if FONT12_DEBUG_LOADING
     fprintf(stderr, "box %03X: %u(+%u) - width=%u:\n",
         tileno + get_font_begin(),
         tileno, boxstart, width);
@@ -411,7 +416,7 @@ namespace
             }
         }
 
-#if 1 /* This prevents gainless shuffling around */
+#if NO_GAINLESS_SHUFFLING_AROUND /* This prevents gainless shuffling around */
 
         // If the patient's home slot is one of the patient's
         // target choices, don't move that patient anywhere
@@ -511,7 +516,7 @@ namespace
             if(a->first == a->second) result.erase(a);
         }
 
-#if 1
+#if DISPLAY_REARRANGE_DETAILS
         for(Rearrangemap_t::const_iterator i=result.begin(); i!=result.end(); ++i)
         {
             unsigned usetimes = 0;
@@ -549,14 +554,14 @@ void insertor::ReorganizeFonts()
     
     const ctchar font_begin = get_font_begin();
     
-    /* Dialog font: 0..0x21 are specials, 0x21..font_begin is dictionary */
+    /* Dialog font: 0..0x20 are specials, 0x21..font_begin-1 is dictionary */
     for(unsigned c=0; c<font_begin; ++c) Fixed_12.insert(c);
     
     /* Item/tech/monster strings: Used in dialog too, thus dialog sets the limits */
     for(unsigned c=0; c<font_begin; ++c) Fixed_2.insert(c);
     
-    /* Status screen font: 0..15 are specials, others are free */
-    for(unsigned c=0; c<0x10; ++c)       Fixed_8.insert(c);
+    /* Status screen font: 0..15 are specials, 16..159 are reserved */
+    for(unsigned c=0; c<0xA0; ++c)       Fixed_8.insert(c);
 
     for(stringlist::const_iterator i=strings.begin(); i!=strings.end(); ++i)
     {
@@ -709,7 +714,7 @@ void insertor::ReorganizeFonts()
     fprintf(stderr, "- Rearranging %u status screen symbols\n", Rearrange_8.size());
     fprintf(stderr, "- Rearranging %u item/tech/monster symbols\n", Rearrange_2.size());
 
-#if 0
+#if DUMP_FREE_MAPS
     fprintf(stderr, "12pix map:\n");
     for(ctchar c=0; c<0x300; ++c)
     {

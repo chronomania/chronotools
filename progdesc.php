@@ -14,32 +14,43 @@ Meant to be useful for anyone who wants to become
 a translator for Chrono Trigger and translate the
 game to their own language.
 
-", 'req:1. Requirements' => "
+", 'how:1. How to begin?' => "
 
-For source code (if you're a developer):
-<blockquote>
-A POSIX compatible system (like Linux or FreeBSD)
-with GNU tools (GNU make, GCC etc) is required.<br>
-These programs are archived as C++ source code.<br>
-</blockquote>
+So here's what you do if you want to translate Chrono Trigger.
 
-For binaries (if you're an unfortunate user stuck with some \"Windows\"):
-<blockquote>
-I don't have a microsoft-operating system here on my hand,
-but I have mingw32, which appears to produce working <em>commandline</em>
-billware binaries. They should work in Windows 2000, Windows 98 and
-possibly most other Windows systems as well.<br>
-I don't offer binaries for any other platforms.<br>
-If you fear the text mode and command line, you better
-change your attitude and start learning :)
-<p>
-At the bottom of this page, there's ctdump as a sample win32 program,
-but to get the full system and support,
-you have to <a href=\"#copying\">contact me with email</a>.
-</blockquote>
+<ul>
+ <li>You <a href=\"#copying\">contact me</a>.</li>
+ <li>We discuss your resources, needs and skills and
+     you get a copy of Chronotools, along with a sample configuration file.</li>
+ <li>You need the Chrono Trigger English ROM. (You won't get it from me.)</li>
+ <li>You dump the script and images from the ROM using
+     <a href=\"#ctdump\">ctdump</a>, included in Chronotools.</li>
+ <li>You redesign the font using an image manipulation
+     program such as <a href=\"http://www.gimp.org\">GIMP</a>,
+     editing <code>ct16fn.tga</code> and <code>ct8fn.tga</code>,
+     and update the configuration to match the new character set
+     in your font and script files.</li>
+ <li>You translate the script, once in a while testing it
+     by creating patches with <a href=\"#ctinsert\">ctinsert</a>.</li>
+ <li>You ask me how to do this and that what you don't know. :)<br>
+     For example, what to do if ctinsert reports errors,
+     or if you want features like
+     <a href=\"#conj\">name conjugation</a> or
+     <a href=\"#vwf8\">variable width 8pix font</a>.</li>
+</ul>
+
+If this is not okay for you, then you use other programs
+like <a href=\"http://www.google.com/search?q=Thingy\">Thingy</a>
+and probably get some of your work done in a much harder way.
 
 ", 'status:1. Current status' => "
 
+Chronotools is under active development.
+Here's the current situation.<br>
+Last updated:
+".date('Y-m-d', filemtime('/WWW/src/.desc-chronotools.php'))."
+
+<p>
 <table>
  <tr>
   <th align=left style=\"background:#EEE\">Subject</th>
@@ -64,9 +75,11 @@ you have to <a href=\"#copying\">contact me with email</a>.
     <td>5%</td> <td>not what I planned</td></tr>
 <tr><td>Error recovery</td>
     <td>10%</td> <td>silent ignore</td></tr>
+<tr><td>Documentation</td>
+    <td>0%</td> <td>practically no documentation; that's why you must contact</td></tr>
 </table>
 
-", 'changes:1.1. Changelog' => "
+", 'changes:1.1. Version history' => "
 
 Copypaste from the Makefile:
 
@@ -117,6 +130,7 @@ Copypaste from the Makefile:
 # VERSION 1.2.11 some translation, compression optimizations
 # VERSION 1.3.0  new compression options, font reorganizer, generic typeface engine
 # VERSION 1.4.0  image patching support, more font reorganizing support
+# VERSION 1.4.1  lots of more translation
 </pre>
 
 ", '1. Program list' => "
@@ -297,6 +311,30 @@ the game to draw the names in thinner font that fits on the screen.
 I have tried to put almost everything in text-only config files
 instead of hardcoding it in the programs. You won't be depending
 on me to do little updates for your purposes.
+
+", 'req:1. Requirements' => "
+
+For source code (if you're a developer):
+<blockquote>
+A POSIX compatible system (like Linux or FreeBSD)
+with GNU tools (GNU make, GCC etc) is required.<br>
+These programs are archived as C++ source code.<br>
+</blockquote>
+
+For binaries (if you're an unfortunate user stuck with some \"Windows\"):
+<blockquote>
+I don't have a microsoft-operating system here on my hand,
+but I have mingw32, which appears to produce working <em>commandline</em>
+billware binaries. They should work in Windows 2000, Windows 98 and
+possibly most other Windows systems as well.<br>
+I don't offer binaries for any other platforms.<br>
+If you fear the text mode and command line, you better
+change your attitude and start learning :)
+<p>
+At the bottom of this page, there's ctdump as a sample win32 program,
+but to get the full system and support,
+you have to <a href=\"#copying\">contact me with email</a>.
+</blockquote>
 
 ", 'copying:1. Copying' => "
 

@@ -21,9 +21,9 @@ SMALL    {font-size:70%}
   <h1>Chrono Trigger translation development system</h1>
   <h2 class=level2> 0. Contents </h2>
   
-  This is the documentation of chronotools-1.4.0.
-<div class=toc><table cellspacing=0 cellpadding=0 class=toc><tr><td width="50%" valign=middle align=left nowrap class=toc>&nbsp;&nbsp;&nbsp;1. <a href="#what">Purpose</a><br>&nbsp;&nbsp;&nbsp;2. <a href="#req">Requirements</a><br>&nbsp;&nbsp;&nbsp;3. <a href="#status">Current status</a><br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;3.1. <a href="#changes">Changelog</a><br>&nbsp;&nbsp;&nbsp;4. <a href="#h0">Program list</a><br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;4.1. <a href="#ctdump">ctdump</a><br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;4.2. <a href="#ctinsert">ctinsert</a><br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;4.3. <a href="#h1">other</a><br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;4.3.1. <a href="#h2">makeips</a><br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;4.3.2. <a href="#h3">unmakeips</a><br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;4.3.3. <a href="#h4">xray</a><br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;4.3.4. <a href="#h5">viewer</a><br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;4.3.5. <a href="#h6">spacefind</a><br></td>
-<td width="50%" valign=middle align=left nowrap class=toc>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;4.3.6. <a href="#h7">taipus.rb</a><br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;4.3.7. <a href="#h8">sramdump</a><br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;4.3.8. <a href="#h9">base62</a><br>&nbsp;&nbsp;&nbsp;5. <a href="#h10">Useful features</a><br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;5.1. <a href="#conj">Name conjugation</a><br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;5.2. <a href="#skew">Font/dictionary skew</a><br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;5.3. <a href="#wrap">Automatic paragraph wrapping</a><br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;5.4. <a href="#vwf8">Variable width 8pix font</a><br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;5.5. <a href="#h11">Very configurable</a><br>&nbsp;&nbsp;&nbsp;6. <a href="#copying">Copying</a><br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;6.1. <a href="#parts">If you only are interested in some features/parts</a><br>&nbsp;&nbsp;&nbsp;7. <a href="#h12">See also</a><br>&nbsp;&nbsp;&nbsp;8. <a href="#download">Downloading</a><br></td>
+  This is the documentation of chronotools-1.4.1.
+<div class=toc><table cellspacing=0 cellpadding=0 class=toc><tr><td width="50%" valign=middle align=left nowrap class=toc>&nbsp;&nbsp;&nbsp;1. <a href="#what">Purpose</a><br>&nbsp;&nbsp;&nbsp;2. <a href="#how">How to begin?</a><br>&nbsp;&nbsp;&nbsp;3. <a href="#status">Current status</a><br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;3.1. <a href="#changes">Version history</a><br>&nbsp;&nbsp;&nbsp;4. <a href="#h0">Program list</a><br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;4.1. <a href="#ctdump">ctdump</a><br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;4.2. <a href="#ctinsert">ctinsert</a><br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;4.3. <a href="#h1">other</a><br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;4.3.1. <a href="#h2">makeips</a><br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;4.3.2. <a href="#h3">unmakeips</a><br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;4.3.3. <a href="#h4">xray</a><br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;4.3.4. <a href="#h5">viewer</a><br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;4.3.5. <a href="#h6">spacefind</a><br></td>
+<td width="50%" valign=middle align=left nowrap class=toc>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;4.3.6. <a href="#h7">taipus.rb</a><br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;4.3.7. <a href="#h8">sramdump</a><br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;4.3.8. <a href="#h9">base62</a><br>&nbsp;&nbsp;&nbsp;5. <a href="#h10">Useful features</a><br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;5.1. <a href="#conj">Name conjugation</a><br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;5.2. <a href="#skew">Font/dictionary skew</a><br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;5.3. <a href="#wrap">Automatic paragraph wrapping</a><br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;5.4. <a href="#vwf8">Variable width 8pix font</a><br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;5.5. <a href="#h11">Very configurable</a><br>&nbsp;&nbsp;&nbsp;6. <a href="#req">Requirements</a><br>&nbsp;&nbsp;&nbsp;7. <a href="#copying">Copying</a><br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;7.1. <a href="#parts">If you only are interested in some features/parts</a><br>&nbsp;&nbsp;&nbsp;8. <a href="#h12">See also</a><br>&nbsp;&nbsp;&nbsp;9. <a href="#download">Downloading</a><br></td>
 </tr></table></div><H2 class="level2"><a name="what"></a>1. Purpose</H2><div class="level2">
 
 Tools aiding in
@@ -33,32 +33,43 @@ Meant to be useful for anyone who wants to become
 a translator for Chrono Trigger and translate the
 game to their own language.
 
-</div><H2 class="level2"><a name="req"></a>2. Requirements</H2><div class="level2">
+</div><H2 class="level2"><a name="how"></a>2. How to begin?</H2><div class="level2">
 
-For source code (if you're a developer):
-<blockquote>
-A POSIX compatible system (like Linux or FreeBSD)
-with GNU tools (GNU make, GCC etc) is required.<br>
-These programs are archived as C++ source code.<br>
-</blockquote>
+So here's what you do if you want to translate Chrono Trigger.
 
-For binaries (if you're an unfortunate user stuck with some "Windows"):
-<blockquote>
-I don't have a microsoft-operating system here on my hand,
-but I have mingw32, which appears to produce working <em>commandline</em>
-billware binaries. They should work in Windows 2000, Windows 98 and
-possibly most other Windows systems as well.<br>
-I don't offer binaries for any other platforms.<br>
-If you fear the text mode and command line, you better
-change your attitude and start learning :)
-<p>
-At the bottom of this page, there's ctdump as a sample win32 program,
-but to get the full system and support,
-you have to <a href="#copying">contact me with email</a>.
-</blockquote>
+<ul>
+ <li>You <a href="#copying">contact me</a>.</li>
+ <li>We discuss your resources, needs and skills and
+     you get a copy of Chronotools, along with a sample configuration file.</li>
+ <li>You need the Chrono Trigger English ROM. (You won't get it from me.)</li>
+ <li>You dump the script and images from the ROM using
+     <a href="#ctdump">ctdump</a>, included in Chronotools.</li>
+ <li>You redesign the font using an image manipulation
+     program such as <a href="http://www.gimp.org">GIMP</a>,
+     editing <code>ct16fn.tga</code> and <code>ct8fn.tga</code>,
+     and update the configuration to match the new character set
+     in your font and script files.</li>
+ <li>You translate the script, once in a while testing it
+     by creating patches with <a href="#ctinsert">ctinsert</a>.</li>
+ <li>You ask me how to do this and that what you don't know. :)<br>
+     For example, what to do if ctinsert reports errors,
+     or if you want features like
+     <a href="#conj">name conjugation</a> or
+     <a href="#vwf8">variable width 8pix font</a>.</li>
+</ul>
+
+If this is not okay for you, then you use other programs
+like <a href="http://www.google.com/search?q=Thingy">Thingy</a>
+and probably get some of your work done in a much harder way.
 
 </div><H2 class="level2"><a name="status"></a>3. Current status</H2><div class="level2">
 
+Chronotools is under active development.
+Here's the current situation.<br>
+Last updated:
+2003-08-11
+
+<p>
 <table>
  <tr>
   <th align=left style="background:#EEE">Subject</th>
@@ -83,9 +94,11 @@ you have to <a href="#copying">contact me with email</a>.
     <td>5%</td> <td>not what I planned</td></tr>
 <tr><td>Error recovery</td>
     <td>10%</td> <td>silent ignore</td></tr>
+<tr><td>Documentation</td>
+    <td>0%</td> <td>practically no documentation; that's why you must contact</td></tr>
 </table>
 
-</div><H3 class="level3"><a name="changes"></a>3.1. Changelog</H3><div class="level3">
+</div><H3 class="level3"><a name="changes"></a>3.1. Version history</H3><div class="level3">
 
 Copypaste from the Makefile:
 
@@ -136,6 +149,7 @@ Copypaste from the Makefile:
 # VERSION 1.2.11 some translation, compression optimizations
 # VERSION 1.3.0  new compression options, font reorganizer, generic typeface engine
 # VERSION 1.4.0  image patching support, more font reorganizing support
+# VERSION 1.4.1  lots of more translation
 </pre>
 
 </div><H2 class="level2"><a name="h0"></a>4. Program list</H2><div class="level2">
@@ -317,7 +331,31 @@ I have tried to put almost everything in text-only config files
 instead of hardcoding it in the programs. You won't be depending
 on me to do little updates for your purposes.
 
-</div><H2 class="level2"><a name="copying"></a>6. Copying</H2><div class="level2">
+</div><H2 class="level2"><a name="req"></a>6. Requirements</H2><div class="level2">
+
+For source code (if you're a developer):
+<blockquote>
+A POSIX compatible system (like Linux or FreeBSD)
+with GNU tools (GNU make, GCC etc) is required.<br>
+These programs are archived as C++ source code.<br>
+</blockquote>
+
+For binaries (if you're an unfortunate user stuck with some "Windows"):
+<blockquote>
+I don't have a microsoft-operating system here on my hand,
+but I have mingw32, which appears to produce working <em>commandline</em>
+billware binaries. They should work in Windows 2000, Windows 98 and
+possibly most other Windows systems as well.<br>
+I don't offer binaries for any other platforms.<br>
+If you fear the text mode and command line, you better
+change your attitude and start learning :)
+<p>
+At the bottom of this page, there's ctdump as a sample win32 program,
+but to get the full system and support,
+you have to <a href="#copying">contact me with email</a>.
+</blockquote>
+
+</div><H2 class="level2"><a name="copying"></a>7. Copying</H2><div class="level2">
 
 If you're interested, throw me email.
 <p>
@@ -330,7 +368,7 @@ that many people in ROM hacking scene aren't very respectful to copyrights.
 <em>Aug 2 2003: Oops, I made an <a href="#ctdump">exception</a>.
 Let's see what kind of problems it causes.</em>
 
-</div><H3 class="level3"><a name="parts"></a>6.1. If you only are interested in some features/parts</H3><div class="level3">
+</div><H3 class="level3"><a name="parts"></a>7.1. If you only are interested in some features/parts</H3><div class="level3">
 
 This system doesn't contain a single assembler file.<br>
 That's because I don't have an assembler.<br>
@@ -338,7 +376,7 @@ I have made my own compilers to generate 65c816 code.<br>
 This is a whole and complete system.<br>
 If you're uncertain, <a href="#copying">send me email and explain your situation</a>.
 
-</div><H2 class="level2"><a name="h12"></a>7. See also</H2><div class="level2">
+</div><H2 class="level2"><a name="h12"></a>8. See also</H2><div class="level2">
 
 <ul>
  <li><a href="http://bisqwit.iki.fi/ctfin/">Bisqwit's
@@ -349,14 +387,14 @@ If you're uncertain, <a href="#copying">send me email and explain your situation
   (publicly available information that these tools base on)</li>
 </ul>
 
-</div><H2 class="level2"><a name="download"></a>8. Downloading</H2><div class="level2">
+</div><H2 class="level2"><a name="download"></a>9. Downloading</H2><div class="level2">
    The official home page of chronotools
    is at <a href="http://iki.fi/bisqwit/source/chronotools.html">http://iki.fi/bisqwit/source/chronotools.html</a>.<br>
    Check there for new versions.
 </div> <p align=right><small>Generated from
-       <code>progdesc.php</code> (last updated: Sun, 10 Aug 2003 05:18:35 +0300)<br>
+       <code>progdesc.php</code> (last updated: Tue, 12 Aug 2003 01:53:47 +0300)<br>
   with <code>docmaker.php</code> (last updated: Thu, 13 Feb 2003 15:11:29 +0200)<br>
-  at Sun, 10 Aug 2003 13:34:12 +0300</small>
+  at Tue, 12 Aug 2003 01:55:42 +0300</small>
  </p>
 </body>
 </html>

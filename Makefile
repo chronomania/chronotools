@@ -54,13 +54,14 @@ include Makefile.sets
 # VERSION 1.2.11 some translation, compression optimizations
 # VERSION 1.3.0  new compression options, font reorganizer, generic typeface engine
 # VERSION 1.4.0  image patching support, more font reorganizing support
+# VERSION 1.4.1  lots of more translation
 
 OPTIM=-O3
 #OPTIM=-O0
 #OPTIM=-O0 -pg -fprofile-arcs
 #LDFLAGS += -pg -fprofile-arcs
 
-VERSION=1.4.0
+VERSION=1.4.1
 ARCHFILES=xray.c xray.h \
           viewer.c \
           ctcset.cc ctcset.hh \
