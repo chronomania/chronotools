@@ -1,0 +1,451 @@
+;.data
+;TESTI .word PrepareEndX
+
+;word
+#define TILENUM  $10
+;word
+#define VRAMADDR $12
+
+
+;long
+#define OSOITE   $14
+;long
+#define TILEPTR  $17
+;word
+#define PIXOFFS  $1A
+;byte
+#define LENGTH   $1C
+;word
+#define END_X    $1D
+
+;8*2*4 bytes
+#define TILEBUF  $20
+
+; undef TILEDATA_OFFS - CONST
+; undef TILEDATA_SEG  - CONST
+; undef WIDTH_OFFS    - CONST
+; undef WIDTH_SEG     - CONST
+
+.text
+
+#define Set8bit_A	sep #$20 : .as
+#define Set16bit_A	rep #$20 : .al
+#define Set8bit_X	sep #$10 : .xs
+#define Set16bit_X	rep #$10 : .xl
+
+#define Set8bit_AX	sep #$30 : .xs : .as
+#define Set16bit_AX	rep #$30 : .xl : .al
+
+#define Set8bit_XA	Set8bit_AX
+#define Set16bit_XA	Set16bit_AX
+
+
+PrepareEndX:
+.(
+        Set16bit_AX ;should be already, but...
+        
+        ; Load the saved maximum length
+        lda LENGTH
+        and #$00FF
+        ; Multiply by two
+        asl
+        sta END_X
+        
+        ; Add to X
+        txa
+        
+        clc
+        adc END_X
+        
+        ; And store to END_X
+        sta END_X
+        rts
+.)
+
+ProceedEndX:
+.(
+        Set16bit_AX
+        
+        cpx END_X
+        bcs Done        ; if >=
+        
+        ; FIXME - attr not handled here
+        lda #$00FF
+
+Loop:   ; doesn't work - sta !$0000,x
+        .byt $9D,$00,$00
+        inx
+        inx
+        
+        cpx END_X
+        bcc Loop       ; if <
+
+Done:   rts
+.)
+
+#define moveon(ofs,n) \
+        lda TILEBUF+ofs+n : \
+        sta TILEBUF+ofs   : \
+        stz TILEBUF+ofs+n
+
+NextTile_2bit:
+.(
+        Set16bit_A
+        moveon(0, 16)
+        moveon(2, 16)
+        moveon(4, 16)
+        moveon(6, 16)
+        moveon(8, 16)
+        moveon(10, 16)
+        moveon(12, 16)
+        moveon(14, 16)
+        rts
+.)
+
+NextTile_4bit:
+.(
+        Set16bit_A
+        moveon(0, 32)
+        moveon(2, 32)
+        moveon(4, 32)
+        moveon(6, 32)
+        moveon(8, 32)
+        moveon(10, 32)
+        moveon(12, 32)
+        moveon(14, 32)
+        moveon(16, 32)
+        moveon(18, 32)
+        moveon(20, 32)
+        moveon(22, 32)
+        moveon(24, 32)
+        moveon(26, 32)
+        moveon(28, 32)
+        moveon(30, 32)
+        rts
+.)
+
+CheckNext_2bit:
+.(
+        Set8bit_A
+        lda PIXOFFS
+        cmp #$08
+        bcc End                ; if <
+        and #$07
+        sta PIXOFFS        ; &= 7
+        jsr Write_2bit
+        jsr NextTile_2bit
+End:
+        rts
+.)
+        
+CheckNext_4bit:
+.(
+        Set8bit_A
+        lda PIXOFFS
+        cmp #$08
+        bcc End                ; if <
+        and #$07
+        sta PIXOFFS        ; &= 7
+        jsr Write_4bit
+        jsr NextTile_4bit
+End:
+        rts
+.)
+
+DoDrawChar_2bit:
+.(
+        Set16bit_AX
+        phx
+         pha
+          jsr InitTilePtr
+          .as
+          phb
+           lda #$00
+           pha
+           plb
+           ; now DB is $00
+           ldy #$0000
+Loop:      jsr HandleBit_2bit
+           jsr HandleBit_2bit
+           cpy #$0010
+           bcc Loop
+          plb ;restore DB
+         
+          Set16bit_AX
+         pla
+         jsr AddPixOffs
+        plx
+        jsr CheckNext_2bit
+        rts
+.)
+
+DoDrawChar_4bit:
+.(
+        Set16bit_AX
+        phx
+         pha
+          jsr InitTilePtr
+          .as
+          phb
+           lda #$00
+           pha
+           plb
+           ; now DB is $00
+           ldy #$0000
+Loop:      jsr HandleBit_4bit
+           jsr HandleBit_4bit
+           cpy #$0010
+           bcc Loop
+          plb
+          Set16bit_AX
+         pla
+         jsr AddPixOffs
+        plx
+        jsr CheckNext_4bit
+        rts
+.)
+
+InitTilePtr:
+.(
+        .al
+        
+        asl
+        asl
+        asl
+        asl
+        clc
+        
+        adc #TILEDATA_OFFS
+        sta TILEPTR
+        
+        Set8bit_A
+        
+        lda #<TILEDATA_SEG
+        sta TILEPTR +2
+        
+	rts
+.)
+
+AddPixOffs:
+.(
+        tax
+        Set8bit_A
+         
+        .byt $BF
+        .word WIDTH_OFFS
+        .byt  <WIDTH_SEG
+         
+        ;;; problems with lda @WIDTH_ADDR,x
+         
+        clc
+        adc PIXOFFS
+        sta PIXOFFS
+        rts
+.)
+        
+HandleBit_2bit:
+.(
+        jsr HandleBit_common
+        
+        ; Note - this doesn't work if D != 0
+        Set8bit_A
+        ora TILEBUF+8*2, y
+        sta TILEBUF+8*2, y
+        xba
+        ora TILEBUF,y
+        sta TILEBUF,y
+        iny
+        rts
+.)
+
+HandleBit_4bit:
+.(
+        jsr HandleBit_common
+        
+        ; Note - this doesn't work if D != 0
+        Set8bit_A
+        ora TILEBUF+8*4,y
+        sta TILEBUF+8*4,y
+        xba
+        ora TILEBUF,y
+        sta TILEBUF,y
+        iny
+        rts
+.)
+
+HandleBit_common:
+.(
+        Set16bit_AX
+        lda PIXOFFS
+        and #$00FF
+        asl
+        tax
+        
+        lda [TILEPTR]
+        and #$00FF
+        inc TILEPTR
+        
+        jmp (tab,x)
+
+tab     .word s1,s2,s3,s4,s5,s6,s7,s8
+s1      asl
+s2      asl
+s3      asl
+s4      asl
+s5      asl
+s6      asl
+s7      asl
+s8      asl
+        rts
+.)
+
+Write_2bit:
+        Set16bit_AX
+        lda TILENUM
+        asl                  ; 2bit= 3 shifts
+        asl                  ; 4bit= 4 shifts
+        asl
+        jsr SendPart1
+        bra Write_Common
+
+Write_4bit:
+        Set16bit_AX
+        lda TILENUM
+        asl                  ; 2bit= 3 shifts
+        asl                  ; 4bit= 4 shifts
+        asl
+        asl
+        jsr SendPart1
+        jsr SendPart2
+Write_Common:
+        lda TILENUM
+        and #$03FF
+        
+        Set8bit_A
+        xba
+        ora $7E    ;attr - from the game
+        xba
+        
+        Set16bit_AX
+        
+        .byt $9D,$00,$00
+        ;^doesn't work - sta !$0000,x
+        
+        inx
+        inx
+        inc TILENUM
+        
+        rts
+
+#define send(ofs) \
+        lda TILEBUF+ofs   : \
+        .byt $8F,$18,$21,$00
+        ;^doesn't work -  sta @$002118
+
+SendPart1:
+        clc
+        adc VRAMADDR
+        .byt $8F,$16,$21,$00
+        ;^doesn't work - sta @$002116
+
+        send(0)
+        send(2)
+        send(4)
+        send(6)
+        send(8)
+        send(10)
+        send(12)
+        send(14)
+	rts
+SendPart2:
+        send(16)
+        send(18)
+        send(20)
+        send(22)
+        send(24)
+        send(26)
+        send(28)
+        send(30)
+        rts
+
+Clear_4bit:
+        stz TILEBUF+32+ 0: stz TILEBUF+48+ 0
+        stz TILEBUF+32+ 2: stz TILEBUF+48+ 2
+        stz TILEBUF+32+ 4: stz TILEBUF+48+ 4
+        stz TILEBUF+32+ 6: stz TILEBUF+48+ 6
+        stz TILEBUF+32+ 8: stz TILEBUF+48+ 8
+        stz TILEBUF+32+10: stz TILEBUF+48+10
+        stz TILEBUF+32+12: stz TILEBUF+48+12
+        stz TILEBUF+32+14: stz TILEBUF+48+14
+Clear_2bit:
+        stz TILEBUF+ 0: stz TILEBUF+16+ 0
+        stz TILEBUF+ 2: stz TILEBUF+16+ 2
+        stz TILEBUF+ 4: stz TILEBUF+16+ 4
+        stz TILEBUF+ 6: stz TILEBUF+16+ 6
+        stz TILEBUF+ 8: stz TILEBUF+16+ 8
+        stz TILEBUF+10: stz TILEBUF+16+10
+        stz TILEBUF+12: stz TILEBUF+16+12
+        stz TILEBUF+14: stz TILEBUF+16+14
+        rts
+
+; Input
+;    Ah,Y = Address of the string
+;    Al   = Maximum length of the string (nul terminates earlier)
+;    DB,X = Where to put the tile indices
+
+DrawS_init:
+        Set8bit_A
+        sta LENGTH    ; Al
+        xba
+        sta OSOITE+2  ; Ah
+        Set16bit_AX
+        
+        sty OSOITE    ; Y
+        stz PIXOFFS
+        
+        jsr PrepareEndX ; X
+        rts
+
+DrawS_2bit:
+.(
+        jsr DrawS_init  ;store registers to vars
+        jsr Clear_2bit
+Loop:
+        Set8bit_A
+        lda #$00
+        xba
+        lda [OSOITE]
+        beq Zero
+        jsr DoDrawChar_2bit
+        Set16bit_A
+        inc OSOITE
+        Set8bit_A
+        dec LENGTH
+        bne Loop
+Zero:
+        jsr Write_2bit
+        jsr ProceedEndX
+        rtl
+.)
+
+DrawS_4bit:
+.(
+        jsr DrawS_init  ;store registers to vars
+        jsr Clear_4bit
+Loop:
+        Set8bit_A
+        lda #$00
+        xba
+        lda [OSOITE]
+        beq Zero
+        jsr DoDrawChar_4bit
+        Set16bit_A
+        inc OSOITE
+        Set8bit_A
+        dec LENGTH
+        bne Loop
+Zero:
+        jsr Write_4bit
+        jsr ProceedEndX
+        rtl
+.)

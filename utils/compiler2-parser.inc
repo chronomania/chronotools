@@ -178,25 +178,22 @@ namespace
         if(asc == "shr") { binary = new expression_shr; goto ParseBinary; }
         if(asc[0] == '$')
         {
-            expression_const *value = new expression_const;
-            value->value = atoi(key.c_str()+1, 16);
+            expression_const *value = new expression_const(atoi(key.c_str()+1, 16));
             result = value; goto Finish;
         }
         if(asc[0] == '-')
         {
-            expression_const *value = new expression_const;
             if(asc[1] == '$')
             {
                 fprintf(stderr, "Error: Use $-12 for negative hex, not -$12\n");
                 return NULL;
             }
-            value->value = atoi(key.c_str()+1, 10);
+            expression_const *value = new expression_const(atoi(key.c_str()+1, 10));
             result = value; goto Finish;
         }
         if(asc[0] >= '0' && asc[0] <= '9')
         {
-            expression_const *value = new expression_const;
-            value->value = atoi(key.c_str(), 10);
+            expression_const *value = new expression_const(atoi(key.c_str(), 10));
             result = value; goto Finish;
         }
         if(asc == "[")
@@ -276,6 +273,9 @@ namespace
             result = var; goto Finish;
         }
     Finish:
+        
+        enum { s_none, s_lo, s_hi } suffix = s_none;
+        
         while(WstrToAsc(inf.Peek()) == ".")
         {
             inf.Get(); // eat "."
@@ -286,10 +286,39 @@ namespace
             else if(key == "word")
                 result->output_type = expression::o_word;
             else if(key == "lo")
-                result->suffix = expression::s_lo;
+                suffix = s_lo;
             else if(key == "hi")
-                result->suffix = expression::s_hi;
+                suffix = s_hi;
         }
+        
+        if(suffix != s_none)
+        {
+            if(result->output_type != expression::o_default)
+            {
+                fprintf(stderr, "Error: .word or .byte may not be used with .lo or .hi.\n");
+            }
+            
+            if(suffix == s_hi)
+            {
+                if(expression_var *v = dynamic_cast<expression_var *> (&*result))
+                {
+                    if(!v->index)
+                        v->index = new expression_const(1);
+                    else
+                        v->index = new expression_sum(new expression_const(1), v->index);
+                }
+                else if(expression_mem *m = dynamic_cast<expression_mem *> (&*result))
+                {
+                    m->offset = new expression_sum(new expression_const(1), m->offset);
+                }
+                else
+                {
+                    fprintf(stderr, "Error: .hi can only be applied to lvalues.\n");
+                }
+            }
+            result->output_type = expression::o_byte;
+        }
+        
         return result;
     }
 
@@ -325,6 +354,9 @@ namespace
         if(asc == "add") { alter_var = new codenode_add; goto ParseAlterVar; }
         if(asc == "and") { alter_var = new codenode_and; goto ParseAlterVar; }
         if(asc == "or")  { alter_var = new codenode_or;  goto ParseAlterVar; }
+        if(asc == "minus") { alter_var = new codenode_minus; goto ParseAlterVar; }
+        if(asc == "shl")  { alter_var = new codenode_shl;   goto ParseAlterVar; }
+        if(asc == "shr")  { alter_var = new codenode_shr;   goto ParseAlterVar; }
         if(asc == "do")
         {
             codenode_do *tmp = new codenode_do;
@@ -434,7 +466,7 @@ namespace
     const ucs4string TransformGlobal(const ucs4string& varname)
     {
         char Buf[64];
-        sprintf(Buf, "@global@");
+        sprintf(Buf, "@GLOBAL@");
         ucs4string result = AscToWstr(Buf);
         result += varname;
         return result;
@@ -445,7 +477,7 @@ namespace
                             const vardefmap_t& globalvars,
                             const vardefmap_t& localvars)
     {
-        vector<code_p>& lines = code.nodes;
+        deque<code_p>& lines = code.nodes;
         for(unsigned a=0; a<lines.size(); ++a)
         {
             codenode* code = lines[a];
@@ -524,7 +556,7 @@ namespace
 
     void TransformCalls(file& f, codelump& code, codelump& result)
     {
-        vector<code_p>& lines = code.nodes;
+        deque<code_p>& lines = code.nodes;
         for(unsigned a=0; a<lines.size(); ++a)
         {
             code_p& line = lines[a];

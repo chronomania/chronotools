@@ -10,7 +10,7 @@ namespace
     static const char DefaultConfig[] =
 "\n\
 # A simple Chronotools configuration file.\n\
-# Complete enough for ctdump to work.\n\
+# Complete enough for only ctdump to work.\n\
 [general]\n\
 characterset=\"iso-8859-15\"\n\
 [dumper]\n\

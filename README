@@ -434,11 +434,29 @@ $C2:5C39 4C B2 58    JMP DB:$58B2         ;$C2:58B2
 $C2:5C64 5C 70 5C 75 JMP $75:$5C70
 
 
+*** TƒSTƒ ALKAA DIALOGIFONTIN PIIRTORUTIINI ***
 
 // 5DC4: piirt‰‰ merkin, joka on osoitteessa $00:0235.
 // T‰nne p‰‰dyt‰‰n kahdesta osoitteesta:
 //  - C2:5C12 (substring)
 //  - C2:58C4 (literal)
+//  PARAMETREJƒ:
+//    $0210: (long) osoitin pikselibufferin alkuun
+//    $0214: (byte) ???
+//    $0217: (byte) tulostettujen merkkien m‰‰r‰ (t‰lle vain tehd‰‰n INC)
+//    $0234: (byte) pikselipositio rivill‰
+//    $0235: (word) merkki, joka piirret‰‰n
+//  PAIKALLISIA:
+//    $0262: (byte) merkin j‰rjestysnumero fontissa, alemmat 8 bitti‰
+//    $0263: (word) t‰h‰n koostetaan bittej‰
+//    $026A: (word) pikselipositio rivill‰ AND 7
+//    $026C: (word) apumuuttuja laskutoimituksiin
+//    $026E: (word) tavuoffset nametableen
+//    $0276: (long) pointteri merkkiin fontissa, part 1
+//    $0279: (long) pointteri merkkiin fontissa, part 2
+//  PALUUARVO:
+//    A = $0000
+
 $C2:5DC4 C2 20       REP $20                            A:00EF X:0000 Y:0030 D:0200 DB:7E PB:C2
 $C2:5DC6 A5 35       LDA [$00:D+$35]      ;$00:0235     A:00EF X:0000 Y:0030 D:0200 DB:7E PB:C2
 $C2:5DC8 0A          ASL A                              A:00EF X:0000 Y:0030 D:0200 DB:7E PB:C2
@@ -481,11 +499,11 @@ $C2:5DF4 85 73       STA [$00:D+$73]      ;$00:0273     A:7008 X:0000 Y:0030 D:0
 $C2:5DF6 E2 20       SEP $20                            A:7008 X:0000 Y:0030 D:0200 DB:7E PB:C2
 $C2:5DF8 A5 12       LDA [$00:D+$12]      ;$00:0212     A:7008 X:0000 Y:0030 D:0200 DB:7E PB:C2
 $C2:5DFA 85 75       STA [$00:D+$75]      ;$00:0275     A:707E X:0000 Y:0030 D:0200 DB:7E PB:C2
-// t‰m‰ segmentti jonnekin
+// t‰m‰ segmentti fonttiin
 $C2:5DFC A9 FF       LDA A, $FF                         A:707E X:0000 Y:0030 D:0200 DB:7E PB:C2
 $C2:5DFE 85 78       STA [$00:D+$78]      ;$00:0278     A:70FF X:0000 Y:0030 D:0200 DB:7E PB:C2
 $C2:5E00 85 7B       STA [$00:D+$7B]      ;$00:027B     A:70FF X:0000 Y:0030 D:0200 DB:7E PB:C2
-// Haetaan merkkipositio rivill‰, kerrotaan nelj‰ll‰
+// Haetaan merkkipositio (rivill‰ / 8) * 2
 $C2:5E02 A5 34       LDA [$00:D+$34]      ;$00:0234     A:70FF X:0000 Y:0030 D:0200 DB:7E PB:C2
 $C2:5E04 29 F8       AND A, $F8                         A:7000 X:0000 Y:0030 D:0200 DB:7E PB:C2
 $C2:5E06 4A          LSR A                              A:7000 X:0000 Y:0030 D:0200 DB:7E PB:C2
@@ -497,15 +515,17 @@ $C2:5E0A 64 6F       STZ [$00:D+$6F]      ;$00:026F     A:7000 X:0000 Y:0030 D:0
 // Kopioidaan $236 -> $262
 $C2:5E0C A5 35       LDA [$00:D+$35]      ;$00:0235     A:7000 X:0000 Y:0030 D:0200 DB:7E PB:C2
 $C2:5E0E 85 62       STA [$00:D+$62]      ;$00:0262     A:70EF X:0000 Y:0030 D:0200 DB:7E PB:C2
-// $214 voisi olla rivi, tai sitten ei...
+// $0214 = ???
 $C2:5E10 A5 14       LDA [$00:D+$14]      ;$00:0214     A:70EF X:0000 Y:0030 D:0200 DB:7E PB:C2
 $C2:5E12 29 0F       AND A, $0F                         A:7080 X:0000 Y:0030 D:0200 DB:7E PB:C2
 $C2:5E14 D0 05       BNE $5E1B                          A:7000 X:0000 Y:0030 D:0200 DB:7E PB:C2
 // Piirret‰‰n!!!
-$C2:5E16 20 36 5E    JSR DB:$5E36         ;$7E:5E36     A:7000 X:0000 Y:0030 D:0200 DB:7E PB:C2
+$C2:5E16 20 36 5E    JSR DB:$5E36  - MUODOSTAMAAN TILE
 // Nyt piirretty. ??
 $C2:5E19 80 03       BRA $5E1E                          A:0000 X:0000 Y:0000 D:0200 DB:7E PB:C2
-// FIXME: t‰st‰ puuttuu 5E1B
+;T‰nne ei jostain syyst‰ p‰‰dyt‰ koskaan!
+$C2:5E1B 20 07 5F    JSR DB:$5F07  - ?
+;T‰h‰n hyp‰ttiin
 $C2:5E1E A9 00       LDA A, $00                         A:0000 X:0000 Y:0000 D:0200 DB:7E PB:C2
 $C2:5E20 EB          XBA                                A:0000 X:0000 Y:0000 D:0200 DB:7E PB:C2
 $C2:5E21 38          SEC                                A:0000 X:0000 Y:0000 D:0200 DB:7E PB:C2
@@ -521,6 +541,10 @@ $C2:5E30 E6 17       INC [$00:D+$17]      ;$00:0217     A:0004 X:004F Y:0000 D:0
 $C2:5E32 A9 00       LDA A, $00                         A:0004 X:004F Y:0000 D:0200 DB:7E PB:C2
 $C2:5E34 EB          XBA                                A:0000 X:004F Y:0000 D:0200 DB:7E PB:C2
 $C2:5E35 60          RTS                                A:0000 X:004F Y:0000 D:0200 DB:7E PB:C2
+
+*** TƒHƒN LOPPUU DIALOGIFONTIN PIIRTORUTIINI ***
+
+*** TƒSTƒ ALKAA DIALOGIFONTIN TILENMUODOSTUKSEN APURUTIINI ***
 
 // Rutiini 5E36: 
 $C2:5E36 8B          PHB                                A:7000 X:0000 Y:0030 D:0200 DB:7E PB:C2
@@ -582,18 +606,22 @@ $C2:5E85 D0 E6       BNE $5E6D                          A:0000 X:0000 Y:0000 D:0
 $C2:5E87 AB          PLB                                A:0000 X:0000 Y:0000 D:0200 DB:C2 PB:C2
 $C2:5E88 60          RTS                                A:0000 X:0000 Y:0000 D:0200 DB:7E PB:C2
 
+*** TƒHƒN PƒƒTTYY DIALOGIFONTIN TILENMUODOSTUKSEN APURUTIINI ***
+
+*** TƒSTƒ ALKAA DIALOGIFONTIN TILEN PIKSELIRIVIN APURUTIINI ***
 
 // Rutiini 5E89:
 //  PARAMETREJƒ:
+//    $0260: (word) tavuoffset fonttibufferipointterin p‰‰lle
+//    $0262: (byte) merkin j‰rjestysnumero fontissa, alemmat 8 bitti‰
+//    $026A: (word) pikselipositio rivill‰ AND 7
+//    $0273: (long) pointteri pikselibufferiin t‰m‰n hetkisen merkin alkuun
 //    $0276: (long) pointteri merkkiin fontissa, part 1
 //    $0279: (long) pointteri merkkiin fontissa, part 2
-//    $0260: (word) Tavulaskuri, ett‰ miss‰ menn‰‰n???
-//    $0273: (word) Positio ruudulla
-//  PAIKALLISIA/GLOBAALEJA:
-//    $0263: (word)
-//    $026A: (word)
-//    $026E: (word) 
-//    
+//    $026E: (word) tavuoffset pikselibufferipointterin p‰‰lle
+//  PAIKALLISIA:
+//    $0263: (word) t‰h‰n koostetaan bittej‰
+
 $C2:5E89 A4 60       LDY [$00:D+$60]      ;$00:0260     A:0000 X:0000 Y:0000 D:0200 DB:C2 PB:C2
 // Hakee merkin alkuosan ja yhdist‰‰ siihen edellisen
 $C2:5E8B B7 76       LDA [long[$00:D+$76]+y] ;$FF:36D1  A:0000 X:0000 Y:0009 D:0200 DB:C2 PB:C2
@@ -677,6 +705,8 @@ $C2:5F00 A5 63       LDA [$00:D+$63]      ;$00:0263     A:0000 X:0000 Y:0000 D:0
 $C2:5F02 17 73       ORA [long[$00:D+$73]+y] ;$7E:7008  A:0000 X:0000 Y:0000 D:0200 DB:C2 PB:C2
 $C2:5F04 97 73       STA [long[$00:D+$73]+y] ;$7E:7008  A:00E0 X:0000 Y:0000 D:0200 DB:C2 PB:C2
 $C2:5F06 60          RTS                                A:00E0 X:0000 Y:0000 D:0200 DB:C2 PB:C2
+
+*** TƒHƒN PƒƒTTYY DIALOGIFONTIN TILEN PIKSELIRIVIN APURUTIINI ***
 
 
 
@@ -930,6 +960,14 @@ $C2:BDEA 60          RTS                                A:0BDC X:303A Y:16E2 D:0
 ;    Ah:Y = osoite tekstidataan
 ;    Al   = pituus
 ;    DB:X = kohde (?)
+
+//  PARAMETREJƒ:
+//    $007E: (byte) ???
+//  PAIKALLISIA:
+//    $0088: (byte) merkkijonon pituus
+//    $0087: (byte) merkkijonon pituus & 127
+//    $0065: (word) kohde (?)
+
 $C2:EF65 8B          PHB                                A:CC0B X:3024 Y:1A31 D:0000 DB:7E PB:C2
 $C2:EF66 08          PHP                                A:CC0B X:3024 Y:1A31 D:0000 DB:7E PB:C2
 $C2:EF67 E2 20       SEP $20                            A:CC0B X:3024 Y:1A31 D:0000 DB:7E PB:C2
@@ -960,6 +998,7 @@ $C2:EF7D 60          RTS                                A:0BDC X:303A Y:1A3C D:0
 ;      -piirto ($C2:EF97)
 ;      -laskurin $0287 pienennys; jos > 0, uusiksi t‰m‰
 ;      -loppu
+
 $C2:EF7E E2 20       SEP $20                            A:0BCC X:3024 Y:1A31 D:0000 DB:CC PB:C2
 $C2:EF80 B9 00 00    LDA DB:($0000+y)     ;$CC:1A31     A:0BCC X:3024 Y:1A31 D:0000 DB:CC PB:C2
 $C2:EF83 F0 11       BEQ $EF96                          A:0BAB X:3024 Y:1A31 D:0000 DB:CC PB:C2
@@ -1274,7 +1313,7 @@ $C2:F0F2 EB          XBA
 $C2:F0F3 A9 11       LDA A, $11                  
 $C2:F0F5 20 14 F1    JSR PB:$F114         ;$7E:F114 
 $C2:F0F8 80 14       BRA $F10E                     
-;else
+;else - muodostetaan t‰hti
 $C2:F0FA A9 2F       LDA A, $2F                  
 $C2:F0FC 9D 00 00    STA DB:($0000+x)     ;$00:08B3   
 $C2:F0FF 9D 02 00    STA DB:($0002+x)     ;$00:08B5
@@ -1447,6 +1486,168 @@ $C1:01F6 D0 CD       BNE $01C5                          A:00FF X:0001 Y:94D0 D:0
 $C1:01F8 60          RTS                                A:0000 X:000B Y:94D0 D:0000 DB:7E PB:C1
 
 
+
+;;;;;;;;;;;;;;;;;;;;;
+
+HuoneENMUODOSTUSskripti:
+  
+   MUISTIKARTTA:
+   
+     7F0000+?: word-taulu, jossa ???
+     7F1100+x: word-taulu, jossa ???
+     7F1180+x: word-taulu, objektien koodipointtereista.
+     7F1B01+x: word-taulu, jossa ??? (alkaa nollasta)
+     7F1B80+x: word-taulu, jossa ??? (alkaa nollasta)
+     7F2000: byte - objektien m‰‰r‰.
+     7F2001: t‰st‰ eteenp‰in koodia.
+
+$C0:58AB A2 00 01    LDX $0100                          A:0100 X:00FF Y:00FF D:0100 DB:00 PB:C
+$C0:58AE 86 4E       STX [$00:D+$4E]      ;$00:014E     A:0100 X:0100 Y:00FF D:0100 DB:00 PB:C
+$C0:58B0 A2 00 19    LDX $1900                          A:0100 X:0100 Y:00FF D:0100 DB:00 PB:C
+$C0:58B3 86 4B       STX [$00:D+$4B]      ;$00:014B     A:0100 X:1900 Y:00FF D:0100 DB:00 PB:C
+$C0:58B5 A9 00       LDA A, $00                         A:0100 X:1900 Y:00FF D:0100 DB:00 PB:C
+$C0:58B7 85 4D       STA [$00:D+$4D]      ;$00:014D     A:0100 X:1900 Y:00FF D:0100 DB:00 PB:C
+$C0:58B9 20 F1 2D    JSR PB:$2DF1         ;$C0:2DF1     A:0100 X:1900 Y:00FF D:0100 DB:00 PB:C
+; ^ $00:$1900 <- $0100 * $00
+$C0:58BC A2 C0 15    LDX $15C0                          A:0180 X:0100 Y:00FF D:0100 DB:00 PB:C
+$C0:58BF 86 4E       STX [$00:D+$4E]      ;$00:014E     A:0180 X:15C0 Y:00FF D:0100 DB:00 PB:C
+$C0:58C1 A2 80 05    LDX $0580                          A:0180 X:15C0 Y:00FF D:0100 DB:00 PB:C
+$C0:58C4 86 4B       STX [$00:D+$4B]      ;$00:014B     A:0180 X:0580 Y:00FF D:0100 DB:00 PB:C
+$C0:58C6 A9 7F       LDA A, $7F                         A:0180 X:0580 Y:00FF D:0100 DB:00 PB:C
+$C0:58C8 85 4D       STA [$00:D+$4D]      ;$00:014D     A:017F X:0580 Y:00FF D:0100 DB:00 PB:C
+$C0:58CA 20 F1 2D    JSR PB:$2DF1         ;$C0:2DF1     A:017F X:0580 Y:00FF D:0100 DB:00 PB:C
+; ^ $7F:$0580 <- $15C0 * $00
+$C0:58CD A9 80       LDA A, $80                         A:0180 X:15C0 Y:00FF D:0100 DB:00 PB:C
+$C0:58CF 85 74       STA [$00:D+$74]      ;$00:0174     A:0180 X:15C0 Y:00FF D:0100 DB:00 PB:C
+$C0:58D1 85 75       STA [$00:D+$75]      ;$00:0175     A:0180 X:15C0 Y:00FF D:0100 DB:00 PB:C
+$C0:58D3 85 76       STA [$00:D+$76]      ;$00:0176     A:0180 X:15C0 Y:00FF D:0100 DB:00 PB:C
+$C0:58D5 85 77       STA [$00:D+$77]      ;$00:0177     A:0180 X:15C0 Y:00FF D:0100 DB:00 PB:C
+$C0:58D7 A2 00 80    LDX $8000                          A:0180 X:15C0 Y:00FF D:0100 DB:00 PB:C
+$C0:58DA 86 71       STX [$00:D+$71]      ;$00:0171     A:0180 X:8000 Y:00FF D:0100 DB:00 PB:C
+$C0:58DC 64 73       STZ [$00:D+$73]      ;$00:0173     A:0180 X:8000 Y:00FF D:0100 DB:00 PB:C
+; Haetaan sceness‰ olevien objektien m‰‰r‰
+$C0:58DE AF 00 20 7F LDA $7F:$2000        ;$7F:2000     A:0180 X:8000 Y:00FF D:0100 DB:00 PB:C
+$C0:58E2 C2 20       REP $20                            A:010A X:8000 Y:00FF D:0100 DB:00 PB:C
+$C0:58E4 29 FF 00    AND A, $00FF                       A:010A X:8000 Y:00FF D:0100 DB:00 PB:C
+$C0:58E7 0A          ASL A                              A:000A X:8000 Y:00FF D:0100 DB:00 PB:C
+; Tallennetaan maksimi talteen
+$C0:58E8 85 BD       STA [$00:D+$BD]      ;$00:01BD     A:0014 X:8000 Y:00FF D:0100 DB:00 PB:C
+$C0:58EA A2 00 00    LDX $0000                          A:0014 X:8000 Y:00FF D:0100 DB:00 PB:C
+; T‰st‰ alkaa skriptilooppi!
+$C0:58ED 9E 01 1B    STZ DB:($1B01+x)     ;$00:1B01     A:0014 X:0000 Y:00FF D:0100 DB:00 PB:C
+$C0:58F0 9E 80 1B    STZ DB:($1B80+x)     ;$00:1B80     A:0014 X:0000 Y:00FF D:0100 DB:00 PB:C
+$C0:58F3 BD 00 11    LDA DB:($1100+x)     ;$00:1100     A:0014 X:0000 Y:00FF D:0100 DB:00 PB:C
+$C0:58F6 30 26       BMI $591E                          A:0007 X:0000 Y:00FF D:0100 DB:00 PB:C
+; Haetaan k‰sitelt‰v‰n objektin koodipointteri.
+$C0:58F8 BD 80 11    LDA DB:($1180+x)     ;$00:1180     A:0007 X:0000 Y:00FF D:0100 DB:00 PB:C
+; K‰sitelt‰v‰n objektin numero talteen.
+$C0:58FB 86 6D       STX [$00:D+$6D]      ;$00:016D     A:0140 X:0000 Y:00FF D:0100 DB:00 PB:C
+$C0:58FD AA          TAX                                A:0140 X:0000 Y:00FF D:0100 DB:00 PB:C
+$C0:58FE E2 20       SEP $20                            A:0140 X:0140 Y:00FF D:0100 DB:00 PB:C
+
+;Haetaan opcode
+;   X on osoite skriptiin skriptibufferissa
+$C0:58FE E2 20       SEP $20                            A:0140 X:0140 Y:00FF D:0100 DB:00 PB:C
+$C0:5900 BF 01 20 7F LDA $7F:($2001+x)    ;$7F:2141     A:0140 X:0140 Y:00FF D:0100 DB:00 PB:C
+$C0:5904 F0 0F       BEQ $5915                          A:01B8 X:0140 Y:00FF D:0100 DB:00 PB:C
+$C0:5906 9B          TXY                                A:01B8 X:0140 Y:00FF D:0100 DB:00 PB:C
+;   osoite talteen Y:ksi
+$C0:5907 C2 20       REP $20                            A:01B8 X:0140 Y:0140 D:0100 DB:00 PB:C
+$C0:5909 29 FF 00    AND A, $00FF                       A:01B8 X:0140 Y:0140 D:0100 DB:00 PB:C
+$C0:590C 0A          ASL A                              A:00B8 X:0140 Y:0140 D:0100 DB:00 PB:C
+$C0:590D AA          TAX                                A:0170 X:0140 Y:0140 D:0100 DB:00 PB:C
+$C0:590E E2 20       SEP $20                            A:0170 X:0170 Y:0140 D:0100 DB:00 PB:C
+; Nyt A:ssa on opcode, X:ss‰ A*2 ja Y:ss‰ skriptiosoite
+$C0:5910 FC 6E 5D    JSR [PB:word[PB:$5D6E+x]] ;$C0:3557 A:0170 X:0170 Y:0140 D:0100 DB:00 PB:
+; Tuloksena X:ss‰ on uusi skriptiosoite.
+$C0:5913 80 EB       BRA $5900                          A:01F8 X:0144 Y:0140 D:0100 DB:00 PB:C
+;^Haetaan seuraava opcode
+; Loppu on 5915:ss‰ 
+
+; Opcodeja:
+;   $16:
+;     $D9 <- tavu
+;     $DB <- tavu
+;     Hakee tavun
+;       Jos negatiivinen:
+;         $C3 <- X
+;         $DD <- A & $7F
+;         $D9 <- [#$7F0000 + ($D9 * 2)]
+;       Muuten:
+;          ?
+;     Kutsuu rutiinia [#$C06467 + ($DD * 2)]
+;      .... 
+;   $57: 
+;     $8D <- $6D
+;     $D9 <- $00
+;     ....
+;   $B8: 3
+;     $2B <- long
+;   $EA: 2
+;     $7E29AE <- tavu
+;     $001E01 <- se sama tavu
+;     $001E00 <- $10
+;     $C7 <- X
+;     CALL #$C70004
+;     X <- $C7+1
+
+
+
+
+;Opcode-loopin loppu.
+$C0:5915 C2 20       REP $20                            A:0100 X:014F Y:014E D:0100 DB:00 PB:C
+$C0:5917 E8          INX                                A:0100 X:014F Y:014E D:0100 DB:00 PB:C
+$C0:5918 8A          TXA                                A:0100 X:0150 Y:014E D:0100 DB:00 PB:C
+; Haetaan k‰sitelt‰v‰n objektin numero.
+$C0:5919 A6 6D       LDX [$00:D+$6D]      ;$00:016D     A:0150 X:0150 Y:014E D:0100 DB:00 PB:C
+$C0:591B 9D 80 11    STA DB:($1180+x)     ;$00:1180     A:0150 X:0000 Y:014E D:0100 DB:00 PB:C
+$C0:591E E8          INX                                A:0150 X:0000 Y:014E D:0100 DB:00 PB:C
+$C0:591F E8          INX                                A:0150 X:0001 Y:014E D:0100 DB:00 PB:C
+; Jos se ei ole viel‰ maksimi,
+$C0:5920 E4 BD       CPX [$00:D+$BD]      ;$00:01BD     A:0150 X:0002 Y:014E D:0100 DB:00 PB:C
+; Niin k‰sitell‰‰n seuraava.
+$C0:5922 D0 C9       BNE $58ED                          A:0150 X:0002 Y:014E D:0100 DB:00 PB:C
+; Lopulta kaikki on k‰sitelty.
+$C0:5924 E2 20       SEP $20                            A:01AF X:0014 Y:01A4 D:0100 DB:00 PB:C0 S:06FB P:envmxdIZC HC:484 VC:131 00
+$C0:5926 82 9A 44    BRL $9DC3                          A:01AF X:0014 Y:01A4 D:0100 DB:00 PB:C0 S:06FB P:envMxdIZC HC:502 VC:131 00
+
+
+; Huoneen sis‰ll‰ looppi
+
+;Sub
+$C0:5A93 A5 68       LDA [$00:D+$68]      ;$00:0168     A:0080 X:000A Y:000E D:0100 DB:00 PB:C0 S:06F9 P:eNvMXdizc HC:1256 VC:255 00
+$C0:5A95 85 67       STA [$00:D+$67]      ;$00:0167     A:0005 X:000A Y:000E D:0100 DB:00 PB:C0 S:06F9 P:envMXdizc HC:1276 VC:255 00
+; $67 <- tavuja j‰ljell‰
+$C0:5A97 C2 20       REP $20                            A:0005 X:000A Y:000E D:0100 DB:00 PB:C0 S:06F9 P:envMXdizc HC:1296 VC:255 00
+; A <- objektin koodipointteri
+$C0:5A99 BD 80 11    LDA DB:($1180+x)     ;$00:118A     A:0005 X:000A Y:000E D:0100 DB:00 PB:C0 S:06F9 P:envmXdizc HC:1314 VC:255 00
+; $6D <- objektin numero
+$C0:5A9C 86 6D       STX [$00:D+$6D]      ;$00:016D     A:01C4 X:000A Y:000E D:0100 DB:00 PB:C0 S:06F9 P:envmXdizc HC:1348 VC:255 00
+$C0:5A9E C2 10       REP $10                            A:01C4 X:000A Y:000E D:0100 DB:00 PB:C0 S:06F9 P:envmXdizc HC:000 VC:256 00
+$C0:5AA0 AA          TAX                                A:01C4 X:000A Y:000E D:0100 DB:00 PB:C0 S:06F9 P:envmxdizc HC:018 VC:256 00
+$C0:5AA1 E2 20       SEP $20                            A:01C4 X:01C4 Y:000E D:0100 DB:00 PB:C0 S:06F9 P:envmxdizc HC:030 VC:256 00
+; Looppi. Haetaan opcode.
+$C0:5AA3 BF 01 20 7F LDA $7F:($2001+x)    ;$7F:21C5     A:01C4 X:01C4 Y:000E D:0100 DB:00 PB:C0 S:06F9 P:envMxdizc HC:048 VC:256 00
+$C0:5AA7 9B          TXY                                A:01B0 X:01C4 Y:000E D:0100 DB:00 PB:C0 S:06F9 P:eNvMxdizc HC:080 VC:256 00
+$C0:5AA8 C2 20       REP $20                            A:01B0 X:01C4 Y:01C4 D:0100 DB:00 PB:C0 S:06F9 P:envMxdizc HC:092 VC:256 00
+$C0:5AAA 29 FF 00    AND A, $00FF                       A:01B0 X:01C4 Y:01C4 D:0100 DB:00 PB:C0 S:06F9 P:envmxdizc HC:110 VC:256 00
+$C0:5AAD 0A          ASL A                              A:00B0 X:01C4 Y:01C4 D:0100 DB:00 PB:C0 S:06F9 P:envmxdizc HC:128 VC:256 00
+$C0:5AAE AA          TAX                                A:0160 X:01C4 Y:01C4 D:0100 DB:00 PB:C0 S:06F9 P:envmxdizc HC:140 VC:256 00
+$C0:5AAF E2 20       SEP $20                            A:0160 X:0160 Y:01C4 D:0100 DB:00 PB:C0 S:06F9 P:envmxdizc HC:152 VC:256 00
+$C0:5AB1 FC 6E 5D    JSR [PB:word[PB:$5D6E+x]] ;$C0:3002 A:0160 X:0160 Y:01C4 D:0100 DB:00 PB:C0 S:06F9 P:envMxdizc HC:170 VC:256 00
+;^K‰sitell‰‰n opcode.
+$C0:5AB4 90 04       BCC $5ABA                          A:0080 X:01C4 Y:000A D:0100 DB:00 PB:C0 S:06F9 P:envMxdizc HC:300 VC:257 00
+$C0:5AB6 C6 67       DEC [$00:D+$67]      ;$00:0167     A:01E3 X:01E3 Y:01FE D:0100 DB:00 PB:C0 S:06F9 P:envMxdizC HC:926 VC:001 00
+$C0:5AB8 D0 E9       BNE $5AA3                          A:01E3 X:01E3 Y:01FE D:0100 DB:00 PB:C0 S:06F9 P:envMxdizC HC:960 VC:001 00
+$C0:5ABA C2 20       REP $20                            A:0080 X:01C4 Y:000A D:0100 DB:00 PB:C0 S:06F9 P:envMxdizc HC:318 VC:257 00
+$C0:5ABC 8A          TXA                                A:0080 X:01C4 Y:000A D:0100 DB:00 PB:C0 S:06F9 P:envmxdizc HC:336 VC:257 00
+; Objektin numero takaisin X:‰‰n
+$C0:5ABD A6 6D       LDX [$00:D+$6D]      ;$00:016D     A:01C4 X:01C4 Y:000A D:0100 DB:00 PB:C0 S:06F9 P:envmxdizc HC:348 VC:257 00
+; Objektin koodipointteri talteen
+$C0:5ABF 9D 80 11    STA DB:($1180+x)     ;$00:118A     A:01C4 X:000A Y:000A D:0100 DB:00 PB:C0 S:06F9 P:envmxdizc HC:376 VC:257 00
+$C0:5AC2 E2 30       SEP $30                            A:01C4 X:000A Y:000A D:0100 DB:00 PB:C0 S:06F9 P:envmxdizc HC:410 VC:257 00
+$C0:5AC4 60          RTS                                A:01C4 X:000A Y:000A D:0100 DB:00 PB:C0 S:06F9 P:envMXdizc HC:428 VC:257 00
+;endsub
 
 
 

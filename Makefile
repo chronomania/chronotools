@@ -8,6 +8,8 @@ include Makefile.sets
 #CXXFLAGS += -Ilibiconv
 #LDFLAGS += -Llibiconv -liconv
 
+DEPDIRS = utils/
+
 # VERSION 1.0.3  was the first working! :D
 # VERSION 1.0.4  handled fixed strings too
 # VERSION 1.0.5  found item descriptions
@@ -54,20 +56,32 @@ include Makefile.sets
 # VERSION 1.2.11 some translation, compression optimizations
 # VERSION 1.3.0  new compression options, font reorganizer, generic typeface engine
 # VERSION 1.4.0  image patching support, more font reorganizing support
-# VERSION 1.4.1  lots of more translation
+# VERSION 1.4.1  lots of more translation (I'm archiving it here for my convenience)
+# VERSION 1.5.0  end of the compiler project; using assembler (xa65) now.
 
 OPTIM=-O3
 #OPTIM=-O0
 #OPTIM=-O0 -pg -fprofile-arcs
 #LDFLAGS += -pg -fprofile-arcs
 
-VERSION=1.4.1
-ARCHFILES=xray.c xray.h \
-          viewer.c \
+CXXFLAGS += -I.
+
+VERSION=1.5.0
+ARCHFILES=utils/xray.c utils/xray.h \
+          utils/viewer.c \
+          utils/vwftest.cc \
+          utils/spacefind.cc \
+          utils/base62.cc \
+          utils/sramdump.cc \
+          utils/facegenerator.cc \
+          utils/makeips.cc \
+          utils/unmakeips.cc \
+          \
           ctcset.cc ctcset.hh \
           miscfun.cc miscfun.hh \
           space.cc space.hh \
           crc32.cc crc32.h \
+          hash.hh \
           wstring.cc wstring.hh \
           readin.cc wrap.cc writeout.cc \
           settings.hh \
@@ -76,6 +90,7 @@ ARCHFILES=xray.c xray.h \
           strload.cc strload.hh \
           images.cc \
           fonts.cc fonts.hh \
+          o65.cc o65.hh \
           logfiles.cc logfiles.hh \
           conjugate.cc conjugate.hh \
           stringoffs.cc stringoffs.hh \
@@ -84,24 +99,30 @@ ARCHFILES=xray.c xray.h \
           tgaimage.cc tgaimage.hh \
           ctdump.cc ctdump.hh \
           ctinsert.cc ctinsert.hh \
-          makeips.cc unmakeips.cc \
-          vwf8.cc vwftest.cc \
+          vwf8.cc \
+          ct-vwf8.a65 \
           config.cc config.hh \
           confparser.cc confparser.hh \
           extras.cc extras.hh \
           typefaces.cc typefaces.hh \
           taipus.rb ct.code \
           progdesc.php \
-          spacefind.cc base62.cc sramdump.cc \
           binpacker.tcc binpacker.hh \
-          compiler2.cc compiler2-parser.inc \
-          facegenerator.cc \
-          hash.hh \
+          \
+          utils/compiler2.cc utils/compiler2-parser.inc utils/ct.code2 \
+          utils/o65test.cc utils/dumpo65.cc \
+          \
           README transnotes.txt Makefile.sets \
-          libiconv/iconv.h libiconv/libiconv.a 
+          \
+          libiconv/iconv.h libiconv/libiconv.a \
+          \
+          dist/ct.cfg dist/ct.code \
+          \
+          etc/ct.cfg etc/ct.code
+          
 
 EXTRA_ARCHFILES=\
-          ct.cfg ct_try.txt ct8fnFI.tga ct16fn.tga ct8fnV.tga \
+          ct.cfg ct_try.txt ct8fn.tga ct16fn.tga ct8fnV.tga \
           FIN/ct.txt \
           FIN/ct16fn.tga \
           FIN/ct8fn.tga \
@@ -117,11 +138,18 @@ ARCHDIR=archives/
 
 PROGS=\
 	ctdump ctinsert \
-	makeips unmakeips \
-	facegenerator \
-	base62 sramdump \
-	viewer xray \
-	spacefind comp2test vwftest
+	utils/makeips \
+	utils/unmakeips \
+	utils/facegenerator \
+	utils/base62 \
+	utils/sramdump \
+	utils/viewer \
+	utils/xray \
+	utils/spacefind \
+	utils/comp2test \
+	utils/vwftest \
+	utils/dumpo65 \
+	utils/o65test
 
 all: $(PROGS)
 
@@ -143,38 +171,48 @@ ctinsert: \
 		dictionary.o images.o \
 		fonts.o typefaces.o extras.o \
 		rom.o snescode.o \
-		conjugate.o vwf8.o compiler.o symbols.o \
+		conjugate.o vwf8.o o65.o compiler.o symbols.o \
 		logfiles.o \
 		config.o confparser.o ctcset.o wstring.o
 	$(CXX) -o $@ $^ $(LDFLAGS) -lm
 
-makeips: makeips.cc
+ct-vwf8.o65: ct-vwf8.a65
+	xa -o $@ $< -R -c -w
+
+utils/makeips: utils/makeips.cc
 	$(CXX) -o $@ $^
-unmakeips: unmakeips.cc
+utils/unmakeips: utils/unmakeips.cc
 	$(CXX) -g -O -Wall -W -pedantic -o $@ $^
 
-spacefind: spacefind.o
+utils/spacefind: utils/spacefind.o
 	$(CXX) -o $@ $^ $(LDFLAGS) -lm
 
-sramdump: sramdump.cc config.o confparser.o wstring.o
+utils/sramdump: utils/sramdump.cc config.o confparser.o ctcset.o wstring.o
 	$(CXX) $(CXXFLAGS) -g -O -Wall -W -pedantic -o $@ $^ $(LDFLAGS)
-base62: base62.cc
+utils/base62: utils/base62.cc
 	$(CXX) $(CXXFLAGS) -g -O -Wall -W -pedantic -o $@ $^ $(LDFLAGS)
-vwftest: \
-		vwftest.cc tgaimage.o \
+utils/vwftest: \
+		utils/vwftest.cc tgaimage.o \
 		fonts.o typefaces.o extras.o conjugate.o \
 		snescode.o symbols.o space.o logfiles.o compiler.o \
 		config.o confparser.o ctcset.o wstring.o
 	$(CXX) $(CXXFLAGS) -g -O -Wall -W -pedantic -o $@ $^ $(LDFLAGS)
-facegenerator: \
-		facegenerator.cc tgaimage.o
+utils/facegenerator: \
+		utils/facegenerator.cc tgaimage.o
 	$(CXX) $(CXXFLAGS) -g -O -Wall -W -pedantic -o $@ $^ $(LDFLAGS)
 
-compiler2.o: compiler2.cc
+utils/compiler2.o: utils/compiler2.cc
 	$(CXX) -g -o $@ -c $< $(CXXFLAGS) -O0 -fno-default-inline
 	
-comp2test: compiler2.o config.o confparser.o ctcset.o wstring.o
+utils/comp2test: utils/compiler2.cc config.o confparser.o ctcset.o wstring.o
 	$(CXX) $(CXXFLAGS) -g -O -Wall -W -pedantic -o $@ $^ $(LDFLAGS)
+
+utils/o65test: utils/o65test.cc o65.o config.o confparser.o ctcset.o wstring.o
+	$(CXX) $(CXXFLAGS) -g -O -Wall -W -pedantic -o $@ $^ $(LDFLAGS)
+
+utils/dumpo65: utils/dumpo65.cc
+	$(CXX) $(CXXFLAGS) -g -O -Wall -W -pedantic -o $@ $^ $(LDFLAGS)
+
 
 #ct.txt: ctdump chrono-dumpee.smc
 #	./ctdump chrono-dumpee.smc >ct_tmp.txt || rm -f ct_tmp.txt && false
@@ -183,15 +221,16 @@ comp2test: compiler2.o config.o confparser.o ctcset.o wstring.o
 ctpatch-hdr.ips ctpatch-nohdr.ips: \
 		ctinsert \
 		ct.txt ct.code ct.cfg \
-		ct16fn.tga ct8fn.tga ct8fnFIv.tga
+		ct16fn.tga ct8fn.tga ct8fnV.tga \
+		ct-vwf8.o65
 	time ./ctinsert
 
-chrono-patched.smc: unmakeips ctpatch-hdr.ips chrono-uncompressed.smc
-	./unmakeips ctpatch-hdr.ips chrono-uncompressed.smc chrono-patched.smc 2>/dev/null
+chrono-patched.smc: utils/unmakeips ctpatch-hdr.ips chrono-uncompressed.smc
+	$< ctpatch-hdr.ips chrono-uncompressed.smc chrono-patched.smc 2>/dev/null
 
 snes9xtest: chrono-patched.smc FORCE
 	#~/src/snes9x/bisq-1.39/Gsnes9x -stereo -alt -m 256x256[C32/32] -r 7 chrono-patched.smc
-	./snes9x-debug -stereo -alt -y 1 -r 7 chrono-patched.smc
+	./snes9x-debug -stereo -alt -y5 -r 7 chrono-patched.smc
 
 snes9xtest2: chrono-patched.smc FORCE
 	./snes9x-debug -r 0 chrono-patched.smc

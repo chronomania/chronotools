@@ -339,6 +339,38 @@ CALL OutWord Len
 OUT 'i'
 RETURN
 
+# Outputs the stem of the word for essive conjugation.
+FUNCTION EssiveStem
+VAR Len
+CALL_GET Length Len
+IF IsAlien
+  CALL OutWord Len
+  OUT '''
+  RETURN
+IF IsAbbrev
+  CALL OutWord Len
+  OUT ':'
+  RETURN
+IF IsEs
+  DEC Len
+  CALL OutWord Len
+  OUT 'k'
+  OUT 's'
+  OUT 'e'
+  RETURN
+IF EndWithVowel
+  IF AkiEnd
+    DEC Len
+    CALL OutWord Len
+    OUT 'e'
+    RETURN
+  CALL OutWord Len
+  RETURN
+CALL OutWord Len
+OUT 'i'
+RETURN
+
+
 # Outputs a/ä, depending whether the character name is
 # front type (äöy) or back type (aou).
 FUNCTION Out_A
@@ -431,15 +463,21 @@ OUT 's'
 OUT 'i'
 RETURN
 
+# Outputs the character name conjugatedf in essive (as).
+# It needs its own stem function.
+# Example: "What would you do as Lucca?" -> "Mitä tekisit Luccana?"
+FUNCTION Do_NA
+CALL EssiveStem
+OUT 'n'
+CALL Out_A
+RETURN
+
 # Do_?N (illative) (to) we will never need
 # Besides it would need another stem function
 # (duplicating last letter doesn't work for abbreviations)
-# Example: "It attached to Robo" -> "Se tarttui Roboon"
-
-# Do_NA (essive) (as) we will never need
-# Besides it would need another stem function
-# (hardstem doesn't work for Magus)
-# Example: "What would you do as Lucca?" -> "Mitä tekisit Luccana?"
+# Example: "Board Epoch" -> "Asutkaa Epochiin"
+#          "It attached to Robo" -> "Se tarttui Roboon"
+# What to do with "aliens"? 'iin, 'uun, 'hun, 'hon?
 
 # Do_?NE(en) (comitative) (together (with) one's) we will
 #                 never need (makes no sense with names)

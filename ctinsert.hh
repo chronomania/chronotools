@@ -69,7 +69,7 @@ private:
     vector<ctstring> dict;
     
     Font8data Font8;
-    Font8data Font8v;
+    Font8vdata Font8v;
     Font12data Font12;
 
     freespacemap freespace;

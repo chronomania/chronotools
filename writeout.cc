@@ -255,10 +255,6 @@ void insertor::WriteCode(ROM &ROM) const
     // Patch with NOP.
     ROM.Write(ConjugatePatchAddress + 4, 0xEA);
     
-    // Testataan item-listaa
-    //ROM.Write(0x02EFB4, 0xA9);
-    //ROM.Write(0x02EFB5, 0x10);
-    
     // Patch the name entry function
     unsigned namechar_address1 = 0x3F0000 + ROM[0x3FC4D3] + 256*ROM[0x3FC4D4];
     ROM.Write(0x02E553,  (namechar_address1     ) & 255);
@@ -268,6 +264,14 @@ void insertor::WriteCode(ROM &ROM) const
     ROM.Write(0x02E331,  (namechar_address2     ) & 255);
     ROM.Write(0x02E332,  (namechar_address2 >> 8) & 255);
     ROM.Write(0x02E333, ((namechar_address2 >>16) & 255) | 0xC0);
+
+
+    // Testataan moottoria
+   // ROM.Write(0x0058DE, 0xA9); //lda A, $08
+   // ROM.Write(0x0058DF, 0x07);
+   // ROM.Write(0x0058E0, 0xEA); //nop
+   // ROM.Write(0x0058E1, 0xEA);
+    
 }
 
 void insertor::Write8pixfont(ROM &ROM) const

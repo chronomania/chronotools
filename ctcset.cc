@@ -4,6 +4,7 @@ using std::string;
 
 #include "ctcset.hh"
 #include "config.hh"
+#include "fonts.hh"
 #include "hash.hh"
 
 /* Language-specific settings end here. */
@@ -15,23 +16,10 @@ namespace
     {
         hash_map<ucs4, ctchar> revmap;
         vector<ctchar> revmapfirst;
-
-    protected:
-        ucs4string cset;
-        virtual void GetCSet() = 0;
-        
-    public:
-        CharacterSet()
+    
+    private:
+        void RebuildRevmap()
         {
-        }
-        virtual ~CharacterSet()
-        {
-        }
-       
-        void Init()
-        {
-            GetCSet();
-            
             revmapfirst.clear();
             revmapfirst.resize(GetConf("font", "charcachesize"), 0);
              
@@ -46,6 +34,55 @@ namespace
                 else if(c != ilseq)revmap[c] = a;
             }
             fprintf(stderr, "Built charset map (%u noncached)\n", revmap.size());
+        }
+
+    protected:
+        ucs4string cset;
+        virtual void GetCSet() = 0;
+        
+    public:
+        CharacterSet()
+        {
+        }
+        virtual ~CharacterSet()
+        {
+        }
+        
+        void Rearrange(const Rearrangemap_t& rearrange)
+        {
+            ucs4string newcset(cset.size(), ilseq);
+            
+            hash_set<ctchar> forbid;
+            
+            for(Rearrangemap_t::const_iterator
+                i = rearrange.begin(); i != rearrange.end(); ++i)
+            {
+                if(i->second < newcset.size()
+                && i->first  < cset.size())
+                {
+                    newcset[i->second] = cset[i->first];
+                    forbid.insert(i->second); // Target may not be overwritten
+                    forbid.insert(i->first);  // Source has already been written
+                }
+            }
+            
+            for(unsigned a=0; a<cset.size(); ++a)
+            {
+                if(forbid.find(a) != forbid.end()) continue;
+                newcset[a] = cset[a];
+            }
+            
+            cset = newcset;
+            
+            RebuildRevmap();
+        }
+       
+        void Init()
+        {
+            GetCSet();
+            /* "cset" now contains the oneway map. */
+            
+            RebuildRevmap();
         }
         ucs4 operator[] (ctchar ind)
         {
@@ -261,4 +298,21 @@ const string GetString(const ctstring &word)
         result += (char)(c & 255);
     }
     return result;
+}
+
+ctstring getctstring(const ucs4string& s, cset_class cl)
+{
+    ctstring result(s.size(), 0);
+    for(unsigned a=0; a<s.size(); ++a)
+        result[a] = getchronochar(s[a], cl);
+    return result;
+}
+
+void RearrangeCharset(cset_class cl, const Rearrangemap_t& rearrange)
+{
+    switch(cl)
+    {
+        case cset_8pix: cset8.Rearrange(rearrange); break;
+        case cset_12pix: cset12.Rearrange(rearrange); break;
+    }
 }

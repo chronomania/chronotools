@@ -1,4 +1,5 @@
 #include <vector>
+#include <deque>
 #include <cxxabi.h>
 
 #include "wstring.hh"
@@ -7,6 +8,7 @@
 #include "autoptr"
 
 using std::vector;
+using std::deque;
 
 namespace
 {
@@ -48,11 +50,10 @@ namespace
     struct expression: public ptrable
     {
         enum output_t { o_default, o_byte, o_word } output_type;
-        enum suffix_t { s_none,    s_lo,   s_hi   } suffix;
 
-        expression()
-        : output_type(o_default), suffix(s_none)
-        { }
+        expression() : output_type(o_default)
+        {
+        }
         
         virtual ~expression() { }
         
@@ -63,8 +64,6 @@ namespace
         {
             if(output_type==o_byte) fprintf(stderr, ".byte");
             if(output_type==o_word) fprintf(stderr, ".word");
-            if(suffix==s_lo) fprintf(stderr, ".lo");
-            if(suffix==s_hi) fprintf(stderr, ".hi");
         }
 
         virtual void ForAllSubExpr(expr_callback_const* ) const { }
@@ -72,6 +71,14 @@ namespace
         
         virtual bool IsConst() const = 0;
         virtual int CalculateConst() const = 0;
+        
+        bool IsSameType(const expression &b) const
+        {
+            return typeid(*this) == typeid(b);
+        }
+
+        virtual bool operator== (const expression &b) const = 0;
+        inline bool operator!= (const expression &b) const { return !operator== (b); }
     };
 
     struct expression_binary_swappable: public expression
@@ -121,6 +128,20 @@ namespace
                 if(!items[a]->IsConst()) return false;
             return true;
         }
+        
+        virtual bool operator== (const expression &b) const
+        {
+            if(!IsSameType(b)) return false;
+            
+            const expression_binary_swappable &bb
+                = reinterpret_cast<const expression_binary_swappable&> (b);
+            
+            if(items.size() != bb.items.size()) return false;
+            for(unsigned a=0; a<items.size(); ++a)
+                if(*items[a] != *bb.items[a]) return false;
+            
+            return true;
+        }
     };
     struct expression_sum: public expression_binary_swappable
     {
@@ -162,6 +183,9 @@ namespace
     struct expression_binary: public expression
     {
         expr_p left, right;
+        
+        expression_binary() { }
+        expression_binary(expression *a, expression *b): left(a),right(b) { }
 
         virtual void Dump() const
         {
@@ -188,10 +212,23 @@ namespace
         {
             return left->IsConst() && right->IsConst();
         }
+
+        virtual bool operator== (const expression &b) const
+        {
+            if(!IsSameType(b)) return false;
+            
+            const expression_binary &bb
+                = reinterpret_cast<const expression_binary&> (b);
+            
+            return *left == *bb.left && *right == *bb.right;
+        }
     };
 
     struct expression_minus: public expression_binary
     {
+        expression_minus() { }
+        expression_minus(expression *a, expression *b): expression_binary(a, b) { }
+
         virtual int CalculateConst() const
         {
             return left->CalculateConst() - right->CalculateConst();
@@ -199,6 +236,9 @@ namespace
     };
     struct expression_shl: public expression_binary
     {
+        expression_shl() { }
+        expression_shl(expression *a, expression *b): expression_binary(a, b) { }
+
         virtual int CalculateConst() const
         {
             return left->CalculateConst() << right->CalculateConst();
@@ -206,6 +246,9 @@ namespace
     };
     struct expression_shr: public expression_binary
     {
+        expression_shr() { }
+        expression_shr(expression *a, expression *b): expression_binary(a, b) { }
+
         virtual int CalculateConst() const
         {
             return left->CalculateConst() >> right->CalculateConst();
@@ -248,6 +291,20 @@ namespace
         {
             (*T)(index); if(index) index->ForAllSubExpr(T);
         }
+
+        virtual bool operator== (const expression &b) const
+        {
+            if(!IsSameType(b)) return false;
+            
+            if(const expression_var *bp = dynamic_cast<const expression_var*> (&b))
+            {
+                if(varname != bp->varname) return false;
+                if(!index != !bp->index) return false;
+                if(!index) return true;
+                return *index == *bp->index;
+            }
+            return false;
+        }
     };
     struct expression_mem: public expression_nonconst
     {
@@ -286,14 +343,26 @@ namespace
             (*T)(page);  if(page) page->ForAllSubExpr(T);
             (*T)(offset);if(offset)offset->ForAllSubExpr(T);
         }
+        
+        virtual bool operator== (const expression &b) const
+        {
+            if(!IsSameType(b)) return false;
+            
+            if(const expression_mem *bp = dynamic_cast<const expression_mem*> (&b))
+            {
+                return *page == *bp->page && *offset == *bp->offset;
+            }
+            return false;
+        }
     };
     struct expression_const: public expression
     {
         int value;
         
-        expression_const() : value(0) { }
-        
-        expression_const(int v): value(v) { }
+        expression_const(int v): value(v)
+        {
+            //output_type = value<256 ? o_byte : o_word;
+        }
         
         virtual void Dump() const
         {
@@ -306,55 +375,87 @@ namespace
 
         virtual bool IsConst() const { return true; }
         virtual int CalculateConst() const { return value; }
-    };
-    struct expression_register: public expression_nonconst
-    {
-        expression_register()
+
+        virtual bool operator== (const expression &b) const
         {
-            output_type = o_word;
+            return b.IsConst() && b.CalculateConst() == value;
         }
-        expression_register(int s)
+    private:
+        expression_const() : value(0) { }
+    };
+    
+    struct register_16bit
+    {
+    private:
+        expr_p value_lo;
+        expr_p value_hi;
+        expr_p value_16bit;
+    public:
+        void Assign_Lo(expression *lo)
         {
-            output_type = o_byte;
-            suffix = s==1 ? s_hi : s_lo;
+            value_lo    = lo;
+            value_16bit = NULL; value_16bit = Get_16bit();
         }
-        
-        virtual void Dump() const
+        void Assign_Hi(expression *hi)
         {
-            fprintf(stderr, "%s", GetTypeName(*this).c_str());
-            ExprDump();
+            value_hi    = hi;
+            value_16bit = NULL; value_16bit = Get_16bit();
+        }
+        void Assign_16bit(expression *e)
+        {
+            value_16bit = e;
+            value_lo = NULL; value_lo = Get_Lo();
+            value_hi = NULL; value_hi = Get_Hi();
+        }
+        const expr_p Get_Lo() const
+        {
+            if(value_lo) return value_lo;
+            expression *result = new expression_and
+               (value_16bit,
+                new expression_const(0x00FF)
+               );
+            result->output_type = expression::o_byte;
+            return result;
+        }
+        const expr_p Get_Hi() const
+        {
+            if(value_hi) return value_hi;
+            expression *result = new expression_shr
+               (value_16bit,
+                new expression_const(8)
+               );
+            result->output_type = expression::o_byte;
+            return result;
+        }
+        const expr_p Get_16bit() const
+        {
+            if(value_16bit) return value_16bit;
+            expression *result = new expression_or
+               (value_lo,
+                new expression_shl
+                (
+                   value_hi,
+                   new expression_const(8)
+                )
+               );
+            result->output_type = expression::o_word;
+            return result;
         }
     };
-    struct expression_reg_A: public expression_register
+
+    struct register_8bit
     {
-        expression_reg_A() { }
-        expression_reg_A(int s) : expression_register(s) { }
-    };
-    struct expression_reg_X: public expression_register
-    {
-        expression_reg_X() { }
-        expression_reg_X(int s) : expression_register(s) { }
-    };
-    struct expression_reg_Y: public expression_register
-    {
-        expression_reg_Y() { }
-        expression_reg_Y(int s) : expression_register(s) { }
-    };
-    struct expression_reg_D: public expression_register
-    {
-        expression_reg_D() { }
-    };
-    struct expression_reg_B: public expression_nonconst
-    {
-        expression_reg_B()
+    private:
+        expr_p value;
+    public:
+        void Assign(expression *e)
         {
-            output_type = o_byte;
+            value = e;
+            value->output_type = expression::o_byte;
         }
-        
-        virtual void Dump() const
+        const expr_p Get() const
         {
-            fprintf(stderr, "B");
-            ExprDump();
+            return value;
         }
     };
     
@@ -377,7 +478,7 @@ namespace
 
     struct codelump
     {
-        vector<code_p> nodes;
+        deque<code_p> nodes;
         
         void Dump() const
         {
@@ -447,9 +548,14 @@ namespace
             (*T)(value);               if(value) value->ForAllSubExpr(T);
         }
     };
+
     struct codenode_add: public codenode_alter_var { };
     struct codenode_and: public codenode_alter_var { };
     struct codenode_or: public codenode_alter_var { };
+
+    struct codenode_minus: public codenode_alter_var { };
+    struct codenode_shl: public codenode_alter_var { };
+    struct codenode_shr: public codenode_alter_var { };
 
     struct codenode_do: public codenode
     {
@@ -582,25 +688,6 @@ namespace
     // Variable name -> contents
     typedef hash_map<ucs4string, expr_p> varstatemap_t;
 
-    struct program
-    {
-        codelump code;
-        vardefmap_t vars;
-        
-        void Dump() const
-        {
-            fprintf(stderr, "--Code(%u)--\n", code.nodes.size());
-            code.Dump();
-            fprintf(stderr, "--Variables(%u)--\n", vars.size());
-            for(vardefmap_t::const_iterator i=vars.begin(); i!=vars.end(); ++i)
-            {
-                fprintf(stderr, "  %s: ", WstrToAsc(i->first).c_str());
-                i->second->Dump();
-                fprintf(stderr, "\n");
-            }
-        }
-    };
-
     bool OptimizeExpression
         (expr_p &p, const varstatemap_t& states)
     {
@@ -654,395 +741,308 @@ namespace
         return tester.changes;
     }
 
-    class Compiler
+    const ucs4string CreateVarName()
     {
-    private:
-        struct program& prog;
-    public:
-        Compiler(struct program& p): prog(p) { }
-    private:
-        codelump result;
+        static unsigned counter = 0;
+        char Buf[128];
+        sprintf(Buf, "@FLY@%u", counter++);
+        return AscToWstr(Buf);
+    }
+    
+    expression *CreateTarget()
+    {
+        return new expression_var(CreateVarName());
+    }
+    
+    struct program
+    {
+        codelump code;
+        vardefmap_t vars;
         
-        transmap_t newnames;
-
-        // Variable name -> variable content
-        varstatemap_t state;
-        // Variable name -> variable size
-        //vardefmap_t   vars;
-        
-        void OptimizeExpressions()
+        void Dump() const
         {
-            for(;;)
+            fprintf(stderr, "--Code(%u)--\n", code.nodes.size());
+            code.Dump();
+            fprintf(stderr, "--Variables(%u)--\n", vars.size());
+            for(vardefmap_t::const_iterator i=vars.begin(); i!=vars.end(); ++i)
             {
-                bool changes = false;
-                for(varstatemap_t::iterator i = state.begin(); i != state.end(); ++i)
-                    if(OptimizeExpression(i->second, state))
-                        changes = true;
-
-                if(!changes) break;
-            }
-        }
-
-    private:
-        const ucs4string GenerateVarName() const
-        {
-            static unsigned counter = 0;
-            char Buf[64];
-            sprintf(Buf, "@fly_%u@", counter++);
-            return AscToWstr(Buf);
-        }
-        
-        unsigned NumVarReadsBeforeAWrite
-                 (const vector<code_p>& lines,
-                  unsigned firstline,
-                  const ucs4string& varname) const
-        {
-            /*
-               To calculate how many times the variable is
-               read before it's overwritten the next time
-            */
-            const unsigned num_assumed_loop_executions = 999;
-            
-            struct tester: public expr_callback_const
-            {
-                const ucs4string& name;
-                unsigned num_reads;
-                
-                tester(const ucs4string& n): name(n) { }
-                
-                virtual void operator() (const expression* p, bool isread, bool iswrite)
-                {
-                    if(!p) return;
-                    if(!isread) return;
-                    
-                    if(const expression_var *v = dynamic_cast<const expression_var *> (&*p))
-                    {
-                        const ucs4string& varname = v->varname;
-                        if(varname != name) return;
-                        
-                        ++num_reads;
-                    }
-                }
-            } tester(varname);
-            
-            for(unsigned a=firstline; a<lines.size(); ++a)
-            {
-                codenode* line = lines[a];
-                
-                tester.num_reads = 0;
-                line->ForAllExpr(&tester);
-                unsigned n = tester.num_reads;
-            }
-            return 3;
-        }
-
-        void CheckVarAccess(const ucs4string& varname,
-                            const vector<code_p>& lines,
-                            unsigned firstline)
-        {
-            // Check if the variable should be loaded.
-            
-            varstatemap_t::iterator i = state.find(varname);
-            
-            if(i == state.end())
-            {
-                // Probably already loaded.
-                return;
-            }
-            
-            expr_p& value = i->second;
-        
-            bool isconst = false;
-            if(dynamic_cast<expression_const *> (&*value))
-            {
-                isconst = true;
-            }
-            else if(value->IsConst())
-            {
-                value = new expression_const(value->CalculateConst());
-                isconst = true;
-            }
-            
-            //if(isconst) return;
-            
-            unsigned num = NumVarReadsBeforeAWrite(lines, firstline, varname);
-            if(num > 1)
-            {
-                codenode_let *let = new codenode_let;
-                
-                let->target = new expression_var(varname);
-                let->value = value;
-                
-                result.nodes.push_back(let);
-                
-                state.erase(i);
-            }
-        }
-
-    public:
-        void SetVarContent(const ucs4string& varname, expr_p value)
-        {
-            const ucs4string newname = GenerateVarName();
-        
-            state[newname]    = value;
-            newnames[varname] = newname;
-        }
-
-        void Compile(codelump& lump)
-        {
-            vector<code_p>& lines = lump.nodes;
-            
-            fprintf(stderr, "--Compiling\n");
-            lump.Dump();
-            fprintf(stderr, "--State:\n");
-            for(varstatemap_t::const_iterator i=state.begin(); i!=state.end(); ++i)
-            {
-                fprintf(stderr, "- %s: ", WstrToAsc(i->first).c_str());
+                fprintf(stderr, "  %s: ", WstrToAsc(i->first).c_str());
                 i->second->Dump();
                 fprintf(stderr, "\n");
             }
-            fprintf(stderr, "--Aliases:\n");
-            for(transmap_t::const_iterator i=newnames.begin(); i!=newnames.end(); ++i)
-                fprintf(stderr, "- %s -> %s\n",
-                    WstrToAsc(i->first).c_str(),
-                    WstrToAsc(i->second).c_str());
-            fprintf(stderr, "----\n");
-
-            for(unsigned linenumber=0; linenumber<lines.size(); ++linenumber)
+        }
+        
+        struct TargetVar
+        {
+            bool needs_word, only_bytes;
+            ucs4string Name;
+            expr_p target;
+            
+            const program &prog;
+            
+        public:
+            TargetVar(const program &p)
+            : needs_word(false), only_bytes(true),
+              Name(CreateVarName()), target(new expression_var(Name)),
+              prog(p)
             {
-                code_p line = lines[linenumber];
+            }
+            
+            void Update(expression *e)
+            {
+                if(e->output_type == expression::o_word) needs_word = true;
+                if(e->output_type == expression::o_byte) return;
                 
-                struct expr_name_converter: public expr_callback
+                if(e->IsConst())
                 {
-                    transmap_t& newnames;
-                    codelump& result;
-                    hash_set<ucs4string> vars_read;
-                    
-                    expr_name_converter(transmap_t& n, codelump& r)
-                    : newnames(n), result(r) { }
-                    
-                    virtual void operator() (expr_p& p, bool isread, bool iswrite)
+                    int value = e->CalculateConst();
+                    if(value & 0xFF00) needs_word = true;
+                    return;
+                }
+                
+                if(expression_var *var = dynamic_cast<expression_var*> (e))
+                {
+                    const ucs4string& varname = var->varname;
+                    vardefmap_t::const_iterator i = prog.vars.find(varname);
+                    if(i != prog.vars.end())
                     {
-                        if(isread)
+                        expression *varsize = i->second;
+                        if(varsize->IsConst())
                         {
-                            if(expression_var *v = dynamic_cast<expression_var *> (&*p))
-                            {
-                                ucs4string& varname = v->varname;
-
-                                transmap_t::const_iterator i = newnames.find(varname);
-                                
-                                if(i != newnames.end())
-                                {
-                                    /*
-                                    fprintf(stderr,
-                                            "Debug: Transformed '%s' to '%s'\n",
-                                            WstrToAsc(varname).c_str(),
-                                            WstrToAsc(i->second).c_str());
-                                    */
-                                    varname = i->second;
-                                }
-                                
-                                vars_read.insert(varname);
-                            }
+                            unsigned size = varsize->CalculateConst();
+                            if(size == 2) needs_word = true;
+                            if(size == 1) return;
                         }
                     }
-                } expr_name_converter(newnames, result);
-                
-                line->ForAllExpr(&expr_name_converter);
-                
-                hash_set<ucs4string>::const_iterator i;
-                for(i=expr_name_converter.vars_read.begin(); 
-                    i!=expr_name_converter.vars_read.end();
-                    ++i)
-                {
-                    CheckVarAccess(*i, lines, linenumber);
-                }
-
-                struct expr_converter: public expr_callback
-                {
-                    const varstatemap_t& state;
-                    
-                    expr_converter(const varstatemap_t& s): state(s) { }
-                    
-                    virtual void operator() (expr_p& p, bool isread, bool iswrite)
+                    else
                     {
-                        if(isread)
-                        {
-                            if(expression_var *v = dynamic_cast<expression_var *> (&*p))
-                            {
-                                varstatemap_t::const_iterator i = state.find(v->varname);
-                                if(i != state.end())
-                                {
-                                    p = i->second;
-                                }
-                            }
-                        }
+                        fprintf(stderr, "Undefined var: '%s'\n",
+                            WstrToAsc(varname).c_str());
                     }
-                } expr_converter(state);
-                
-                expression_binary_swappable* swappable = NULL;
-                codenode_alter_var* altervar = NULL;
-                
-                if(codenode_let *cmd = dynamic_cast<codenode_let *> (&*line))
-                  if(dynamic_cast<expression_var *> (&*cmd->target))
-                {
-                    altervar = cmd;
-                    //goto HandleAlterVar;
-                }
-                if(codenode_add *cmd = dynamic_cast<codenode_add *> (&*line))
-                  if(dynamic_cast<expression_var *> (&*cmd->target))
-                {
-                    altervar = cmd;
-                    swappable = new expression_sum;
-                    //goto HandleAlterVar;
-                }
-                if(codenode_and *cmd = dynamic_cast<codenode_and *> (&*line))
-                  if(dynamic_cast<expression_var *> (&*cmd->target))
-                {
-                    altervar = cmd;
-                    swappable = new expression_and;
-                    //goto HandleAlterVar;
-                }
-                if(codenode_or *cmd = dynamic_cast<codenode_or *> (&*line))
-                  if(dynamic_cast<expression_var *> (&*cmd->target))
-                {
-                    altervar = cmd;
-                    swappable = new expression_or;
-                    //goto HandleAlterVar;
                 }
 
-                if(altervar)
-                {
-                    expr_p target = altervar->target;
-                    expr_p value  = altervar->value;
-                    if(expression_var *var = dynamic_cast<expression_var *> (&*target))
-                    {
-                        expr_converter(value, true, false);
-                        value->ForAllSubExpr(&expr_converter);
-                        if(swappable)
-                        {
-                            swappable->items.push_back(target);
-                            swappable->items.push_back(value);
-                            value = swappable;
-                            expr_converter(value, true, false);
-                            value->ForAllSubExpr(&expr_converter);
-                        }
+                only_bytes = false;
+            }
+            
+            void Set16bit()
+            {
+                only_bytes = false;
+            }
+            
+            operator const expr_p& () const { return target; }
+            operator const ucs4string& () const { return Name; }
+            
+            unsigned GetSize() const
+            {
+                return needs_word ? 2 : only_bytes ? 1 : 2;
+            }
+        };
 
-                        SetVarContent(var->varname, value);
-                    }
-                    continue;
-                }
+        void Flatten(expr_p& expr, codelump& code, unsigned& line)
+        {
+            if(expr->IsConst())
+            {
+                expr = new expression_const(expr->CalculateConst());
+            }
+            
+            deque<code_p>& lines = code.nodes;
+            if(expression_binary_swappable *e = dynamic_cast<expression_binary_swappable *> (&*expr))
+            {
+                TargetVar target(*this);
                 
-                line->ForAllExpr(&expr_converter, false);
-                
-                if(codenode_do *cmd = dynamic_cast<codenode_do *> (&*line))
+                for(unsigned a = 0; a < e->items.size(); ++a)
                 {
-                    struct var_write_finder: public expr_callback_const
+                    expr_p& expr2 = e->items[a];
+                    Flatten(expr2, code, line);
+                    
+                    target.Update(expr2);
+                    
+                    codenode_alter_var *c;
+                    
+                    if(!a)
+                        c = new codenode_let;
+                    else if(dynamic_cast<expression_sum *> (e))
+                        c = new codenode_add;
+                    else if(dynamic_cast<expression_or *> (e))
+                        c = new codenode_or;
+                    else if(dynamic_cast<expression_and *> (e))
+                        c = new codenode_and;
+                    else
                     {
-                        const transmap_t& newnames;
-                        hash_set<ucs4string> vars_written;
+                        c = NULL;
                         
-                        var_write_finder(const transmap_t& n): newnames(n) { }
-                        
-                        virtual void operator() (const expression* p, bool isread, bool iswrite)
-                        {
-                            if(iswrite)
-                            {
-                                if(const expression_var *v = dynamic_cast<const expression_var *> (p))
-                                {
-                                    ucs4string varname = v->varname;
-                                    
-                                    transmap_t::const_iterator i = newnames.find(varname);
-                                    if(i != newnames.end()) varname = i->second;
-                                    
-                                    vars_written.insert(varname);
-                                }
-                            }
-                        }
-                    } var_write_finder(newnames);
-                    
-                    cmd->content.ForAllExpr(&var_write_finder, true);
-                    
-                    hash_set<ucs4string>::const_iterator i;
-                    for(i=var_write_finder.vars_written.begin(); 
-                        i!=var_write_finder.vars_written.end();
-                        ++i)
-                    {
-                        fprintf(stderr, "Checking var '%s' write: ",
-                            WstrToAsc(*i).c_str());
-                        if(state.find(*i) != state.end())
-                            state[*i]->Dump();
-                        fprintf(stderr, "\n");
-                        CheckVarAccess(*i, cmd->content.nodes, 0);
+                        fprintf(stderr, "Internal error: "
+                            "Expression type '%s' not handled in binary-swappable\n",
+                            GetTypeName(*e).c_str());
                     }
                     
-                    const codelump outer = result; result.nodes.clear();
-
-                    Compile(cmd->content);
-
-                    fprintf(stderr, "--Aliases AFTER:\n");
-                    for(transmap_t::const_iterator i=newnames.begin(); i!=newnames.end(); ++i)
-                        fprintf(stderr, "- %s -> %s\n",
-                            WstrToAsc(i->first).c_str(),
-                            WstrToAsc(i->second).c_str());
-                    fprintf(stderr, "----\n");
-
+                    c->target = target;
+                    c->value  = expr2;
                     
-                    codenode_do *newcmd = new codenode_do(*cmd);
-                    newcmd->content = result;
-                    
-                    result = outer;
-                    result.nodes.push_back(newcmd);
-                    
-                    continue;
+                    lines.insert(lines.begin() + line++, c);
                 }
+                
+                if(dynamic_cast<expression_sum *> (e)) target.Set16bit();
+                
+                vars[target] = new expression_const(target.GetSize());
+                
+                expr = target;
+                return;
+            }
 
-                if(codenode_if_eq *cmd = dynamic_cast<codenode_if_eq *> (&*line))
+            if(expression_binary *e = dynamic_cast<expression_binary *> (&*expr))
+            {
+                Flatten(e->left, code, line);
+                Flatten(e->right, code, line);
+                
+                TargetVar target(*this);
+                
+                target.Update(e->left);
+                target.Update(e->right);
+
+                codenode_alter_var *c = NULL;
+                
+                c = new codenode_let;
+                c->target = target;
+                c->value  = e->left;
+                lines.insert(lines.begin() + line++, c);
+                
+                if(dynamic_cast<expression_minus *> (e))
+                    c = new codenode_minus;
+                else if(dynamic_cast<expression_shl *> (e))
+                    c = new codenode_shl;
+                else if(dynamic_cast<expression_shr *> (e))
+                    c = new codenode_shr;
+                else
                 {
-                    const codelump outer = result; result.nodes.clear();
-                    
-                    Compile(cmd->content);
-                    
-                    codenode_if_eq *newcmd = new codenode_if_eq(*cmd);
-                    newcmd->content = result;
-                    
-                    result = outer;
-                    result.nodes.push_back(newcmd);
-                    
-                    continue;
+                    c = NULL;
+              
+                    fprintf(stderr, "Internal error: "
+                        "Expression type '%s' not handled in binary\n",
+                        GetTypeName(*e).c_str());
                 }
-
-                if(codenode_if_gte *cmd = dynamic_cast<codenode_if_gte *> (&*line))
+                
+                c->target = target;
+                c->value  = e->right;
+                lines.insert(lines.begin() + line++, c);
+                
+                target.Set16bit();
+                vars[target] = new expression_const(target.GetSize());
+                
+                expr = target;
+                return;
+            }
+            
+            if(expression_var *e = dynamic_cast<expression_var *> (&*expr))
+            {
+                /* Index can be NULL too */
+                if(e->index)
                 {
-                    const codelump outer = result; result.nodes.clear();
-                    
-                    Compile(cmd->content);
-                    
-                    codenode_if_gte *newcmd = new codenode_if_gte(*cmd);
-                    newcmd->content = result;
-                    
-                    result = outer;
-                    result.nodes.push_back(newcmd);
-                    
+                    Flatten(e->index, code, line);
+                }
+                return;
+            }
+            
+            if(expression_mem *e = dynamic_cast<expression_mem *> (&*expr))
+            {
+                Flatten(e->page, code, line);
+                Flatten(e->offset, code, line);
+                return;
+            }
+
+            if(expression_const *e = dynamic_cast<expression_const *> (&*expr))
+            {
+                return;
+            }
+
+            fprintf(stderr, "Internal error: "
+                        "Expression type '%s' not handled in flatten\n",
+                        GetTypeName(*&*expr).c_str());
+        }
+
+        void Flatten(codelump& code)
+        {
+            deque<code_p>& lines = code.nodes;
+            for(unsigned a=0; a<lines.size(); ++a)
+            {
+                codenode* stmt = lines[a];
+                
+                if(codenode_alter_var *p = dynamic_cast<codenode_alter_var *> (stmt))
+                {
+                    Flatten(p->value, code, a);
+                    Flatten(p->target, code, a);
                     continue;
                 }
-                result.nodes.push_back(line);
+                if(codenode_do *p = dynamic_cast<codenode_do *> (stmt))
+                {
+                    Flatten(p->content);
+                    continue;
+                }
+                if(codenode_any_if *p = dynamic_cast<codenode_any_if *> (stmt))
+                {
+                    Flatten(p->a, code, a);
+                    Flatten(p->b, code, a);
+                    Flatten(p->content);
+                    continue;
+                }
+                if(codenode_any_break *p = dynamic_cast<codenode_any_break *> (stmt))
+                {
+                    Flatten(p->a, code, a);
+                    Flatten(p->b, code, a);
+                    continue;
+                }
             }
         }
+        
+        void Flatten()
+        {
+            Flatten(code);
+        }
+    }; /* struct program */
+
+    struct context
+    {
+        register_16bit A, X, Y;
+        register_16bit D;
+        register_8bit B;
     };
+    
+    void Compile(const codelump& code, context& ctx, vardefmap_t& vars)
+    {
+        
+    }
+    
+    void Compile(const program& prog, context& ctx)
+    {    
+        //Compile(prog.code, ctx, prog.vars);
+    }
 
     void TestRun(program& prog)
     {
-        Compiler comp(prog);
-        
-        #define def_global(name, expr) comp.SetVarContent(AscToWstr(name), expr)
+        #define assign_var(name, expr) \
+          do { \
+            codenode_alter_var *p = new codenode_let; \
+            p->target = new expression_var(AscToWstr(name)); \
+            p->value = expr; \
+            prog.code.nodes.push_front(p); \
+          } while(0)
 
-        parammap_t params;
-        def_global("TILEBASE_SEG",  new expression_const(0x11));
-        def_global("TILEBASE_OFFS", new expression_const(0x2233));
-        def_global("WIDTH_SEG",     new expression_const(0x11));
-        def_global("WIDTH_OFFS",    new expression_const(0x2233));
-        def_global("BITNESS",       new expression_const(4));
+        assign_var("TILEBASE_SEG",  new expression_const(0x11));
+        assign_var("TILEBASE_OFFS", new expression_const(0x2233));
+        assign_var("WIDTH_SEG",     new expression_const(0x11));
+        assign_var("WIDTH_OFFS",    new expression_const(0x2233));
+        assign_var("BITNESS",       new expression_const(4));
+
+        assign_var("VRAMaddr",      new expression_const(0x0000));
+        assign_var("tilenum",       new expression_const(0x100));
+
+        assign_var("attr",          new expression_const(0x15));
+        
+        prog.Flatten();
+        
+        prog.Dump();
+        
+/*
         def_global("Length",        new expression_reg_A(0)); //lo
         def_global("OsoiteSeg",     new expression_reg_A(1)); //hi
         def_global("OsoiteOffs",    new expression_reg_Y);
@@ -1055,16 +1055,7 @@ namespace
                       expression::o_word));
         def_global("tiledest_offs", new expression_reg_X);
         def_global("tiledest_seg",  new expression_reg_B);
-
-        def_global("VRAMaddr",      new expression_const(0x0000));
-        def_global("tilenum",       new expression_const(0x100));
-
-        def_global("attr",          new expression_const(0x15));
-        
-        prog.Dump();
-        
-        // FIXME: "vars" not handled here
-        comp.Compile(prog.code);
+*/
     }
 
 

@@ -45,6 +45,7 @@ and probably get some of your work done in a much harder way.
 
 ", 'status:1. Current status' => "
 
+<img src=\"/src/chronotools-toad.gif\" align=left alt=\"\">
 Chronotools is under active development.
 Here's the current situation.<br>
 Last updated:
@@ -130,7 +131,8 @@ Copypaste from the Makefile:
 # VERSION 1.2.11 some translation, compression optimizations
 # VERSION 1.3.0  new compression options, font reorganizer, generic typeface engine
 # VERSION 1.4.0  image patching support, more font reorganizing support
-# VERSION 1.4.1  lots of more translation
+# VERSION 1.4.1  lots of more translation (I'm archiving it here for my convenience)
+# VERSION 1.5.0  end of the compiler project; using assembler (xa65) now.
 </pre>
 
 ", '1. Program list' => "
@@ -290,20 +292,40 @@ English version.<br>
 
 ", 'wrap:1.1. Automatic paragraph wrapping' => "
 
+<img src=\"/src/chronotools-wrapdemo.png\" alt=\"It works!\" align=right>
 The program takes automatically care of proper line
 lengths, so you don't have to risk running into unexpected
 too-long-lines or making too short lines in paranoia.<br>
-You can force line breaks, but you don't have to.
+You can force line breaks (like in HTML), but you don't have to.
+<p>
+The image on the right shows this script piece:
+<pre class=smallerpre
+>T‰m‰ on Leenen Aukio. Sanotaan, ett‰ jos
+joskus kuulee Leenen Kellon soivan, el‰‰
+mielenkiintoisen ja onnellisen el‰m‰n!
+</pre>
+And is equal to if I had wrote this:
+<pre class=smallerpre
+>T‰m‰ on Leenen Aukio. Sanotaan, ett‰[nl]
+jos joskus kuulee Leenen Kellon soivan,[nl]
+el‰‰ mielenkiintoisen ja onnellisen[nl]
+el‰m‰n!</pre>
+
+<br clear=all>
 
 ", 'vwf8:1.1. Variable width 8pix font' => "
 
-<img src=\"/src/chronotools-vwf8.jpg\" alt=\"It works!\" align=right>
+<img src=\"/src/chronotools-vwf8.png\" alt=\"It works!\" align=right>
 Item, monster and technique names in Chrono Trigger are limited to 10 characters
 (restriction is enforced by both the screen layout and the ROM space).<br>
 This is way too little for Finnish, which has long words.
 <p>
 For this reason Chronotools creates a vwf8 engine that allows
 the game to draw the names in thinner font that fits on the screen.
+<p>
+It still has the length limitation in the ROM though,
+but this will be fixed eventually.
+
 <br clear=all>
 
 ", '1.1. Very configurable' => "
@@ -335,6 +357,10 @@ At the bottom of this page, there's ctdump as a sample win32 program,
 but to get the full system and support,
 you have to <a href=\"#copying\">contact me with email</a>.
 </blockquote>
+<p>
+The VWF8 code requires an assembler,
+<a href=\"http://www.google.fi/search?q=xa65\">xa65</a>.
+It can be found in Debian and compiled for other systems.
 
 ", 'copying:1. Copying' => "
 
@@ -351,10 +377,9 @@ Let's see what kind of problems it causes.</em>
 
 ", 'parts:1.1. If you only are interested in some features/parts' => "
 
-This system doesn't contain a single assembler file.<br>
-That's because I don't have an assembler.<br>
-I have made my own compilers to generate 65c816 code.<br>
-This is a whole and complete system.<br>
+This system doesn't contain much reusable material, although
+it now does contain some separate assembly code.<br>
+I have made my own systems to compile and link code.<br>
 If you're uncertain, <a href=\"#copying\">send me email and explain your situation</a>.
 
 ", '1. See also' => "

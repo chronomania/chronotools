@@ -335,7 +335,7 @@ int main(void)
     }
 */
     
-    newfont12.Save("ct16fn_.tga");
+    newfont12.Save("ct16fn_.tga", TGAimage::pal_6color);
     
     return 0;
 }

@@ -1,7 +1,7 @@
 # This is Bisqwit's generic depfun.mak, included from Makefile.
 # The same file is used in many different projects.
 #
-# depfun.mak version 1.4.1
+# depfun.mak version 1.5.0
 #
 # Required vars:
 #
@@ -21,14 +21,33 @@
 #  ${BINDIR}        - Directory for installed programs (without /)
 #                     Example: /usr/local/bin
 #  ${INSTALL}       - Installer program, example: install
+#  ${DEPDIRS}       - Optional dependency dirs to account in .depend
 #
 #  ${EXTRA_ARCHFILES} - More files to include in archive,
 #                       but without dependency checking
 
 
+# Note: This requires perl. FIXME change it to sed
 .depend: ${ARCHFILES}
 	@echo "Checking dependencies..."
-	@rm -f $@.tmp && for s in *.c *.cc *.cpp;do if echo "$$s"|grep -vq '^\*';then ${CPP} ${CPPFLAGS} -MM -MG $$s;fi;done >$@.tmp && rm -f $@ && cp -p $@.tmp $@ && sed 's/\.o:/.lo:/' <$@.tmp >>$@ && rm -f $@.tmp
+	@rm -f $@.tmp && \
+	 for dir in "" ${DEPDIRS}; \
+	 do n="`pwd`";cd "$$dir";for s in *.c *.cc *.cpp; \
+	 do if echo "$$s"|grep -vq '^\*';\
+	    then \
+	    cd "$$n";\
+	    ${CPP} ${CPPFLAGS} -MM -MG "$$dir""$$s" |\
+	     perl -pe "s|^([^ ])|$$dir\\1|" \
+	      > $@."$$s";\
+	    fi&done; \
+	    cd "$$n"; \
+	 done;\
+	 wait;\
+	 cat $@.* >$@ \
+	 && cp -f $@ $@.tmp \
+	 && sed 's/\.o:/.lo:/' <$@.tmp >>$@ \
+	 && rm -f $@.*
+
 depend dep: .depend
 
 

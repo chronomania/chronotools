@@ -4,12 +4,13 @@
 
 using namespace std;
 
-#include "ctcset.cc"
+#include "ctcset.hh"
 
 static vector<string> items;
 static void LoadDict()
 {
     FILE *fp = fopen("ct_eng.txt", "rt");
+    if(!fp)return;
     char Buf[600];
     bool ok = false;
     while((fgets(Buf, sizeof Buf, fp)))
@@ -20,7 +21,7 @@ static void LoadDict()
         char *s = Buf;
         while(*s && *s != ':') ++s;
         string item;
-        while(*++s != ';')
+        while(*++s != ';' && *s != '\n' && *s != '\r')
             item += *s;
         items.push_back(item);
     }
@@ -44,7 +45,11 @@ int main(void)
         printf("  ");
         for(unsigned b=0; b<16; ++b)
         {
-            char c = isprint(Buf[b]) ? Buf[b] : '.';
+            unsigned char c = Buf[b];
+            
+            if(c < 0x20) c = '.';
+            else if(c >= 0x7F && c <= 0x9F) c = '.';
+            
             putchar(c);
         }
         printf("  ");
@@ -58,7 +63,8 @@ int main(void)
             }
             else if(c >= 0xA0 && c <= 0xFF)
             {
-                putchar(getucs4(c, cset_12pix));
+            	ucs4 ch = getucs4(c, cset_12pix);
+                putchar(ch);
             }
             else
             {

@@ -14,7 +14,9 @@
 
 namespace
 {
-    unsigned font12_end = 0x3000;
+    unsigned font12_end   = 0x300;
+    unsigned font8v_end   = 0x300;
+    unsigned font8v_begin = 0x80;
 
 #if 0
     unsigned get_num_normal_chars() // Get num of characters < 0x100
@@ -249,7 +251,7 @@ void Font8data::Reload(const Rearrangemap_t& arrange)
     
     unsigned boxstart  = 0;
     unsigned boxcount  = image.getboxcount();
-    unsigned charcount = 256;
+    unsigned charcount = GetCount();
     
     tiletable.clear();
     tiletable.resize(charcount * 16, 0);
@@ -289,6 +291,16 @@ void Font8data::Load(const string &filename)
     
     Rearrangemap_t dummy;
     Reload(dummy);
+}
+
+unsigned Font8data::GetCount() const
+{
+    return 256;
+}
+
+unsigned Font8vdata::GetCount() const
+{
+    return font8v_end;
 }
 
 unsigned insertor::GetFont12width(ctchar chronoch) const
@@ -544,11 +556,9 @@ void insertor::ReorganizeFonts()
 {
     charset_t Fixed_12 = LoadFixedMap("lock12syms", cset_12pix);
     charset_t Fixed_8  = LoadFixedMap("lock8syms", cset_8pix);
-    charset_t Fixed_2 = Fixed_8;
     
     usagemap_by_char_t UsagesByChar_12;
     usagemap_by_char_t UsagesByChar_8;
-    usagemap_by_char_t UsagesByChar_2;
     
     fprintf(stderr, "Analyzing character usage...\n");
     
@@ -556,9 +566,6 @@ void insertor::ReorganizeFonts()
     
     /* Dialog font: 0..0x20 are specials, 0x21..font_begin-1 is dictionary */
     for(unsigned c=0; c<font_begin; ++c) Fixed_12.insert(c);
-    
-    /* Item/tech/monster strings: Used in dialog too, thus dialog sets the limits */
-    for(unsigned c=0; c<font_begin; ++c) Fixed_2.insert(c);
     
     /* Status screen font: 0..15 are specials, 16..159 are reserved */
     for(unsigned c=0; c<0xA0; ++c)       Fixed_8.insert(c);
@@ -617,9 +624,9 @@ void insertor::ReorganizeFonts()
                 {
                     ctchar c = str[a];
                     
-                    if(Fixed_2.find(c) != Fixed_2.end()) continue;
+                    if(Fixed_12.find(c) != Fixed_12.end()) continue;
                     
-                    ++UsagesByChar_2[c];
+                    ++UsagesByChar_12[c];
                 }
                 break;
             }
@@ -628,7 +635,6 @@ void insertor::ReorganizeFonts()
     
     usagemap_t Usages_12 = LoadUsageMap(UsagesByChar_12);
     usagemap_t Usages_8  = LoadUsageMap(UsagesByChar_8);
-    usagemap_t Usages_2  = LoadUsageMap(UsagesByChar_2);
     
 #if 0
     fprintf(stderr, "12pix:\n");
@@ -644,18 +650,10 @@ void insertor::ReorganizeFonts()
         ucs4 c = getucs4(i->ch, cset_8pix);
         fprintf(stderr, "  '%c'(%X): %u\n", WcharToAsc(c),i->ch, i->count);
     }
-    
-    fprintf(stderr, "Other:\n");
-    for(usagemap_t::const_iterator i = Usages_2.begin(); i != Usages_2.end(); ++i)
-    {
-        ucs4 c = getucs4(i->ch, cset_8pix);
-        fprintf(stderr, "  '%c'(%X): %u\n", WcharToAsc(c),i->ch, i->count);
-    }
 #endif
 
     charset_t Free_12;
     charset_t Free_8;
-    charset_t Free_2;
     
     for(ctchar c=0; c<0x300; ++c)
     {
@@ -683,18 +681,6 @@ void insertor::ReorganizeFonts()
             Free_8.insert(c);
         }
     }
-
-    for(ctchar c=0; c<0x100; ++c)
-    {
-        if(Fixed_2.find(c) != Fixed_2.end()) continue;
-        
-        if(getucs4(c, cset_8pix) == ilseq
-        || UsagesByChar_2.find(c) == UsagesByChar_2.end())
-        {
-            Free_2.insert(c);
-        }
-    }
-    
     set<ctchar> ControlCodes;
 
     ControlCodes.clear();
@@ -703,17 +689,12 @@ void insertor::ReorganizeFonts()
         if(Conjugater->IsConjChar(i->ch)) ControlCodes.insert(i->ch);
     }
     Rearrangemap_t Rearrange_12 = Rearrange(Usages_12, Free_12, Fixed_12, ControlCodes);
+    fprintf(stderr, "- Rearranged %u dialog symbols\n", Rearrange_12.size());
     
     ControlCodes.clear();
     Rearrangemap_t Rearrange_8  = Rearrange(Usages_8, Free_8, Fixed_8, ControlCodes);
+    fprintf(stderr, "- Rearranged %u status screen symbols\n", Rearrange_8.size());
     
-    ControlCodes.clear();
-    Rearrangemap_t Rearrange_2  = Rearrange(Usages_2, Free_2, Fixed_2, ControlCodes);
-    
-    fprintf(stderr, "- Rearranging %u dialog symbols\n", Rearrange_12.size());
-    fprintf(stderr, "- Rearranging %u status screen symbols\n", Rearrange_8.size());
-    fprintf(stderr, "- Rearranging %u item/tech/monster symbols\n", Rearrange_2.size());
-
 #if DUMP_FREE_MAPS
     fprintf(stderr, "12pix map:\n");
     for(ctchar c=0; c<0x300; ++c)
@@ -728,14 +709,6 @@ void insertor::ReorganizeFonts()
     {
         if( (c&31) == 0)  fprintf(stderr, " %02X: ", c);
         fputc( (Fixed_8.find(c) == Fixed_8.end()) ? 'F' : 'U' , stderr);
-        if( (c&31) == 31) fputc('\n', stderr);
-    }
-
-    fprintf(stderr, "Other map:\n");
-    for(ctchar c=0; c<0x100; ++c)
-    {
-        if( (c&31) == 0)  fprintf(stderr, " %02X: ", c);
-        fputc( (Fixed_2.find(c) == Fixed_2.end()) ? 'F' : 'U' , stderr);
         if( (c&31) == 31) fputc('\n', stderr);
     }
 #endif
@@ -793,13 +766,25 @@ void insertor::ReorganizeFonts()
                 {
                     const unsigned aa = a; ctchar c = str[a];
                     
-                    if(Fixed_2.find(c) != Fixed_2.end()) continue;
+                    if(Fixed_12.find(c) != Fixed_12.end()) continue;
 
-                    Rearrangemap_t::const_iterator k = Rearrange_2.find(c);
-                    if(k != Rearrange_2.end()) str[aa] = k->second;
+                    Rearrangemap_t::const_iterator k = Rearrange_12.find(c);
+                    if(k != Rearrange_12.end()) str[aa] = k->second;
                 }
                 break;
             }
+        }
+    }
+    
+    /* Transform the dictionary characters */
+    for(unsigned d=0; d<dict.size(); ++d)
+    {
+        ctstring& dictword = dict[d];
+        for(unsigned a=0; a<dictword.size(); ++a)
+        {
+            ctchar c = dictword[a];
+            Rearrangemap_t::const_iterator k = Rearrange_12.find(c);
+            if(k != Rearrange_12.end()) dictword[a] = k->second;
         }
     }
     
@@ -818,13 +803,19 @@ void insertor::ReorganizeFonts()
     font12_end = 0;
     for(charset_t::const_iterator i = Fixed_12.begin(); i != Fixed_12.end(); ++i)
         if(*i >= font12_end)
+        {
             font12_end = *i + 1;
+            font8v_end = *i + 1;
+        }
     
     fprintf(stderr, "Font12 end tag set at 0x%X\n", font12_end);
     
     Font12.Reload(Rearrange_12);
     Font8.Reload(Rearrange_8);
-    Font8v.Reload(Rearrange_2);
+    Font8v.Reload(Rearrange_12);
+    
+    RearrangeCharset(cset_12pix, Rearrange_12);
+    RearrangeCharset(cset_8pix, Rearrange_8);
     
     /* FIXME: ctcset must be rearranged too!
      * Otherwise conjugate-asm fails */
