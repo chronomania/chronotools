@@ -10,6 +10,8 @@ namespace
     // Where is the function that draws text
     const unsigned DialogDrawFunctionAddr = 0x025DC4;
     
+    const unsigned GetItemNameFunctionAddr= 0x02F2E2;
+    
     // Address of the byte that normally is 0xA0
     const unsigned FirstChar_Address     = 0x0258BB;
     

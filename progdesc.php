@@ -109,6 +109,7 @@ problems, please contact me.<br>My email-address (sigh) is:
 
 ", '1.1.1. Item/technique/monster names' => "
 
+<img src=\"http://bisqwit.iki.fi/src/chronotools-vwf8.png\" alt=\"It works!\" align=right>
 Item and technique names are limited to 10 characters
 (restriction is enforced by both the screen layout and the ROM space).<br>
 This is way too little for Finnish, which has long words.<br>   
@@ -116,13 +117,14 @@ Solution A: Leave the item names and technique names untranslated.<br>
 This is not a considerable solution for me.<br>
 Solution B: Move the names to a different location in ROM so that
 there is no space limit. But: They still don't fit on screen.<br>
-Solution C: Add code using <a href=\"ct8f.png\">variable width 8x8 font</a>
+Solution C: Add code using <a href=\"/ctfin/ct8f.png\">variable width 8x8 font</a>
 and rewrite the method the item names are looked up.
 This means <em>lots of work</em>. But I attempt to do it anyway :)
+<br clear=all>
 
 ", '1.1.1. Name conjugation' => "
 
-<a href=\"ct-code.txt\">
+<a href=\"/ctfin/ct-code.txt\">
 <img src=\"/kala/snap/ctdevel/ct-taipus2.png\" alt=\"It works!\" align=right>
 </a>  
 Finnish is a language where words are conjugated.
@@ -132,6 +134,7 @@ Solution A: Ignore the problem. But: This is crude. I don't want it.<br>
 Solution B: Add <a href=\"taipus.rb\">code that conjugates the names</a>.
 This means <em>lots of work</em>. 30.6.2003 I did it! It works.
 <br><a href=\"#conj\">See below.</a>
+<br clear=all>
 
 ", '1. Useful features' => "
 
@@ -244,6 +247,8 @@ Copypaste from the Makefile:
 # VERSION 1.1.10 new configuration system. Time to squash bugs.
 # VERSION 1.1.11 configuration works, font-enhancement works.
 # VERSION 1.2.0  variable-width 8pix font has stepped in, but has many many bugs.
+# VERSION 1.2.1  more vwf stuff, backup before doing big changes
+# VERSION 1.2.2  vwf stability++, also techniques now vwf. Scrolling bugs.
 </pre>
 
 ", '1. See also' => "

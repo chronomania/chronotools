@@ -255,7 +255,24 @@ void insertor::Write8vpixfont(ROM &ROM)
     ROM.Write(0x02F2DC+5, 0x60); // RTS
 
     // Patch for item3func
-    ROM.Write(0x02B061+4, 0xEA); // NOP
+    ROM.Write(0x02B053+4, 0xEA); // NOP -..and
+    ROM.Write(0x02B053+5, 0xEA); // NOP - asl a
+    ROM.Write(0x02B053+6, 0xEA); // NOP - tay
+    ROM.Write(0x02B053+7, 0xEA); // NOP - lda
+    ROM.Write(0x02B053+8, 0xEA); // NOP
+    ROM.Write(0x02B053+9, 0xEA); // NOP
+    ROM.Write(0x02B053+10, 0xEA);// NOP - tay
+    ROM.Write(0x02B053+11, 0xEA); // NOP - lda
+    ROM.Write(0x02B053+12, 0xEA); // NOP
+    ROM.Write(0x02B053+13, 0xEA); // NOP
+    ROM.Write(0x02B053+14, 0xEA); // NOP - jsr
+    ROM.Write(0x02B053+15, 0xEA); // NOP
+    ROM.Write(0x02B053+16, 0xEA); // NOP
+
+    // Patch tech1func
+    ROM.Write(0x02BDE3+4, 0xEA); // NOP
+    ROM.Write(0x02BDE3+5, 0xEA); // NOP
+
 }
 
 void insertor::Write12pixfont(ROM &ROM)
