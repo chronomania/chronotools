@@ -22,6 +22,9 @@
  */
 #define GT_GE_BETTER_THAN_LT_LE  0
 
+#define OPTIMIZE_SIZE  0
+#define SUPPORT_TABLES 0
+
 bool CaseGenerator::IntCaseItem::HasLowerBound(const CaseGenerator& g) const
 {
     if(low <= g.GetMinValue()) return true;
@@ -386,20 +389,24 @@ void CaseGenerator::Generate()
     unsigned size_tree  = (3+2) * count;
     unsigned size_table = (range+1)*2 + 3+2;
 
-#if 1
+#if SUPPORT_TABLES
+#if OPTIMIZE_SIZE
     if(size_tree < size_table)
 #else
     if(count < CASE_VALUES_THRESHOLD
     || range > 10*count
     || range < 0)
 #endif
+#endif
     {
         CreateTree();
     }
+#if SUPPORT_TABLES
     else
     {
         CreateTable(minval, range);
     }
+#endif
 }
 
 void CaseGenerator::Generate(const CaseItemList& source, const CaseLabel& over)

@@ -119,7 +119,7 @@ LoopHelper:
         ; Does not modify X.
         ; Uses Y.
         ; Returns the letter in A.
-        ; Expected to return with A=8-bit, X=anything, AH=0
+        ; Expected to return with A=8-bit, X=16-bit, AH=0
         
         SET_16_BIT_AX()
         phx

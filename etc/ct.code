@@ -39,8 +39,6 @@
 #     Note: Loops may not be nested. (Recursion is allowed though).
 #  ? name characters
 #     If name is in set, process subblock
-#  > name value
-#     If(name > value), process subblock
 #  = name value
 #     If(name == value), process subblock
 #  TRUE

@@ -13,6 +13,8 @@
 
 namespace
 {
+    /* TODO: Tail optimization */
+
     /* Emit any code taking an int param */
     const std::string CreateImmedIns(const std::string& s, int value)
     {
@@ -31,11 +33,61 @@ namespace
         const FlagAssumption flags = GetAssumption();
         return flags.GetA() == Assume16bitA;
     }
+    bool A_is_8bit()
+    {
+        const FlagAssumption flags = GetAssumption();
+        return flags.GetA() == Assume8bitA;
+    }
     bool XY_is_16bit()
     {
         const FlagAssumption flags = GetAssumption();
         return flags.GetXY() == Assume16bitXY;
     }
+    
+    enum CarryAssumedState { CarrySet, CarryUnset, CarryUnknown };
+    class CarryAssumption
+    {
+        CarryAssumedState state;
+        bool specified;
+    public:
+        CarryAssumption()
+           : state(CarryUnknown), specified(false) { }
+        CarryAssumption(CarryAssumedState C)
+           : state(C), specified(true) { }
+        void Combine(const CarryAssumption& b)
+        {
+        	//Dump("Combining: ");
+        	//b.Dump(" and: ");
+        	
+            if(!b.specified) return;
+            if(!specified) { state = b.state; }
+            else if(state != b.state) { state=CarryUnknown; }
+            specified=true;
+            //Dump("Result: ");
+        }
+        void Assume(CarryAssumedState s) { state=s; specified=true; }
+        void Undefine() { specified = false; state = CarryUnknown; }
+        void Dump(const std::string& prefix="") const
+        {
+            if(!specified)
+                Emit(string("nop;")+prefix+"carry insignificant");
+            else if(state == CarrySet)
+                Emit(string("nop;")+prefix+"carry set");
+            else if(state == CarryUnset)
+                Emit(string("nop;")+prefix+"carry unset");
+            else
+                Emit(string("nop;")+prefix+"carry unknown");
+        }
+        bool operator== (CarryAssumedState s) const { return state == s; }
+        bool operator!= (CarryAssumedState s) const { return state != s; }
+    };
+    
+    CarryAssumption assumed_carry;
+    const CarryAssumption& GetCarryAssumption() { return assumed_carry; }
+    void Assume(const CarryAssumption &s) { assumed_carry = s; }
+    void Assume(CarryAssumedState s) { assumed_carry.Assume(s); }
+    void UndefineCarry() { assumed_carry.Undefine(); }
+    void DumpCarry(const std::string& prefix="") { assumed_carry.Dump(prefix); }
 
     class Assembler
     {
@@ -59,12 +111,24 @@ namespace
         bool started;       // Code begun?
         unsigned LoopCount; // How many loops active
         
+        struct BranchStateData
+        {
+            FlagAssumption  flags;
+            CarryAssumption carry;
+            
+            void CombineCurrent()
+            {
+                flags.Combine(GetAssumption());
+                carry.Combine(GetCarryAssumption());
+            }
+        };
+        
         struct BranchData
         {
             unsigned level;
             std::string label;
             
-            FlagAssumption flags;
+            BranchStateData state;
         };
         typedef list<BranchData> branchlist_t;
         branchlist_t openbranches;
@@ -72,9 +136,12 @@ namespace
         struct FunctionData
         {
             FlagAssumption flags;
+            unsigned    varcount;
         };
         typedef map<ucs4string, FunctionData> functionlist_t;
         functionlist_t functiondata;
+        
+        ucs4string PendingCall;
         
         class ConstState
         {
@@ -118,7 +185,7 @@ namespace
             AHstate.Invalidate();
         }
         
-        void DeallocateVars()
+        unsigned CountMemVariables() const
         {
             // Count variables
             unsigned varcount = vars.size();
@@ -127,7 +194,16 @@ namespace
                 if(i->second.is_regvar)
                     --varcount;
             
-            if(XY_is_16bit())
+            return varcount;
+        }
+        
+        void DeallocateVars()
+        {
+            unsigned varcount = CountMemVariables();
+            
+            if(varcount >= 6
+            || varcount == 4
+            || XY_is_16bit())
             {
                 while(varcount >= 2)
                 {
@@ -145,12 +221,8 @@ namespace
         
         void FRAME_BEGIN()
         {
-            // Count variables
-            unsigned varcount = vars.size();
-            // But don't count register variables
-            for(vars_t::const_iterator i=vars.begin(); i!=vars.end(); ++i)
-                if(i->second.is_regvar)
-                    --varcount;
+            unsigned varcount = CountMemVariables();
+            functiondata[CurSubName].varcount = varcount;
             
             /* Note: All vars will be initialized with A's current value */
         #if 0
@@ -206,8 +278,46 @@ namespace
         {
             openbranches.clear();
         }
+        void CheckPendingCall()
+        {
+            if(PendingCall.empty()) return;
+            
+            // leave A unmodified and issue call to function
+
+            // X needs to be saved if we're in a loop.
+            if(LoopCount)
+            {
+                Emit("phx", Want16bitXY);
+            }
+            
+            EmitBranch("jsr", WstrToAsc(PendingCall));
+            Assume(CarryUnknown);
+
+            // No idea what A contains after function call.
+            Invalidate_A();
+            
+            if(PendingCall == OutcHelperName)
+            {
+                // OutcHelper is assumed to return
+                // with X=16bit, A=16bit
+                Assume(Assume16bitXY, Assume16bitA);
+            }
+            else
+            {
+                const FlagAssumption& flags = functiondata[PendingCall].flags;
+                Assume(flags.GetA(), flags.GetXY());
+            }
+            
+            if(LoopCount)
+            {
+                Emit("plx", Want16bitXY);
+            }
+            
+            CLEARSTR(PendingCall);
+        }
         void CheckCodeStart()
         {
+            CheckPendingCall();
             if(started) return;
             
             FRAME_BEGIN();
@@ -235,7 +345,8 @@ namespace
         }
         
         void RememberBranch(const std::string& name, unsigned ind,
-                            const FlagAssumption& flags)
+                            const FlagAssumption& flags,
+                            const CarryAssumption& carry)
         {
             // Remember that when entering this level,
             // must cancel this label.
@@ -243,33 +354,88 @@ namespace
             BranchData tmp;
             tmp.level = ind;
             tmp.label = name;
-            tmp.flags = flags;
+            tmp.state.flags = flags;
+            tmp.state.carry = carry;
             
             openbranches.push_back(tmp);
         }
         void RememberBranch(const std::string& name, unsigned ind)
         {
             FlagAssumption flags = GetAssumption();
-            RememberBranch(name, ind, flags);
+            CarryAssumption carry = GetCarryAssumption();
+            RememberBranch(name, ind, flags, carry);
+        }
+        void RememberBranch(const std::string& name, unsigned ind,
+                            const FlagAssumption& flags)
+        {
+            CarryAssumption carry = GetCarryAssumption();
+            RememberBranch(name, ind, flags, carry);
+        }
+        void RememberBranch(const std::string& name, unsigned ind,
+                            const CarryAssumption& carry)
+        {
+            FlagAssumption flags = GetAssumption();
+            RememberBranch(name, ind, flags, carry);
         }
         
         void EndBranch(BranchData& data)
         {
             CheckCodeStart();
             
-            data.flags.Combine(GetAssumption());
+            //data.state.carry.Dump("Saved: ");
+            //DumpCarry("Current: ");
+            
+            data.state.CombineCurrent();
             
             Invalidate_A();
 
             EmitLabel(data.label);
-            Assume(data.flags.GetA(), data.flags.GetXY());
+            Assume(data.state.flags.GetA(), data.state.flags.GetXY());
+            Assume(data.state.carry);
+            
+            //DumpCarry("Result: ");
         }
         
         void GenerateComparison
             (unsigned indent,
-             const char* notjump, const char* jump)
+             const std::string& notjump,
+             const std::string& jump)
         {
             std::string elselabel = GenLabel();
+            
+            if(notjump == "bcc")
+            {
+                if(GetCarryAssumption() == CarrySet) return;
+                if(GetCarryAssumption() == CarryUnset)
+                {
+                    EmitBranch("bra", elselabel);
+                    EmitBarrier();
+                    UndefineCarry();
+                    return;
+                }
+                //Emit("nop;bcc");
+                EmitBranch("bcc", elselabel);
+                RememberBranch(elselabel, indent, CarryUnset);
+                Assume(CarrySet);
+                return;
+            }
+            if(notjump == "bcs")
+            {
+                if(GetCarryAssumption() == CarryUnset) return;
+                if(GetCarryAssumption() == CarrySet)
+                {
+                    EmitBranch("bra", elselabel);
+                    EmitBarrier();
+                    UndefineCarry();
+                    return;
+                }
+                //Emit("nop;bcs");
+                EmitBranch("bcs", elselabel);
+                RememberBranch(elselabel, indent, CarrySet);
+                Assume(CarryUnset);
+                return;
+            }
+            
             EmitBranch(notjump, elselabel);
             RememberBranch(elselabel, indent);
         }
@@ -285,6 +451,8 @@ namespace
           MagicVarName(GetConf("compiler", "magicvarname"))
         {
             Assume(UnknownXY, UnknownA);
+            Assume(CarryUnknown);
+            EmitSegment("code");
             LoopCount=0;
         }
         
@@ -314,6 +482,7 @@ namespace
             EmitLabel(WstrToAsc(name));
             KeepLabel(WstrToAsc(name));
             Assume(UnknownXY, UnknownA);
+            Assume(CarryUnknown);
             
             Invalidate_A();
         }
@@ -350,6 +519,19 @@ namespace
         }
         void VOID_RETURN()
         {
+            if(!PendingCall.empty())
+            {
+                std::string Target = WstrToAsc(PendingCall);
+                CLEARSTR(PendingCall);
+                CheckCodeStart();
+                DeallocateVars();
+                
+                EmitBranch("bra", Target);
+                EmitBarrier();
+                UndefineCarry();
+
+                return;
+            }
             CheckCodeStart();
             
             DeallocateVars();
@@ -357,24 +539,58 @@ namespace
             functiondata[CurSubName].flags.Combine(GetAssumption());
             Emit("rts");
             EmitBarrier();
+            UndefineCarry();
         }
         void BOOLEAN_RETURN(bool value)
         {
             CheckCodeStart();
             // emit flag, then return
             
-            // Never inline "sec;<rtscode>" unless necessary.
-            // bra is 2 bytes: always shorter or equal length.
+            unsigned varcount = CountMemVariables();
+
             if(value)
             {
-                // sec = true
-                Emit("sec");
+                if(GetCarryAssumption() != CarrySet)
+                {
+                    // sec = true
+                    if(varcount > 0 && (varcount <= 3 || varcount == 5))
+                    {
+                        // Handy to set XY=8bit here too
+                        Emit("sec", Want8bitXY);
+                    }
+                    else
+                    {
+                        Emit("sec");
+                    }
+                    Assume(CarrySet);
+                }
+                else
+                {
+                    Emit(";carry already set");
+                }
                 VOID_RETURN();
             }
             else
             {
-                // clc = false
-                Emit("clc");
+                if(GetCarryAssumption() != CarryUnset)
+                {
+                    // clc = false
+                    
+                    if(varcount > 0 && !(varcount & ~ 2))
+                    {
+                        // Handy to set XY=16bit here too
+                        Emit("clc", Want16bitXY);
+                    }
+                    else
+                    {
+                        Emit("clc");
+                    }
+                    Assume(CarryUnset);
+                }
+                else
+                {
+                    Emit(";carry already unset");
+                }
                 VOID_RETURN();
             }
         }
@@ -397,8 +613,11 @@ namespace
 
                 unsigned stackpos = GetStackOffset(name);
                 vars[name].loaded = true;
+                
                 if(!vars[name].written)
                 {
+                    // Now only gives this warning for memory vars.
+                    
                     fprintf(stderr,
                         "  Warning: In function '%s', variable '%s' was read before written.\n",
                         WstrToAsc(CurSubName).c_str(), WstrToAsc(name).c_str());
@@ -514,6 +733,8 @@ namespace
             ALstate.Const.Inc();
 
             STORE_VAR(name);
+            
+            // curiously, lda&inc&sta don't touch carry.
         }
         void DEC_VAR(const ucs4string &name)
         {
@@ -531,31 +752,7 @@ namespace
         {
             CheckCodeStart();
             
-            // leave A unmodified and issue call to function
-
-            // X needs to be saved if we're in a loop.
-            if(LoopCount)
-            {
-                Emit("phx", Want16bitXY);
-            }
-            
-            EmitBranch("jsr", WstrToAsc(name));
-            
-            if(name == OutcHelperName)
-            {
-                Assume(Assume16bitXY, Assume16bitA);
-            }
-            else
-            {
-                const FlagAssumption& flags = functiondata[name].flags;
-                Assume(flags.GetA(), flags.GetXY());
-            }
-            
-            if(LoopCount)
-            {
-                Emit("plx", Want16bitXY);
-            }
-            Invalidate_A();
+            PendingCall = name;
         }
         void COMPARE_BOOL(unsigned indent)
         {
@@ -596,6 +793,7 @@ namespace
                 // A bitness insignificant
                 Emit(CreateImmedIns("cmp", val));
             }
+            Assume(CarryUnknown);
             
             GenerateComparison(indent, "bne", "beq");
         }
@@ -607,39 +805,8 @@ namespace
             LOAD_VAR(name);
 
             // Note: we're not checking ALstate here, would be mostly useless check
-
+            
             GenerateComparison(indent, "bne", "beq");
-        }
-        void COMPARE_GREATER(const ucs4string &name, unsigned indent)
-        {
-            CheckCodeStart();
-            
-            FlagAssumption flags;
-
-            unsigned stackpos = GetStackOffset(name);
-            vars[name].read = vars[name].loaded = true;
-
-            // process subblock if A is greater than given var
-            Emit(CreateStackIns("cmp", stackpos), Want8bitA);
-            
-            std::string shortlabel1 = GenLabel();
-            std::string shortlabel2 = GenLabel();
-            std::string elselabel = GenLabel();
-            
-            flags = GetAssumption();
-            EmitBranch("bcs", shortlabel1); // BCS- Jump to if greater or equal
-            EmitBranch("bra", elselabel);   // BRL- Jump to "else"
-            EmitBarrier();
-            
-            EmitLabel(shortlabel1);
-
-            EmitBranch("bne", shortlabel2); // BNE- Jump to n-eq too (leaving only "greater")
-            EmitBranch("bra", elselabel);   // BRL- Jump to "else"
-            EmitBarrier();
-            
-            EmitLabel(shortlabel2);
-            
-            RememberBranch(elselabel, indent);
         }
         void SELECT_CASE(const ucs4string &cset, unsigned indent)
         {
@@ -652,31 +819,53 @@ namespace
                 string    PendingLabel;
                 string    LastCompareType;
                 
-                map<string, FlagAssumption> flags;
+                std::map<std::string, BranchStateData> jumps;
+                
             private:
                 void EmitCompareJump
                    (CaseValue value,
                     const std::string& target,
-                    const char *comparetype)
+                    const std::string& comparetype)
                 {
                     CheckPendingBra();
                     if(!ChainCompare || value != LastCompare)
                     {
                         Emit(CreateImmedIns("cmp", value), Want8bitA);
+                        Assume(CarryUnknown);
                         LastCompare  = value;
                         ChainCompare = true;
                     }
-                    flags[target].Combine(GetAssumption());
-                    EmitBranch(comparetype, target);
+                    
+                    if(comparetype == "bcc")
+                    {
+                        jumps[target].flags.Combine(GetAssumption());
+                        jumps[target].carry.Combine(CarryUnset);
+                        EmitBranch(comparetype, target);
+                        Assume(CarrySet);
+                    }
+                    else if(comparetype == "bcs")
+                    {
+                        jumps[target].flags.Combine(GetAssumption());
+                        jumps[target].carry.Combine(CarrySet);
+                        EmitBranch(comparetype, target);
+                        Assume(CarryUnset);
+                    }
+                    else
+                    {
+                        jumps[target].CombineCurrent();
+                        EmitBranch(comparetype, target);
+                    }
+                    
                     LastWasBra      = false;
                     LastCompareType = comparetype;
                 }
                 void CheckPendingBra()
                 {
                     if(!BraPending) return;
-                    flags[PendingLabel].Combine(GetAssumption());
+                    jumps[PendingLabel].CombineCurrent();
                     EmitBranch("bra", PendingLabel);
                     EmitBarrier();
+                    UndefineCarry();
                     BraPending = false;
                 }
 
@@ -700,9 +889,10 @@ namespace
                         BraPending = true;
                     else
                     {
-                        flags[target].Combine(GetAssumption());
+                        jumps[target].CombineCurrent();
                         EmitBranch("bra", target);
                         EmitBarrier();
+                        UndefineCarry();
                     }
                     LastWasBra   = true;
                     ChainCompare = false;
@@ -757,8 +947,27 @@ namespace
                 virtual void EmitSubtract(CaseValue value)
                 {
                     CheckPendingBra();
-                    Emit("sec");
-                    Emit(CreateImmedIns("sbc", value));
+                    
+                    /*
+                    if(A_is_8bit() && GetCarryAssumption() == CarryUnset)
+                    {
+                        if(GetCarryAssumption() != CarryUnset)
+                        {
+                            Emit("clc", Want8bitA);
+                            Assume(CarryUnset);
+                        }
+                        Emit(CreateImmedIns("adc", 256-value), Want8bitA);
+                    }
+                    else*/
+                    {
+                        if(GetCarryAssumption() != CarrySet)
+                        {
+                            Emit("sec", Want8bitA);
+                            Assume(CarrySet);
+                        }
+                        Emit(CreateImmedIns("sbc", value), Want8bitA);
+                    }
+                    Assume(CarryUnknown);
                     LastWasBra   = false;
                 }
                 virtual const std::string EmitBlock()
@@ -769,41 +978,64 @@ namespace
                 {
                     CheckPendingBra();
                     EmitLabel(label);
+                    
+                    FlagAssumption  flags = GetFlags(label);
+                    CarryAssumption carry = GetCarry(label);
+                    Assume(flags.GetA(), flags.GetXY());
+                    Assume(carry);
+                    
                     LastWasBra   = false;
                 }
                 virtual void EmitJumpTable(const std::vector<std::string>& table)
                 {
                     std::string tablelabel = GenLabel();
                     CheckPendingBra();
-                    Emit("asl");
-                    Emit("tax");
-                    std::string line = "jmp (";
-                    line += tablelabel;
-                    line += ",x)";
-                    Emit(line);
-                    EmitBarrier();
+                    //if(!Asm.AHstate.Const.Is(0))
+                    {
+                        // We don't have Asm handle here
+                        Emit(CreateImmedIns("and",255), Want16bitA, Want16bitXY);
+                    }
+                    Emit("asl", Want16bitA, Want16bitXY);
+                    Assume(CarryUnset); // assume the shift didn't overflow.
+                    Emit("tax", Want16bitA, Want16bitXY);
                     
-                    // This label must be saved, because
-                    // it's embedded in the jmp command above.
+                    const CarryAssumption carry = GetCarryAssumption();
+                    const FlagAssumption  flags = GetAssumption();
+                    
+                    //DumpCarry();
+                    
+                    EmitBranch(".jmpx", tablelabel);
+                    EmitBarrier();
+                    UndefineCarry();
+                    
+                    EmitSegment("data");
+                    
                     EmitLabel(tablelabel);
-                    KeepLabel(tablelabel);
-                    line = "";
                     for(unsigned a=0; a<table.size(); ++a)
                     {
-                        if(line.empty()) line += ".word ";else line += ", ";
-                        line += table[a];
-                        KeepLabel(table[a]);
-                        if(line.size() > 60) { Emit(line); line = ""; }
+                        const std::string& label = table[a];
+                        EmitBranch(".word", label);
+                        jumps[label].flags.Combine(flags);
+                        jumps[label].carry.Combine(carry);
+                        
+                        //jumps[label].carry.Dump("^Flags: ");
                     }
-                    if(!line.empty()) Emit(line);
                     LastWasBra   = true;
                     
                     EmitBarrier();
+                    UndefineCarry();
+                    
+                    EmitSegment("code");
                 }
                 
                 const FlagAssumption& GetFlags(const string& label)
                 {
-                    return flags[label];
+                    return jumps[label].flags;
+                }
+                
+                const CarryAssumption& GetCarry(const string& label)
+                {
+                    return jumps[label].carry;
                 }
             };
             
@@ -825,12 +1057,15 @@ namespace
             cases.push_back(tmpcase);
             casehandler.Generate(cases, negativelabel);
             
-            FlagAssumption flags = casehandler.GetFlags(positivelabel);
+            FlagAssumption  flags = casehandler.GetFlags(positivelabel);
+            CarryAssumption carry = casehandler.GetCarry(positivelabel);
             EmitLabel(positivelabel);
             Assume(flags.GetA(), flags.GetXY());
+            Assume(carry);
 
             flags = casehandler.GetFlags(negativelabel);
-            RememberBranch(negativelabel, indent, flags);
+            carry = casehandler.GetCarry(negativelabel);
+            RememberBranch(negativelabel, indent, flags, carry);
         }
         
         struct LoopData
@@ -860,13 +1095,16 @@ namespace
             Assume(Assume16bitXY, UnknownA);
             
             EmitBranch("jsr", WstrToAsc(LoopHelperName));
-            Assume(UnknownXY, Assume8bitA);
-            // LoopHelper is known to give A=8-bit and X=unknown.
+            Assume(Assume16bitXY, Assume8bitA);
+            Assume(CarryUnknown);
+            
+            // LoopHelper is known to give A=8-bit and X=16-bit.
             
             data.EndFlags = GetAssumption();
             EmitBranch("beq", data.EndLabel);
 
             Invalidate_A();
+            AHstate.Const.Set(0);
 
             STORE_VAR(MagicVarName);// save in "c".
             // mark read, because it indeed has been
@@ -885,9 +1123,11 @@ namespace
             Emit("inx", Want16bitXY);
             EmitBranch("bra", data.BeginLabel);
             EmitBarrier();
+            UndefineCarry();
 
             EmitLabel(data.EndLabel);
             Assume(data.EndFlags.GetA(), data.EndFlags.GetXY());
+            Assume(CarryUnknown);
             
             Invalidate_A();
             
@@ -1057,11 +1297,6 @@ void Compile(FILE *fp)
                     Asm.COMPARE_EQUAL(words[2], indent);
                 }
             }
-        }
-        else if(firstword == ">")
-        {
-            Asm.LOAD_VAR(words[2]);
-            Asm.COMPARE_GREATER(words[1], indent);
         }
         else if(firstword == "?")
         {

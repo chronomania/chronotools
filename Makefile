@@ -92,7 +92,8 @@ DEPDIRS = utils/
 # VERSION 1.9.1  improved the signature feature; added checksum and ROM name feature
 # VERSION 1.9.2  has only documentation updates
 # VERSION 1.9.3  includes the forgotten snescode and dictionary modules.
-# VERSION 1.10.0 implements various assembly optimization techniques
+# VERSION 1.10.0 implemented various assembly optimization techniques
+# VERSION 1.10.1 updated the docs and the conj.code generator
 
 OPTIM=-O3
 #OPTIM=-O0
@@ -101,7 +102,7 @@ OPTIM=-O3
 
 CXXFLAGS += -I.
 
-VERSION=1.10.0
+VERSION=1.10.1
 ARCHFILES=utils/xray.cc utils/xray.h \
           utils/viewer.c \
           utils/vwftest.cc \
@@ -116,6 +117,7 @@ ARCHFILES=utils/xray.cc utils/xray.h \
           utils/compiler.cc \
           utils/codegen.cc utils/codegen.hh \
           utils/casegen.cc utils/casegen.hh \
+          utils/macrogenerator.cc utils/macrogenerator.hh \
           \
           autoptr \
           \
@@ -165,7 +167,7 @@ ARCHFILES=utils/xray.cc utils/xray.h \
           \
           utils/ctxtview.cc \
           \
-          README COPYING transnotes.txt Makefile.sets \
+          README COPYING Makefile.sets \
           \
           winlibs/iconv.h winlibs/libiconv.a \
           \
@@ -256,7 +258,8 @@ utils/sramdump: utils/sramdump.o config.o confparser.o ctcset.o wstring.o
 utils/base62: utils/base62.cc
 	$(CXX) $(LDOPTS) $(CXXFLAGS) -g -O -Wall -W -pedantic -o $@ $^ $(LDFLAGS)
 utils/compile: \
-		utils/compiler.o utils/casegen.o utils/codegen.o \
+		utils/compiler.o utils/casegen.o \
+		utils/codegen.o utils/macrogenerator.o \
 		symbols.o \
 		config.o confparser.o ctcset.o wstring.o
 	$(CXX) $(LDOPTS) $(CXXFLAGS) -g -O -Wall -W -pedantic -o $@ $^ $(LDFLAGS)

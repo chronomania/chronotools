@@ -9,19 +9,36 @@ require_once '/WWW/email.php';
 $text = array(
    'what:1. Purpose' => "
 
-Tools aiding in
-<a href=\"http://bisqwit.iki.fi/ctfin/\">Bisqwit's Finnish Chrono Trigger translation</a>.
+Tools for translating Chrono&nbsp;Trigger to different languages.
 <p>
 Meant to be useful for anyone who wants to become
 a translator for Chrono Trigger and translate the
 game to their own language.
+<p>
+These programs do quite much more than just some little editing:
+<ul>
+ <li>Find data (images, text)</li>
+ <li>Decompress data</li>
+ <li>Recompress data</li>
+ <li>Find space for the data</li>
+ <li>Organize the data around in little pieces to ensure everything fits</li>
+ <li>Reroute pointers and modify code to handle the data</li>
+ <li>Write data</li>
+</ul>
+
+This project has grown together with
+<a href=\"http://bisqwit.iki.fi/ctfin/\">Bisqwit's Finnish Chrono Trigger translation</a>,
+but it's not limited to Finnish.<br>
+It has been designed to allow as much flexibility as possible.
 
 ", 'how:1. How to begin?' => "
 
 So here's what you do if you want to translate Chrono Trigger.
 
 <ul>
- <li><a href=\"#download\">Download</a> Chronotools. (Source code on this site. Windows binaries available upon request.)</li>
+ <li><a href=\"#download\">Download</a> Chronotools.
+     (Source code on this site.
+      Windows binaries may be available upon request.)</li>
  <li>You need the Chrono Trigger English ROM. (You won't get it from me.)</li>
  <li>You dump the script and images from the ROM using
      <a href=\"#ctdump\">ctdump</a>, included in Chronotools.</li>
@@ -68,7 +85,7 @@ Last updated:
 <tr><td>Compression algorithms</td>
     <td>100%</td> <td>everything works</td></tr>
 <tr><td>Item/tech/monster font handling</td>
-    <td>80%</td> <td>useless in its current state</td></tr>
+    <td>80%</td> <td>useless in its current state; the old method works.</td></tr>
 <tr><td>Graphics handling</td>
     <td>95%</td> <td>minor details left</td></tr>
 <tr><td>Signature feature</td>
@@ -76,7 +93,7 @@ Last updated:
 <tr><td>Error recovery</td>
     <td>10%</td> <td>silent ignore</td></tr>
 <tr><td>Documentation</td>
-    <td>0%</td> <td>next to none</td></tr>
+    <td>1%</td> <td>if it isn't on this page, it's <a href=\"#undocs\">nowhere</a></td></tr>
 </table>
 
 ", 'changes:1.1. Version history' => "
@@ -156,7 +173,8 @@ Copypaste from the Makefile:
 # VERSION 1.9.1  improved the signature feature; added checksum and ROM name feature
 # VERSION 1.9.2  has only documentation updates
 # VERSION 1.9.3  includes the forgotten snescode and dictionary modules.
-# VERSION 1.10.0 implements various assembly optimization techniques
+# VERSION 1.10.0 implemented various assembly optimization techniques
+# VERSION 1.10.1 updated the docs and the conj.code generator
 </pre>
 
 ", '1. Program list' => "
@@ -168,8 +186,8 @@ Copypaste from the Makefile:
 
 Dumps the script and fonts from a given ROM.<br>
 Requires <code>chrono-dumpee.smc</code>.<br>
-Produces <code>ct_eng.txt</code>,
-<code>ct8fn.tga</code> and <code>ct16fn.tga</code>.
+Produces the script file, the font files and a couple
+of other image files.
 <p>
 Sample of produced script:<pre class=smallerpre
 >;1000ad (Lucca's home)
@@ -207,10 +225,9 @@ Usage example:
 
 Reinserts the (edited) script and (edited) fonts to a ROM.<br>
 Requires the files referenced by <code>ct.cfg</code>
-(usually <code>ct.txt</code>, <code>ct8fn.tga</code> and <code>ct16fn.tga</code>
-and optional extra fonts and code files).<br>
-Produces <code>ctpatch-hdr.ips</code>
-and <code>ctpatch-nohdr.ips</code>.<br>
+(usually <code>ct.txt</code>, <code>ct8fn.tga</code> and <code>ct16fn.tga</code>,
+elemental images and optional extra fonts and code files).<br>
+Produces <code>ctpatch-hdr.ips</code> and <code>ctpatch-nohdr.ips</code>.<br>
 Curiously, it doesn't require the ROM.
 
 ", '1.1. other' => "
@@ -313,7 +330,17 @@ as the English version. Both have the same engine with only minor
 changes. If you are going to translate to Chinese or something else
 that uses thousands of different symbols, you are either going to
 have to manage with ~700 symbols or have to request some changes
-to the insertor.<br>
+to the insertor.
+<p>
+Expanding the character set is a complicated thing because of its
+configurability. Maybe less options would be better, but then it
+wouldn't always work.
+<p>
+The compression, btw, generally shrinks the raw script
+(which is about 2/3 of the size of <code>ct.txt</code>)
+by a factor of 30...40%.<br>
+For a 370&nbsp;kB script file this means about 30&nbsp;kB of
+free ROM space or 74&nbsp;kB of free dialog text space.
 
 ", 'wrap:1.1. Automatic paragraph wrapping' => "
 
@@ -374,13 +401,18 @@ I don't have a microsoft-operating system here on my hand,
 but I have mingw32, which appears to produce working <em>commandline</em>
 billware binaries. They should work in Windows 2000, Windows 98 and
 possibly most other Windows systems as well.<br>
+If the \"download\" section doesn't have a recent win32 version,
+you can download the source and install mingw32 and try to compile
+the source yourself.<br>
+&nbsp;<br>
 I don't offer binaries for any other platforms.<br>
 If you fear the text mode and command line, you better
 change your attitude and start learning :)
 </blockquote>
 <p>
-The <acronym title=\"Variable width 8pix tall font\">VWF8</acronym> code
-and the conjugator require an assembler,
+The <acronym title=\"Variable width 8pix tall font\">VWF8</acronym> code,
+the <code>[crononick]</code> code (something that was removed
+in the English release of CT) and the conjugator require an assembler,
 <a href=\"http://bisqwit.iki.fi/source/snescom.html\">snescom</a>.
 Snescom is a GPL'd xa65-compatible 65816 assembler program,
 and it can be downloaded at
@@ -411,6 +443,24 @@ although it now does contain some separate assembly code.<br>
 I have made my own systems to compile and link code.<br>
 If you're uncertain, <a href=\"#copying\">send me email and explain your situation</a>.
 
+", 'undocs:1. Undocumented things' => "
+
+Things that should be documented some day but currently are not:
+<ul>
+ <li>Image file format requirements</li>
+ <li>How does the character map actually work</li>
+ <li>How to do conjugation</li>
+ <li>How to do <acronym title=\"Variable Width Font (8pix)\">VWF8</acronym></li>
+ <li>How to configure the dictionary generator</li>
+ <li>How to avoid rerunning the dictionary generator every time</li>
+ <li>Known bugs and their resolutions</li>
+ <li>Script format guidelines (how do the indents work)</li>
+ <li>What is <code>[crononick]</code></li>
+ <li>How to add the \"signature\" (the logo on the startup screen)</li>
+ <li>Tips and hints one should know</li>
+ <li>The source code</li>
+</ul>
+
 ", '1. See also' => "
 
 <ul>
@@ -421,7 +471,7 @@ If you're uncertain, <a href=\"#copying\">send me email and explain your situati
   - xa65-compatible 65816 assembler with free source code</li>
  <li><a href=\"http://bisqwit.iki.fi/jutut/ctcset.html\">Chrono Trigger
   technical document</a>
-  (publicly available information that these tools base on)</li>
+  (a very modest document that got me started in this whole thing)</li>
 </ul>
 
 ");

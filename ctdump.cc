@@ -862,9 +862,9 @@ int main(int argc, const char* const* argv)
     
     // 
     fprintf(scriptout, ";items\n");
-    DumpFStrings(0x0C0B5E, 11, 242);
+    DumpFStrings(0x0C0B5E, 11, 232);
     fprintf(scriptout, ";item descriptions\n");
-    DumpZStrings(0x0C2EB1, 242, false);
+    DumpZStrings(0x0C2EB1, 232, false);
     
     DumpFStrings(0x0CFB4C, 16, 1);
     DumpFStrings(0x0CFB5E, 16, 1);

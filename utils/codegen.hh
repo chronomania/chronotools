@@ -45,9 +45,18 @@ public:
        : Astate(A), XYstate(XY), A_specified(true),XY_specified(true) { }
     void Combine(const FlagAssumption& b)
     {
-        if(!A_specified) { Astate=b.Astate; } else if(Astate!=b.Astate) { Astate=UnknownA; }
-        if(!XY_specified){XYstate=b.XYstate;}else if(XYstate!=b.XYstate){XYstate=UnknownXY;}
-        A_specified=XY_specified=true;
+        if(b.A_specified)
+        {
+             if(!A_specified) { Astate=b.Astate; }
+             else if(Astate!=b.Astate) { Astate=UnknownA; }
+             A_specified=true;
+        }
+        if(b.XY_specified)
+        {
+            if(!XY_specified) { XYstate=b.XYstate; }
+            else if(XYstate!=b.XYstate) { XYstate=UnknownXY; }
+            XY_specified=true;
+        }
     }
     FlagAssumedStateA GetA() const { return Astate; }
     FlagAssumedStateXY GetXY() const { return XYstate; }
@@ -102,3 +111,6 @@ void KeepLabel(const std::string& label);
 
 void BeginCode(std::FILE *);
 void EndCode();
+
+/* Select segment: "code", "bss" etc */
+void EmitSegment(const std::string& segment);

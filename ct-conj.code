@@ -39,8 +39,6 @@
 #     Note: Loops may not be nested. (Recursion is allowed though).
 #  ? name characters
 #     If name is in set, process subblock
-#  > name value
-#     If(name > value), process subblock
 #  = name value
 #     If(name == value), process subblock
 #  TRUE
@@ -72,7 +70,39 @@
 # Returns true if the parameter is a vowel.
 FUNCTION IsVowel
 REG c
-? c aeiouy‰ˆÂÈAEIOUYƒ÷≈…0123456
+? c aeiouy‰ˆÂÈAEIOUYƒ÷≈…
+  TRUE
+FALSE
+
+FUNCTION IsVowelTypeChar
+VAR c
+IF IsVowel c
+  TRUE
+? c 0123456
+  TRUE
+FALSE
+
+FUNCTION IsBackVowelTypeChar
+REG c
+? c aouAOU02368
+  TRUE
+FALSE
+
+FUNCTION IsFrontVowelTypeChar
+REG c
+? c ‰ˆyƒ÷Y14579
+  TRUE
+FALSE
+
+FUNCTION IsOtherVowelTypeChar
+REG c
+? c eiÈEI…
+  TRUE
+FALSE
+
+FUNCTION IsNumber
+REG c
+? c 0123456789
   TRUE
 FALSE
 
@@ -91,14 +121,11 @@ LET FoundE 0
 LET Finalguess 0
 {
   LET Finalguess 1
-  ? c aouAOU02368
-    # Back-vowel
+  IF IsBackVowelTypeChar c
     LET VowelType 1
-  ? c ‰ˆyƒ÷Y14579
-    # Front-vowel
+  IF IsFrontVowelTypeChar c
     LET VowelType 2
-  ? c eiÈEI…
-    # Well some vowel anyway
+  IF IsOtherVowelTypeChar c
     LET FoundE 1
   ? c hkqÂHKQ≈
     # If ends with such char
@@ -169,11 +196,11 @@ LET WasVowel 0
 {
   INC Len
   LET ElseFlag 1
-  ? c aeiouy‰ˆÂÈAEIOUYƒ÷≈…
+  IF IsVowel c
     LET Vowels 1
     LET WasVowel 1
     LET ElseFlag 0
-  ? c 0123456789
+  IF IsNumber c
     = WasVowel 1
       LET Vowels 0
     #s WasVowel 0
@@ -191,7 +218,7 @@ FALSE
 FUNCTION IsEs
 REG c2 c
 CALL_GET LastChar2 c2
-IF IsVowel c2
+IF IsVowelTypeChar c2
   CALL_GET LastChar1 c
   ? c sS
     TRUE
@@ -223,7 +250,7 @@ FALSE
 FUNCTION EndWithVowel
 REG c1
 CALL_GET LastChar1 c1
-IF IsVowel c1
+IF IsVowelTypeChar c1
   TRUE
 FALSE
 
