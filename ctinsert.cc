@@ -24,8 +24,6 @@ static const unsigned DictMaxSpacesPerWord = 4;
 
 class insertor
 {
-    char revcharset[256];
-
     map<string, char> symbols2, symbols8, symbols16;
     
     class stringdata
@@ -56,7 +54,6 @@ class insertor
     unsigned dictaddr, dictsize;
 
 public:
-    void LoadCharSet();
     void LoadSymbols();
     void LoadFile(FILE *fp);
 
@@ -339,8 +336,8 @@ void insertor::WriteROM()
     }
     fwrite("EOF",   1, 5, fp);
     fwrite("EOF",   1, 5, fp2);
-    fclose(fp);
-    fclose(fp2);
+    fclose(fp); fprintf(stderr, "Created %s\n", "ctpatch-nohdr.ips");
+    fclose(fp2); fprintf(stderr, "Created %s\n", "ctpatch-hdr.ips");
 }
 
 void insertor::ReportFreeSpace() const
@@ -369,24 +366,24 @@ void insertor::ReportFreeSpace() const
 string insertor::DispString(const string &s) const
 {
     string result;
+    wstringOut conv;
+    conv.SetSet(getcharset());
     for(unsigned a=0; a<s.size(); ++a)
     {
-        unsigned char c = characterset[(unsigned char)s[a]];
-        if((char)c != '¶')
+        unsigned char c = s[a];
+        ucs4 u = getucs4(c);
+        if(u != ilseq)
         {
-            result += c;
+            result += conv.putc(u);
+            continue;
         }
-        else
-        {
-            c = (unsigned char)s[a];
-            if(c == 5) result += "[nl]";
-            else if(c == 6) result += "[nl3]";
-            else if(c == 11) result += "[pause]";
-            else if(c == 12) result += "[pause3]";
-            else if(c == 0) result += "[end]"; // Uuh?
-            else if(c == 0xF1) result += "...";
-            else { char Buf[8]; sprintf(Buf, "[%02X]", c); result += Buf; }
-        }
+        if(c == 5) result += conv.puts(AscToWstr("[nl]"));
+        else if(c == 6) result += conv.puts(AscToWstr("[nl3]"));
+        else if(c == 11) result += conv.puts(AscToWstr("[pause]"));
+        else if(c == 12) result += conv.puts(AscToWstr("[pause3]"));
+        else if(c == 0) result += conv.puts(AscToWstr("[end]")); // Uuh?
+        else if(c == 0xF1) result += conv.puts(AscToWstr("..."));
+        else { char Buf[8]; sprintf(Buf, "[%02X]", c); result += conv.puts(AscToWstr(Buf)); }
     }
     return result;
 }
@@ -605,14 +602,12 @@ void insertor::MakeDictionary()
              * so that it won't be used in any other substrings.
              * It would mess up the statistics otherwise.
              */
-            unsigned char replacement[2];
-            replacement[0] = 0x21 + dict.size();
-            replacement[1] = '\0';
+            unsigned char replacement = 0x21 + dict.size();
 
             for(stringmap::iterator i=strings.begin(); i!=strings.end(); ++i)
             {
                 if(i->second.type != stringdata::zptr16) continue;
-                i->second.str = str_replace(bestword, (const char *)replacement, i->second.str);
+                i->second.str = str_replace(bestword, replacement, i->second.str);
             }
 
             dictbytes += bestword.size()+1;
@@ -633,15 +628,12 @@ void insertor::MakeDictionary()
         {
             const string &dictword = dict[d];
             
-            unsigned char replacement[2];
-            replacement[1] = '\0';
-
             string bestword = dictword;
             for(unsigned c=0; c<d; ++c)
             //for(unsigned c=d; c-->0; )
             {
-                replacement[0] = 0x21 + c;
-                bestword = str_replace(replacements[c], (const char *)replacement, bestword);
+                unsigned char replacement = 0x21 + c;
+                bestword = str_replace(replacements[c], replacement, bestword);
             }
             
             fprintf(stderr, "'%s%*c",
@@ -651,12 +643,12 @@ void insertor::MakeDictionary()
             
             dictbytes += bestword.size()+1;
             
-            replacement[0] = 0x21 + d;
+            unsigned char replacement = 0x21 + d;
             
             for(stringmap::iterator i=strings.begin(); i!=strings.end(); ++i)
             {
                 if(i->second.type != stringdata::zptr16) continue;
-                i->second.str = str_replace(bestword, (const char *)replacement, i->second.str);
+                i->second.str = str_replace(bestword, replacement, i->second.str);
             }
             replacements.push_back(bestword);
         }
@@ -675,16 +667,6 @@ void insertor::MakeDictionary()
     fprintf(stderr, "Original script size: %u bytes; new script size: %u bytes\n"
                     "Saved: %u bytes; dictionary size: %u bytes\n",
         origsize, resultsize, origsize-resultsize, dictbytes);
-}
-
-void insertor::LoadCharSet()
-{
-    for(unsigned a=0; a<256; ++a)
-    {
-        const char *c = strchr(characterset, (char)a);
-        if(!c) revcharset[a] = '?';
-        else revcharset[a] = (char)(c - characterset);
-    }
 }
 
 void insertor::LoadSymbols()
@@ -739,6 +721,7 @@ void insertor::LoadSymbols()
     defbsym(armorsymbol, 0x28)
     defbsym(helmsymbol,  0x27)
     defbsym(ringsymbol,  0x29)
+    defbsym(shieldsymbol,0x2E)
     defbsym(starsymbol,  0x2F)
     targets=16;
     defbsym(musicsymbol, 0xEE)
@@ -751,15 +734,57 @@ void insertor::LoadSymbols()
     fprintf(stderr, "%u 16pix symbols loaded\n", symbols16.size());
 }
 
+#undef getc
+class ScriptCharGet
+{
+    wstringIn conv;
+    FILE *fp;
+    unsigned cacheptr;
+    wstring cache;
+
+    ucs4 getc_priv()
+    {
+        for(;;)
+        {
+            if(cacheptr < cache.size())
+                return cache[cacheptr++];
+            
+            CLEARWSTR(cache);
+            cacheptr = 0;
+            while(!cache.size())
+            {
+                int c = fgetc(fp);
+                if(c == EOF)break;
+                cache = conv.putc(c);
+            }
+            if(!cache.size()) return (ucs4)EOF;
+        }
+    }
+public:
+    ScriptCharGet(FILE *f) : fp(f), cacheptr(0)
+    {
+        conv.SetSet(getcharset());
+    }
+    ucs4 getc()
+    {
+        ucs4 c = getc_priv();
+        if(c == ';') { do { c = getc_priv(); } while(c != '\n' && c != (ucs4)EOF); }
+        return c;
+    }
+};
+
 void insertor::LoadFile(FILE *fp)
 {
     if(!fp)return;
     
     string header;
     
-    int c;
+    ucs4 c;
 
-    #define cget(c) c=fgetc(fp);if(c==';'){do{c=fgetc(fp);}while(c != '\n' && c != EOF);}
+    ScriptCharGet getter(fp);
+    
+    #define cget(c) (c=getter.getc())
+    
     cget(c);
     
     stringdata model;
@@ -768,7 +793,7 @@ void insertor::LoadFile(FILE *fp)
     
     for(;;)
     {
-        if(c == EOF)break;
+        if(c == (ucs4)EOF)break;
         if(c == '\n')
         {
             cget(c);
@@ -781,10 +806,10 @@ void insertor::LoadFile(FILE *fp)
             for(;;)
             {
                 cget(c);
-                if(c == EOF || isspace(c))break;
+                if(c == (ucs4)EOF || isspace(c))break;
                 header += (char)c;
             }
-            while(c != EOF && c != '\n') { cget(c); }
+            while(c != (ucs4)EOF && c != '\n') { cget(c); }
             
             if(header.size() > 9 && header[8] == 'L')
             {
@@ -831,7 +856,7 @@ void insertor::LoadFile(FILE *fp)
             for(;;)
             {
                 cget(c);
-                if(c == EOF || c == '\n' || c == ':')break;
+                if(c == (ucs4)EOF || c == '\n' || c == ':')break;
                 if(isdigit(c))
                     label = label * 10 + c - '0';
                 else
@@ -839,27 +864,14 @@ void insertor::LoadFile(FILE *fp)
                     fprintf(stderr, "$%u: Got char '%c', invalid is!\n", label, c);
                 }
             }
-            /*if(c == ':')
-            {
-                cget(c);
-                if(c != '\t')
-                    fprintf(stderr, "$%u: Got char '%c', tab expected!\n", label, c);
-            }*/
-            string content;
-            /*string spaces;*/
+            wstring content;
             for(;;)
             {
                 const bool beginning = (c == '\n');
                 cget(c);
-                if(c == EOF)break;
+                if(c == (ucs4)EOF)break;
                 if(beginning && (c == '*' || c == '$'))break;
-                if(c == '\n') { /*spaces = "";*/ continue; }
-                /*if(c == ' ') { spaces += c; continue; }
-                if(spaces.size())
-                {
-                    content += spaces;
-                    spaces="";
-                }*/
+                if(c == '\n') { continue; }
                 if(c == '[')
                 {
                     content += c;
@@ -867,7 +879,7 @@ void insertor::LoadFile(FILE *fp)
                     {
                         cget(c);
                         content += c;
-                        if(c == ']' || c == EOF)break;
+                        if(c == ']' || c == (ucs4)EOF)break;
                     }
                     continue;
                 }
@@ -876,9 +888,11 @@ void insertor::LoadFile(FILE *fp)
             
             if(header.size() == 4 && header[3] == 'S')
             {
+                string ascii = WstrToAsc(content);
+                
                 unsigned page=0, begin=0;
                 sscanf(header.c_str(), "%X:S", &page);
-                sscanf(content.c_str(), "%X", &begin);
+                sscanf(ascii.c_str(), "%X", &begin);
                 
                 //fprintf(stderr, "Adding %u bytes of free space at %02X:%04X\n", label, page, begin);
                 freespace[page].insert(pair<unsigned,unsigned> (begin, label));
@@ -890,22 +904,33 @@ void insertor::LoadFile(FILE *fp)
             {
                 string newcontent;
                 for(unsigned a=0; a<content.size(); ++a)
-                    newcontent += revcharset[(unsigned char)content[a]];
+                    newcontent += getchronochar(content[a]);
                 dict.push_back(newcontent);
                 continue;
             }
 
-            content = str_replace("[nl]   ",    "[nl3]", content);
-            content = str_replace("[pause]   ", "[pause3]", content);
+            content = str_replace
+            (
+              AscToWstr("[nl]   "),
+              AscToWstr("[nl3]"),
+              content
+            );
+            content = str_replace
+            (
+              AscToWstr("[pause]   "),
+              AscToWstr("[pause3]"),
+              content
+            );
             
             string newcontent, code;
-            
             for(unsigned a=0; a<content.size(); ++a)
             {
                 map<string, char>::const_iterator i;
-                char c = content[a];
+                unsigned char c = content[a];
                 for(unsigned testlen=3; testlen<=5; ++testlen)
-                    if(symbols != NULL && (i = symbols->find(code = content.substr(a, testlen))) != symbols->end())
+                    if(symbols != NULL && (i = symbols->find
+                        (code = WstrToAsc(content.substr(a, testlen)))
+                                          ) != symbols->end())
                     {
                         a += testlen-1;
                         goto GotCode;
@@ -916,7 +941,7 @@ void insertor::LoadFile(FILE *fp)
                     for(;;)
                     {
                         c = content[++a];
-                        code += c;
+                        code += (char)c;
                         if(c == ']')break;
                     }
                     
@@ -941,7 +966,7 @@ void insertor::LoadFile(FILE *fp)
                     }
                 }
                 else
-                    newcontent += revcharset[(unsigned char)c];
+                    newcontent += getchronochar(c);
             }
             
             model.str = newcontent;
@@ -975,7 +1000,6 @@ int main(void)
     
     insertor ins;
     
-    ins.LoadCharSet();
     ins.LoadSymbols();
     
     FILE *fp = fopen("ct_eng.txt", "rt");

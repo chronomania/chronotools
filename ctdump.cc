@@ -146,91 +146,116 @@ static const vector<string> LoadFStrings(unsigned offset, unsigned len, unsigned
     return result;
 }
 
-static void Disp16Char(unsigned char k)
+static wstring Disp16Char(unsigned char k)
 {
-    if(k == 0x05) { printf("[nl]\n"); return; }
-    if(k == 0x06) { printf("[nl]\n   "); return; }
+    switch(k)
+    {
+        case 0x05: return AscToWstr("[nl]\n");
+        case 0x06: return AscToWstr("[nl]\n   ");
     
-    // Pausing cls (used by Magus in his ending)
-    if(k == 0x09) { printf("\n[cls1]\n"); return; }
+        // Pausing cls (used by Magus in his ending)
+        case 0x09: return AscToWstr("\n[cls1]\n");
 
-    // Nonpause cls (used by gaspar in blah blah etc etc)
-    if(k == 0x0A) { printf("\n[cls2]\n"); return; }
+        // Nonpause cls (used by gaspar in blah blah etc etc)
+        case 0x0A: return AscToWstr("\n[cls2]\n");
     
-    if(k == 0x0B) { printf("\n[pause]\n"); return; }
-    if(k == 0x0C) { printf("\n[pause]\n   "); return; }
+        case 0x0B: return AscToWstr("\n[pause]\n");
+        case 0x0C: return AscToWstr("\n[pause]\n   ");
     
-    if(k == 0x0D) { printf("[num8]"); return; }
-    if(k == 0x0E) { printf("[num16]"); return; }
-    if(k == 0x0F) { printf("[num32]"); return; }
-    if(k == 0x11) { printf("[member]"); return; }
-    if(k == 0x12) { printf("[tech]"); return; }
+        case 0x0D: return AscToWstr("[num8]");
+        case 0x0E: return AscToWstr("[num16]");
+        case 0x0F: return AscToWstr("[num32]");
+        case 0x11: return AscToWstr("[member]");
+        case 0x12: return AscToWstr("[tech]");
     
-    // 13..19 are the character names
+        // 13..19 are the character names
 
-    // 1A is the name Ayla calls Crono?
-    if(k ==0x1A) { printf("[crononick]"); return; }
+        // 1A is the name Ayla calls Crono?
+        case 0x1A: return AscToWstr("[crononick]");
     
     
-    if(k ==0x1B) { printf("[member1]"); return; }
-    if(k ==0x1C) { printf("[member2]"); return; }
-    if(k ==0x1D) { printf("[member3]"); return; }
+        case 0x1B: return AscToWstr("[member1]");
+        case 0x1C: return AscToWstr("[member2]");
+        case 0x1D: return AscToWstr("[member3]");
     
-    // 1E is Nadia (princess)
+        // 1E is Nadia (princess)
 
-    if(k ==0x1F) { printf("[item]"); return; }
+        case 0x1F: return AscToWstr("[item]");
     
-    // 20 is Epoch
-    // 21..9F are substrings.
-    // A0..EF are the character set.
-    // F0..FF are ???
+        // 20 is Epoch
+        // 21..9F are substrings.
+        // A0..FF are the character set.
 
-    if(k == 0xEE) { printf("[musicsymbol]"); return; }
-    if(k == 0xF0) { printf("[heartsymbol]"); return; }
+        // The character set contains some special symbols.
+        case 0xEE: return AscToWstr("[musicsymbol]");
+        case 0xF0: return AscToWstr("[heartsymbol]");
+    }
     
     if(substrings[k].size())
     {
+        wstring result;
         const string &s = substrings[k].c_str();
         for(unsigned a=0; a<s.size(); ++a)
-            Disp16Char((unsigned char)s[a]);
-        return;
+            result += Disp16Char((unsigned char)s[a]);
+        return result;
     }
-    
-    char cset = characterset[k];
-    if(cset == '¶')
-        printf("[%u]", k);
+
+    ucs4 tmp = getucs4(k);
+    if(tmp == ilseq)
+    {
+        char Buf[32];
+        sprintf(Buf, "[%u]", k);
+        return AscToWstr(Buf);
+    }
     else
-        putchar(cset);
+    {
+        wstring result;
+        result += tmp;
+        return result;
+    }
 }
 
-static void DispFChar(unsigned char k)
+static wstring Disp8Char(unsigned char k)
 {
-    if(k == 0x20) { printf("[bladesymbol]"); return; }
-    if(k == 0x21) { printf("[bowsymbol]"); return; }
-    if(k == 0x22) { printf("[gunsymbol]"); return; }
-    if(k == 0x23) { printf("[armsymbol]"); return; }
-    if(k == 0x24) { printf("[swordsymbol]"); return; }
-    if(k == 0x25) { printf("[fistsymbol]"); return; }
-    if(k == 0x26) { printf("[scythesymbol]"); return; }
-    if(k == 0x27) { printf("[helmsymbol]"); return; }
-    if(k == 0x28) { printf("[armorsymbol]"); return; }
-    if(k == 0x29) { printf("[ringsymbol]"); return; }
-    if(k == 0x2F) { printf("[starsymbol]"); return; }
-    
-    char cset = characterset[k];
-    if(cset == '¶')
-        printf("[%u]", k);
+    ucs4 tmp = getucs4(k);
+    if(tmp == ilseq)
+    {
+        char Buf[32];
+        sprintf(Buf, "[%u]", k);
+        return AscToWstr(Buf);
+    }
     else
-        putchar(cset);
+    {
+        wstring result;
+        result += tmp;
+        return result;
+    }
 }
 
-static void Disp8Char(unsigned char k)
+static wstring DispFChar(unsigned char k)
 {
-    char cset = characterset[k];
-    if(cset == '¶')
-        printf("[%u]", k);
-    else
-        putchar(cset);
+    switch(k)
+    {
+        // 0x00..0x1F: blank
+        case 0x20: return AscToWstr("[bladesymbol]");
+        case 0x21: return AscToWstr("[bowsymbol]");
+        case 0x22: return AscToWstr("[gunsymbol]");
+        case 0x23: return AscToWstr("[armsymbol]");
+        case 0x24: return AscToWstr("[swordsymbol]");
+        case 0x25: return AscToWstr("[fistsymbol]");
+        case 0x26: return AscToWstr("[scythesymbol]");
+        case 0x27: return AscToWstr("[helmsymbol]");
+        case 0x28: return AscToWstr("[armorsymbol]");
+        case 0x29: return AscToWstr("[ringsymbol]");
+        // 0x2A: "H"
+        // 0x2B: "M"
+        // 0x2C: "P"
+        // 0x2D: ":"
+        case 0x2E: return AscToWstr("[shieldsymbol]");
+        case 0x2F: return AscToWstr("[starsymbol]");
+        // 0x30..: empty
+        default: return Disp8Char(k);
+    }
 }
 
 static void DumpScript(const vector<string> &tab, bool dolf)
@@ -239,28 +264,41 @@ static void DumpScript(const vector<string> &tab, bool dolf)
     {
         const string &s = tab[a];
         printf("$%u", a);
-        if(dolf)putchar('\n');else printf(":");
+        putchar(dolf ? '\n' : ':');
+        
+        wstringOut conv;
+        conv.SetSet(getcharset());
 
+        string line;
         for(unsigned b=0; b<s.size(); ++b)
         {
             if(s[b] == 3)
-                printf("[delay %02X]", (unsigned char)s[++b]);
+            {
+                char Buf[32];
+                sprintf(Buf, "[delay %02X]", (unsigned char)s[++b]);
+                for(unsigned a=0; Buf[a]; ++a)
+                    line += conv.putc(Buf[a]);
+            }
             else
-                Disp16Char(s[b]);
+                line += conv.puts(Disp16Char(s[b]));
         }
-        printf("\n");
+        puts(line.c_str());
     }
 }
 
-static void DumpTable(const vector<string> &tab, void (*Disp)(unsigned char))
+static void DumpTable(const vector<string> &tab, wstring (*Disp)(unsigned char))
 {
     for(unsigned a=0; a<tab.size(); ++a)
     {
         const string &s = tab[a];
         printf("$%u:", a);
+        wstringOut conv;
+        conv.SetSet(getcharset());
+
+        string line;
         for(unsigned b=0; b<s.size(); ++b)
-            Disp(s[b]);
-        printf("\n");
+            line += conv.puts(Disp(s[b]));
+        puts(line.c_str());
     }
 }
 
@@ -397,66 +435,63 @@ static const string revtrans(const char *s)
 {
     string result;
     while(*s)
-    {
-        const char *c = strchr(characterset, *s);
-        if(!c)result += '?';
-        else result += (char)(c - characterset);
-        ++s;
-    }
+        result += getchronochar(*s++);
     return result;
 }
 
 static void Dump8x8sprites(unsigned spriteoffs, unsigned count)
 {
-	unsigned offs = spriteoffs;
-	for(unsigned a=0; a<count; ++a)
-	{
-		for(unsigned y=0; y<8; ++y)
-		{
-			unsigned char byte1 = ROM[offs];
-			unsigned char byte2 = ROM[offs+1];
-			offs += 2;
-			for(unsigned x=0; x<8; ++x)
-				putchar(".coO"
-					[((byte1 >> (7-x))&1) | (((byte2 >> (7-x))&1) << 1)]
-				);
-			putchar('\n');
-			fflush(stdout);
-		}
-		putchar('\n');
-	}
+    unsigned offs = spriteoffs;
+    for(unsigned a=0; a<count; ++a)
+    {
+        for(unsigned y=0; y<8; ++y)
+        {
+            unsigned char byte1 = ROM[offs];
+            unsigned char byte2 = ROM[offs+1];
+            offs += 2;
+            for(unsigned x=0; x<8; ++x)
+                putchar(".coO"
+                    [((byte1 >> (7-x))&1) | (((byte2 >> (7-x))&1) << 1)]
+                );
+            putchar('\n');
+            fflush(stdout);
+        }
+        putchar('\n');
+    }
 }
 static void DumpFont(unsigned spriteoffs, unsigned sizeoffs, unsigned count)
 {
-	unsigned offs = spriteoffs;
-	for(unsigned a=0; a<count; ++a)
-	{
-		unsigned width = ROM[sizeoffs + a];
-		printf("[%u]\n", width); fflush(stdout);
-		for(unsigned y=0; y<12; ++y)
-		{
-			unsigned char byte1 = ROM[offs];
-			unsigned char byte2 = ROM[offs+1];
-			offs += 2;
-			for(unsigned x=0; x<=width; ++x)
-				putchar(".coO"
-					[((byte1 >> (7-x))&1) | (((byte2 >> (7-x))&1) << 1)]
-				);
-			putchar('\n');
-		}
-		putchar('\n');
-		fflush(stdout);
-	}
+    unsigned offs = spriteoffs;
+    for(unsigned a=0; a<count; ++a)
+    {
+        unsigned width = ROM[sizeoffs + a];
+        printf("[%u]\n", width); fflush(stdout);
+        for(unsigned y=0; y<12; ++y)
+        {
+            unsigned char byte1 = ROM[offs];
+            unsigned char byte2 = ROM[offs+1];
+            offs += 2;
+            for(unsigned x=0; x<=width; ++x)
+                putchar(".coO"
+                    [((byte1 >> (7-x))&1) | (((byte2 >> (7-x))&1) << 1)]
+                );
+            putchar('\n');
+        }
+        putchar('\n');
+        fflush(stdout);
+    }
 }
 
 int main(void)
 {
-	fprintf(stderr,
-		"Chrono Trigger script dumper version "VERSION"\n"
-		"Copyright (C) 1992,2002 Bisqwit (http://bisqwit.iki.fi/)\n");
-	
+    fprintf(stderr,
+        "Chrono Trigger script dumper version "VERSION"\n"
+        "Copyright (C) 1992,2002 Bisqwit (http://bisqwit.iki.fi/)\n");
+    
     LoadROM();
+
 #if 1
+
     substrings.resize(256);
     
     printf("; Note: There is a one byte sequence for [nl] and three spaces.\n"
@@ -610,7 +645,10 @@ int main(void)
 
 #else
 
+    // The font for the magic 0x60 characters
+    // starts actually from 0x3F9660
     //Dump8x8sprites(0x3F9360, 142);
+    // This is the beginning for the 0x60 chars
     DumpFont(0x3F2F60, 0x260E5, 64);
 
 #endif

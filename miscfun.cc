@@ -4,9 +4,27 @@ using std::memcmp;
 
 #include "miscfun.hh"
 
-string str_replace(const string &search, const char *with, const string &where)
+string str_replace(const string &search, unsigned char with, const string &where)
 {
     string result;
+    for(unsigned a=0; a < where.size(); )
+    {
+        unsigned b = where.find(search, a);
+        if(b == where.npos)
+        {
+            result += where.substr(a);
+            break;
+        }
+        result += where.substr(a, b-a);
+        result += (char)with;
+        a = b + search.size();
+    }
+    return result;
+}
+
+wstring str_replace(const wstring &search, const wstring &with, const wstring &where)
+{
+    wstring result;
     for(unsigned a=0; a < where.size(); )
     {
         unsigned b = where.find(search, a);

@@ -98,6 +98,7 @@ static void Disp(const char *s)
     if(!fp)return;
     
     static byte merk[50][80];
+    static const unsigned PIXC[4] = {0,0x0D00,0x0300,0xF777};
     
 Redraw:    
     memset(merk, ' ', sizeof(merk));
@@ -129,6 +130,8 @@ Redraw:
         int cx=0, cy=0;
         
         int sylimit=128/ylimit;
+        
+        unsigned widthharppaus = (bits * ylimit + 7) / 8;
         
         fseek(fp, posi, SEEK_SET);
         
@@ -166,7 +169,7 @@ Redraw:
                 bx*=8;
                 by*=ylimit;
             
-                if(fread(Buf, (bits*ylimit+7)/8, 1, fp) != 1)
+                if(fread(Buf, widthharppaus, 1, fp) != 1)
                     for(y=0; y<ylimit; y++)
                         for(x=0; x<8; x++)
                             ggiPutPixel(vis, bx+x, by+y, 251);
@@ -233,24 +236,24 @@ Redraw:
                                 for(x=0; x<8; x++)
                                 {
                                     ggiPutPixel(vis, bx+x, by+y,
-                                        (((b1 >> (7-x))&1) | (((b2 >> (7-x))&1)<<1)) * 15 / 3
+                                        PIXC[(((b1 >> (7-x))&1) | (((b2 >> (7-x))&1)<<1))]
                                     );
                                 }
                                 break;
                             case 32:
                                 for(x=0; x<8; x++)
                                 {
-                                    ggiPutPixel(vis, bx+x, by+y,
+                                    ggiPutPixel(vis, bx+x, by+y, PIXC[
                                         ((b1 >> (7-x))&1)
                                       | (((b2 >> (7-x))&1)<<1)
                                       | (((b3 >> (7-x))&1)<<2)
-                                      | (((b4 >> (7-x))&1)<<3)
+                                      | (((b4 >> (7-x))&1)<<3)]
                                     );
                                 }
                                 break;
                             case 8:
                                 for(x=0; x<8; x++)
-                                    ggiPutPixel(vis, bx+x, by+y, 15*((b1 >> (7-x))&1));
+                                    ggiPutPixel(vis, bx+x, by+y, PIXC[((b1 >> (7-x))&1)]);
                         }
                     }
                 }
@@ -281,9 +284,9 @@ Redraw:
                 case 'a': if(posi>0)posi--; break;
                 case 'd': posi++; break;
                 case GIIK_Down:
-                case 's': posi+=32*bits; break;
+                case 's': posi+=32*widthharppaus; break;
                 case GIIK_Up:
-                case 'w': if(posi>32*bits)posi-=32*bits;else posi=0; break;
+                case 'w': if(posi>32*widthharppaus)posi-=32*widthharppaus;else posi=0; break;
                 case GIIK_PageDown:
                 case '.':
                 case '':
@@ -293,11 +296,11 @@ Redraw:
                 case '':
                 case 'u': if(posi>15*32*bits)posi-=15*32*bits;else posi=0; break;
                 case GIIK_Right:
-                case '':
-                case 'e': posi+=bits; break;
-                case GIIK_Left:
                 case '':
-                case 'q': if(posi>bits)posi-=bits;else posi=0; break;
+                case 'e': posi+=widthharppaus; break;
+                case GIIK_Left:
+                case '':
+                case 'q': if(posi>widthharppaus)posi-=widthharppaus;else posi=0; break;
                 case 'p': swap=(swap+1)%4; break;
                 case 'b': bits=bits==8?16:bits==16?32:8; break;
                 case 'n': nes^=1; break;

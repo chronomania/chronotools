@@ -17,135 +17,133 @@
 ;  110  $FBCE $FB24 $FBC1 $FB21 $FB0C  $FB99 $FB00 $FC77 $FBA7 $FCAA
 ;  120  $FBC8 $FCBA $FBD1 $FC4F $FBD7  $FCC3 $FC11
 *1E:FA00:D127 ;127 substrings in dictionary
-$0:e ; score: 10465.1
-$1:       ; score: 9580.0
-$2: th; score: 7299.2
-$3:t ; score: 4916.5
-$4:s ; score: 4699.6
-$5:: ; score: 4515.4
-$6:ou; score: 3837.1
-$7:in; score: 3601.0
-$8:er; score: 3072.7
-$9:   ; score: 2518.4
-$10:an; score: 2447.3
-$11:, ; score: 2275.9
-$12:on; score: 2118.4
-$13:d ; score: 2022.4
-$14:en; score: 1932.5
-$15:ha; score: 1778.0
-$16:or; score: 1719.2
-$17:o ; score: 1689.1
-$18:ll ; score: 1558.5
-$19:th; score: 1501.9
-$20:y ; score: 1432.7
-$21:ea; score: 1402.9
-$22:you ; score: 1358.4
-$23:ing ; score: 1330.7
-$24: the ; score: 1191.4
-$25:es; score: 1148.3
-$26:CHANCELLOR: ; score: 974.0
-$27:ow; score: 910.1
-$28:'s ; score: 866.5
-$29:om; score: 839.7
-$30:ar; score: 818.9
-$31:st; score: 809.3
-$32:Th; score: 792.7
-$33:a ; score: 785.1
-$34:is ; score: 745.9
-$35:igh; score: 712.1
-$36:of ; score: 693.6
-$37:al; score: 670.7
-$38:to ; score: 640.3
-$39:it; score: 619.1
-$40:el; score: 592.6
-$41:e!; score: 571.6
-$42:ve ; score: 550.9
-$43:at; score: 541.2
-$44:I ; score: 537.5
-$45:you; score: 531.9
-$46:You ; score: 524.5
-$47:ack; score: 517.6
-$48:            Got 1 ; score: 498.9
-$49:is; score: 484.4
-$50:us; score: 459.9
-$51:MELCHIOR: ; score: 456.8
-$52:e.; score: 451.4
-$53:'re ; score: 422.3
-$54:ch; score: 419.1
-$55:ed; score: 413.2
-$56:to; score: 403.3
-$57:Lavo; score: 398.5
-$58:ed ; score: 384.5
-$59:for; score: 381.8
-$60:er ; score: 379.2
-$61:ing; score: 369.6
-$62:et; score: 353.6
-$63:with; score: 341.7
-$64:im; score: 334.1
-$65:I'm ; score: 328.5
-$66:ur; score: 324.2
-$67:wa; score: 322.3
-$68:en ; score: 320.1
-$69:like ; score: 306.9
-$70:OLD MAN: ; score: 304.4
-$71:oo; score: 292.9
-$72:The ; score: 289.5
-$73:r ; score: 287.6
-$74:em; score: 284.6
-$75:'t ; score: 279.3
-$76:hat ; score: 277.6
-$77:: W; score: 270.0
-$78:   No.; score: 268.6
-$79:ag; score: 265.2
-$80:her; score: 263.9
-$81:   Yes.; score: 257.2
-$82:un; score: 249.8
-$83:DALTON: ; score: 247.1
-$84:ow ; score: 243.6
-$85:ic; score: 242.0
-$86:an ; score: 240.7
-$87:am; score: 239.7
-$88:tr; score: 237.3
-$89: that ; score: 235.1
-$90:il; score: 234.0
-$91:ake ; score: 229.8
-$92:and ; score: 225.2
-$93:ough; score: 223.7
-$94:rea; score: 216.5
-$95:!!; score: 215.2
-$96:ir; score: 208.1
-$97:ec; score: 206.9
-$98:it ; score: 201.1
-$99:It's ; score: 199.1
-$100:e...; score: 196.8
-$101:e, ; score: 190.7
-$102:es ; score: 188.3
-$103:OZZIE: ; score: 185.3
-$104:la; score: 183.0
-$105:of; score: 180.7
-$106:on ; score: 179.5
-$107:k ; score: 176.1
-$108:in ; score: 174.0
-$109:SCHALA: ; score: 171.4
-$110:the ; score: 170.6
-$111:ould ; score: 169.5
-$112:os; score: 169.0
-$113:ot ; score: 168.5
-$114:will ; score: 165.9
-$115:be ; score: 164.5
-$116:et ; score: 163.9
-$117:But ; score: 163.4
-$118:ev; score: 162.7
-$119:from; score: 161.6
-$120:ear; score: 160.3
-$121: the; score: 159.5
-$122:be; score: 158.5
-$123:id; score: 157.4
-$124:wh; score: 156.0
-$125:KNIGHT CAPTAIN; score: 154.9
-$126:ab; score: 152.3
-;Original script size: 238068 bytes; new script size: 145513 bytes
-;Saved: 92555 bytes; dictionary size: 470 bytes
+$0:the
+$1:th
+$2:he
+$3:ou
+$4:in
+$5:er
+$6:you
+$7:re
+$8:ing
+$9:on
+$10:ha
+$11:an
+$12:hat
+$13:it
+$14:at
+$15:her
+$16:here
+$17:to
+$18:en
+$19:ng
+$20:e t
+$21:is
+$22:me
+$23:or
+$24:st
+$25:ve
+$26:hi
+$27:ea
+$28:yo
+$29:ere
+$30:es
+$31:thi
+$32:e th
+$33:nd
+$34:ne
+$35:his
+$36:ca
+$37:t t
+$38:ro
+$39:be
+$40:s t
+$41:t th
+$42:and
+$43:that
+$44:al
+$45:no
+$46:The
+$47:this
+$48:s th
+$49:'s
+$50:ight
+$51:You
+$52:ome
+$53:ther
+$54:: Th
+$55:t's
+$56:for
+$57:se
+$58:la
+$59:te
+$60:e the
+$61:e a
+$62:t the
+$63:Th
+$64:as
+$65:ow
+$66:CHANCELLOR:
+$67:ed
+$68:n the
+$69:n't
+$70:one
+$71:ay
+$72:e you
+$73:ave
+$74:thin
+$75:ch
+$76:ee
+$77:et
+$78:n th
+$79:rl
+$80:s a
+$81:s the
+$82:om
+$83:tha
+$84:ght
+$85:all
+$86:our
+$87:hin
+$88:ur
+$89:thing
+$90:ron
+$91:have
+$92:ck
+$93:: T
+$94:n t
+$95:ver
+$96:e s
+$97:lo
+$98:us
+$99:el
+$100:e w
+$101:What
+$102:ut
+$103:nt
+$104:ti
+$105:igh
+$106:e i
+$107:d t
+$108:e to
+$109:t you
+$110:of
+$111:to the
+$112:of the
+$113:uc
+$114:with
+$115:rea
+$116:your
+$117:e yo
+$118:ou're
+$119:ce
+$120:of th
+$121:av
+$122:o the
+$123:f the
+$124:o th
+$125:are
+$126:in the
 
 
 ;items

@@ -30,11 +30,11 @@ static struct
 
 enum csettype
 {
-	normalset,
-	pokemonset,
-	chronoset,
-	
-	CSETCOUNT
+    normalset,
+    pokemonset,
+    chronoset,
+    
+    CSETCOUNT
 };
 
 static int breaks=0;
@@ -275,17 +275,17 @@ static void display(void)
         char chr;
         switch(usecset)
         {
-        	case normalset:
-        		chr = *s + add;
-        		break;
-        	case pokemonset:
-        		chr  = set1[(unsigned char)(*s + add)];
-        		break;
-        	case chronoset:
-        		chr  = set3[(unsigned char)(*s + add)];
-        		break;
-        	default:
-        		chr=0;
+            case normalset:
+                chr = *s + add;
+                break;
+            case pokemonset:
+                chr  = set1[(unsigned char)(*s + add)];
+                break;
+            case chronoset:
+                chr  = set3[(unsigned char)(*s + add)];
+                break;
+            default:
+                chr=0;
         }
         
         if((*s && fullhex) || fullhex==2)goto Hex;
@@ -537,7 +537,7 @@ Restart:
             case '': Up: if(pos>X)pos-=X;else pos=0; Upd(); break;
             case '': case '.': case ' ': pos += X*Y/2; Upd(); break;
             case '': case ',': if(pos>X*Y)pos -= X*Y/2;else pos=0; Upd(); break;
-            case 'a': if(X>8)--X; Upd(); break;
+            case 'a': if(X>=4)--X; Upd(); break;
             case 's': if(X<900)++X; Upd(); break;
             case 'b': breaks=((breaks+1)%3); Upd(); break;
             case 'h': fullhex=((fullhex+1)%3); Upd(); break;
@@ -624,18 +624,18 @@ Restart:
                 s=Buf;
                 if(Buf[0]=='"')
                 {
-                	++s;
-                	for(t=Buf; *s&&*s!='\n'; ++s)
-                	{
-                		unsigned char c = (unsigned char)(*s + 256 - add);
-                		if(usecset == chronoset)
-                		{
-                			if(c >= 'A' && c <= 'Z')c = c-'A'+0xA0;
-                			else if(c >= 'a' && c <= 'z')c = c-'a'+0xBA;
-                			else if(c >= '0' && c <= '9')c = c-'0'+0xD4;
-                		}
-                		*t++ = c;
-                	}
+                    ++s;
+                    for(t=Buf; *s&&*s!='\n'; ++s)
+                    {
+                        unsigned char c = (unsigned char)(*s + 256 - add);
+                        if(usecset == chronoset)
+                        {
+                            if(c >= 'A' && c <= 'Z')c = c-'A'+0xA0;
+                            else if(c >= 'a' && c <= 'z')c = c-'a'+0xBA;
+                            else if(c >= '0' && c <= '9')c = c-'0'+0xD4;
+                        }
+                        *t++ = c;
+                    }
                 }
                 else
                 {
