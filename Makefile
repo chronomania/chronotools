@@ -60,6 +60,7 @@ DEPDIRS = utils/
 # VERSION 1.5.0  end of the compiler project; using assembler (xa65) now.
 # VERSION 1.5.1  vwf8 optimizations, assembly experiments
 # VERSION 1.5.2  compressed graphics support: decompressor and compressor
+# VERSION 1.5.3  better graphics compressor
 
 OPTIM=-O3
 #OPTIM=-O0
@@ -68,7 +69,7 @@ OPTIM=-O3
 
 CXXFLAGS += -I.
 
-VERSION=1.5.2
+VERSION=1.5.3
 ARCHFILES=utils/xray.c utils/xray.h \
           utils/viewer.c \
           utils/vwftest.cc \
@@ -82,7 +83,7 @@ ARCHFILES=utils/xray.c utils/xray.h \
           \
           ctcset.cc ctcset.hh \
           miscfun.cc miscfun.hh \
-          compress.hh \
+          compress.cc compress.hh \
           space.cc space.hh \
           crc32.cc crc32.h \
           hash.hh \
@@ -160,6 +161,7 @@ all: $(PROGS)
 
 ctdump: \
 		ctdump.o rommap.o strload.o extras.o \
+		compress.o \
 		tgaimage.o symbols.o miscfun.o config.o \
 		confparser.o ctcset.o wstring.o
 	$(CXX) -o $@ $^ $(LDFLAGS)
@@ -212,7 +214,7 @@ utils/compiler2.o: utils/compiler2.cc
 utils/comp2test: utils/compiler2.cc config.o confparser.o ctcset.o wstring.o
 	$(CXX) $(CXXFLAGS) -g -O -Wall -W -pedantic -o $@ $^ $(LDFLAGS)
 
-utils/comprtest: utils/comprtest.o rommap.o
+utils/comprtest: utils/comprtest.o rommap.o compress.o
 	$(CXX) $(CXXFLAGS) -g -O -Wall -W -pedantic -o $@ $^ $(LDFLAGS)
 
 utils/o65test: utils/o65test.o o65.o wstring.o

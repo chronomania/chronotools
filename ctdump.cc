@@ -641,11 +641,12 @@ static void DumpGFX_Compressed_4bit
      const string &fn,
      const unsigned *palette = NULL)
 {
-    vector<unsigned char> Target(65536, 0);
+    vector<unsigned char> Target;
     
-    unsigned size = Uncompress(ROM + (addr&0x3FFFFF), &Target[0], Target.size());
+    unsigned origsize = Uncompress(ROM + (addr&0x3FFFFF), Target);
+    unsigned size = Target.size();
     
-    fprintf(stderr, "Uncompressed %u bytes...\n", size);
+    fprintf(stderr, "Uncompressed %u bytes from %u bytes...\n", size, origsize);
     
     unsigned char *SavedROM = ROM;
     ROM = &Target[0];

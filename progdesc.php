@@ -134,6 +134,8 @@ Copypaste from the Makefile:
 # VERSION 1.4.1  lots of more translation (I'm archiving it here for my convenience)
 # VERSION 1.5.0  end of the compiler project; using assembler (xa65) now.
 # VERSION 1.5.1  vwf8 optimizations, assembly experiments
+# VERSION 1.5.2  compressed graphics support: decompressor and compressor
+# VERSION 1.5.3  better graphics compressor
 </pre>
 
 ", '1. Program list' => "
