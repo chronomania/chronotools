@@ -15,7 +15,7 @@ void ROM::AddCall(unsigned codeaddress, unsigned target)
     
     target |= 0xC00000; // Ensure we're jumping correctly
     
-    fprintf(stderr, "Adding subroutine %02X:%04X call at %02X:%04X\n",
+    fprintf(stderr, "- Adding subroutine %02X:%04X call at %02X:%04X\n",
         target>>16, target&0xFFFF,
         0xC0 | (rompos>>16),
         rompos & 0xFFFF);
@@ -29,7 +29,7 @@ void ROM::AddCall(unsigned codeaddress, unsigned target)
 void ROM::AddSubRoutine(unsigned target, const vector<unsigned char> &code)
 {
 #if 0
-    fprintf(stderr, "Adding %u bytes long subroutine at %02X:%04X\n",
+    fprintf(stderr, "- Adding %u bytes long subroutine at %02X:%04X\n",
         code.size(),
         0xC0 | (target >> 16), target & 0xFFFF);
 #endif

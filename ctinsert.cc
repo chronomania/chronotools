@@ -8,6 +8,8 @@ using namespace std;
 #include "config.hh"
 #include "symbols.hh"
 #include "rom.hh"
+#include "conjugate.hh"
+#include "typefaces.hh"
 
 namespace
 {
@@ -82,7 +84,14 @@ const string DispString(const ctstring &s, unsigned symbols_type)
             continue;
         }
 
-        ucs4 u = getucs4(c);
+        ucs4 u = ilseq;
+        switch(symbols_type)
+        {
+            case 16: u = getucs4(c, cset_12pix); break;
+            case  8: u = getucs4(c, cset_8pix); break;
+            case  2: u = getucs4(c, cset_8pix); break;
+        }
+        
         if(u != ilseq)
         {
             result += conv.putc(u);
@@ -101,8 +110,13 @@ void insertor::ReportFreeSpace()
     freespace.Report();
 }
 
-insertor::insertor(): Conjugatemap(*this)
+insertor::insertor(): Conjugater(NULL)
 {
+}
+
+insertor::~insertor()
+{
+    delete Conjugater; Conjugater = NULL;
 }
 
 int main(void)
@@ -120,6 +134,8 @@ int main(void)
     const string font12fn = WstrToAsc(GetConf("font",   "font12fn"));
     const string scriptfn = WstrToAsc(GetConf("readin", "scriptfn"));
     
+    LoadTypefaces();
+    
     // Font loading must happen before script loading,
     // or script won't be properly paragraph-wrapped.
     ins->LoadFont8(font8fn);
@@ -130,6 +146,8 @@ int main(void)
     char Buf[8192];setvbuf(fp, Buf, _IOFBF, sizeof Buf);
     ins->LoadFile(fp);
     fclose(fp);}
+    
+    ins->ReorganizeFonts();
     
     ins->DictionaryCompress();
     

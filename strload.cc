@@ -62,18 +62,25 @@ const vector<ctstring> LoadPStrings(unsigned offset, unsigned count)
     return result;
 }
 
-const ctstring LoadZString(unsigned offset, const map<unsigned,unsigned> &extrasizes)
+const ctstring LoadZString(unsigned offset, const extrasizemap_t& extrasizes)
 {
     ctstring foundstring;
     
     for(unsigned p=offset; ; ++p)
     {
         if(ROM[p] == 0) break;
-        unsigned byte = ROM[p];
+        unsigned int byte = ROM[p];
+        
+        /* FIXME: Invent a better way to see this */
+        if(extrasizes.size() == 1)
+        {
+        	if(byte == 1 || byte == 2)
+        		byte = byte*256 + ROM[++p];
+        }
+        
         foundstring += (ctchar)byte;
         
-        map<unsigned,unsigned>::const_iterator i;
-        i = extrasizes.find(byte);
+        extrasizemap_t::const_iterator i = extrasizes.find(byte);
         if(i != extrasizes.end())
         {
             unsigned extra = i->second;
@@ -90,7 +97,7 @@ const ctstring LoadZString(unsigned offset, const map<unsigned,unsigned> &extras
 }
 
 const vector<ctstring> LoadZStrings(unsigned offset, unsigned count,
-                                    const map<unsigned,unsigned> &extrasizes)
+                                    const extrasizemap_t& extrasizes)
 {
     const unsigned segment = offset >> 16;
     const unsigned base = segment << 16;

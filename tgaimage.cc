@@ -65,15 +65,12 @@ void TGAimage::Save(const string &fn)
     TgaPutB(fp, 8); // pixel bitness
     TgaPutB(fp, 0); //misc
     
-    // border color:
-    TgaPutP(fp, 128,128,128);
-    // colours 0..3
-    TgaPutP(fp, 192,192,192);
-    TgaPutP(fp,  32, 48,128);
-    TgaPutP(fp,  40, 72,192);
-    TgaPutP(fp,  60, 90,255);
-    // filler
-    TgaPutP(fp, 255,255,255);
+    TgaPutP(fp, 255,  0,  0); // border
+    TgaPutP(fp,  80, 64, 32); // background
+    TgaPutP(fp,   0,  0,  0); // edge
+    TgaPutP(fp,  90, 90, 90); // semiedge
+    TgaPutP(fp, 255,255,255); // paint
+    TgaPutP(fp, 128,100, 10); // filler
     
     for(unsigned y=ydim; y-->0; )
         fwrite(&data[y*xdim], 1, xdim, fp);

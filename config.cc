@@ -17,8 +17,7 @@ characterset=\"iso-8859-15\"\n\
 font8fn=\"ct8fn.tga\"\n\
 font12fn=\"ct16fn.tga\"\n\
 [font]\n\
-num_characters=96\n\
-num_extra=0\n\
+begin=0xA0\n\
 font8fn=\"ct8fn.tga\"\n\
 font12fn=\"ct16fn.tga\"\n\
 use_vwf8=false\n\
@@ -39,6 +38,22 @@ font12_C0=\"ghijklmnopqrstuv\"\n\
 font12_D0=\"wxyz0123456789!?\"\n\
 font12_E0=\"/«»:&()'.,=-+%# \"\n\
 font12_F0=\"°¶##LRHMP·¶()¶¶_\"\n\
+font8_00=\"¶¶¶¶¶¶¶¶¶¶¶¶¶¶¶¶\"\n\
+font8_10=\"¶¶¶¶¶¶¶¶¶¶¶¶¶¶¶¶\"\n\
+font8_20=\"¶¶¶¶¶¶¶¶¶¶¶¶¶¶¶¶\"\n\
+font8_30=\"¶¶¶¶¶¶¶¶¶¶¶¶¶¶¶¶\"\n\
+font8_40=\"¶¶¶¶¶¶¶¶¶¶¶¶¶¶¶¶\"\n\
+font8_50=\"¶¶¶¶¶¶¶¶¶¶¶¶¶¶¶¶\"\n\
+font8_60=\"¶¶¶¶¶¶¶¶¶¶¶¶¶¶¶¶\"\n\
+font8_70=\"¶¶¶¶¶¶¶¶¶¶¶¶¶¶¶¶\"\n\
+font8_80=\"¶¶¶¶¶¶¶¶¶¶¶¶¶¶¶¶\"\n\
+font8_90=\"¶¶¶¶¶¶¶¶¶¶¶¶¶¶¶¶\"\n\
+font8_A0=\"ABCDEFGHIJKLMNOP\"\n\
+font8_B0=\"QRSTUVWXYZabcdef\"\n\
+font8_C0=\"ghijklmnopqrstuv\"\n\
+font8_D0=\"wxyz0123456789!?\"\n\
+font8_E0=\"/«»:&()'.,=-+%# \"\n\
+font8_F0=\"°¶##LRHMP·¶()¶¶_\"\n\
 def8sym 0x20 \"[bladesymbol]\"\n\
 def8sym 0x21 \"[bowsymbol]\"\n\
 def8sym 0x22 \"[gunsymbol]\"\n\

@@ -5,6 +5,7 @@
 #include "logfiles.hh"
 #include "symbols.hh"
 #include "config.hh"
+#include "conjugate.hh"
 
 const ctstring insertor::WrapDialogLines(const ctstring &dialog) const
 {
@@ -20,19 +21,17 @@ const ctstring insertor::WrapDialogLines(const ctstring &dialog) const
     
     ctstring result;
     
-    static const vector<ctchar> ConjugateBytes = GetConjugateBytesList();
-    
-    static const unsigned char spacechar = getchronochar(' ');
-    static const unsigned char colonchar = getchronochar(':');
-    static const unsigned char eightchar = getchronochar('8');
-    static const unsigned char dblw_char = getchronochar('W');
+    static const unsigned char spacechar = getchronochar(' ', cset_12pix);
+    static const unsigned char colonchar = getchronochar(':', cset_12pix);
+    static const unsigned char eightchar = getchronochar('8', cset_12pix);
+    static const unsigned char dblw_char = getchronochar('W', cset_12pix);
 
     unsigned space3width = (GetFont12width( spacechar ) ) * 3;
     unsigned num8width   = (GetFont12width( eightchar ) );
     unsigned w5width     = (GetFont12width( dblw_char ) ) * 5;
     
-    const unsigned dictend   = 0x100 - get_num_chronochars();
-    const unsigned fontbegin = dictend;
+    const unsigned fontbegin = get_font_begin();
+    const unsigned dictend   = fontbegin;
 
     unsigned wrappos = 0;
     unsigned wrapcol = 0;
@@ -117,14 +116,17 @@ const ctstring insertor::WrapDialogLines(const ctstring &dialog) const
                 static const string nadia = WstrToAsc(Symbols.GetRev(16).find(0x1E)->second);
                 // This name can't be changed by the player
                 for(unsigned a=0; a<nadia.size(); ++a)
-                    col += GetFont12width(getchronochar(nadia[a]));
+                {
+                    ctchar c = getchronochar(nadia[a], cset_12pix);
+                    col += GetFont12width(c);
+                }
                 break;
             }
             default:
             {
-                if(Conjugatemap.IsConjChar(c))
+                if(Conjugater->IsConjChar(c))
                 {
-                    col += Conjugatemap.GetMaxWidth(c);
+                    col += Conjugater->GetMaxWidth(c);
                 }
                 else if(c >= fontbegin)
                 {

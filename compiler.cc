@@ -346,7 +346,7 @@ namespace
             unsigned val = 0;
             
             if(name[0] == '\'')
-                val = getchronochar(name[1]);
+                val = getchronochar(name[1], cset_12pix);
             else
                 val = strtol(WstrToAsc(name).c_str(), NULL, 10);
             
@@ -527,7 +527,7 @@ namespace
 
                 // Note: we're not checking ALstate here, would be mostly useless check
                 
-                ctchar c = getchronochar(cset[a]);
+                ctchar c = getchronochar(cset[a], cset_12pix);
                 CODE.Set8bit_M();
                 CODE.EmitCode(0xC9, c);   // CMP A, imm8            
                 CODE.EmitCode(0xF0, 0);   // BEQ - Jump to if equal

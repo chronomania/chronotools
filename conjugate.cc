@@ -8,6 +8,7 @@
 #include "config.hh"
 #include "space.hh"
 #include "ctinsert.hh"
+#include "conjugate.hh"
 
 using namespace std;
 
@@ -27,7 +28,10 @@ void Conjugatemap::Load(const insertor &ins)
         
         tmp.maxwidth = 0;
         for(unsigned b=0; b<width.size(); ++b)
-            tmp.maxwidth += 1 + ins.GetFont12width(getchronochar(width[b]));
+        {
+            ctchar c = getchronochar(width[b], cset_12pix);
+            tmp.maxwidth += 1 + ins.GetFont12width(c);
+        }
         
         for(unsigned b=0; b<data.size(); ++b)
         {
@@ -66,7 +70,7 @@ void Conjugatemap::Load(const insertor &ins)
                     a += name.size() - 1;
                 }
                 else
-                    key += getchronochar(s[a]);
+                    key += getchronochar(s[a], cset_12pix);
             
             tmp.data[key] = person;
         }
@@ -77,8 +81,6 @@ void Conjugatemap::Load(const insertor &ins)
 
 void Conjugatemap::Work(ctstring &s, formit fit)
 {
-    static const vector<ctchar> AllowedBytes = GetConjugateBytesList();
-    
     form &form = *fit;
 
     datamap_t::const_iterator i;
@@ -91,27 +93,46 @@ void Conjugatemap::Work(ctstring &s, formit fit)
             
             if(!form.used)
             {
-                unsigned ind = 0;
-                for(formlist::const_iterator j=forms.begin(); j!=forms.end(); ++j)
-                    if(j->used)
-                        ++ind;
-                
-                if(ind >= AllowedBytes.size())
+                unsigned byte = 0x2FF;
+                for(;; --byte)
                 {
-                    fprintf(stderr,
-                        "\n"
-                        "Error: Too many different conjugations used.\n"
-                        "Only %u bytes defined in configuration!\n",
-                            AllowedBytes.size()
-                           );
+                    /* If this byte is used... */
+                    if(getucs4(byte, cset_12pix) != ilseq) continue;
+
+                    bool used = false;
+                    
+                    const ConfParser::ElemVec& elems = GetConf("font", "typeface").Fields();
+                    for(unsigned a=0; a<elems.size(); a += 6)
+                    {
+                        unsigned begin = elems[a+3];
+                        unsigned end   = elems[a+4];
+                        if(byte >= begin && byte < end)
+                        {
+                            used = true;
+                            break;
+                        }
+                    }
+                    
+                    if(used) continue;
+                    
+                    for(formlist::const_iterator j=forms.begin(); j!=forms.end(); ++j)
+                        if(j->used
+                        && j->prefix == byte)
+                        {
+                            used = true;
+                            break;
+                        }
+                    if(!used) break;
                 }
                 
                 form.used   = true;
-                form.prefix = AllowedBytes[ind];
-                
-                fprintf(stderr, " \n  Assigned 0x%04X for %s ",
+                form.prefix = byte;
+
+#if 0                
+                fprintf(stderr, " \n  Assigned ControlCode 0x%04X for %s ",
                     form.prefix,
                     WstrToAsc(form.func).c_str());
+#endif
                 
                 charmap[form.prefix] = fit;
             }
@@ -131,8 +152,19 @@ void Conjugatemap::Work(ctstring &s, formit fit)
 
 bool Conjugatemap::IsConjChar(ctchar c) const
 {
-    charmap_t::const_iterator i = charmap.find(c);
-    return i != charmap.end();
+    return charmap.find(c) != charmap.end();
+}
+
+void Conjugatemap::RedefineConjChar(ctchar was, ctchar is)
+{
+    charmap_t::iterator i = charmap.find(was);
+    if(i != charmap.end())
+    {
+        formit tmp = i->second;
+        tmp->prefix = is;
+        charmap.erase(i);
+        charmap[is] = tmp;
+    }
 }
 
 unsigned Conjugatemap::GetMaxWidth(ctchar c) const
@@ -159,16 +191,15 @@ void Conjugatemap::Work(ctstring &s)
 
 namespace
 {
-    const SubRoutine GetConjugateCode(const Conjugatemap &Conjugatemap)
+    const SubRoutine GetConjugateCode(const Conjugatemap *const Conjugater)
     {
         SubRoutine result;
         SNEScode &code = result.code;
 
         SNEScode::RelativeBranch branchEnd = code.PrepareRelativeBranch();
         SNEScode::RelativeBranch branchOut = code.PrepareRelativeBranch();
-        SNEScode::RelativeBranch branchOverCursive = code.PrepareRelativeBranch();
         
-        const Conjugatemap::formlist &forms = Conjugatemap.GetForms();
+        const Conjugatemap::formlist &forms = Conjugater->GetForms();
         
         bool first=true;
         
@@ -213,22 +244,6 @@ namespace
             branchSkip.ToHere();
             branchSkip.Proceed();
         }
-        
-        static unsigned const curs_begin = GetConf("font", "cursive_begin");
-        static unsigned const curs_end   = GetConf("font", "cursive_end");
-        
-        code.Set16bit_M();
-        code.EmitCode(0xC9, curs_begin&255, curs_begin>>8); //cmp a, curs_begin
-        code.EmitCode(0x90, 0);                             //bcc out ( < )
-        branchOverCursive.FromHere();
-        code.EmitCode(0xC9, curs_end&255, curs_end>>8);     //cmp a, curs_end
-        code.EmitCode(0xB0, 0);                             //bcs out ( >= )
-        branchOverCursive.FromHere();
-        
-        // Cursive text - rewind one pixel per character!
-        code.EmitCode(0xC6, 0x34); // dec [$00:D+$34]
-        
-        branchOverCursive.ToHere();
 
         code.Set8bit_M();
         SNEScode::FarToNearCall call = code.PrepareFarToNearCall();
@@ -243,7 +258,6 @@ namespace
         
         branchEnd.Proceed();
         branchOut.Proceed();
-        branchOverCursive.Proceed();
 
         // This function will be called from.
         code.AddCallFrom(ConjugatePatchAddress | 0xC00000);
@@ -264,19 +278,10 @@ void insertor::GenerateConjugatorCode()
     FunctionList Functions = Compile(fp);
     fclose(fp);
     
-    SubRoutine conjugator = GetConjugateCode(this->Conjugatemap);
+    SubRoutine conjugator = GetConjugateCode(Conjugater);
     Functions.Define(ConjFuncName, conjugator);
 
     Functions.RequireFunction(ConjFuncName);
     
     LinkAndLocate(Functions);
-}
-
-const vector<ctchar> GetConjugateBytesList()
-{
-    vector<ctchar> result;
-    const ConfParser::ElemVec& elems = GetConf("conjugator", "bytes").Fields();
-    for(unsigned a=0; a<elems.size(); ++a)
-        result.push_back(elems[a].IField);
-    return result;
 }

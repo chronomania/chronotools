@@ -188,7 +188,7 @@ namespace
 
                 const ctstring &host = pagestrings[hostnum].str;
                 
-                unsigned place = hostoffs + host.size()-str.size();
+                unsigned place = hostoffs + CalcSize(host) - CalcSize(str);
                 
                 WritePtr(ROM, ptroffs, place);
             }
@@ -212,18 +212,26 @@ void insertor::PatchROM(ROM &ROM)
         }
     }
     
+    // Write the strings first because they require certain pages!
     WriteStrings(ROM);
+    
+    // Next write 12pix font, because it requires page on same page!
+    Write12pixfont(ROM);
+
+    // Then write 8pix font
     Write8pixfont(ROM);
     if(GetConf("font", "use_vwf8"))
     {
         // This function will also generate the code to handle the font.
         Write8vpixfont(ROM);
     }
-    Write12pixfont(ROM);
-    WriteDictionary(ROM);
-
-    GenerateCode(); 
+    
+    // Then place the code blobs
+    GenerateCode();
     WriteCode(ROM);
+
+    // Last write the dictionary: It fits almost anywhere.
+    WriteDictionary(ROM);
 }
 
 void insertor::GenerateCode()
@@ -316,18 +324,18 @@ void insertor::Write12pixfont(ROM &ROM)
     
     fprintf(stderr, "Writing 12-pix font... ");
 
-    unsigned tilecount  = get_num_chronochars() + get_num_extrachars();
-    unsigned font_begin = 0x100 - get_num_chronochars();
+    const unsigned font_begin = get_font_begin();
+    const unsigned tilecount  = Font12.GetCount();
     
     vector<freespacerec> Organization(2);
     Organization[0].len = tiletab1.size();
     Organization[1].len = tiletab2.size();
     
-    unsigned tmp=NOWHERE;
-    freespace.OrganizeToAnySamePage(Organization, tmp);
+    unsigned page=NOWHERE;
+    freespace.OrganizeToAnySamePage(Organization, page);
 
-    unsigned addr1 = Organization[0].pos + (tmp<<16);
-    unsigned addr2 = Organization[1].pos + (tmp<<16);
+    unsigned addr1 = Organization[0].pos + (page<<16);
+    unsigned addr2 = Organization[1].pos + (page<<16);
 
     unsigned WidthTab_Address = freespace.FindFromAnyPage(tilecount);
     
@@ -340,7 +348,7 @@ void insertor::Write12pixfont(ROM &ROM)
            );
     
     // patch font engine
-    tmp = WidthTab_Address - font_begin;
+    unsigned tmp = WidthTab_Address - font_begin;
     ROM.Write(WidthTab_Address_Ofs+0, tmp & 255);
     ROM.Write(WidthTab_Address_Ofs+1, (tmp >> 8) & 255);
     ROM.Write(WidthTab_Address_Seg, 0xC0 | ((tmp >> 16) & 255));

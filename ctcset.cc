@@ -1,28 +1,76 @@
 #include <string>
 
+using std::string;
+
 #include "ctcset.hh"
-
-/* These are language-specific settings! */
-
 #include "config.hh"
 #include "hash.hh"
 
 /* Language-specific settings end here. */
 namespace
 {
-    std::string CharSet = "iso-8859-1";
+    string CharSet = "iso-8859-1";
 
     class CharacterSet
     {
-        ucs4string cset;
         hash_map<ucs4, ctchar> revmap;
         vector<ctchar> revmapfirst;
+
+	protected:
+        ucs4string cset;
+        virtual void GetCSet() = 0;
+        
     public:
         CharacterSet()
         {
         }
-        
+        virtual ~CharacterSet()
+        {
+        }
+       
         void Init()
+        {
+            GetCSet();
+            
+            revmapfirst.clear();
+            revmapfirst.resize(GetConf("font", "charcachesize"), 0);
+             
+            ucs4string noncharstr = GetConf("font", "nonchar");
+            ucs4 nonchar = noncharstr[0];
+            
+            for(unsigned a = 0; a < cset.size(); ++a)
+            {
+                ucs4 c = cset[a];
+                if(c == nonchar) { cset[a] = c = ilseq; }
+                if((unsigned)c < revmapfirst.size()) revmapfirst[(unsigned)c] = a;
+                else if(c != ilseq)revmap[c] = a;
+            }
+            fprintf(stderr, "Built charset map (%u noncached)\n", revmap.size());
+        }
+        ucs4 operator[] (ctchar ind)
+        {
+            if(cset.empty()) Init();
+            return cset[ind];
+        }
+        ctchar find(ucs4 p)
+        {
+            if(p == ilseq)return 0;
+            
+            if(cset.empty()) Init();
+            
+            if((unsigned)p < revmapfirst.size()) return revmapfirst[(unsigned)p];
+            
+            hash_map<ucs4, ctchar>::const_iterator i;
+            i = revmap.find(p);
+            if(i == revmap.end())return 0;
+            return i->second;
+        }
+    };
+
+    class CharacterSet12: public CharacterSet
+    {
+    private:
+        virtual void GetCSet()
         {
             cset = GetConf("font", "font12_00").SField();
             cset+= GetConf("font", "font12_10").SField();
@@ -73,46 +121,41 @@ namespace
             cset+= GetConf("font", "font12_2E0").SField();
             cset+= GetConf("font", "font12_2F0").SField();
             
-            unsigned extranum = GetConf("font", "num_extra");
-            if(cset.size() < (0x100 + extranum))
+            if(cset.size() != 0x300)
             {
                 fprintf(stderr, "ctcset error: Configuration not set properly!\n");
             }
-            
-            revmapfirst.clear();
-            revmapfirst.resize(GetConf("font", "charcachesize"), 0);
-             
-            ucs4string noncharstr = GetConf("font", "nonchar");
-            ucs4 nonchar = noncharstr[0];
-            
-            for(unsigned a = 0; a < cset.size(); ++a)
+        }
+    } cset12;
+    
+    class CharacterSet8: public CharacterSet
+    {
+    private:
+        virtual void GetCSet()
+        {
+            cset = GetConf("font", "font8_00").SField();
+            cset+= GetConf("font", "font8_10").SField();
+            cset+= GetConf("font", "font8_20").SField();
+            cset+= GetConf("font", "font8_30").SField();
+            cset+= GetConf("font", "font8_40").SField();
+            cset+= GetConf("font", "font8_50").SField();
+            cset+= GetConf("font", "font8_60").SField();
+            cset+= GetConf("font", "font8_70").SField();
+            cset+= GetConf("font", "font8_80").SField();
+            cset+= GetConf("font", "font8_90").SField();
+            cset+= GetConf("font", "font8_A0").SField();
+            cset+= GetConf("font", "font8_B0").SField();
+            cset+= GetConf("font", "font8_C0").SField();
+            cset+= GetConf("font", "font8_D0").SField();
+            cset+= GetConf("font", "font8_E0").SField();
+            cset+= GetConf("font", "font8_F0").SField();
+
+            if(cset.size() != 0x100)
             {
-                ucs4 c = cset[a];
-                if(c == nonchar) { cset[a] = c = ilseq; }
-                if((unsigned)c < revmapfirst.size()) revmapfirst[(unsigned)c] = a;
-                else if(c != ilseq)revmap[c] = a;
+                fprintf(stderr, "ctcset error: Configuration not set properly!\n");
             }
-            fprintf(stderr, "Built charset map (%u noncached)\n", revmap.size());
         }
-        ucs4 operator[] (ctchar ind)
-        {
-            if(cset.empty()) Init();
-            return cset[ind];
-        }
-        ctchar find(ucs4 p)
-        {
-            if(p == ilseq)return 0;
-            
-            if(cset.empty()) Init();
-            
-            if((unsigned)p < revmapfirst.size()) return revmapfirst[(unsigned)p];
-            
-            hash_map<ucs4, ctchar>::const_iterator i;
-            i = revmap.find(p);
-            if(i == revmap.end())return 0;
-            return i->second;
-        }
-    } characterset;
+    } cset8;
 }
 
 const char *getcharset()
@@ -129,37 +172,37 @@ void setcharset(const char *newcset)
 }
 
 // Note: Only values 0xA0..0xFF are worth using.
-ucs4 getucs4(ctchar chronochar)
+ucs4 getucs4(ctchar chronochar, cset_class cl)
 {
-    return characterset[chronochar];
+	switch(cl)
+	{
+		case cset_8pix: return cset8[chronochar];
+		case cset_12pix: return cset12[chronochar];
+	}
+	/* Should be unreached */
+	return cset12[chronochar];
 }
 
 // Note: Returns 0 for nonpresentible chars.
-ctchar getchronochar(ucs4 c)
+ctchar getchronochar(ucs4 ch, cset_class cl)
 {
-    ctchar result = characterset.find(c);
-    if(result == 0)
+    ctchar result = 0;
+    switch(cl)
     {
-        fprintf(stderr, "Error: Irrepresentible character '%c' (%X)\n", c, c);
+    	case cset_8pix: result = cset8.find(ch); break;
+    	case cset_12pix: result = cset12.find(ch); break;
     }
-    else if(result < 0x100 - get_num_chronochars())
+    if(result < get_font_begin())
     {
-        fprintf(stderr, "Error: Character %02X ('%c', %X) is outside visible character range\n",
-            result, c, c);
+        fprintf(stderr, "Error: Irrepresentible character '%c' (%X)\n", ch, ch);
     }
     return result;
 }
 
-unsigned get_num_chronochars()
+unsigned get_font_begin()
 {
     // Standard defines that this'll be initialized upon the first call.
-    static const unsigned cache = GetConf("font", "num_characters");
-    return cache;
-}
-
-unsigned get_num_extrachars()
-{
-    static const unsigned cache = GetConf("font", "num_extra");
+    static const unsigned cache = GetConf("font", "begin");
     return cache;
 }
 

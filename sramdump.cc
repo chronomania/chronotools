@@ -51,16 +51,18 @@ int main(void)
         for(unsigned b=0; b<16; ++b)
         {
             unsigned char c = Buf[b];
-            switch(c)
+            
+            if(c >= 0x21 && c <= 0x7F)
             {
-                case 0x21 ... 0x7F:
-                    printf("%s", items[c-0x21].c_str());
-                    break;
-                case 0xA0 ... 0xFF:
-                    putchar(getucs4(c));
-                    break;
-                default:
-                    putchar('.');
+                printf("%s", items[c-0x21].c_str());
+            }
+            else if(c >= 0xA0 && c <= 0xFF)
+            {
+                putchar(getucs4(c, cset_12pix));
+            }
+            else
+            {
+                putchar('.');
             }
         }
         printf("\n");

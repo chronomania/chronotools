@@ -389,9 +389,10 @@ bool freespacemap::OrganizeToAnySamePage(vector<freespacerec> &blocks, unsigned 
     freespacemap saved_this = *this;
     quiet = true;
     
-    unsigned bestpagenum = 0;
+    unsigned bestpagenum = 0x3F;
     unsigned bestpagesize = 0;
     bool first = true;
+    bool candidates = false;
     for(const_iterator i=begin(); i!=end(); ++i)
     {
         unsigned pagenum = i->first;
@@ -414,6 +415,8 @@ bool freespacemap::OrganizeToAnySamePage(vector<freespacerec> &blocks, unsigned 
                 bestpagesize = freesize;
                 first = false;
             }
+            
+            candidates = true;
         }
     }
     
@@ -421,6 +424,11 @@ bool freespacemap::OrganizeToAnySamePage(vector<freespacerec> &blocks, unsigned 
 
     page = bestpagenum;
     
+    if(!candidates)
+    {
+        fprintf(stderr, "Warning: All pages seem to be too small\n");
+    }
+
     return Organize(blocks, bestpagenum);
 }
 
@@ -428,7 +436,7 @@ unsigned freespacemap::FindFromAnyPage(unsigned length)
 {
     FILE *log = GetLogFile("mem", "log_addrs");
 
-    unsigned leastfree=0, bestpage=0; bool first=true;
+    unsigned leastfree=0, bestpage=0x3F; bool first=true;
     for(const_iterator i=begin(); i!=end(); ++i)
     {
         const freespaceset &pagemap = i->second;

@@ -10,7 +10,6 @@
 #include "fonts.hh"
 #include "snescode.hh"
 #include "ctcset.hh"
-#include "conjugate.hh"
 
 using namespace std;
 
@@ -34,7 +33,10 @@ public:
 
     void ReportFreeSpace();
     
+    void ReorganizeFonts();
+    
     insertor();
+    ~insertor();
     
 private:
     struct stringdata
@@ -63,7 +65,7 @@ private:
 
     freespacemap freespace;
     
-    class Conjugatemap Conjugatemap;
+    class Conjugatemap *Conjugater;
     
     void WriteDictionary(class ROM &ROM);
     void WriteStrings(class ROM &ROM);

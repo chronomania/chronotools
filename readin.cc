@@ -8,6 +8,8 @@
 #include "miscfun.hh"
 #include "symbols.hh"
 #include "config.hh"
+#include "conjugate.hh"
+#include "typefaces.hh"
 
 using namespace std;
 
@@ -87,7 +89,7 @@ const ctstring insertor::ParseScriptEntry(const ucs4string &input, const stringd
                        : is_fixed  ? 2
                        : 0);
 
-    bool is_cursive = false;
+    int current_typeface = -1;
     
     if(is_dialog)
     {
@@ -145,6 +147,16 @@ const ctstring insertor::ParseScriptEntry(const ucs4string &input, const stringd
                 {
                     unsigned testlen = i->first.size();
                     a += testlen-1;
+                    
+                    if(current_typeface >= 0
+                    && i->second >= get_font_begin()
+                      )
+                    {
+                        fprintf(stderr,
+                            "Warning: Symbol '%s' probably won't work in different typefaces!\n",
+                                WstrToAsc(i->first).c_str());
+                    }
+                    
                     result += i->second;
                     foundsym = true;
                     break;
@@ -158,12 +170,24 @@ const ctstring insertor::ParseScriptEntry(const ucs4string &input, const stringd
         if(c != AscToWchar('['))
         {
             // No code, translate byte.
-            ctchar chronoc = getchronochar(c);
+            ctchar chronoc = 0;
             
-            if(is_cursive)
+            switch(model.type)
             {
-                static const unsigned cursive_offset = GetConf("font", "cursive_offset");
-                chronoc += cursive_offset;
+                case stringdata::zptr8:
+                case stringdata::fixed: 
+                    chronoc = getchronochar(c, cset_8pix);
+                    break;
+                case stringdata::zptr12:
+                    chronoc = getchronochar(c, cset_12pix);
+                    break;
+            }
+            
+            /* A slight optimization: We're not typeface-changing spaces! */
+            if(current_typeface >= 0 && c != AscToWchar(' '))
+            {
+                unsigned offset = Typefaces[current_typeface].get_offset();
+                chronoc += offset;
             }
             
             result += chronoc;
@@ -198,34 +222,55 @@ const ctstring insertor::ParseScriptEntry(const ucs4string &input, const stringd
         static const ucs4string code12= AscToWstr("[stat,");
         static const ucs4string code0 = AscToWstr("[gfx");
         
-        static const ucs4string begin_cursive = AscToWstr("[i]");
-        static const ucs4string end_cursive   = AscToWstr("[/i]");
-        
         if(false) {} // for indentation...
         else if(is_dialog && code.compare(0, delay.size(), delay) == 0)
         {
             result += (ctchar)3;
             result += (ctchar)atoi(code.c_str() + delay.size(), 10);
         }
-        else if(is_dialog && code.compare(0, tech.size(), tech) == 0)
+        else if(is_dialog && code == tech)
         {
             result += (ctchar)0x12;
             result += (ctchar)0x00;
         }
-        else if(is_dialog && code.compare(0, monster.size(), monster) == 0)
+        else if(is_dialog && code == monster)
         {
             result += (ctchar)0x12;
             result += (ctchar)0x01;
         }
-        else if(is_dialog && code.compare(0, begin_cursive.size(), begin_cursive) == 0)
+        else if(is_dialog)
         {
-            is_cursive = true;
+            bool found = false;
+            for(unsigned a=0; a<Typefaces.size(); ++a)
+            {
+                const ucs4string& begin = Typefaces[a].get_begin_marker();
+                const ucs4string& end   = Typefaces[a].get_end_marker();
+                
+                if(code == begin)
+                {
+                    if(current_typeface >= 0)
+                    {
+                        fprintf(stderr, "Error: Started typeface with '%s' when one was already active!\n",
+                            WstrToAsc(begin).c_str());
+                    }
+                    current_typeface = a;
+                    found = true;
+                }
+                if(code == end)
+                {
+                    if(current_typeface < 0)
+                    {
+                        fprintf(stderr, "Error: Ended typeface with '%s' when none was active!\n",
+                            WstrToAsc(end).c_str());
+                    }
+                    current_typeface = -1;
+                    found = true;
+                }
+            }
+            if(!found) goto Continue1;
         }
-        else if(is_dialog && code.compare(0, end_cursive.size(), end_cursive) == 0)
-        {
-            is_cursive = false;
-        }
-        else if(is_8pix && code.compare(0, code0.size(), code0) == 0)
+        else Continue1:
+            if(is_8pix && code.compare(0, code0.size(), code0) == 0)
         {
         Handle8Code:
             unsigned a=0, b=code.size();
@@ -265,7 +310,7 @@ const ctstring insertor::ParseScriptEntry(const ucs4string &input, const stringd
     
     if(is_dialog)
     {
-        this->Conjugatemap.Work(result);
+        Conjugater->Work(result);
         result = WrapDialogLines(result);
     }
 
@@ -275,6 +320,9 @@ const ctstring insertor::ParseScriptEntry(const ucs4string &input, const stringd
 void insertor::LoadFile(FILE *fp)
 {
     if(!fp)return;
+
+    if(!Conjugater)
+        Conjugater = new Conjugatemap(*this);
     
     string header;
     
@@ -500,7 +548,7 @@ void insertor::LoadFile(FILE *fp)
                     if(c != AscToWchar('['))
                     {
                         // No code, translate byte.
-                        ctchar chronoc = getchronochar(c);
+                        ctchar chronoc = getchronochar(c, cset_12pix);
                         dictword += chronoc;
                         continue;
                     }

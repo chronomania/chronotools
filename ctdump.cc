@@ -15,6 +15,7 @@ using namespace std;
 #include "tgaimage.hh"
 #include "symbols.hh"
 #include "config.hh"
+#include "extras.hh"
 
 static ucs4string dict[256];
 
@@ -29,7 +30,7 @@ static const ucs4string Disp8Char(ctchar k)
 
     if(k == 0x2D) return AscToWstr(":");
         
-    ucs4 tmp = getucs4(k);
+    ucs4 tmp = getucs4(k, cset_8pix);
     if(tmp == ilseq)
     {
         char Buf[32];
@@ -70,10 +71,10 @@ static const ucs4string Disp12Char(ctchar k)
     // are quite obfuscated in the ROM. We use hardcoded
     // symbol map instead of trying to decipher the ROM.
     
-    if(!dict[k].empty())
+    if(k < 256 && !dict[k].empty())
         return dict[k];
 
-    ucs4 tmp = getucs4(k);
+    ucs4 tmp = getucs4(k, cset_12pix);
     if(tmp == ilseq)
     {
         char Buf[32];
@@ -90,9 +91,7 @@ static void DumpZStrings(const unsigned offs, unsigned len, bool dolf=true)
 {
     fprintf(stderr, "Dumping strings at %06X...", offs);
     
-    map<unsigned,unsigned> extrasizes;
-    extrasizes[0x12] = 1;
-    vector<ctstring> strings = LoadZStrings(offs, len, extrasizes);
+    vector<ctstring> strings = LoadZStrings(offs, len, Extras_12);
 
     printf("*z;%u pointerstrings (12pix font)\n", strings.size());
 
@@ -153,19 +152,7 @@ static void DumpZStrings(const unsigned offs, unsigned len, bool dolf=true)
 static void Dump8Strings(const unsigned offs, unsigned len=0)
 {
     fprintf(stderr, "Dumping strings at %06X...", offs);
-    map<unsigned,unsigned> extrasizes;
-    extrasizes[2] = 2;
-    extrasizes[3] = 2+2;
-    extrasizes[4] = 3;
-    extrasizes[5] = 2;
-    extrasizes[6] = 2;
-    extrasizes[7] = 2;
-    extrasizes[8] = 1;
-    extrasizes[9] = 1;
-    extrasizes[10] = 1;
-    extrasizes[11] = 2+2;
-    extrasizes[12] = 1+2;
-    vector<ctstring> strings = LoadZStrings(offs, len, extrasizes);
+    vector<ctstring> strings = LoadZStrings(offs, len, Extras_8);
 
     printf("*r;%u pointerstrings (8pix font)\n", strings.size());
 
@@ -225,7 +212,7 @@ Retry:
                     {
                         unsigned addr = ((c1&0x3F) << 16) + c2;
                         
-                        ctstring str = LoadZString(addr, extrasizes);
+                        ctstring str = LoadZString(addr, Extras_8);
                         
                         //line += conv.putc(AscToWchar('{')); //}
                         
@@ -400,7 +387,7 @@ static void LoadDict(unsigned offs, unsigned len)
     {
         const ctstring &s = strings[a];
         ucs4string tmp;
-        for(unsigned b=0; b<s.size(); ++b)tmp += getucs4(s[b]);
+        for(unsigned b=0; b<s.size(); ++b)tmp += getucs4(s[b], cset_12pix);
         dict[a + 0x21] = tmp;
     }
 
@@ -713,6 +700,8 @@ int main(int argc, const char* const* argv)
     puts(";Status screen strings");
     
     Dump8Strings(0x3FC457, 61);
+    
+    Dump8Strings(0x3FC4D3, 2);
     
     puts(";Misc prompts");
     DumpZStrings(0x3FCF3B, 7);

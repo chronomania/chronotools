@@ -52,13 +52,14 @@ include Makefile.sets
 # VERSION 1.2.9  compiler progress, first windows binaries are working
 # VERSION 1.2.10 cursive font support
 # VERSION 1.2.11 some translation, compression optimizations
+# VERSION 1.3.0  new compression options, font reorganizer
 
 OPTIM=-O3
 #OPTIM=-O0
 #OPTIM=-O0 -pg -fprofile-arcs
 #LDFLAGS += -pg -fprofile-arcs
 
-VERSION=1.2.11
+VERSION=1.3.0
 ARCHFILES=xray.c xray.h \
           viewer.c \
           ctcset.cc ctcset.hh \
@@ -84,11 +85,14 @@ ARCHFILES=xray.c xray.h \
           vwf8.cc vwftest.cc \
           config.cc config.hh \
           confparser.cc confparser.hh \
+          extras.cc extras.hh \
+          typefaces.cc typefaces.hh \
           taipus.rb ct.code \
           progdesc.php \
           spacefind.cc base62.cc sramdump.cc \
           binpacker.tcc binpacker.hh \
           compiler2.cc compiler2-parser.inc \
+          facegenerator.cc \
           hash.hh \
           README transnotes.txt Makefile.sets \
           libiconv/iconv.h libiconv/libiconv.a 
@@ -100,8 +104,13 @@ EXTRA_ARCHFILES=\
 ARCHNAME=chronotools-$(VERSION)
 ARCHDIR=archives/
 
-PROGS=ctdump ctinsert makeips unmakeips \
-      spacefind base62 sramdump viewer xray
+PROGS=\
+	ctdump ctinsert \
+	makeips unmakeips \
+	facegenerator \
+	base62 sramdump \
+	viewer xray \
+	spacefind comp2test vwftest
 
 all: $(PROGS)
 
@@ -112,14 +121,17 @@ viewer: viewer.o
 	$(CC) -o $@ $^ $(LDFLAGS) -lslang
 
 ctdump: \
-		ctdump.o rommap.o strload.o tgaimage.o symbols.o \
-		miscfun.o config.o confparser.o ctcset.o wstring.o
+		ctdump.o rommap.o strload.o extras.o \
+		tgaimage.o symbols.o miscfun.o config.o \
+		confparser.o ctcset.o wstring.o
 	$(CXX) -o $@ $^ $(LDFLAGS)
 
 ctinsert: \
 		ctinsert.o miscfun.o readin.o wrap.o \
 		tgaimage.o space.o writeout.o stringoffs.o \
-		dictionary.o fonts.o rom.o snescode.o \
+		dictionary.o \
+		fonts.o typefaces.o extras.o \
+		rom.o snescode.o \
 		conjugate.o vwf8.o compiler.o symbols.o \
 		logfiles.o \
 		config.o confparser.o ctcset.o wstring.o
@@ -138,8 +150,13 @@ sramdump: sramdump.cc config.o confparser.o wstring.o
 base62: base62.cc
 	$(CXX) $(CXXFLAGS) -g -O -Wall -W -pedantic -o $@ $^ $(LDFLAGS)
 vwftest: \
-		vwftest.cc tgaimage.o fonts.o config.o \
-		confparser.o ctcset.o wstring.o
+		vwftest.cc tgaimage.o \
+		fonts.o typefaces.o extras.o conjugate.o \
+		snescode.o symbols.o space.o logfiles.o compiler.o \
+		config.o confparser.o ctcset.o wstring.o
+	$(CXX) $(CXXFLAGS) -g -O -Wall -W -pedantic -o $@ $^ $(LDFLAGS)
+facegenerator: \
+		facegenerator.cc tgaimage.o
 	$(CXX) $(CXXFLAGS) -g -O -Wall -W -pedantic -o $@ $^ $(LDFLAGS)
 
 compiler2.o: compiler2.cc

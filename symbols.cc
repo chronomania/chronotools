@@ -27,8 +27,6 @@ void Symbols::Load()
     // 8pix symbols;  *xx:xxxx:Lxx
     // 16pix symbols; *xx:xxxx:Zxx
     
-    targets=2+8+16;
-    defbsym(end,         0x00)
     targets=16;
     // 0x01: characters 256-511
     // 0x02: characters 512-767
@@ -67,9 +65,7 @@ void Symbols::Load()
     defbsym(item,        0x1F)
     defsym(Epoch,        0x20) // User definable
     
-    // 21..9F are used by dictionary
-    // A0..FF are used by font
-    // (or actually the point depends on get_num_chronochars())
+    // 0x21+ are dictionary and font and optionally conjugate-codebytes
     
     #undef defsym
     #undef defbsym

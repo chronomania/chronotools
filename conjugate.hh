@@ -46,10 +46,11 @@ private:
     void Load(const class insertor &ins);
 public:
     const formlist &GetForms() const { return forms; }
+    
     bool IsConjChar(ctchar c) const;
+    void RedefineConjChar(ctchar was, ctchar is);
+    
     unsigned GetMaxWidth(ctchar c) const; // Max width caused by the conjugation char
 };
-
-const vector<ctchar> GetConjugateBytesList();
 
 #endif
