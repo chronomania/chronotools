@@ -2,6 +2,7 @@
 #include <list>
 #include <vector>
 #include <cstdio>
+#include <algorithm>
 
 #include "eventdata.hh"
 #include "miscfun.hh"
@@ -1050,7 +1051,7 @@ const char* MapNames[0x200] =
     "{1FE} (empty map)",
     "{1FF} (empty map)"
 };
-const char* Emotion[0x20] =
+const char* Emotion[0x20] = // Poses
 {
 "{00} Standing",
 "{01} Walking",
@@ -1071,7 +1072,7 @@ const char* Emotion[0x20] =
 "{10} Shock?",
 "{11} Standing?",
 "{12} Weak",
-"{13} Beat Chest (Robo)",
+"{13} Beat Chest (Robo)", // talktalk (Ayla)
 "{14} Unknown",
 "{15} Right Hand Up",
 "{16} Nod",
@@ -1702,7 +1703,7 @@ namespace
         paramholder& operator= (const std::wstring& s)
         { std::wstring::operator=(s); return *this; }
     };
-    typedef std::map<std::string, paramholder> parammap;
+    typedef std::map<char, paramholder> parammap;
 
 
     /* Prints the string using the format, filling in the parameters. */
@@ -1715,14 +1716,13 @@ namespace
         {
             if(*fmtptr == '%')
             {
-                std::string paramname;
-                while(std::isalnum(*++fmtptr)) paramname += *fmtptr;
-                
+                char paramname = *++fmtptr; ++fmtptr;
                 parammap::const_iterator i = params.find(paramname);
                 if(i == params.end())
                 {
-                    std::fprintf(stderr, "Internal error: Param '%s' not found\n",
-                        paramname.c_str());
+                    std::fprintf(stderr,
+                        "Internal error: Param '%c' not found for '%s'\n",
+                        paramname, opformat);
                     continue;
                 }
                 result += i->second;
@@ -1752,9 +1752,8 @@ namespace
             
             if(*fmtptr == '%')
             {
-                /* REad the parameter name */
-                std::string paramname;
-                while(std::isalnum(*++fmtptr)) paramname += *fmtptr;
+                /* Read the parameter name */
+                char paramname = *++fmtptr; ++fmtptr;
                 
                 unsigned param_begin = strpos;
                 
@@ -1819,135 +1818,11 @@ namespace
     {
         std::map<unsigned, std::wstring> per_addr;
         std::multimap<std::wstring, unsigned> per_name;
-    private:
+    public:
         void Define(unsigned n, const std::wstring& s)
         {
             per_addr.insert(std::make_pair(n, s));
             per_name.insert(std::make_pair(s, n));
-        }
-    public:
-        MemoryAddressConstants()
-        {
-            // Vars starting with Object are related to the actor.
-            // Vars starting with Sprite are related to the GFX sprite.
-            Define(0x7E016D, L"{ObjectID}");
-            Define(0x7E01BD, L"{NumActors}");
-            Define(0x7E011F, L"{ExploreMode}");
-            Define(0x7E0154, L"{Unknown54}");
-            Define(0x7E016B, L"{Unknown6B}");
-            Define(0x7E0197, L"{Member1ObjectNo}");
-            Define(0x7E0199, L"{Member2ObjectNo}");
-            Define(0x7E019B, L"{Member3ObjectNo}");
-            Define(0x7E01F8, L"{RandomCounter}");
-            Define(0x7E0520, L"{Sprite520}");
-            Define(0x7E0521, L"{Sprite521}");
-            // ^related to palette
-            Define(0x7E0522, L"{Sprite522}");
-            Define(0x7E0523, L"{Sprite523}");
-            Define(0x7E0524, L"{Sprite524}");
-            Define(0x7E0525, L"{Sprite525}");
-            Define(0x7E0526, L"{Sprite526}");
-            Define(0x7E0527, L"{Sprite527}");
-            Define(0x7E0528, L"{Sprite528}");
-            // 7E0F00: ?
-            Define(0x7E0F81, L"{ObjectPaletteNumber}");
-            // 1000: bitmask of unknown purpose (#$80 is a bit, lower bits are value)
-            // 1001: maybe a copy of 1000 (see op 87)
-            Define(0x7E1100, L"{ObjectMemberIdentity}");
-            // 1100: Identity as a party member
-            //         If bit $80 is set, the object is dead
-            //         and its code will not be interpreted.
-            //         #0: member1
-            //         #1: member2
-            //         #2: member3
-            //         #3: out-party PC
-            //         #4: NPC
-            //         #5: monster
-            Define(0x7E1101, L"{ObjectPlayerIdentity}");
-            // 1101: Identity as a player character
-            //         #0: crono
-            //         #1: marle
-            //         and so on
-            Define(0x7E1180, L"{ObjectCodePointer}");
-            // 1180: object's current code pointer
-            // 1301: static animation? (like sleeping)
-            Define(0x7E1400, L"{ObjectPalettePointer}");
-            // 1400: Pointer to palette in ROM (offset only, page E4)
-            // 7E15C0: ?
-            Define(0x7E1600, L"{ObjectFacing}");
-            // 1600: facing
-            // 1601: possibly a L"facing is up to date" flag
-            // 1680: current animation
-            // 1681: possibly a L"animation is up to date" flag
-            // 1780: ?flag
-            // 1781: ?
-            // 1800: ?flag for x-coord
-            Define(0x7E1801, L"{ObjectXCoord}");
-            // 1801: X-coordinate
-            // 1880: ?flag for y-coord
-            Define(0x7E1881, L"{ObjectYCoord}");
-            // 1881: Y-coordinate
-            // 1900: ?
-            // 1980: ?
-            Define(0x7E1A00, L"{ObjectSpeed}");
-            // 1A00: NpcSpeed
-            Define(0x7E1A01, L"{ObjectMovementLength}");
-            // 1A01: Length of movement
-            // 1A80: Appears to be a L"is moving?" flag
-            Define(0x7E1A81, L"{ObjectDrawingMode}");
-            // 1A81: Allocated? Drawing mode? 1=on, 0=off, $80=hide
-            Define(0x7E1B01, L"{ObjectSolidProps}");
-            // 1B01: NpcSolidProps
-            // 1B80: ?flag
-            // 1B81: ?
-            Define(0x7E1C00, L"{ObjectPriorityNumber}");
-            // 1C00: Current Priority number
-            Define(0x7E1C01, L"{ObjectEventFlag}");
-            // 1C01: EventFlag
-            Define(0x7E1C80, L"{ObjectMoveProps}");
-            // 1C80: NpcMoveProps
-            // 1C81: ?
-            //Define(0x7F0200, L"{DialogTextParam0}");
-            //Define(0x7F0201, L"{DialogTextParam1}");
-            //Define(0x7F0202, L"{DialogTextParam2}");
-            //Define(0x7F0203, L"{DialogTextParam3}");
-            //Define(0x7F0204, L"{DialogTextParam4}");
-            //Define(0x7F0205, L"{DialogTextParam5}");
-            // These may be used for dialog params, but
-            // they are also used for various other purposes
-            // as temporary variables.
-            
-            Define(0x7F0580, L"{ObjectPriority0Ptr}");
-            // 7F0580: Priority 0 code pointer (begins as 0)
-            Define(0x7F0600, L"{ObjectPriority1Ptr}");
-            // 7F0600: Priority 1 code pointer (begins as 0)
-            Define(0x7F0680, L"{ObjectPriority2Ptr}");
-            // 7F0680: Priority 2 code pointer (begins as 0)
-            Define(0x7F0700, L"{ObjectPriority3Ptr}");
-            // 7F0700: Priority 3 code pointer (begins as 0)
-            Define(0x7F0780, L"{ObjectPriority4Ptr}");
-            // 7F0780: Priority 4 code pointer (begins as 0)
-            Define(0x7F0800, L"{ObjectPriority5Ptr}");
-            // 7F0800: Priority 5 code pointer (begins as 0)
-            Define(0x7F0880, L"{ObjectPriority6Ptr}");
-            // 7F0880: Priority 6 code pointer (begins as 0)
-            Define(0x7F0900, L"{ObjectPriority7Ptr}");
-            // 7F0900: Priority 7 code pointer (begins as 0)
-            // 7F0980: flag used by opcode $04
-            Define(0x7E2980, L"{Member1ID}");
-            Define(0x7E2981, L"{Member2ID}");
-            Define(0x7E2982, L"{Member3ID}");
-            Define(0x7E2983, L"{Member4ID}");
-            Define(0x7E2984, L"{Member5ID}");
-            Define(0x7E2985, L"{Member6ID}");
-            Define(0x7E2986, L"{Member7ID}");
-            Define(0x7E2987, L"{Member8ID}");
-            Define(0x7E2988, L"{Member9ID}");
-            Define(0x7F0000, L"{StoryLineCounter}");
-            Define(0x7F0A80, L"{Result}");
-            // 7F0A80: "Result" of various tests
-            // 7F0B01: Used by op B7
-            // 7F0B80: Current pose number
         }
         const std::wstring& Find(unsigned n)
         {
@@ -2162,8 +2037,8 @@ private:
             t_dialogaddr
         };
     
-        ElemData(unsigned nb, unsigned mi,unsigned ma,unsigned ad,int sh)
-            : bytepos(0), type(t_trivial),
+        ElemData(unsigned nb, unsigned mi,unsigned ma,unsigned ad,int sh,typetype t=t_trivial)
+            : bytepos(0), type(t),
               n_bytes(nb),min(mi),max(ma),add(ad),shift(sh),
               highbit_trick(false) {}
         
@@ -2174,6 +2049,7 @@ private:
         }
         
         ElemData& SetBytePos(unsigned n) { bytepos = n; return *this; }
+        unsigned GetBytePos() const { return bytepos; }
         
         ElemData& SetType(typetype t)
         {
@@ -2500,7 +2376,9 @@ private:
                 {
                     /* First, read the integer value. */
                     unsigned value = ScanNumeric(s);
+#ifdef DEBUG_SCAN
                     const unsigned saved_value = value;
+#endif
                     if(value < add) goto trivial_err;
 
                     /* Unadjust the formatting. */
@@ -2766,19 +2644,26 @@ private:
         Command() {}
         explicit Command(const char* fmt) : format(fmt) { }
     
-        void Add(ElemData data, unsigned bytepos, const char* name)
+        void Add(ElemData data, unsigned bytepos, char name)
         {
+            if(!name) { Add(data, bytepos); return; }
+            
             data.SetBytePos(bytepos);
-            pos_data.push_back(std::make_pair(*name?name:NULL, data));
+            AddPosData(name, data);
         }
         void Add(ElemData data, unsigned bytepos)
         {
             data.SetBytePos(bytepos);
-            pos_data.push_back(std::make_pair((const char*)NULL, data));
+            AddPosData('\0', data);
         }
-        void Add(const ElemData& data, const char* name)
+        void Add(const ElemData& data, char name)
         {
-            other_data.push_back(std::make_pair(name, data));
+            AddOtherData(name, data);
+        }
+        
+        void SetSize(unsigned nbytes)
+        {
+            min_size = nbytes;
         }
         
         void PutInto(OpcodeTree& tree, unsigned bytepos=0)
@@ -2789,12 +2674,13 @@ private:
             // Find out which of the options defines the range
             // for this byte
             bool found=false;
-            for(unsigned a=0; a<pos_data.size(); ++a)
+            
+            for(list_t::const_iterator p = pos_data.begin(); p != pos_data.end(); ++p)
             {
-                const ElemData& d = pos_data[a].second;
-                if(d.KnowRange(bytepos))
+                const ElemData& elem = p->second;
+                if(elem.KnowRange(bytepos))
                 {
-                    range<unsigned char> r(d.GetMin(bytepos), d.GetMax(bytepos));
+                    range<unsigned char> r(elem.GetMin(bytepos), elem.GetMax(bytepos));
                     
                     OpcodeTree::maptype::iterator i = tree.data.find(r);
                     if(i == tree.data.end())
@@ -2814,9 +2700,34 @@ private:
             // If there were no specialisations, use the current node.
             if(!found) tree.choices.push_back(*this);
         }
-        void PutInto(StringTree& tree)
+        void PutInto(StringTree& tree, unsigned characterpos=0)
         {
-            tree.choices.push_back(*this);
+            /* Encodes the data into the character tree
+             * for optimized retrieval */
+        
+            bool found=false;
+            
+            char c;
+            while((c = format[characterpos]) == ' ') ++characterpos;
+            
+            if(c != '%')
+            {
+                StringTree::maptype::iterator i = tree.data.find(c);
+                if(i == tree.data.end())
+                {
+                    StringTree *subtree = new StringTree;
+                    PutInto(*subtree, characterpos+1);
+                    tree.data.insert(std::make_pair(c, subtree));
+                }
+                else
+                {
+                    StringTree& subtree = *i->second;
+                    PutInto(subtree, characterpos+1);
+                }
+                found=true;
+            }
+            // If there were no specialisations, use the current node.
+            if(!found) tree.choices.push_back(*this);
         }
         
         const EventCode::DecodeResult
@@ -2827,14 +2738,17 @@ private:
             
             EventCode::DecodeResult result;
             
+            result.goto_type = EventCode::goto_none;
+            
             unsigned nbytes = 1;
-            for(unsigned a=0; a<pos_data.size(); ++a)
+            for(list_t::const_iterator p = pos_data.begin(); p != pos_data.end(); ++p)
             {
+                const char name      = p->first;
+                const ElemData& elem = p->second;
+                
                 /* Even if it doesn't have a name, it needs to be decoded
                  * to get the opcode length properly.
                  */
-                const char* name = pos_data[a].first;
-                const ElemData& elem = pos_data[a].second;
                 
                 ElemData::FormatResult
                     tmp = elem.Format(offset, data, length, state);
@@ -2843,14 +2757,18 @@ private:
                 {
                     params[name] = tmp.text;
                 }
-                result.goto_type   = tmp.goto_type;
-                result.goto_target = tmp.goto_target;
+                if(tmp.goto_type != EventCode::goto_none)
+                {
+                    result.goto_type   = tmp.goto_type;
+                    result.goto_target = tmp.goto_target;
+                }
                 if(tmp.maxoffs > nbytes) nbytes = tmp.maxoffs;
             }
-            for(unsigned a=0; a<other_data.size(); ++a)
+
+            for(list_t::const_iterator p = other_data.begin(); p != other_data.end(); ++p)
             {
-                const char* name = other_data[a].first;
-                const ElemData& elem = other_data[a].second;
+                const char name      = p->first;
+                const ElemData& elem = p->second;
                 
                 if(!name)
                 {
@@ -2881,10 +2799,10 @@ private:
              * verify the values of the parameters match.
              */
 
-            for(unsigned a=0; a<other_data.size(); ++a)
+            for(list_t::const_iterator p = other_data.begin(); p != other_data.end(); ++p)
             {
-                const char* name     = other_data[a].first;
-                const ElemData& elem = other_data[a].second;
+                const char name      = p->first;
+                const ElemData& elem = p->second;
                 
                 if(!name)
                 {
@@ -2897,10 +2815,10 @@ private:
             /* Encode all parameters that contribute to the
              * byte representation.
              */
-            for(unsigned a=0; a<pos_data.size(); ++a)
+            for(list_t::const_iterator p = pos_data.begin(); p != pos_data.end(); ++p)
             {
-                const char* name     = pos_data[a].first;
-                const ElemData& elem = pos_data[a].second;
+                const char name      = p->first;
+                const ElemData& elem = p->second;
                 
                 ElemData::ScanResult tmp = name
                     ? elem.Scan(params[name], goto_backward, state)
@@ -2922,11 +2840,22 @@ private:
             
             return result;
         }
+    private:
+        void AddPosData(char name, const ElemData& elem)
+        {
+            pos_data.push_back(std::make_pair(name, elem));
+        }
+        void AddOtherData(char name, const ElemData& elem)
+        {
+            other_data.push_back(std::make_pair(name, elem));
+        }
         
     private:
         const char* format;
-        std::vector<std::pair<const char*, ElemData> > pos_data;
-        std::vector<std::pair<const char*, ElemData> > other_data;
+        unsigned min_size;
+        typedef std::list<std::pair<char, ElemData> > list_t;
+        list_t pos_data;
+        list_t other_data;
     };
     
 private:
@@ -2939,6 +2868,28 @@ private:
         typedef simple_rangemap<unsigned char, OpcodeTreePtr> maptype;
         maptype data;
         std::vector<Command> choices;
+        
+        void Optimize()
+        {
+            /* Optimize all subtrees */
+            for(maptype::iterator i = data.begin(); i != data.end(); ++i)
+            {
+                i->second->Optimize();
+            }
+            /* If we now have only 1 subtree and it's not deep,
+             * assimilate it. */
+            if(data.size() == 1)
+            {
+                maptype::iterator i = data.begin();
+                const OpcodeTree& child = *i->second;
+                if(child.data.empty()) // the child must not have children
+                {
+                    // ok, take the child's commands and delete it
+                    choices.insert(choices.end(), child.choices.begin(), child.choices.end());
+                    data.erase(i);
+                }
+            }
+        }
         
         void Dump(unsigned indent=0) const
         {
@@ -2962,2395 +2913,63 @@ private:
             }
         }
     };
-    class StringTree
+
+    typedef autoptr<class StringTree> StringTreePtr;
+    class StringTree: public ptrable
     {
     public:
         StringTree() { }
         
+        typedef std::map<char, StringTreePtr> maptype;
+        maptype data;
         std::vector<Command> choices;
+        
+        void Optimize()
+        {
+            /* Optimize all subtrees */
+            for(maptype::iterator i = data.begin(); i != data.end(); ++i)
+            {
+                i->second->Optimize();
+            }
+            /* If we now have only 1 subtree and it's not deep,
+             * assimilate it. */
+            if(data.size() == 1)
+            {
+                maptype::iterator i = data.begin();
+                const StringTree& child = *i->second;
+                if(child.data.empty()) // the child must not have children
+                {
+                    // ok, take the child's commands and delete it
+                    choices.insert(choices.end(), child.choices.begin(), child.choices.end());
+                    data.erase(i);
+                }
+            }
+        }
+        
+        void Dump(unsigned indent=0) const
+        {
+            if(!choices.empty())
+            {
+                std::fprintf(stderr, "%*s", indent, "");
+                std::fprintf(stderr, "%u choices.\n", choices.size());
+            }
+            for(maptype::const_iterator
+                i = data.begin();
+                i != data.end();
+                ++i)
+            {
+                const StringTreePtr& p = i->second;
+                const StringTree& subtree = *p;
+                
+                std::fprintf(stderr, "%*s", indent, "");
+                std::fprintf(stderr, "subtree %c:\n", i->first ? i->first : '*');
+                subtree.Dump(indent+2);
+            }
+        }
     };
     
 private:
-    class Initialize
-    {
-    private:
-        struct NamedElem: public std::pair<const char*, ElemData>
-        {
-        public:
-            NamedElem(const char*s, const ElemData& e)
-              : std::pair<const char*,ElemData>(s,e) { }
-        
-            NamedElem& AnnotatePC()
-            {
-               // this->second.Annotate(ElemData::anno_pc);
-                return *this;
-            }
-            NamedElem& AnnotateNPC()
-            {
-               // this->second.Annotate(ElemData::anno_npc);
-                return *this;
-            }
-            NamedElem& AnnotateEnemy()
-            {
-               // this->second.Annotate(ElemData::anno_enemy);
-                return *this;
-            }
-            NamedElem& AnnotateSong()
-            {
-               // this->second.Annotate(ElemData::anno_song);
-                return *this;
-            }
-            NamedElem& AnnotateSFX()
-            {
-               // this->second.Annotate(ElemData::anno_sfx);
-                return *this;
-            }
-            NamedElem& SetHighbit()
-            {
-                this->second.DeclareHighbit();
-                return *this;
-            }
-        };
-    
-        /* formatting */
-        Initialize& operator<< (const char* format)
-        {
-            Flush();
-            cur_command = new Command(format);
-            return *this;
-        }
-
-        /* set byteposition */
-        Initialize& operator<< (int bytepos)
-        {
-            curpos = bytepos;
-            return *this;
-        }
-        
-        /* opcode settings */
-        Initialize& operator>> (const NamedElem& data)
-        {
-            if(cur_command) cur_command->Add(data.second, curpos, data.first);
-            return *this;
-        }
-        /* unnamed elements */
-        Initialize& operator>> (const ElemData& data)
-        {
-            if(cur_command) cur_command->Add(data, curpos);
-            return *this;
-        }
-        Initialize& operator>> (unsigned char ch)
-        {
-            return *this >> ElemData(1,ch,ch,0,0);
-        }
-
-        /* settings */
-        Initialize& operator<< (const NamedElem& data)
-        {
-            if(cur_command) cur_command->Add(data.second, data.first);
-            return *this;
-        }
-        
-        /* opcode settings */
-        static NamedElem DeclareByte(const char* name, unsigned min=0x00, unsigned max=0xFF,
-                                     bool highbittrick=false)
-        {
-            ElemData tmp(1,min,max,0,0);
-            if(highbittrick) tmp.DeclareHighbit();
-            return NamedElem(name, tmp);
-        }
-        static NamedElem DeclareObjectNo(const char* name)
-        {
-            ElemData tmp(1,0x00,0x7E,0,-1);
-            return NamedElem(name, tmp);
-        }
-        static NamedElem DeclareWord(const char* name, unsigned min=0x0000, unsigned max=0xFFFF)
-        {
-            return NamedElem(name, ElemData(2,min,max,0,0));
-        }
-        static NamedElem DeclareLong(const char* name, unsigned min=0x000000, unsigned max=0xFFFFFF)
-        {
-            return NamedElem(name, ElemData(3,min,max,0,0));
-        }
-        static NamedElem DeclareNibbleHi(const char* name)
-        {
-            ElemData result(1, 0x00,0xFF, 0,0);
-            result.SetType(ElemData::t_nibble_hi);
-            return NamedElem(name, result);
-        }
-        static NamedElem DeclareNibbleLo(const char* name)
-        {
-            ElemData result(1, 0x00,0xFF, 0,0);
-            result.SetType(ElemData::t_nibble_lo);
-            return NamedElem(name, result);
-        }
-        static NamedElem DeclareOrBitnum(const char* name)
-        {
-            ElemData result(1, 0x00,0x07, 0,0);
-            result.SetType(ElemData::t_orbit);
-            return NamedElem(name, result);
-        }
-        static NamedElem DeclareAndBitnum(const char* name)
-        {
-            ElemData result(1, 0x00,0x07, 0,0);
-            result.SetType(ElemData::t_andbit);
-            return NamedElem(name, result);
-        }
-        static NamedElem Declare7E0000_B(const char* name)
-            { return NamedElem(name, ElemData(1,0x00,0xFF,0x7E0000,0)); }
-        static NamedElem Declare7E0197_B(const char* name)
-            { return NamedElem(name, ElemData(1,0x00,0xFF,0x7E0197,0)); }
-        static NamedElem Declare7E0100_B(const char* name)
-            { return NamedElem(name, ElemData(1,0x00,0xFF,0x7E0100,0)); }
-        static NamedElem Declare7F0000_B(const char* name)
-            { return NamedElem(name, ElemData(1,0x00,0xFF,0x7F0000,0)); }
-        static NamedElem Declare7F0000_W(const char* name)
-            { return NamedElem(name, ElemData(2,0x00,0xFFFF,0x7F0000,0)); }
-        static NamedElem Declare7F0200_2(const char* name)
-            { return NamedElem(name, ElemData(1,0x00,0xFF,0x7F0200,1)); }
-        static NamedElem DeclareOperator(const char* name)
-        {
-            ElemData result(1, 0x00,0x7F, 0,0);
-            result.SetType(ElemData::t_operator);
-            return NamedElem(name, result);
-        }
-        static NamedElem DeclareBlob(const char* name)
-        {
-            ElemData result(2, 0x0000,0xFFFF, 0,0);
-            result.SetType(ElemData::t_blob);
-            return NamedElem(name, result);
-        }
-        static NamedElem DeclareTextBlob(const char* name)
-        {
-            ElemData result(2, 0x0000,0xFFFF, 0,0);
-            result.SetType(ElemData::t_textblob);
-            return NamedElem(name, result);
-        }
-        static NamedElem DeclareDialogBegin(const char* name)
-        {
-            ElemData result(3, 0x000000,0xFFFFFF, 0,0);
-            result.SetType(ElemData::t_dialogbegin);
-            return NamedElem(name, result);
-        }
-        static NamedElem DeclareDialogAddr(const char* name)
-        {
-            ElemData result(1, 0x00,0xFF, 0,0);
-            result.SetType(ElemData::t_dialogaddr);
-            return NamedElem(name, result);
-        }
-        
-        /* settings */
-        static NamedElem DeclareConst(const char* name, unsigned value)
-        {
-            if(value <= 0xFF)
-                return NamedElem(name, ElemData(1,value,value,0,0));
-            if(value <= 0xFFFF)
-                return NamedElem(name, ElemData(2,value,value,0,0));
-            if(value <= 0xFFFFFF)
-                return NamedElem(name, ElemData(3,value,value,0,0));
-            return NamedElem(name, ElemData(4,value,value,0,0));
-        }
-
-        static NamedElem DeclareProp(const char* name, unsigned address)
-        {
-            if(address <=0x0000FF) address += 0x7E0100; // D page.
-            if(address < 0x7E0000) address += 0x7E0000;
-            return DeclareConst(name, address);
-        }
-        static ElemData DeclareElse()
-        {
-            // forward goto
-            ElemData result(1, 0x00,0xFF, 0,0);
-            return result.SetType(ElemData::t_else);
-        }
-        static ElemData DeclareLoop()
-        {
-            // backward goto
-            ElemData result(1, 0x00,0xFF, 0,0);
-            return result.SetType(ElemData::t_loop);
-        }
-        static ElemData DeclareIf()
-        {
-            // conditional goto
-            //   Declares a condition - if the condition
-            //   matches, goto is NOT performed
-            
-            // FIXME: Verify the polarity of each "if"
-            
-            ElemData result(1, 0x00,0xFF, 0,0);
-            return result.SetType(ElemData::t_if);
-        }
-        
-        void Init()
-        {
-        *this
-<< "[Return]"
-    << 0 >> 0x00
-    /*
-        A = $1C00 of cur obj
-        If A == 7
-        {
-          // There are no more threads.
-          return and loop
-        }
-        X = (A << 7) + (obj number)
-        $7F0580[X] = word(0) // Mark the current thread as completed
-        <begin>
-         $1C00 of cur obj += 1
-         X += #$80
-         A = $7F0580[X]
-        <while A==0>
-        returns X as A (execution position)
-        return
-        
-      Returns to the function of lower priority
-      (bigger number)
-    */
-
-<< "[Execute:%2 [priority:%1] [for:%0] [wait:nothing]]"
-    << 0 >> 0x02
-    << 1 >> DeclareObjectNo("0") // object number whose execution to alter
-    << 2 >> DeclareNibbleHi("1")
-    << 2 >> DeclareNibbleLo("2")
-    /*
-        If ( $1C01 for given obj != #0
-        Or   $1100 for given obj & #$80
-        Or   $1000 for given obj & #$80 )
-        {
-          return
-        }
-        $D9 = $1C00 for given obj // Current thread
-        $DF = hi nibble
-        If $DF == $D9
-        {
-          // Already executing the selected thread
-          return
-        }
-        If $DF >= $D9
-        {
-          // Verify that the thread is undefined
-          $E1 = ($DF << 7) + param1
-          A = $7F0580[$E1]
-          If(!zero)
-          {
-            // Already defined.
-            return
-          }
-          // Define it.
-          $E3 = (param0 << 4) + (lo nibble)*2
-          $7F0580[$E1] = given actor's pointer from $7F2001[$E3]
-        }
-        else
-        {
-          // Returning to a previous thread?
-          
-          // Save current code position
-          $E1 = ($D9 << 7) + param1
-          $7F0580[$E1] = $1180 for given obj
-          
-          // Load new position
-          $E3 = (param0 << 4) + (lo nibble)*2
-          $1180 for given obj = given actor's pointer from $7F2001[$E3]
-          $1C00 for given obj = $DF
-          $1A80 for given obj = 0 (moving flag)
-          $1A01 for given obj = 0 (length of movement)
-        }
-        return
-        
-        Analysis:
-          This function meddles with ANOTHER object.
-          It does not alter the execution of SELF.
-
-          If the current thread < %1
-            Saves current location to current thread
-            Calls function %2 as thread %1
-          If the current thread >= %1
-            Sets thread %1 exit address from function %2
-            Only if not defined yet.
-          
-          Analysis continued, the thread number
-          may represent "priority".
-
-          When the thread number is smaller than
-          current, the function is called immediately.
-          When the number is bigger, it will be called
-          when the current one finishes.
-
-          There are eight priority levels:
-             0 1 2 3 4 5 6 7
-          The opcode 00 returns to the next priority level,
-          like from 6 to 7. If the current is 7 when
-          opcode 00 is called, it will loop.
-
-     */
-     // Note: used by op 05.
-
-<< "[Execute:%2 [priority:%1] [for:%0] [wait:call]]"
-    << 0 >> 0x03
-    << 1 >> DeclareObjectNo("0")
-    << 2 >> DeclareNibbleHi("1")
-    << 2 >> DeclareNibbleLo("2")
-    
-    /* Same as op 02, except that if the given
-       object is currently performing a more urgent
-       task, this op will wait until it's completed
-       and then transfer it to the new one.
-    */
-    /*
-        if ( $1C01 for given obj != #0 )
-          return, loop
-        
-        If ( $1100 for given obj & #$80
-        Or   $1000 for given obj & #$80 )
-        {
-          return
-        }
-        
-        $D9 = $1C00 for given obj // Current thread
-        $DF = hi nibble
-        If $DF >= $D9
-        {
-          return, loop
-        }
-        
-        // Save current code position
-        $E1 = ($D9 << 7) + param1
-        $7F0580[$E1] = $1180 for given obj
-        
-        // Load new position
-        $E3 = (param1 << 4) + (lo nibble)*2
-        $1180 for given obj = given actor's pointer from $7F2001[$E3]
-        $1C00 for given obj = $DF
-        $1A80 for given obj = 0 (moving flag)
-        $1A01 for given obj = 0 (length of movement)
-        return
-     */
-     // Note: used by op 06.
-
-<< "[Execute:%2 [priority:%1] [for:%0] [wait:return]]"
-    << 0 >> 0x04
-    << 1 >> DeclareObjectNo("0")
-    << 2 >> DeclareNibbleHi("1")
-    << 2 >> DeclareNibbleLo("2")
-    
-    /*
-       Same as op 03, except that it will wait
-       until the target object returns from the
-       function.
-     */
-    /*
-       $DB = param0 // object number
-       
-       $D9 = $1C00 for given obj // Current thread
-       $DD = byte2 (param1 and param2)
-       $DF = param1
-       
-       A = $7F0980 for _current_ object
-       If(A != 0)
-       {
-         If ( $1100 for given obj & #$80
-         Or   $1000 for given obj & #$80 )
-         {
-           $7F0980 for _current_ object = 0
-           return
-         }
-         
-         If $DF >= $D9:
-           return, loop
-         
-         $7F0980 for _current_ obj = 0
-         return
-       }
-       
-       If ( $1C01 for given obj != 0):
-         return, loop
-       
-       If ( $1100 for given obj & #$80
-       Or   $1000 for given obj & #$80 )
-       {
-         return
-       }
-       
-       If $DF >= $D9:
-         return, loop
-       
-       // Save current code position
-       $E1 = ($D9 << 7) + param0
-       $7F0580[$E1] = $1180 for given obj
-       
-       // Load new position
-       $E3 = (param0 << 4) + (param2)*2
-       $1180 for given obj = given actor's pointer from $7F2001[$E3]
-       $1C00 for given obj = $DF
-       $1A80 for given obj = 0 (moving flag)
-       $1A01 for given obj = 0 (length of movement)
-
-       $7F0980 for _current_ obj = 1
-       return, loop
-    */
-     // Note: used by op 07.
-
-<< "[Execute:%2 [priority:%1] [for:%0] [wait:nothing]]"
-    << 0 >> 0x05
-    << 1 >> Declare7E0197_B("0")//target obj
-    << 2 >> DeclareNibbleHi("1")
-    << 2 >> DeclareNibbleLo("2")
-        // Same as 0x02, but uses object number from table.
-
-<< "[Execute:%2 [priority:%1] [for:%0] [wait:call]]"
-    << 0 >> 0x06
-    << 1 >> Declare7E0197_B("0")//target obj
-    << 2 >> DeclareNibbleHi("1")
-    << 2 >> DeclareNibbleLo("2")
-    // Same as 0x03, but uses object number from table.
-
-<< "[Execute:%2 [priority:%1] [for:%0] [wait:return]]"
-    << 0 >> 0x07
-    << 1 >> Declare7E0197_B("0")//target obj
-    << 2 >> DeclareNibbleHi("1")
-    << 2 >> DeclareNibbleLo("2")
-    // Same as 0x04, but uses object number from table.
-
-<< "[ObjectLetB:%0:%1]"
-    << 0 >> 0x08
-    << DeclareProp("0", 0x1C01)
-    << DeclareConst("1", 1)
-
-<< "[ObjectLetB:%0:%1]"
-    << 0 >> 0x09
-    << DeclareProp("0", 0x1C01)
-    << DeclareConst("1", 0)
-
-<< "[ObjectRemove [for:%0]]"
-    << 0 >> 0x0A
-    << 1 >> DeclareObjectNo("0")
-    // For given obj,
-    //   Sets 1100=$80 (code execution: dead)
-    //   And  1A81=$00 (drawing mode: none)
-
-<< "[ObjectOrB:%0:%1 [for:%2]]"
-    << 0 >> 0x0B
-    << 1 >> DeclareObjectNo("2")
-    << DeclareProp("0", 0x1000)
-    << DeclareConst("1", 0x80)
-
-<< "[ObjectAndB:%0:%1 [for:%2]]"
-    << 0 >> 0x0C
-    << 1 >> DeclareObjectNo("2")
-    << DeclareProp("0", 0x1000)
-    << DeclareConst("1", 0x7F)
-
-<< "[ObjectLetB:%0:%1]"
-    << 0 >> 0x0D
-    << 1 >> DeclareByte("1")
-    << DeclareProp("0", 0x1C80)
-
-<< "[ObjectLetB:%0:%1]"
-    << 0 >> 0x0E
-    << 1 >> DeclareByte("1")
-    << DeclareProp("0", 0x1C81)
-
-<< "[ObjectSetFacing:%0]"
-    << 0 >> 0x0F
-    << DeclareConst("0", 0) //up
-    // puts 1600=0, 1601=0
-
-<< ""
-    << 0 >> 0x10
-    << 1 >> DeclareElse()
-
-<< ""
-    << 0 >> 0x11
-    << 1 >> DeclareLoop()
-
-<< "B:%addr %op %value"
-    << 0 >> 0x12
-    << 1 >> Declare7F0200_2("addr")
-    << 2 >> DeclareByte("value")
-    << 3 >> DeclareOperator("op")
-    << 4 >> DeclareIf()
-
-<< "W:%addr %op %value"
-    << 0 >> 0x13
-    << 1 >> Declare7F0200_2("addr")
-    << 2 >> DeclareWord("value")
-    << 4 >> DeclareOperator("op")
-    << 5 >> DeclareIf()
-
-<< "B:%addr1 %op %addr2"
-    << 0 >> 0x14
-    << 1 >> Declare7F0200_2("addr1")
-    << 2 >> Declare7F0200_2("addr2")
-    << 3 >> DeclareOperator("op")
-    << 4 >> DeclareIf()
-
-<< "W:%addr1 %op %addr2"
-    << 0 >> 0x15
-    << 1 >> Declare7F0200_2("addr1")
-    << 2 >> Declare7F0200_2("addr2")
-    << 3 >> DeclareOperator("op")
-    << 4 >> DeclareIf()
-
-<< "B:%addr %op %value"
-    << 0 >> 0x16
-    << 1 >> Declare7E0000_B("addr")
-    << 2 >> DeclareByte("value")
-    << 3 >> DeclareOperator("op")
-    << 4 >> DeclareIf()
-
-<< "B:%addr %op %value"
-    << 0 >> 0x16
-    << 1 >> Declare7E0100_B("addr")
-    << 2 >> DeclareByte("value")
-    << 3 >> DeclareOperator("op").SetHighbit()
-    << 4 >> DeclareIf()
-
-<< "[ObjectSetFacing:%0]"
-    << 0 >> 0x17
-    << DeclareConst("0", 1) //down
-    // puts 1600=1, 1601=0
-
-<< "B:%addr < %0"
-    << 0 >> 0x18
-    << 1 >> DeclareByte("0")
-    << 2 >> DeclareIf()
-    << DeclareConst("addr", 0x7F0000)
-
-<< "[ObjectLetB:%0:%1]"
-    << 0 >> 0x19
-    << 1 >> Declare7F0200_2("1")
-    << DeclareProp("0", 0x7F0A80)
-
-<< "ObjectB:%0 == %1"
-    << 0 >> 0x1A
-    << 1 >> DeclareByte("1")
-    << 2 >> DeclareIf()
-    << DeclareProp("0", 0x7F0A80)
-
-<< "[ObjectSetFacing:%0]"
-    << 0 >> 0x1B
-    << DeclareConst("0", 2) //left
-    // puts 1600=2, 1601=0
-
-<< "[ObjectLetB:%0:%1]"
-    << 0 >> 0x1C
-    << 1 >> Declare7F0000_B("1")
-    << DeclareProp("0", 0x7F0A80)
-
-<< "[ObjectSetFacing:%0]"
-    << 0 >> 0x1D
-    << DeclareConst("0", 3) //right
-    // puts 1600=3, 1601=0
-
-<< "[ObjectSetFacing:%0 [for:%1]]"
-    << 0 >> 0x1E
-    << 1 >> DeclareObjectNo("1")
-    << DeclareConst("0", 0) //up
-    // puts 1600=0, 1601=0
-
-<< "[ObjectSetFacing:%0 [for:%1]]"
-    << 0 >> 0x1F
-    << 1 >> DeclareObjectNo("1")
-    << DeclareConst("0", 1) //down
-    // puts 1600=1, 1601=0
-
-<< "[LetB:%0:%1]"
-    << 0 >> 0x20
-    << 1 >> Declare7F0200_2("0")
-    << DeclareConst("1", 0x7E2980) // member1
-
-<< "[ObjectGetPosition:%1:%2 [for:%0]]"
-    << 0 >> 0x21
-    << 1 >> DeclareObjectNo("0")
-    << 2 >> Declare7F0200_2("1")
-    << 3 >> Declare7F0200_2("2")
-    /*
-       param1 = $1801 for given obj (xcoord)
-       param2 = $1881 for given obj (ycoord)
-     */
-
-<< "[ObjectGetPosition:%1:%2 [for:%0]]"
-    << 0 >> 0x22
-    << 1 >> Declare7E0197_B("0")
-    << 2 >> Declare7F0200_2("1")
-    << 3 >> Declare7F0200_2("2")
-    /* Same as op 21, but gets object from $97 instead. */
-
-<< "[ObjectGetFacing:%1 [for:%0]]"
-    << 0 >> 0x23
-    << 1 >> DeclareObjectNo("0")
-    << 2 >> Declare7F0200_2("1")
-    /*
-       assigns $1600 of given obj to param1.
-    */
-
-<< "[ObjectGetFacing:%1 [for:%0]]"
-    << 0 >> 0x24
-    << 1 >> Declare7E0197_B("0")
-    << 2 >> Declare7F0200_2("1")
-    /* Same as op 23, but gets object from $97 instead. */
-
-<< "[ObjectSetFacing:%0 [for:%1]]"
-    << 0 >> 0x25
-    << 1 >> DeclareObjectNo("1")
-    << DeclareConst("0", 2) //left
-    // puts 1600=2, 1601=0
-
-<< "[ObjectSetFacing:%0 [for:%1]]"
-    << 0 >> 0x26
-    << 1 >> DeclareObjectNo("1")
-    << DeclareConst("0", 3) //right
-    // puts 1600=3, 1601=0
-
-<< "ObjectB:%0 == %1 [for:%2]"
-    << 0 >> 0x27
-    << 1 >> DeclareObjectNo("2")
-    << 2 >> DeclareIf()
-    << DeclareConst("1", 0)
-    << DeclareProp("0", 0x0F00)
-
-<< "ObjectNearUnknown [for:%0]"
-    << 0 >> 0x28
-    << 1 >> DeclareObjectNo("0")
-    << 2 >> DeclareIf()
-    /*
-        $DB = $1D0A >> 1
-        $DD = $1D0E >> 1
-        x = $1801 for given obj
-        y = $1881 for given obj
-        if (x - $DB) in (0, 1, >= 14)
-        or (y - $DD) in (0, 1, >= 13)
-        {
-          @ 668F
-          goto.
-        }
-        return
-        
-        <evilpeer> Seems to be related to the moving
-        Turrents on the Blackbird's Left Wing.
-     */
-
-<< "[EndingText:%0]"
-    << 0 >> 0x29
-    << 1 >> DeclareByte("0")
-
-<< "[OrB:%0:%1]"
-    << 0 >> 0x2A
-    << DeclareConst("0", 0x7E0154)
-    << DeclareConst("1", 4)
-
-<< "[OrB:%0:%1]"
-    << 0 >> 0x2B
-    << DeclareConst("0", 0x7E0154)
-    << DeclareConst("1", 8)
-
-<< "[Unknown2C:%0:%1]"
-    << 0 >> 0x2C
-    << 1 >> DeclareByte("0")
-    << 2 >> DeclareByte("1")
-    /*
-      $1D3F = 0
-      $1D40 = 0
-      $1D92 = 0
-      $1D8F = word(param1*8)
-      $1D91 = word(param2*8)
-      purpose unknown
-    */
-
-<< "W:%0 <> 00"
-    << 0 >> 0x2D
-    << 1 >> DeclareIf()
-    << DeclareConst("0", 0x7E01F8)
-
-<< "[PaletteSet:%2:%3 [palette:%1]]"
-    << 0 >> 0x2E
-    << 1 >> DeclareByte("", 0x80, 0x8F) // the actual value matters not.
-    << 2 >> DeclareNibbleHi("1") // palette number
-    << 2 >> DeclareNibbleLo("2") // starting colour
-    << 3 >> DeclareBlob("3")
-    // writes to 7E2200-> and 7E2000->
-    //
-    //      7E2200 is the 512-byte buffer of palettes.
-    //      DMA 7 writes it to PPU port 2122 (CGRAM) all the time.
-
-<< "[GFXSetup:%0:%1:%2:%3:%4]"
-    << 0 >> 0x2E
-    << 1 >> DeclareByte("0", 0x40, 0x5F) // this value matters
-    << 2 >> DeclareByte("1")
-    << 3 >> DeclareByte("2")
-    << 4 >> DeclareByte("3")
-    << 5 >> DeclareByte("4")
-    /*
-      calls function 4B2C.
-         if carry set, returns
-         if carry clear:
-           $0520[Y] = param0 // 0x40..0x5F.
-           $0521[Y] = param1
-           $0522[Y] = param2
-           $0523[Y] = 8
-           $0524[Y] = 0
-           $0525[Y] = param4
-           $0526[Y] = param0
-           $0527[Y] = ((param3 & 0xF0) >> 4) | (param3 & 0xF0)
-           $0528[Y] = ((param3 & 0x0F) << 4) | (param3 & 0x0F)
-
-        @4B2C: This function is referred often.
-          
-          Y = 0
-          loop:
-            A = $0520[Y]
-            if(zero)
-              return carry-clear
-            Y += #$0C
-          :loop while Y<60
-          return carry-set
-        
-          I guess this function allocates a new sprite
-          slot for the particular object.
-
-     */
-
-<< "[LetW:%0:%1]"
-    << 0 >> 0x2F
-    << 1 >> DeclareWord("1")
-    << DeclareConst("0", 0x0BE3)
-
-<< "B:%0 & %1"
-    << 0 >> 0x30
-    << 1 >> DeclareIf()
-    << DeclareConst("0", 0x7E01F8)
-    << DeclareConst("1", 0x02)
-
-<< "B:%0 & %1"
-    << 0 >> 0x31
-    << 1 >> DeclareIf()
-    << DeclareConst("0", 0x7E01F8)
-    << DeclareConst("1", 0x80)
-
-<< "[OrB:%0:%1]"
-    << 0 >> 0x32
-    << DeclareConst("0", 0x7E0154)
-    << DeclareConst("1", 0x10)
-
-<< "[ObjectChangePalette:%0]"
-    << 0 >> 0x33
-    << 1 >> DeclareByte("0")
-
-<< "ButtonStatus:A"
-    << 0 >> 0x34
-    << 1 >> DeclareIf()
-    // accesses $F2
-    // Checks for current status of button?
-    // mask $80
-
-<< "ButtonStatus:B"
-    << 0 >> 0x35
-    << 1 >> DeclareIf()
-    // mask $08
-
-<< "ButtonStatus:X"
-    << 0 >> 0x36
-    << 1 >> DeclareIf()
-    // mask $40
-
-<< "ButtonStatus:Y"
-    << 0 >> 0x37
-    << 1 >> DeclareIf()
-    // mask $04
-
-<< "ButtonStatus:L"
-    << 0 >> 0x38
-    << 1 >> DeclareIf()
-    // mask $20
-
-<< "ButtonStatus:R"
-    << 0 >> 0x39
-    << 1 >> DeclareIf()
-    // accesses $F2
-    // mask $10
-
-<< "Unknown3B"
-    << 0 >> 0x3B
-    << 1 >> DeclareIf()
-    // does something for $50, tests for bit #$02
-
-<< "Unknown3C"
-    << 0 >> 0x3C
-    << 1 >> DeclareIf()
-    // does something for $50, tests for bit #$80
-
-
-// button masks:
-//    $50:
-//      02=left?  80=up?
-//    $51:
-//      01=start, 02=select, 04=y, 08=b
-//      10=r,     20=l,      40=x, 80=a
-
-<< "ButtonPressed:A"
-    << 0 >> 0x3F
-    << 1 >> DeclareIf()
-    // accesses $51
-    // Checks if the button has been pressed?
-    // mask $80 
-
-<< "ButtonPressed:B"
-    << 0 >> 0x40
-    << 1 >> DeclareIf()
-    // mask $08
-
-<< "ButtonPressed:X"
-    << 0 >> 0x41
-    << 1 >> DeclareIf()
-    // mask $40
-
-<< "ButtonPressed:Y"
-    << 0 >> 0x42
-    << 1 >> DeclareIf()
-    // mask $04
-
-<< "ButtonPressed:L"
-    << 0 >> 0x43
-    << 1 >> DeclareIf()
-    // mask $20
-
-<< "ButtonPressed:R"
-    << 0 >> 0x44
-    << 1 >> DeclareIf()
-    // accesses $F1
-    // mask $10
-
-<< "[LetB:%0:%1]"
-    << 0 >> 0x47
-    << 1 >> DeclareByte("1")
-    << DeclareConst("0", 0x7E016B)
-
-<< "[LetB:%addr:%long]"
-    << 0 >> 0x48
-    << 1 >> DeclareLong("long", 0x000100,0xFFFFFF)
-    << 4 >> Declare7F0200_2("addr")
-
-<< "[LetW:%addr:%long]"
-    << 0 >> 0x49
-    << 1 >> DeclareLong("long", 0x000100,0xFFFFFF)
-    << 4 >> Declare7F0200_2("addr")
-
-<< "[LetB:%long:%byte]"
-    << 0 >> 0x4A
-    << 1 >> DeclareLong("long", 0x000100,0x7FFFFF)
-    << 4 >> DeclareByte("byte")
-
-<< "[LetW:%long:%word]"
-    << 0 >> 0x4B
-    << 1 >> DeclareLong("long", 0x000100,0x7FFFFF)
-    << 4 >> DeclareWord("word")
-
-<< "[LetB:%long:%addr]"
-    << 0 >> 0x4C
-    << 1 >> DeclareLong("long", 0x000100,0x7FFFFF)
-    << 4 >> Declare7F0200_2("addr")
-
-<< "[LetW:%long:%addr]"
-    << 0 >> 0x4D
-    << 1 >> DeclareLong("long", 0x000100,0x7FFFFF)
-    << 4 >> Declare7F0200_2("addr")
-
-<< "[StringStore:%long:%data]"
-    << 0 >> 0x4E
-    << 1 >> DeclareLong("long", 0x7E2C23,0x7E2C23) // show the character name table in plaintext.
-    << 4 >> DeclareTextBlob("data")
-
-<< "[StringStore:%long:%data]"
-    << 0 >> 0x4E
-    << 1 >> DeclareLong("long", 0x000100,0x7FFFFF)
-    << 4 >> DeclareBlob("data")
-
-<< "[LetB:%addr:%byte]"
-    << 0 >> 0x4F
-    << 1 >> DeclareByte("byte")
-    << 2 >> Declare7F0200_2("addr")
-
-<< "[LetW:%addr:%word]"
-    << 0 >> 0x50
-    << 1 >> DeclareWord("word")
-    << 3 >> Declare7F0200_2("addr")
-
-<< "[LetB:%1:%0]"
-    << 0 >> 0x51
-    << 1 >> Declare7F0200_2("0")
-    << 2 >> Declare7F0200_2("1")
-
-<< "[LetW:%1:%0]"
-    << 0 >> 0x52
-    << 1 >> Declare7F0200_2("0")
-    << 2 >> Declare7F0200_2("1")
-
-<< "[LetB:%1:%0]"
-    << 0 >> 0x53
-    << 1 >> Declare7F0000_W("0")
-    << 3 >> Declare7F0200_2("1")
-
-<< "[LetW:%1:%0]"
-    << 0 >> 0x54
-    << 1 >> Declare7F0000_W("0")
-    << 3 >> Declare7F0200_2("1")
-
-<< "[LetB:%0:%1]]"
-    << 0 >> 0x55
-    << 1 >> Declare7F0200_2("1")
-    << DeclareConst("0", 0x7F0000)
-    // "story line counter"?
-
-<< "[LetB:%addr:%byte]"
-    << 0 >> 0x56
-    << 1 >> DeclareByte("byte")
-    << 2 >> Declare7F0000_W("addr")
-
-<< "[ObjectLoadPC:%0 [IfInParty]]"
-    << 0 >> 0x57
-    << DeclareConst("0", 0).AnnotatePC() // crono
-    // firsts checks for a party member.
-    // if not a party member:
-    //  puts $1100,X <- #$80 object is now dead
-    //  puts $1101,X <- param0
-    //  returns
-    // if member 1: puts $1100,X <- #$00
-    // if member 2: puts $1100,X <- #$01
-    // if member 3: puts $1100,X <- #$02
-    // puts $1C80,X <- #$00 movement props
-    // puts $1A81,X <- #$01 drawing mode
-    // puts $1B01,X <- #$01 solid
-    // puts $1101,X <- param0
-    // then continues in a complex way.
-    
-<< "[LetB:%1:%0]"
-    << 0 >> 0x58
-    << 1 >> Declare7F0200_2("0")
-    << 2 >> Declare7F0000_W("1")
-
-<< "[LetW:%1:%0]"
-    << 0 >> 0x59
-    << 1 >> Declare7F0200_2("0")
-    << 2 >> Declare7F0000_W("1")
-
-<< "[LetW:%1:%0]"
-    << 0 >> 0x5A
-    << 1 >> DeclareByte("0")
-    << DeclareConst("1", 0x7F0000)
-    // "story line counter"
-
-<< "[AddB:%addr:%byte]"
-    << 0 >> 0x5B
-    << 1 >> DeclareByte("byte")
-    << 2 >> Declare7F0200_2("addr")
-
-<< "[ObjectLoadPC:%0 [IfInParty]]"
-    << 0 >> 0x5C
-    << DeclareConst("0", 1).AnnotatePC() // marle
-    // @41EC
-    //     $8E <- objno
-    //     A   <- 1
-    //     goto 421A
-
-<< "[AddB:%1:%0]"
-    << 0 >> 0x5D
-    << 1 >> Declare7F0200_2("0")
-    << 2 >> Declare7F0200_2("1")
-
-<< "[AddW:%1:%0]"
-    << 0 >> 0x5E
-    << 1 >> Declare7F0200_2("0")
-    << 2 >> Declare7F0200_2("1")
-
-<< "[SubB:%addr:%byte]"
-    << 0 >> 0x5F
-    << 1 >> DeclareByte("byte")
-    << 2 >> Declare7F0200_2("addr")
-
-<< "[SubW:%addr:%word]"
-    << 0 >> 0x60
-    << 1 >> DeclareWord("word")
-    << 3 >> Declare7F0200_2("addr")
-
-<< "[SubB:%1:%0]"
-    << 0 >> 0x61
-    << 1 >> Declare7F0200_2("0")
-    << 2 >> Declare7F0200_2("1")
-
-<< "[ObjectLoadPC:%0 [IfInParty]]"
-    << 0 >> 0x62
-    << DeclareConst("0", 2).AnnotatePC() // lucca
-
-<< "[OrB:%addr:%bit]"
-    << 0 >> 0x63
-    << 1 >> DeclareOrBitnum("bit")
-    << 2 >> Declare7F0200_2("addr")
-    // addr |= $FF20[byte]
-
-<< "[OrB:%addr:%bit]"
-    << 0 >> 0x63
-    << 1 >> DeclareOrBitnum("bit")
-    << 2 >> Declare7F0200_2("addr")
-    // addr |= $FF20[byte]
-
-<< "[AndB:%addr:%bit]"
-    << 0 >> 0x64
-    << 1 >> DeclareAndBitnum("bit")
-    << 2 >> Declare7F0200_2("addr")
-    // addr &= $FF28[byte]
-
-<< "[OrB:%addr:%bit]"
-    << 0 >> 0x65
-    << 1 >> DeclareOrBitnum("bit")
-    << 2 >> Declare7E0000_B("addr")
-    // addr_value |= (byte & 0x80) << 1
-    // addr |= $FF20[byte & 0x0F]
-    
-<< "[OrB:%addr:%bit]"
-    << 0 >> 0x65
-    << 1 >> DeclareOrBitnum("bit").SetHighbit()
-    << 2 >> Declare7E0100_B("addr")
-
-<< "[AndB:%addr:%bit]"
-    << 0 >> 0x66
-    << 1 >> DeclareAndBitnum("bit")
-    << 2 >> Declare7E0000_B("addr")
-
-<< "[AndB:%addr:%bit]"
-    << 0 >> 0x66
-    << 1 >> DeclareAndBitnum("bit").SetHighbit()
-    << 2 >> Declare7E0100_B("addr")
-
-<< "[AndB:%addr:%byte]"
-    << 0 >> 0x67
-    << 1 >> DeclareByte("byte")
-    << 2 >> Declare7F0200_2("addr")
-
-<< "[ObjectLoadPC:%0 [IfInParty]]"
-    << 0 >> 0x68
-    << DeclareConst("0", 3).AnnotatePC() // frog
-
-<< "[OrB:%addr:%byte]"
-    << 0 >> 0x69
-    << 1 >> DeclareByte("byte")
-    << 2 >> Declare7F0200_2("addr")
-
-<< "[ObjectLoadPC:%0 [IfInParty]]"
-    << 0 >> 0x6A
-    << DeclareConst("0", 4).AnnotatePC() // robo
-
-<< "[XorB:%addr:%byte]"
-    << 0 >> 0x6B
-    << 1 >> DeclareByte("byte")
-    << 2 >> Declare7F0200_2("addr")
-
-<< "[ObjectLoadPC:%0 [IfInParty]]"
-    << 0 >> 0x6C
-    << DeclareConst("0", 5).AnnotatePC() // ayla
-
-<< "[ObjectLoadPC:%0 [IfInParty]]"
-    << 0 >> 0x6D
-    << DeclareConst("0", 6).AnnotatePC() // magus
-
-<< "[ShrB:%addr:%byte]"
-    << 0 >> 0x6F
-    << 1 >> DeclareByte("byte")
-    << 2 >> Declare7F0200_2("addr")
-
-<< "[IncB:%0]"
-    << 0 >> 0x71
-    << 1 >> Declare7F0200_2("0")
-
-<< "[IncW:%0]"
-    << 0 >> 0x72
-    << 1 >> Declare7F0200_2("0")
-
-<< "[DecB:%0]"
-    << 0 >> 0x73
-    << 1 >> Declare7F0200_2("0")
-
-<< "[LetB:%0:1]"
-    << 0 >> 0x75
-    << 1 >> Declare7F0200_2("0")
-
-<< "[LetW:%0:1]"
-    << 0 >> 0x76
-    << 1 >> Declare7F0200_2("0")
-
-<< "[LetB:%0:0]"
-    << 0 >> 0x77
-    << 1 >> Declare7F0200_2("0")
-
-<< "[ObjectJump:%0:%1:%2]"
-    << 0 >> 0x7A
-    << 1 >> DeclareByte("0") //x
-    << 2 >> DeclareByte("1") //y
-    << 3 >> DeclareByte("2") //height
-    // geometrically "jump"
-
-<< "[ObjectPerformMovement:%0:%1:%2:%3]"
-    << 0 >> 0x7B
-    << 1 >> DeclareByte("0") // $1900 ?
-    << 2 >> DeclareByte("1") // $1980 ?
-    << 3 >> DeclareByte("2") // $1B81 ?
-    << 4 >> DeclareByte("3") // $1A01 length of movement
-    /* Waits until 1A01 becomes zero again. */
-
-<< "[ObjectLetB:%2:%3 [for:%0]]"
-    << 0 >> 0x7C
-    << 1 >> DeclareObjectNo("0")
-    << DeclareProp("2", 0x1A81)
-    << DeclareConst("3", 1)
-    // Sets drawing "on" */
-
-<< "[ObjectLetB:%2:%3 [for:%0]]"
-    << 0 >> 0x7D
-    << 1 >> DeclareObjectNo("0")
-    << DeclareProp("2", 0x1A81)
-    << DeclareConst("3", 0)
-    // Sets drawing "off" */
-
-<< "[ObjectLetB:%2:%3]"
-    << 0 >> 0x7E
-    << DeclareProp("2", 0x1A81)
-    << DeclareConst("3", 0x80)
-    // Sets drawing "hide" */
-
-<< "[GetRandom:%0]"
-    << 0 >> 0x7F
-    << 1 >> Declare7F0200_2("0")
-    // does:
-    //  A  = ++$7E01F8
-    //  %0 = $FE00[A & 0xFF]
-
-<< "[ObjectLoadPC:%0 [IfInParty]]"
-    << 0 >> 0x80
-    << 1 >> DeclareByte("0").AnnotatePC()
-    // @421E
-    // if not a party member:
-    //  puts $1100,X <- #$80   (marks object dead)
-    //  puts $1101,X <- param
-    //  returns
-    // if the given value is 0..6,
-    //  sets $8D+param = current object number
-    // Then follows with the actual thing.
-    // This function is called by opcodes
-    // 57,5C,62,68,6A,6C and 6D.
-    // 
-
-<< "[ObjectLoadPC:%0 [As NPC]]"
-    << 0 >> 0x81
-    << 1 >> DeclareByte("0").AnnotatePC()
-    // @4476
-    //    Somehow differs from op 80.
-    /*
-           $1100 for cur obj <- 3 (object identifier)
-           $1B01 for cur obj <- 1
-           $1101 for cur obj <- param0
-           $BF = param0 * 5
-           $A = $E4F001[$BF]
-           and so on.
-    */
-
-<< "[ObjectLoadNPC:%0]"
-    << 0 >> 0x82
-    << 1 >> DeclareByte("0").AnnotateNPC()
-
-<< "[ObjectLoadEnemy:%m:%1]"
-    << 0 >> 0x83
-    << 1 >> DeclareByte("m").AnnotateEnemy()
-    << 2 >> DeclareByte("1")
-    // the meaning of the second param is unknown
-
-<< "[ObjectLetB:%0:%1]"
-    << 0 >> 0x84
-    << 1 >> DeclareByte("1")
-    << DeclareProp("0", 0x1B01)
-    // "npc solid props"
-
-<< "[ObjectSet1000:%0]"
-    << 0 >> 0x87
-    << 1 >> DeclareByte("0")
-    // $1000,X  &=  #$80
-    // $1000,X  |=  (param+1)
-    // $1001,X  = $1000,X
-
-<< "[ObjectPaletteReset]"
-    << 0 >> 0x88
-    << 1 >> 0x00
-    /* 
-        @48C0
-          
-          Y = $7F0B80 for cur obj
-          if Y & #$80
-            return
-          $7F0B80 for cur obj = #$FFFF
-          $0520[Y] = #$00
-          Y = ($0F81 for cur obj) << 4
-          X = ($1400 for cur obj)
-          Copy 18 bytes from $E4:X to $7E:(#$2102+Y)
-          Copy 18 bytes from $E4:X to $7E:(#$2302+Y)
-          return
-        
-        Seems to load the object's palette from ROM and set it.
-          
-     */
-
-<< "[ObjectGFXSetup:%0:%1:%2:%3]"
-    << 0 >> 0x88
-    << 1 >> DeclareByte("0", 0x20, 0x20) // this value matters
-    << 2 >> DeclareByte("1")
-    << 3 >> DeclareNibbleLo("2")
-    << 3 >> DeclareNibbleHi("3")
-    /* 
-        @4919
-        
-          call $4B2C
-          if carry set:
-            return
-          $7F0B80 for cur obj = Y
-          $0520[Y] = param0 // the 0x20,0x30 byte.
-          $0521[Y] = param3 + (($0F81 for cur obj) << 3) + 0x80
-          $0522[Y] = param2
-          $0524[Y] = 0
-          $0525[Y] = param1
-          return
-          
-          
-     */
-
-<< "[ObjectGFXSetup:%0:%1:%2:%3]"
-    << 0 >> 0x88
-    << 1 >> DeclareByte("0", 0x30, 0x30) // this value matters
-    << 2 >> DeclareByte("1")
-    << 3 >> DeclareNibbleLo("2")
-    << 3 >> DeclareNibbleHi("3")
-    // same as 88 20
-
-<< "[ObjectGFXSetup:%0:%1:%2:%3:%4]"
-    << 0 >> 0x88
-    << 1 >> DeclareByte("0", 0x40, 0x5F) // this value matters
-    << 2 >> DeclareNibbleLo("1")
-    << 2 >> DeclareNibbleHi("2")
-    << 3 >> DeclareByte("3")
-    << 4 >> DeclareByte("4")
-    /* 
-        @4970
-        
-          call $4B2C
-          if carry set:
-            return
-          
-          $0520[Y] = param0 & 0xF0 // the 0x40..0x5F byte.
-          $0521[Y] = param2 + (($0F81 for cur obj) << 3) + 0x80
-          $0522[Y] = param1
-          $0523[Y] = 8
-          $0524[Y] = 0
-          $0525[Y] = param4
-          $0526[Y] = param0 & 0x0F
-          $0527[Y] = ((param3 & 0xF0) >> 4) | (param3 & 0xF0)
-          $0528[Y] = ((param3 & 0x0F) << 4) | (param3 & 0x0F)
-          return
-          
-          
-     */
-
-<< "[ObjectPaletteSet:%0:%1]"
-    << 0 >> 0x88
-    << 1 >> DeclareByte("", 0x80, 0x8F) // actual value matters
-    << 1 >> DeclareNibbleLo("0") // starting colour
-    << 2 >> DeclareBlob("1")
-    /* 
-       @49F8
-         
-          $DB = (($0F81 for cur obj) << 3) + 0x80
-          $DD = ((param0 & 0x0F) + $DB) * 2
-          writes the blob into $7E2200+[$DB] and $7E2000+[$DB]
-          
-          7E2200 is the 512-byte buffer of palettes.
-          DMA 7 writes it to PPU port 2122 (CGRAM) all the time.
-     */
-
-<< "[ObjectLetB:%0:%1]"
-    << 0 >> 0x89
-    << 1 >> DeclareByte("1")
-    << DeclareProp("0", 0x1A00)
-    // "npc speed"
-
-<< "[ObjectLetB:%0:%1]"
-    << 0 >> 0x8A
-    << 1 >> Declare7F0200_2("1")
-    << DeclareProp("0", 0x1A00)
-    // "npc speed"
-
-<< "[ObjectSetCoord:%0:%1]"
-    << 0 >> 0x8B
-    << 1 >> DeclareByte("0")
-    << 2 >> DeclareByte("1")
-    // $1800,X = 80xx where xx=%0
-    // $1880,X = FFxx where xx=%1
-
-<< "[ObjectSetCoord:%0:%1]"
-    << 0 >> 0x8C
-    << 1 >> Declare7F0200_2("0")
-    << 2 >> Declare7F0200_2("1")
-
-<< "[SetObjectCoord2:%0:%1]"
-    << 0 >> 0x8D
-    << 1 >> DeclareWord("0")
-    << 3 >> DeclareWord("1")
-
-<< "[ObjectHide:%0]"
-    << 0 >> 0x8E
-    << 1 >> DeclareByte("0")
-    /*
-    > 03 - bottom half
-    > 0C - ???
-    > 30 - top half
-    > 40 - ???
-    > 80 - determines mode
-    */
-
-<< "[ObjectMoveTowards:%0 [facing:rotate]]"
-    << 0 >> 0x8F
-    << 1 >> Declare7E0197_B("0")//target obj
-    /*
-       if ( $1A01 for current object  <> 0 )
-         return, loop this command.
-       
-       if ( $1100 for given object & #$80 )
-       {
-         // if the object is removed?
-         call $568B
-         return
-       }
-       
-       @5444
-       [$F2] = $1801 for given obj
-       [$F3] = $1881 for given obj
-       [$F0] = $1801 for current object
-       [$F1] = $1881 for current object
-       
-       if ( abs([$F1] - [$F3]) <= 1
-       and  abs([$F0] - [$F2]) <= 1 )
-       {
-         call $568B
-         return
-       }
-       @547C
-       $DB = $1D0A >> 1
-       $DD = $1D0E >> 1
-       if ($F0 - $DB) in (0, 1, >= 14)
-       or ($F1 - $DD) in (0, 1, >= 13)
-       {
-         @ 54B6
-         call $ABA2
-         ...
-         return, loop
-       }
-       call $568B
-       return
-       
-       .....
-       
-       
-       "rotate" is probably incorrect, but it's used
-       when the code contains a #$30 added to the angle.
-      
-     */
-
-<< "[ObjectLetB:%2:%3]"
-    << 0 >> 0x90
-    << DeclareProp("2", 0x1A81)
-    << DeclareConst("3", 1)
-    // Sets drawing "on" */
-
-<< "[ObjectLetB:%2:%3]"
-    << 0 >> 0x91
-    << DeclareProp("2", 0x1A81)
-    << DeclareConst("3", 0)
-    // Sets drawing "off" */
-
-<< "[ObjectMoveAngle:%0:%1 [facing:change]]"
-    << 0 >> 0x92
-    << 1 >> DeclareByte("0") //angle     ($40 = 90 degrees)
-    << 2 >> DeclareByte("1") //magnitude
-
-<< "[ObjectMoveTowards:%0 [facing:change]]"
-    << 0 >> 0x94
-    << 1 >> DeclareObjectNo("0") //target obj
-    // included by op B5
-    /*
-       if ( $1A01 for current object  <> 0 )
-         return, loop this command.
-       
-       if ( $1100 for given object & #$80 )
-       {
-         // if the object is removed?
-         call $527B
-         return
-       }
-       
-       @522D
-       [$F2] = $1801 for given obj
-       [$F3] = $1881 for given obj
-       [$F0] = $1801 for current object
-       [$F1] = $1881 for current object
-       
-       if ( abs([$F1] - [$F3]) > 1
-       or   abs([$F0] - [$F2]) > 1 )
-       {
-         @5281
-         call $ABA2 // calculate facing
-         .....
-       }
-       @5265
-       if ( $1C81 for current object & #$02 )
-       {
-         @526E
-         call $30B3
-         if carry set
-         {
-           @527B
-           call $5614
-           return, loop
-         }
-       }
-       call $568B
-       return
-    */
-    
-<< "[ObjectMoveTowards:%0 [facing:change]]"
-    << 0 >> 0x95
-    << 1 >> Declare7E0197_B("0")//target obj
-    // included by op B6
-    /*
-       if ( $1A01 for current object <> 0 )
-         return, loop this command.
-       
-       load the object number of the party leader
-       (from $97[param])
-       then goto op $94.
-
-       $97 is a word. The object number of first party member?
-       Bit $80 means inactive.
-       Ha! Indeed.
-       $9B is a word too - it refers to an object. (?)
-       But it's not used here.
-    */
-    /* Execution continues (maybe) when the goal has been reached. */
-
-<< "[ObjectMoveTowards:%0:%1 [facing:change]]"
-    << 0 >> 0x96
-    << 1 >> DeclareByte("0") //xcoord
-    << 2 >> DeclareByte("1") //ycoord
-
-<< "[ObjectMoveTowards:%0:%1 [facing:change]]"
-    << 0 >> 0x97
-    << 1 >> Declare7F0200_2("0") //xcoord from-var
-    << 2 >> Declare7F0200_2("1") //ycoord from-var
-    /* Same as $96 but coordinates are loaded from vars. */
-
-<< "[ObjectMoveTowardsBy:%0:%1 [facing:change]]"
-    << 0 >> 0x98
-    << 1 >> DeclareObjectNo("0") // the target obj.
-    << 2 >> DeclareByte("1") // length of movement
-    /* The same as 0x94, except that 1A80
-     * plays some important part here. */
-    /*
-       if ( $1A80 for current object <> 0)
-       {
-         if ( $1A01 for current object  <> 0 )
-           return, loop this command.
-         $1A80 for current object <- 0
-         return
-       }
-       
-       if ( $1100 for given object & #$80 )
-       { 
-         // if the object is removed?
-         $1A80 for given object <- 0
-         call $568B
-         return
-       }
-       
-       @5370
-       [$F2] = $1801 for given obj
-       [$F3] = $1881 for given obj
-       [$F0] = $1801 for current object
-       [$F1] = $1881 for current object
-       
-       if ( abs([$F1] - [$F3]) > 1
-       or   abs([$F0] - [$F2]) > 1 )
-       {
-         @53CA
-         call $ABA2
-         .....
-       }
-       @53A8
-       if ( $1C81 for current object & #$02 )
-       {
-         @53B1
-         call $30B3
-         if carry set
-         {
-           @53C4
-           call $5614
-           return, loop
-         }
-       }
-       $1A80 for current object <- 0
-       call $568B
-       return
-    */
-
-<< "[ObjectMoveTowardsBy:%0:%1 [facing:change]]"
-    << 0 >> 0x99
-    << 1 >> Declare7E0197_B("0") // the target obj.
-    << 2 >> DeclareByte("1")     // length of movement
-
-<< "[ObjectMoveTowardsBy:%0:%1:%2 [facing:change]]"
-    << 0 >> 0x9A
-    << 1 >> DeclareByte("0") // xcoord
-    << 2 >> DeclareByte("1") // ycoord
-    << 3 >> DeclareByte("2") // length of movement
-
-<< "[ObjectMoveAngle:%0:%1 [facing:keep]]"
-    << 0 >> 0x9C
-    << 1 >> DeclareByte("0") // angle ($40 = 90 degrees)
-    << 2 >> DeclareByte("1") // length of movement
-    // Same as op 92, but without changing facing
-
-<< "[ObjectMoveAngle:%0:%1 [facing:keep]]"
-    << 0 >> 0x9D
-    << 1 >> Declare7F0200_2("0")
-    << 2 >> Declare7F0200_2("1")
-    // Same as op 9C, but from vars
-
-<< "[ObjectMoveTowards:%0 [facing:keep]]"
-    << 0 >> 0x9E
-    << 1 >> DeclareObjectNo("0") // target obj
-    // same as op 94, but without changing facing
-
-<< "[ObjectMoveTowards:%0 [facing:keep]]"
-    << 0 >> 0x9F
-    << 1 >> Declare7E0197_B("0") // target obj
-    // same as op 9E, but from var (such as party member)
-
-<< "[ObjectMoveTowards:%0:%1 [facing:rotate]]"
-    << 0 >> 0xA0
-    << 1 >> DeclareByte("0") //xcoord
-    << 2 >> DeclareByte("1") //ycoord
-    /*
-       "rotate" is probably incorrect, but it's used
-       when the code contains a #$30 added to the angle.
-    */
-
-<< "[ObjectMoveTowards:%0:%1 [facing:rotate]]"
-    << 0 >> 0xA1
-    << 1 >> Declare7F0200_2("0") //xcoord from
-    << 2 >> Declare7F0200_2("1") //ycoord from
-    /* Used for Robo's following of party members at End of time */
-    /*
-       "rotate" is probably incorrect, but it's used
-       when the code contains a #$30 added to the angle.
-    */
-
-<< "[ObjectSetFacing:%0]"
-    << 0 >> 0xA6
-    << 1 >> DeclareByte("0")
-
-<< "[ObjectSetFacing:%0]"
-    << 0 >> 0xA7
-    << 1 >> Declare7F0200_2("0")
-
-<< "[ObjectSetFacingTowards:%0]"
-    << 0 >> 0xA8
-    << 1 >> DeclareObjectNo("0")
-
-<< "[ObjectSetFacingTowards:%0]"
-    << 0 >> 0xA9
-    << 1 >> Declare7F0200_2("0")
-
-<< "[ObjectAnimation:%0 [mode:1]]"
-    << 0 >> 0xAA
-    << 1 >> DeclareByte("0")
-    /*
-         $1680 for cur obj = byte1
-         $1780 for cur obj = 1
-         $1601 for cur obj = 0
-         $1681 for cur obj = 0
-       $7F0B01 for cur obj = 0
-       
-     op B3 is the same with byte1=0
-     op B4 is the same with byte1=1
-       
-     */
-
-<< "[ObjectAnimation:%0 [mode:2]]"
-    << 0 >> 0xAB
-    << 1 >> DeclareByte("0")
-    /*
-        A = $7F0B01 of cur obj
-        If(A > 0)
-        {
-          --A
-          If(A == 0)
-          {
-            // end loop.
-            $7F0B01 of cur obj = 0
-            $1601 of cur obj = 0
-            $1681 of cur obj = 0
-            if($1680 of cur obj == #$FF)
-            {
-                $1680 of cur obj = #0
-                $1780 of cur obj = 0
-            }
-            else
-            {
-                $1780 of cur obj = 1
-            }
-            return // end loop.
-          }
-          // wait until the animation frame has changed.
-          if(byte1 == $1781 of cur obj)
-          {
-            return, loop
-          }
-        }
-        $1781 of cur obj = byte1
-        $1681 of cur obj = 0
-        $1601 of cur obj = 0
-        if($1780 of cur obj == 0)
-        {
-          $1680 of cur obj = #$FF
-        }
-        $1780 of cur obj = 2
-        $7F0B01 of cur obj = 2
-        return, loop
-    */
-
-<< "[ObjectAnimation:%0 [mode:3]]"
-    << 0 >> 0xAC
-    << 1 >> DeclareByte("0")
-    /*
-         $1301 for cur obj = byte1
-         $1601 for cur obj = 0
-         $1681 for cur obj = 0
-         if($1780 for cur obj <> 0)
-         {
-           $1680 for cur obj = #$FF
-         }
-         $1780 for cur obj = 3
-         return
-     */
-
-<< "[Pause:%0]"
-    << 0 >> 0xAD
-    << 1 >> DeclareByte("0")
-
-<< "[ObjectAnimationReset]"
-    << 0 >> 0xAE
-
-<< "[PartyAction [once]]"
-    << 0 >> 0xAF
-
-<< "[PartyAction [forever]]"
-    << 0 >> 0xB0
-    /*
-        // referred by op B0
-        If $38 <> 0, returns.
-        
-        A = $1100 for current obj. (party identity)
-        switch(A)
-        {
-          case 0: // member1
-            $1A01 for current obj = 1 (movement length)
-            call 9E29
-            A = $1600 for current obj (facing)
-            call 5B8D
-            if carry set:
-              call 3154
-            break;
-          case 1: // member2
-            $1A01 for current obj = 1
-            call A26B
-            break;
-          case 2: // member3
-            $1A01 for current obj = 1
-            call A2C2
-            break;
-        }
-        return, loop.
-        
-        Analysis: This opcode lets the player control the party members.
-        If the object is member1, it responds to controls.
-        If the object is member2, it imitates member1 with delay.
-        If the object is member3, it imitates member2 with delay.
-        I did not disassemble those called functions, but I'm quite
-        sure for this...
-    */
-
-<< "[Yield]"
-    << 0 >> 0xB1
-    /* This command tells the task manager that this object
-     * wants now other objects to execute one cycle of
-     * whatever they are doing.
-     * It is usually issued in loops, before rerunning the loop.
-     */
-
-<< "[Yield [forever]]"
-    << 0 >> 0xB2
-    /* This function is used when the current function
-     * has nothing to do, but for some reason it doesn't
-     * want to [Return] to the lower priority routine.
-     *
-     * It simply will [Yield] forever, without altering
-     * the object's state.
-     */
-
-<< "[ObjectAnimation:%0 [mode:1]]"
-    << 0 >> 0xB3
-    << DeclareConst("0", 0)
-    // Same as op AA, but with value 0
-
-<< "[ObjectAnimation:%0 [mode:1]]"
-    << 0 >> 0xB4
-    << DeclareConst("0", 1)
-    // Same as op AA, but with value 1
-
-<< "[ObjectMoveTowards:%0 [facing:change] [forever]]"
-    << 0 >> 0xB5
-    << 1 >> DeclareObjectNo("0")
-    // loops op 94 forever
-
-<< "[ObjectMoveTowards:%0 [facing:change] [forever]]"
-    << 0 >> 0xB6
-    << 1 >> Declare7E0197_B("0")
-    // loops op 95 forever
-
-<< "[ObjectAnimation:%0:%1 [mode:2]]"
-    << 0 >> 0xB7
-    << 1 >> DeclareByte("0") // animation index, possibly
-    << 2 >> DeclareByte("1") // duration, possibly
-    /*
-        A = $7F0B01 of cur obj
-        If(A > 0)
-        {
-          --A
-          If(A == 0)
-          {
-            // end loop.
-            $7F0B01 of cur obj = 0
-            $1601 of cur obj = 0
-            $1681 of cur obj = 0
-            if($1600 of cur obj == #$FF)
-            {
-                $1680 of cur obj = #0
-                $1780 of cur obj = 0
-            }
-            else
-            {
-                $1780 of cur obj = 1
-            }
-            return // end loop.
-          }
-          // wait until the animation frame has changed.
-          if(byte1 == $1781 of cur obj)
-          {
-            return, loop
-          }
-        }
-        $1781 of cur obj = byte1
-        $1681 of cur obj = 0
-        $1601 of cur obj = 0
-        if($1780 of cur obj == 0)
-        {
-          $1680 of cur obj = #$FF
-        }
-        $1780 of cur obj = #2
-        $7F0B01 of cur obj = byte2 + 1
-        return, loop
-    */
-
-<< "[DialogSetTable:%0]"
-    << 0 >> 0xB8
-    << 1 >> DeclareDialogBegin("0")
-
-<< "[Pause:250ms]"
-    << 0 >> 0xB9
-
-<< "[Pause:500ms]"
-    << 0 >> 0xBA
-
-<< "[DialogDisplay:%0 [pos:auto]]"
-    << 0 >> 0xBB
-    << 1 >> DeclareDialogAddr("0")
-
-<< "[Pause:1000ms]"
-    << 0 >> 0xBC
-
-<< "[Pause:2000ms]"
-    << 0 >> 0xBD
-
-<< "[DialogAsk:%0:%1:%2 [pos:auto]]"
-    << 0 >> 0xC0
-    << 1 >> DeclareDialogAddr("0")
-    << 2 >> DeclareByte("2")
-    << DeclareProp("1", 0x7F0A80)
-
-<< "[DialogDisplay:%0 [pos:top]]"
-    << 0 >> 0xC1
-    << 1 >> DeclareDialogAddr("0")
-
-<< "[DialogDisplay:%0 [pos:bottom]]"
-    << 0 >> 0xC2
-    << 1 >> DeclareDialogAddr("0")
-
-<< "[DialogAsk:%0:%1:%2 [pos:top]]"
-    << 0 >> 0xC3
-    << 1 >> DeclareDialogAddr("0")
-    << 2 >> DeclareByte("2")
-    << DeclareProp("1", 0x7F0A80)
-
-<< "[DialogAsk:%0:%1:%2 [pos:bottom]]"
-    << 0 >> 0xC4
-    << 1 >> DeclareDialogAddr("0")
-    << 2 >> DeclareByte("2")
-    << DeclareProp("1", 0x7F0A80)
-
-<< "[ItemGive:%0]"
-    << 0 >> 0xC7
-    << 1 >> Declare7F0200_2("0")
-    // adds an item from the given location
-
-<< "[DialogDisplaySpecial:%0]"
-    << 0 >> 0xC8
-    << 1 >> DeclareByte("0")
-    // shops, name entries and such.
-
-<< "HasItem:%0"
-    << 0 >> 0xC9
-    << 1 >> DeclareByte("0")
-    << 2 >> DeclareIf()
-
-<< "[ItemGive:%0]"
-    << 0 >> 0xCA
-    << 1 >> DeclareByte("0")
-
-<< "[ItemTake:%0]"
-    << 0 >> 0xCB
-    << 1 >> DeclareByte("0")
-
-<< "HasGold:%0"
-    << 0 >> 0xCC
-    << 1 >> DeclareWord("0")
-    << 3 >> DeclareIf()
-
-<< "[GoldGive:%0]"
-    << 0 >> 0xCD
-    << 1 >> DeclareWord("0")
-
-<< "[GoldTake:%0]"
-    << 0 >> 0xCE
-    << 1 >> DeclareWord("0")
-
-<< "HasMember:%0"
-    << 0 >> 0xCF
-    << 1 >> DeclareByte("0")
-    << 2 >> DeclareIf()
-
-<< "[GiveMember:%0]"
-    << 0 >> 0xD0
-    << 1 >> DeclareByte("0")
-
-<< "[TakeMember:%0]"
-    << 0 >> 0xD1
-    << 1 >> DeclareByte("0")
-
-<< "HasActiveMember:%0"
-    << 0 >> 0xD2
-    << 1 >> DeclareByte("0")
-    << 2 >> DeclareIf()
-
-<< "[GiveActiveMember:%0]"
-    << 0 >> 0xD3
-    << 1 >> DeclareByte("0")
-
-<< "[UnactivateMember:%0]"
-    << 0 >> 0xD4
-    << 1 >> DeclareByte("0")
-
-<< "[EquipMember:%0:%1]"
-    << 0 >> 0xD5
-    << 1 >> DeclareByte("0")
-    << 2 >> DeclareByte("1")
-
-<< "[TakeActiveMember:%0]"
-    << 0 >> 0xD6
-    << 1 >> DeclareByte("0")
-
-<< "[ItemQueryAmount:%byte:%addr]"
-    << 0 >> 0xD7
-    << 1 >> DeclareByte("byte")
-    << 2 >> Declare7F0200_2("addr")
-
-<< "[StartBattle:%0]"
-    << 0 >> 0xD8
-    << 1 >> DeclareWord("0")
-
-<< "[PartyMove:%x1:%y1:%x2:%y2:%x3:%y3]"
-    << 0 >> 0xD9
-    << 1 >> DeclareByte("x1")
-    << 2 >> DeclareByte("y1")
-    << 3 >> DeclareByte("x2")
-    << 4 >> DeclareByte("y2")
-    << 5 >> DeclareByte("x3")
-    << 6 >> DeclareByte("y3")
-    /* Moves the party members to the given positions */
-    // writes to 1180
-
-<< "[PartySetFollow]"
-    << 0 >> 0xDA
-    /* causes members 2 and 3 to follow member 1 again. */
-    // writes to 1180
-
-<< "[PartyTeleportDC:%0:%1:%2:%3]"
-    << 0 >> 0xDC
-    << 1 >> DeclareByte("0")
-    << 2 >> DeclareByte("1")
-    << 3 >> DeclareByte("2")
-    << 4 >> DeclareByte("3")
-    /*
-        %1: 7654321076543210: stored to $0C. (x and y?)
-        %0: 7654321076543210
-                   ^^^^^^^^^: stored to $0A.
-            ^  ^^^^         : stored to $0E. (b000zzzz)
-     */
-
-<< "[PartyTeleportDD:%0:%1:%2:%3]"
-    << 0 >> 0xDD
-    << 1 >> DeclareByte("0")
-    << 2 >> DeclareByte("1")
-    << 3 >> DeclareByte("2")
-    << 4 >> DeclareByte("3")
-    /*
-        %1: 7654321076543210: stored to $02. (x and y?)
-        %0: 7654321076543210
-                   ^^^^^^^^^: stored to $00.
-            ^  ^^^^         : stored to $04. (b000zzzz)
-    */
-
-<< "[PartyTeleportDD:%0:%1:%2:%3 [with 1E=1]]"
-    << 0 >> 0xDE
-    << 1 >> DeclareByte("0")
-    << 2 >> DeclareByte("1")
-    << 3 >> DeclareByte("2")
-    << 4 >> DeclareByte("3")
-    // Same as DD, but puts $1E = 1 */
-
-<< "[PartyTeleportE1:%0:%1:%2:%3 [with 1E=1]]"
-    << 0 >> 0xDF
-    << 1 >> DeclareByte("0")
-    << 2 >> DeclareByte("1")
-    << 3 >> DeclareByte("2")
-    << 4 >> DeclareByte("3")
-    // Same as E1, but puts $1E = 1 */
-
-<< "[PartyTeleportE0:%0:%1:%2:%3]"
-    << 0 >> 0xE0
-    << 1 >> DeclareByte("0")
-    << 2 >> DeclareByte("1")
-    << 3 >> DeclareByte("2")
-    << 4 >> DeclareByte("3")
-    /*
-       Waits until [$17] & 0x80 = 0.
-
-        %1: 7654321076543210: stored to $14 (x and y?)
-        %0: 7654321076543210
-                   ^^^^^^^^^: stored to $12.
-            ^  ^^^^         : stored to $16. (b000zzzz)
-        Sets   $17 |= 0x80
-        Stores $19 = 0x0F
-     */
-
-<< "[PartyTeleportE1:%0:%1:%2:%3]"
-    << 0 >> 0xE1
-    << 1 >> DeclareByte("0")
-    << 2 >> DeclareByte("1")
-    << 3 >> DeclareByte("2")
-    << 4 >> DeclareByte("3")
-    /*
-        %1: 7654321076543210: stored to $14. (x and y?)
-        %0: 7654321076543210
-                   ^^^^^^^^^: stored to $12.
-            ^  ^^^^         : stored to $16. (b000zzzz)
-        Waits for vrefresh.
-        Calls 0B4E.
-        Sets $05 = 0x0000
-        Sets $07 = 0x0002
-        Sets $09 = [$04]
-        Sets $00 = [$12]
-        Sets $02 = [$14]
-        Sets $04 = [$16]
-        Then restarts the scene.
-     */
-    
-
-<< "[PartyTeleportE0:%0:%1:%2:%3]"
-    << 0 >> 0xE2
-    << 1 >> Declare7F0200_2("0")
-    << 2 >> Declare7F0200_2("1")
-    << 3 >> Declare7F0200_2("2")
-    << 4 >> Declare7F0200_2("3")
-    /*
-       Same as E0, except the values
-       are loaded from given memory locations.
-    
-     */
-
-<< "[LetB:%1:%0]"
-    << 0 >> 0xE3
-    << 1 >> DeclareByte("0")
-    << DeclareConst("1", 0x7E011F)
-           // Explore mode
-
-<< "[CopyTiles:%l:%t:%r:%b:%x:%y:%f [v0]]"
-    << 0 >> 0xE4
-    << 1 >> DeclareByte("l")
-    << 2 >> DeclareByte("t")
-    << 3 >> DeclareByte("r")
-    << 4 >> DeclareByte("b")
-    << 5 >> DeclareByte("x")
-    << 6 >> DeclareByte("y")
-    << 7 >> DeclareByte("f")
-    // Pokes the parameters to $3E,$40,$42,$44 and calls $AF4E.
-
-<< "[CopyTiles:%l:%t:%r:%b:%x:%y:%f [v1]]"
-    << 0 >> 0xE5
-    << 1 >> DeclareByte("l")
-    << 2 >> DeclareByte("t")
-    << 3 >> DeclareByte("r")
-    << 4 >> DeclareByte("b")
-    << 5 >> DeclareByte("x")
-    << 6 >> DeclareByte("y")
-    << 7 >> DeclareByte("f")
-    // Pokes the parameters to $3E,$40,$42,$44
-    // then puts (f & 7) to $45 and does [$17] |= 0x20.
-
-<< "[ScrollLayers:%0:%1:%2]"
-    << 0 >> 0xE6
-    << 1 >> DeclareWord("0")
-    << 3 >> DeclareByte("1")
-    << 4 >> DeclareByte("2")
-
-<< "[ScrollScreen:%0:%1]"
-    << 0 >> 0xE7
-    << 1 >> DeclareByte("0") //x
-    << 2 >> DeclareByte("1") //y
-
-<< "[PlaySound:%a [pan=%p]]"
-    << 0 >> 0xE8
-    << 1 >> DeclareByte("a")
-    << DeclareConst("p", 0x80)
-    /* Command E8 pokes $1E00..$1E02 as 18:a:80
-     *  and calls a sound function
-     */
-
-<< "[SongPlay:%a]"
-    << 0 >> 0xEA
-    << 1 >> DeclareByte("a").AnnotateSong()
-    /* Command EA pokes $1E00..$1E01 as 10:a
-     * and stores a into $7E29AE
-     *  and calls a sound function
-     */
-
-<< "[SetVolume:%l:%r]"
-    << 0 >> 0xEB
-    << 1 >> DeclareByte("l")
-    << 2 >> DeclareByte("r")
-    /* Command EA pokes $1E00..$1E03 as 81:l:r:FF
-     *  and calls a sound function
-     *       then pokes $1E00..$1E02 as 82:00:FF
-     *  and calls a sound function.
-     */
-
-/* Command EC pokes $1E00..$1E02 as a:b:c
- * and calls a sound function.
- */
-
-<< "[SongPlay:%a [generic]]"
-    << 0 >> 0xEC
-    << 1 >> 0x11
-    << 2 >> DeclareByte("a").AnnotateSong()
-    << 3 >> 0x00
-
-<< "[SongPlay:%a [keep pos]]"
-    << 0 >> 0xEC
-    << 1 >> 0x14
-    << 2 >> DeclareByte("a").AnnotateSong()
-    << 3 >> 0x00
-
-<< "[PlaySound:%a [pan=%p]]"
-    << 0 >> 0xEC
-    << 1 >> DeclareByte("", 0x18, 0x19)
-    << 2 >> DeclareByte("a").AnnotateSFX()
-    << 3 >> DeclareByte("p")
-
-<< "[SongFade:%volume [duration=%duration]]"
-    << 0 >> 0xEC
-    << 1 >> 0x82
-    << 2 >> DeclareByte("duration")
-    << 3 >> DeclareByte("volume")
-
-<< "[SongChangeTempo:%tempo [duration=%duration]]"
-    << 0 >> 0xEC
-    << 1 >> DeclareByte("", 0x85, 0x86)
-    << 2 >> DeclareByte("duration")
-    << 3 >> DeclareByte("tempo")
-
-<< "[SongChangeState]"
-    << 0 >> 0xEC
-    << 1 >> 0x88
-    << 2 >> 0x01
-    << 3 >> 0x01
-
-<< "[SongMute]"
-    << 0 >> 0xEC
-    << 1 >> 0xF0
-    << 2 >> 0x00
-    << 3 >> 0x00
-
-<< "[SoundEffectMute]"
-    << 0 >> 0xEC
-    << 1 >> 0xF2
-    << 2 >> 0x00
-    << 3 >> 0x00
-
-<< "[SongChangeState]"
-    << 0 >> 0xEC
-    << 1 >> 0x88
-    << 2 >> 0x01
-    << 3 >> 0x01
-
-<< "[SoundCommand:%a:%b:%c]"
-    << 0 >> 0xEC
-    << 1 >> DeclareByte("a")
-    << 2 >> DeclareByte("b")
-    << 3 >> DeclareByte("c")
-
-<< "[WaitSilence]"
-    << 0 >> 0xED
-
-<< "[WaitSongEnd]"
-    << 0 >> 0xEE
-
-<< "[FadeOutScreen:%0]"
-    << 0 >> 0xF0
-    << 1 >> DeclareByte("0")
-
-<< "[BrightenScreen:%index]"
-    << 0 >> 0xF1
-    << 1 >> DeclareByte("index", 0x00, 0x00)
-
-<< "[BrightenScreen:%index:%duration]"
-    << 0 >> 0xF1
-    << 1 >> DeclareByte("index", 0x01, 0xFF)
-    << 2 >> DeclareByte("duration")
-
-<< "[FadeOutScreen]"
-    << 0 >> 0xF2
-
-<< "[WaitFor18bit08]"
-    << 0 >> 0xF3
-
-<< "[ShakeScreen:%0]"
-    << 0 >> 0xF4
-    << 1 >> DeclareByte("0")
-
-<< "[HealHPandMP]"
-    << 0 >> 0xF8
-    /* does opF9 and opFA */
-
-<< "[HealHP]"
-    << 0 >> 0xF9
-    /* calls C28004,A=6 */
-
-<< "[HealMP]"
-    << 0 >> 0xFA
-    /* calls C28004,A=7 */
-
-<< "[SetGeometry:%a1:%a2:%b1:%b2:%c1:%c2:%d1:%d2:%e1:%e2:%f1:%f2:%g1:%g2:%h1:%h2 [divider=%divider]]"
-    << 0 >> 0xFE
-    << 1 >> DeclareByte("divider")
-    << 2 >> DeclareByte("a1")
-    << 3 >> DeclareByte("a2")
-    << 4 >> DeclareByte("b1")
-    << 5 >> DeclareByte("b2")
-    << 6 >> DeclareByte("c1")
-    << 7 >> DeclareByte("c2")
-    << 8 >> DeclareByte("d1")
-    << 9 >> DeclareByte("d2")
-    << 10 >> DeclareByte("e1")
-    << 11 >> DeclareByte("e2")
-    << 12 >> DeclareByte("f1")
-    << 13 >> DeclareByte("f2")
-    << 14 >> DeclareByte("g1")
-    << 15 >> DeclareByte("g2")
-    << 16 >> DeclareByte("h1")
-    << 17 >> DeclareByte("h2")
-    /*
-       $F4     = byte1
-       $7F1CE8 = byte1
-       $C7     = pos
-       $F0     = 0
-       $F6     = 0
-       $F7     = 0
-      <begin>
-       pos     = [$C7]
-       $F1     = next byte (high part of $F0)
-       A       = next byte
-       $C7     = pos
-       A(word) = ( word.A - word.$F0 ) / byte.$F4
-       X       = [$F6]
-       [$7F1CF9+X] = word.A
-       [$7F1CE9+X] = word.$F0
-       [$F6]   = X+2
-      <loop 8 times>
-       [$39]   = 6
-       X       = [$C7]
-       
-       The table 7F1CF9 is referred by function at C024A7.
-       It does adds the first (F9) value to the second (E9).
-       Therefore, F9 is the speed of change and E9 is the counter.
-       
-       But why such pointless math with constant values? No idea.
-       If you want to test it, see Lucca's wondershot scene. She
-       invokes this event there.
-
-       Here is C++ code that simulates this opcode:
-
-        unsigned char divider = Stream[0];
-        for(unsigned pos=1, c=0; c<8; ++c)
-        {
-            signed short B = Stream[pos++] << 8; 
-            signed short A = Stream[pos++] << 8; 
-            A = (A-B) / divider; 
-            printf("%d %d\n", F0, A);
-        }
-       
-
-    */
-
-<< "[Mode7Scene:%0:%1:%2]"
-    << 0 >> 0xFF
-    << 1 >> DeclareByte("0", 0x90, 0x90)
-    << 2 >> DeclareWord("1")
-    << 4 >> DeclareByte("2")
-    //sets $39=1, $3A=paramword, $3D=parambyte $3C=0
-    // >> black circle that opens similar to a portal and covers the entire screen (DNL)
-
-<< "[Mode7Scene:%0:%1:%2]"
-    << 0 >> 0xFF
-    << 1 >> DeclareByte("0", 0x97, 0x97)
-    << 2 >> DeclareWord("1")
-    << 4 >> DeclareByte("2")
-    //sets $39=4, $3A=paramword, $3D=parambyte $3C=0
-
-<< "[Mode7Scene:%0]"
-    << 0 >> 0xFF
-    << 1 >> DeclareByte("0", 0x00, 0x8F)
-    //Calls a Mode 7 scene.
-    //Causes data at 0x031513 to be decompressed.
-    //A few values:
-
-<< "[Mode7Scene:%0]"
-    << 0 >> 0xFF
-    << 1 >> DeclareByte("0", 0x91, 0x95)
-    // 0x00:// >> highway race
-    // 0x01:// >> none
-    // 0x02:// >> title screen
-    // 0x03:// >> top of black omen, "blurs" into view (Does Not Load new graphics, may not be visible)
-    // 0x04:// >> lavos falls to earth
-    // 0x0A:// >> fireworks
-    // 0x0C:// >> credits over moving star background
-    // 0x0D:// >> programmer's ending credits
-    // 0x25:// >> lavos summoned to 600AD (DNL)
-    // 0x66:// >> Epoch, first person view
-    // 0x67:// >> world globe exploding, "But the future refused to change"
-    // 0x68:// >> world globe, "But the future refused to change" (short version)
-    // 0x69:// >> attract mode highway race
-    // 0x80:// >> long wormhole (first warp to 600 A.D.)
-    // 0x81:// >> normal wormhole
-    // 0x82:// >> quick wormhole
-    // 0x89:// >> wormhole to lavos
-    // 0x91: //sets $39 = 2
-    // 0x92: //may sometimes not progress
-             // >> the screen wipe effect used during attract mode (left to right)
-    // 0x93: //may sometimes not progress
-             // >> the screen wipe effect used during attract mode (right to left, open)
-    // 0x94: //may sometimes not progress
-             // >> left to right wipe (close)
-    // 0x95: //may sometimes not progress
-             // >> right to left wipe (close)
-    // 0x96: //does not return (resets the system?)
-             // >> Reset (see Castle Magus Inner Sanctum)
-    // 0x98: //sets $39 = 5
-             // >> used by Taban during Moonlight Parade ending
-    // 0x99: //sets $39 = 7
-             // >> used during Death Peak summit sequence, no noticable effect
-    // 0x9A: //sets $39 = 9
-             // >> used after Crono revived in Death Peak sequence 
-    // 0x9B: //sets $39 = 0xB
-             // >> Massive Portal (see Castle Magus Inner Sanctum)
-    // 0x9C: //sets $39 = 0xE
-             // >> Beam upward (Sunstone) (MAYBE)
-    // 0x9D: //sets $54 &= ~2
-    // 0x9E: //if $39==0, sets to 0xC. loops if $39!=0xD.
-             // >> Reality Distortion (see Castle Magus Inner Sanctum)
-    // 0x9F: //calls C28004,A=8
-             // >> used in Tesseract
-    // 0xA0: // 0xA1: //seems like it halts the system
-    // 0xA2: // 0xA3: //seems like it halts the system
-
-<< "[Mode7Scene:%0]"
-    << 0 >> 0xFF
-    << 1 >> DeclareByte("0", 0x98, 0xA3)
-
-<< "[Mode7Scene:%0]"
-    << 0 >> 0xFF
-    << 1 >> DeclareByte("0", 0x96, 0x96)
-
-        ;
-        } /* Init() */
-
-        void Flush()
-        {
-            if(!cur_command) return;
-            
-            cur_command->PutInto(target);
-            cur_command->PutInto(strings);
-            
-            delete cur_command;
-            cur_command = NULL;
-        }
-
-    public:
-        Initialize(OpcodeTree& t, StringTree& s)
-           : target(t), strings(s), cur_command(NULL)
-        {
-            Init();
-        }
-        ~Initialize() { Flush(); }
-        
-    private:
-        OpcodeTree& target;
-        StringTree& strings;
-        Command* cur_command;
-        unsigned curpos;
-    };
-
-    void FindChoices
+    void FindChoices_aux
         (const OpcodeTree& tree,
          std::list<Command>& choices,
          const unsigned char* data, unsigned length) const
@@ -5363,7 +2982,7 @@ private:
             for(i = tree.data.begin(); i != tree.data.end(); ++i)
             {
                 if(!i->first.Contains(opcode)) continue;
-                FindChoices(*i->second, choices, data+1, length-1);
+                FindChoices_aux(*i->second, choices, data+1, length-1);
             }
         }
         choices.insert(choices.begin(), tree.choices.begin(), tree.choices.end());
@@ -5373,23 +2992,51 @@ private:
         (const unsigned char* data, unsigned length) const
     {
         std::list<Command> choices;
-        FindChoices(OPTree, choices, data, length);
+        FindChoices_aux(OPTree, choices, data, length);
         return choices;
+    }
+
+
+    void FindChoices_aux
+        (const StringTree& tree,
+         std::list<Command>& choices,
+         const wchar_t* cmd, int length) const
+    {
+    redo:
+        if(length >= 0)
+        {
+            char ch = length > 0 ? WcharToAsc(cmd[0]) : '\0';
+            if(ch == ' ')
+            {
+                ++cmd; --length;
+                goto redo;
+            }
+            
+            StringTree::maptype::const_iterator i = tree.data.find(ch);
+            if(i != tree.data.end())
+            {
+                FindChoices_aux(*i->second, choices, cmd+1, length-1);
+            }
+        }
+        choices.insert(choices.begin(), tree.choices.begin(), tree.choices.end());
     }
 
     const std::list<Command> FindChoices
         (const std::wstring& cmd, bool goto_backward) const
     {
-        /* No screening happens for now. TODO: Improve. */
-        std::list<Command> choices(STRTree.choices.begin(), STRTree.choices.end());
+        std::list<Command> choices;
+        FindChoices_aux(STRTree, choices, cmd.data(), cmd.size());
         return choices;
     }
     
 public:
     EvCommands()
     {
-        Initialize tmp(OPTree, STRTree);
+#include "eventdata.inc"
+        OPTree.Optimize();
+        STRTree.Optimize();
         //OPTree.Dump();
+        //STRTree.Dump();
     }
     
     const EventCode::DecodeResult
@@ -5424,12 +3071,15 @@ public:
         std::list<Command> choices = FindChoices(cmd, goto_backward);
         std::list<Command>::const_iterator i;
         
-        /* FIXME: Instead of giving the first choice that works,
-         * should attempt to find the shortest one.
-         */
-        
         EventCode::EncodeResult result;
         bool first=true;
+        
+        //fprintf(stderr, "%u choices for '%s'...\n", choices.size(), WstrToAsc(cmd).c_str());
+        
+        /* TODO: Thinkable speed optimization:
+         *    Sort the choices in the order of expected length
+         *    and pick the first one that works.
+         */
         
         for(i=choices.begin(); i!=choices.end(); ++i)
         {

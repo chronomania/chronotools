@@ -136,6 +136,7 @@ DEPDIRS = utils/
 # VERSION 1.15.0.2 improved support for location events.
 # VERSION 1.15.0.3 improved location event decompiler.
 # VERSION 1.15.1 location event support - preliminary release.
+# VERSION 1.15.2 now dumps the button names and allows changing them.
 
 #OPTIM=-Os
 # -fshort-enums
@@ -151,7 +152,7 @@ CFLAGS += -I/usr/include/slang
 LDFLAGS += -L/usr/lib/slang
 
 
-VERSION=1.15.1
+VERSION=1.15.2
 ARCHFILES=utils/xray.cc utils/xray.h \
           utils/viewer.c \
           utils/vwftest.cc \
@@ -163,7 +164,6 @@ ARCHFILES=utils/xray.cc utils/xray.h \
           utils/unmakeips.cc \
           utils/fixchecksum.cc \
           utils/comprtest.cc \
-          utils/eventtest.cc \
           utils/rearrange.cc \
           utils/compiler.cc \
           utils/codegen.cc utils/codegen.hh \
@@ -171,6 +171,7 @@ ARCHFILES=utils/xray.cc utils/xray.h \
           utils/macrogenerator.cc utils/macrogenerator.hh \
           utils/deasm.cc utils/assemble.hh \
           utils/insdata.cc utils/insdata.hh \
+          utils/eventsynmake.cc \
           \
           autoptr \
           \
@@ -190,6 +191,7 @@ ARCHFILES=utils/xray.cc utils/xray.h \
           range.hh range.tcc \
           space.cc space.hh \
           crc32.cc crc32.h \
+          xml.cc xml.hh \
           hash.hh \
           wstring.cc wstring.hh \
           script.cc wrap.cc writeout.cc \
@@ -255,7 +257,9 @@ ARCHFILES=utils/xray.cc utils/xray.h \
           DOCS/imageformat.html DOCS/source/imageformat.php \
           DOCS/ct-moglogo.a65 \
           DOCS/ct-conj.code DOCS/ct-crononick.code \
-          DOCS/ct8fnV.tga
+          DOCS/ct8fnV.tga \
+          \
+          DOCS/eventdata.css DOCS/eventdata.xsl DOCS/eventdata.xml
 
 NOGZIPARCHIVES=1
 
@@ -313,6 +317,8 @@ utils/compile: \
 utils/compiler: FORCE
 	@echo Make utils/compile instead\!
 
+eventdata.inc: DOCS/eventdata.xml utils/eventsynmake
+	utils/eventsynmake < "$<" > "$@"
 
 # Patch generator
 utils/makeips: utils/makeips.cc
@@ -354,6 +360,9 @@ utils/base62: utils/base62.cc base62.o
 utils/sramdump: utils/sramdump.o config.o confparser.o ctcset.o wstring.o
 	$(CXX) $(LDOPTS) $(CXXFLAGS)  -o $@ $^ $(LDFLAGS)
 
+# Event syntax builder (from the XML description)
+utils/eventsynmake: utils/eventsynmake.o xml.o wstring.o
+	$(CXX) $(LDOPTS) $(CXXFLAGS)  -o $@ $^ $(LDFLAGS)
 
 
 # Script reformatter (not generic)
@@ -376,9 +385,6 @@ utils/ctxtview: utils/ctxtview.o settings.o rommap.o
 utils/comprtest: utils/comprtest.o compress.o
 	$(CXX) $(LDOPTS) $(CXXFLAGS)  -o $@ $^ $(LDFLAGS)
 utils/comprtest2: utils/comprtest2.o compress.o
-	$(CXX) $(LDOPTS) $(CXXFLAGS)  -o $@ $^ $(LDFLAGS)
-
-utils/eventtest: utils/eventtest.o compress.o eventdata.o base62.o romaddr.o
 	$(CXX) $(LDOPTS) $(CXXFLAGS)  -o $@ $^ $(LDFLAGS)
 
 # Second compiler version (not generic, incomplete, obsolete)
@@ -467,6 +473,7 @@ fullzip: \
 		DOCS/ct-moglogo.a65 \
 		DOCS/ct-conj.code DOCS/ct-crononick.code \
 		DOCS/ct8fnV.tga \
+                DOCS/eventdata.css DOCS/eventdata.xsl DOCS/eventdata.xml \
 		ct-vwf8.a65 ct-vwf8.o65 \
 		timebox.a65 timebox.ips \
 		relocstr.a65 relocstr.o65 \

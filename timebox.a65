@@ -53,3 +53,8 @@
 ;lda #$1E00: sta $0063,x               ; vram target address
 ;lda #$1F00: sta $006B,x               ; ?
 ;lda #$0180: sta $0065,x: sta $006D,x  ; data size
+
+;*=$C0211C
+;.as
+;lda #$08
+;sta $0214

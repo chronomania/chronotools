@@ -8,6 +8,8 @@
 
 #define MAX_RECURSION_DEPTH  2
 #define DEEP_RUN_FORWARD  2048
+//#define MAX_RECURSION_DEPTH  0
+//#define DEEP_RUN_FORWARD     1
 
 /******
 
@@ -46,12 +48,24 @@ namespace
             *out++ = *in++;
     }
     
-    template<typename in_it1, typename Size, typename in_it2>
-    static const std::pair<in_it1, in_it2>
-    mismatch_n(in_it1 in1, Size size, in_it2 in2)
+    static unsigned MatchingLength
+        (const unsigned char* in1,
+         unsigned size,
+         const unsigned char* in2)
     {
-        // There doesn't seem to be mismatch_n at all.
-        return std::mismatch(in1, in1+size, in2);
+        // Trivial implementation would be:
+        //   return std::mismatch(in1,in1+size, in2).second-in2;
+        // However this function attempts to gain something
+        // by comparing sizeof(unsigned) bytes at time instead
+        // of 1 byte at time.
+        unsigned len = 0;
+        const unsigned intsize = sizeof(unsigned);
+        const unsigned*const p1 = reinterpret_cast<const unsigned*>(in1);
+        const unsigned*const p2 = reinterpret_cast<const unsigned*>(in2);
+        while(size >= intsize && p1[len] == p2[len]) { ++len; size -= intsize; }
+        len *= intsize;
+        while(size > 0 && in1[len] == in2[len]) { --size; ++len; }
+        return len;
     }
 
     class SavingMap
@@ -91,14 +105,13 @@ namespace
             
             for(unsigned offs = min_offs; offs < max_offs; ++offs)
             {
-                const unsigned matching_length =
-                    mismatch_n(Data+offs, output_max, out_offs).second - out_offs;
+                const unsigned len = MatchingLength(Data+offs, output_max, out_offs);
                 
-                if(matching_length < output_min) continue;
+                if(len < output_min) continue;
                 
-                if(matching_length > best_len)
+                if(len > best_len)
                 {
-                    best_len = matching_length;
+                    best_len = len;
                     best_offs= pos - offs;
                 }
             }
@@ -241,6 +254,7 @@ namespace
         }
 
     private:
+#if MAX_RECURSION_DEPTH > 0
         class PickCacheType
         {
         public:
@@ -260,6 +274,7 @@ namespace
         private:
             std::vector<PickCacheType::record> data;
         } PickCache[MAX_RECURSION_DEPTH];
+#endif
         
         /* For various number of recursions. */
         unsigned PickCounter(unsigned pos,
@@ -267,6 +282,7 @@ namespace
                              unsigned& n_result,
                              unsigned MaxRecursion)
         {
+#if MAX_RECURSION_DEPTH > 0
             if(MaxRecursion < MAX_RECURSION_DEPTH)
             {
                 PickCache[MaxRecursion].Resize(Length);
@@ -278,6 +294,7 @@ namespace
                     return tmp.pick;
                 }
             }
+#endif
             double best_goodness   = 0;
             unsigned best_counter  = 0;
             unsigned best_n_source = 0;
@@ -329,6 +346,7 @@ namespace
                 unsigned evaluate_n_result = this_n_result;
                 unsigned evaluate_n_source = testpos-pos; // how many bytes eaten.
                 
+#if MAX_RECURSION_DEPTH > 0
                 if(testpos < Length)
                 {
                     if(MaxRecursion > 1)
@@ -357,6 +375,7 @@ namespace
                         evaluate_n_result += r;
                     }
                 }
+#endif
                 
                 double goodness = evaluate_n_source / (double)evaluate_n_result;
                 if(goodness > best_goodness)
@@ -369,6 +388,7 @@ namespace
                 if(bits == 0x00) { /* No more tests: they wouldn't work. */ break; }
             }
             
+#if MAX_RECURSION_DEPTH > 0
             if(MaxRecursion < MAX_RECURSION_DEPTH)
             {
                 PickCacheType::record& tmp = PickCache[MaxRecursion][pos];
@@ -378,6 +398,7 @@ namespace
                 tmp.pick = best_counter;
                 tmp.cached = true;
             }
+#endif
 
             n_source = best_n_source;
             n_result = best_n_result;

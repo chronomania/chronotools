@@ -12,6 +12,7 @@ public:
     void AddData(unsigned ptr_addr,
                  const std::string& label,
                  const std::wstring& data);
+    void Close();
 
 public:
     struct Event

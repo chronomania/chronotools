@@ -730,6 +730,8 @@ void insertor::LoadFile(FILE *fp)
         UNEXPECTED(c);
     }
     
+    EvCom.Close();
+    
     for(unsigned a=0; a<EvCom.events.size(); ++a)
     {
         stringdata tmp;

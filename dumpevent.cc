@@ -267,7 +267,7 @@ private:
                         }
                         else
                         {
-                            OutputLine(L"[LoopBegin]"+line.Command, front.indent);
+                            OutputLine(L"[LoopBegin]", front.indent);
                         }
                         
                         /*  FIXME: turn ifX { ifY {a} } else {b}
@@ -688,11 +688,12 @@ void DumpEvent(const unsigned ptroffs, const std::wstring& what)
         
         text += tmp.code;
         offs += tmp.nbytes;
-        
+
         /*
         text += L"(*";
-        //text += wformat(L"{%04X}", address);
+        text += wformat(L"{%04X}", address);
         for(unsigned a=0; a<tmp.nbytes; ++a) text += wformat(L" %02X", Data[address+a]);
+        text += wformat(L" (gototype:%d)", tmp.goto_type);
         text += L" *)";
         */
         

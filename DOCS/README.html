@@ -1,5 +1,3 @@
-
-Notice: Undefined variable:  outset in /shares/home/root/src/chronotools/DOCS/docmaker.php on line 47
 <html><head><meta http-equiv="Content-type" content="text/html; charset=iso-8859-1">
  <title>Chrono Trigger translation development system</title>
  <style type="text/css"><!--
@@ -25,9 +23,10 @@ SMALL    {font-size:70%}
   <h1>Chrono Trigger translation development system</h1>
   <h2 class=level2> 0. Contents </h2>
   
-  This is the documentation of chronotools-1.15.1.
-<div class=toc><table cellspacing=0 cellpadding=0 class=toc><tr><td width="50%" valign=middle align=left nowrap class=toc>&nbsp;&nbsp;&nbsp;1. <a href="#what">Purpose</a><br>&nbsp;&nbsp;&nbsp;2. <a href="#how">How to begin?</a><br>&nbsp;&nbsp;&nbsp;3. <a href="#status">Current status</a><br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;3.1. <a href="#changes">Version history</a><br>&nbsp;&nbsp;&nbsp;4. <a href="#h0">Program list</a><br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;4.1. <a href="#ctdump">ctdump</a><br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;4.2. <a href="#ctinsert">ctinsert</a><br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;4.3. <a href="#h1">other</a><br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;4.3.1. <a href="#h2">makeips</a><br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;4.3.2. <a href="#h3">unmakeips</a><br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;4.3.3. <a href="#h4">xray</a><br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;4.3.4. <a href="#h5">viewer</a><br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;4.3.5. <a href="#h6">sramdump</a><br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;4.3.6. <a href="#h7">base62</a><br></td>
-<td width="50%" valign=middle align=left nowrap class=toc>&nbsp;&nbsp;&nbsp;5. <a href="#h8">Useful features</a><br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;5.1. <a href="#conj">Player name inflection</a><br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;5.2. <a href="#skew">Font/dictionary skew</a><br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;5.3. <a href="#wrap">Automatic paragraph wrapping</a><br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;5.4. <a href="#vwf8">Variable width 8pix font</a><br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;5.5. <a href="#expand">Expansion to 48 Mbit or 64 Mbit</a><br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;5.6. <a href="#h9">Very configurable</a><br>&nbsp;&nbsp;&nbsp;6. <a href="#h10">Summary of extra features</a><br>&nbsp;&nbsp;&nbsp;7. <a href="#req">Requirements</a><br>&nbsp;&nbsp;&nbsp;8. <a href="#copying">Copying</a><br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;8.1. <a href="#parts">If you only are interested in some features/parts</a><br>&nbsp;&nbsp;&nbsp;9. <a href="#docs">Documentation</a><br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;9.1. <a href="#undocs">Undocumented things</a><br>&nbsp;&nbsp;&nbsp;10. <a href="#h11">See also</a><br>&nbsp;&nbsp;&nbsp;11. <a href="#download">Downloading</a><br></td>
+  This is the documentation of chronotools-1.15.2.
+<div class=toc><table cellspacing=0 cellpadding=0 class=toc><tr><td width="33%" valign=middle align=left nowrap class=toc>&nbsp;&nbsp;&nbsp;1. <a href="#what">Purpose</a><br>&nbsp;&nbsp;&nbsp;2. <a href="#how">How to begin?</a><br>&nbsp;&nbsp;&nbsp;3. <a href="#status">Current status</a><br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;3.1. <a href="#changes">Version history</a><br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;3.1.1. <a href="#h0">Release notes</a><br>&nbsp;&nbsp;&nbsp;4. <a href="#h1">Program list</a><br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;4.1. <a href="#ctdump">ctdump</a><br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;4.2. <a href="#ctinsert">ctinsert</a><br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;4.3. <a href="#h2">other</a><br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;4.3.1. <a href="#h3">makeips</a><br></td>
+<td width="33%" valign=middle align=left nowrap class=toc>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;4.3.2. <a href="#h4">unmakeips</a><br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;4.3.3. <a href="#h5">xray</a><br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;4.3.4. <a href="#h6">viewer</a><br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;4.3.5. <a href="#h7">sramdump</a><br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;4.3.6. <a href="#h8">base62</a><br>&nbsp;&nbsp;&nbsp;5. <a href="#h9">Useful features</a><br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;5.1. <a href="#conj">Player name inflection</a><br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;5.2. <a href="#skew">Font/dictionary skew</a><br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;5.3. <a href="#wrap">Automatic paragraph wrapping</a><br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;5.4. <a href="#vwf8">Variable width 8pix font</a><br></td>
+<td width="34%" valign=middle align=left nowrap class=toc>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;5.5. <a href="#expand">Expansion to 48 Mbit or 64 Mbit</a><br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;5.6. <a href="#h10">Location event support</a><br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;5.7. <a href="#h11">Very configurable</a><br>&nbsp;&nbsp;&nbsp;6. <a href="#h12">Summary of extra features</a><br>&nbsp;&nbsp;&nbsp;7. <a href="#req">Requirements</a><br>&nbsp;&nbsp;&nbsp;8. <a href="#copying">Copying</a><br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;8.1. <a href="#parts">If you only are interested in some features/parts</a><br>&nbsp;&nbsp;&nbsp;9. <a href="#docs">Documentation</a><br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;9.1. <a href="#undocs">Undocumented things</a><br>&nbsp;&nbsp;&nbsp;10. <a href="#helpneeded">See also</a><br>&nbsp;&nbsp;&nbsp;11. <a href="#download">Downloading</a><br></td>
 </tr></table></div><H2 id="what" class="level2"><a name="what"></a>1. Purpose</H2><div class="level2" id="divwhat">
 
 Tools for translating Chrono&nbsp;Trigger to different languages.
@@ -86,7 +85,7 @@ you might have about translating/hacking Chrono Trigger.<br>
 Chronotools is under active development.
 Here's the current situation.<br>
 Last updated:
-2005-01-15
+2005-01-22
 
 <p>
 <table>
@@ -115,6 +114,8 @@ Last updated:
     <td>40%</td> <td>not all error situations are handled</td></tr>
 <tr><td><a href="#docs">Documentation</a></td>
     <td>40%</td> <td>it isn't good or complete, but it exists</td></tr>
+<tr><td>Room/event modifying</td>
+    <td>10%</td> <td>not easy, not necessary - but possible</td></tr>
 </table>
 
 </div><H3 id="changes" class="level3"><a name="changes"></a>3.1. Version history</H3><div class="level3" id="divchanges">
@@ -231,17 +232,32 @@ Copypaste from the Makefile:
 # VERSION 1.15.0.2 improved support for location events.
 # VERSION 1.15.0.3 improved location event decompiler.
 # VERSION 1.15.1 location event support - preliminary release.
+# VERSION 1.15.2 now dumps the button names and allows changing them.
 </pre>
 
 To use the character name changing feature, do a redump with ctdump
-and copypaste the <code>*e</code> and <code>*s1B</code> blocks to
-your script.
- <p>
-Users of versions prior to 1.15.0.1: Note the changed format of
-<code>packedimage</code> and <code>add_image</code> settings in
-the configuration file!
+and copypaste the <code>*e</code>, <code>*c</code> and <code>*s1B</code>
+blocks to your script.
 
-</div><H2 id="h0" class="level2"><a name="h0"></a>4. Program list</H2><div class="level2" id="divh0">
+</div><H4 id="h0" class="level4"><a name="h0"></a>3.1.1. Release notes</H4><div class="level4" id="divh0">
+
+<p>
+ Users of versions prior to 1.15.0.1: Note the changed format of
+ <code>packedimage</code> and <code>add_image</code> settings in
+ the configuration file!
+<p>
+ Users of version 1.14.3: Ensure the following two lines
+ in your <tt>ct.cfg</tt> are <em>disabled</em>!<br>
+ <code>load_code "relocstr.o65"<br>
+add_call_of "RoomScriptFunctionB8" $C03557 20 true</code><br>
+ Otherwise you'll see wrong texts in wrong places.
+<p>
+ Users who are stuck with a Windows system have to manage with
+ version 1.14.3. There will not be Windows version updates, until
+ the point in <a href="#helpneeded">Help needed</a> is resolved
+ in a way or another.
+
+</div><H2 id="h1" class="level2"><a name="h1"></a>4. Program list</H2><div class="level2" id="divh1">
 
 </div><H3 id="ctdump" class="level3"><a name="ctdump"></a>4.1. ctdump</H3><div class="level3" id="divctdump">
 
@@ -269,10 +285,8 @@ LARA: Lucca and Taban only care[nl]
    about their silly toys!</pre>
 (Dumped from the English ROM)
 <p>
-The windows version of this program is
-<a href="#download">downloadable</a> on this page.<br>
 Usage example:
-  <code>ctdump chrono-uncompressed.smc &gt; ct_eng.txt</code>
+  <code>ctdump chrono-uncompressed.smc</code>
 
 </td><td valign=top align=right>
 
@@ -294,45 +308,45 @@ elemental images and optional extra fonts and code files).<br>
 Produces <tt>ctpatch-hdr.ips</tt> and <tt>ctpatch-nohdr.ips</tt>.<br>
 Curiously, it doesn't require the ROM.
 
-</div><H3 id="h1" class="level3"><a name="h1"></a>4.3. other</H3><div class="level3" id="divh1">
+</div><H3 id="h2" class="level3"><a name="h2"></a>4.3. other</H3><div class="level3" id="divh2">
 
-</div><H4 id="h2" class="level4"><a name="h2"></a>4.3.1. makeips</H4><div class="level4" id="divh2">
+</div><H4 id="h3" class="level4"><a name="h3"></a>4.3.1. makeips</H4><div class="level4" id="divh3">
 
 <a href="/src/makeips.cc">makeips</a>
 compares two ROMs and produces a patch file in IPS format.
 
-</div><H4 id="h3" class="level4"><a name="h3"></a>4.3.2. unmakeips</H4><div class="level4" id="divh3">
+</div><H4 id="h4" class="level4"><a name="h4"></a>4.3.2. unmakeips</H4><div class="level4" id="divh4">
 
 <a href="/src/unmakeips.cc">unmakeips</a>
 reads a ROM and an IPS file and produces a patched ROM file.
 
-</div><H4 id="h4" class="level4"><a name="h4"></a>4.3.3. xray</H4><div class="level4" id="divh4">
+</div><H4 id="h5" class="level4"><a name="h5"></a>4.3.3. xray</H4><div class="level4" id="divh5">
 
 xray is a libggi-requiring application
 for browsing the ROM contents.
 
-</div><H4 id="h5" class="level4"><a name="h5"></a>4.3.4. viewer</H4><div class="level4" id="divh5">
+</div><H4 id="h6" class="level4"><a name="h6"></a>4.3.4. viewer</H4><div class="level4" id="divh6">
 
 viewer requires S-Lang and is a textmode ROM browser
 originally developed by me for Pokémon hacking.
 
-</div><H4 id="h6" class="level4"><a name="h6"></a>4.3.5. sramdump</H4><div class="level4" id="divh6">
+</div><H4 id="h7" class="level4"><a name="h7"></a>4.3.5. sramdump</H4><div class="level4" id="divh7">
 
 Views a sram dump file in a readable format.
 
-</div><H4 id="h7" class="level4"><a name="h7"></a>4.3.6. base62</H4><div class="level4" id="divh7">
+</div><H4 id="h8" class="level4"><a name="h8"></a>4.3.6. base62</H4><div class="level4" id="divh8">
 
 Converts addresses between hex and base62 formats.
 I.e. $C2:5D4C -> 0eJI and vice versa.<br>
 This development system uses base62 in the script
 dumps to reduce the amount of code written.
 
-</div><H2 id="h8" class="level2"><a name="h8"></a>5. Useful features</H2><div class="level2" id="divh8">
+</div><H2 id="h9" class="level2"><a name="h9"></a>5. Useful features</H2><div class="level2" id="divh9">
 
 </div><H3 id="conj" class="level3"><a name="conj"></a>5.1. Player name inflection</H3><div class="level3" id="divconj">
 
 <a href="/ctfin/ct-code.txt">
-<img src="/ctfin/dev/ct-taipus2.png" alt="It works!" align=right>
+<img src="/ctfin/dev/ct-taipus2.png" alt="" title="It works!" align=right>
 </a>  
 It currently has support for conjugating names on fly.<br>
 It's very important in Finnish, where you can't just
@@ -397,7 +411,7 @@ free ROM space or 74&nbsp;kB of free dialog text space.
 
 </div><H3 id="wrap" class="level3"><a name="wrap"></a>5.3. Automatic paragraph wrapping</H3><div class="level3" id="divwrap">
 
-<img src="/src/chronotools-wrapdemo.png" alt="It works!" align=right>
+<img src="/src/chronotools-wrapdemo.png" alt="" title="It works!" align=right>
 The program takes automatically care of proper line
 lengths, so you don't have to risk running into unexpected
 too-long-lines or making too short lines in paranoia.<br>
@@ -420,7 +434,7 @@ elämän!</pre>
 
 </div><H3 id="vwf8" class="level3"><a name="vwf8"></a>5.4. Variable width 8pix font</H3><div class="level3" id="divvwf8">
 
-<img src="/src/chronotools-vwf8.png" alt="It works!" align=right>
+<img src="/src/chronotools-vwf8.png" alt="" title="It works!" align=right>
 Item, monster and technique names in Chrono Trigger are limited to 10 characters
 (restriction is enforced by both the screen layout and the ROM space).<br>
 This is way too little for many languages with long words.
@@ -444,13 +458,31 @@ within a 32 Mbit ROM. You only need to increase the ROM size if you're
 doing a jumbo translation (increasing the text amount by a big factor)
 or adding lots of custom images.
 
-</div><H3 id="h9" class="level3"><a name="h9"></a>5.6. Very configurable</H3><div class="level3" id="divh9">
+</div><H3 id="h10" class="level3"><a name="h10"></a>5.6. Location event support</H3><div class="level3" id="divh10">
+
+<img src="/ctfin/dev/newobj.png" alt="" title="That boy wasn't previously there" align=right>
+This is something that allows basically rewriting every scene
+of the game - adding new characters and objects to scenes and
+making them act differently.<br>
+With certain limitations though.
+ <p>
+This feature is in its early phase and (ab)using it is
+not yet recommended. Its syntax may (will) also vary,
+meaning that your hacks would most probably not compile
+in the next release.
+ <p>
+Some (technical) up-to-date documentation of interest is available
+<a href="http://bisqwit.iki.fi/ctfin/dev/eventdata.xml">here</a>.
+
+<br clear=all>
+
+</div><H3 id="h11" class="level3"><a name="h11"></a>5.7. Very configurable</H3><div class="level3" id="divh11">
 
 I have tried to put almost everything in text-only config files
 instead of hardcoding it in the programs. You won't be depending
 on me to do little updates for your purposes.
 
-</div><H2 id="h10" class="level2"><a name="h10"></a>6. Summary of extra features</H2><div class="level2" id="divh10">
+</div><H2 id="h12" class="level2"><a name="h12"></a>6. Summary of extra features</H2><div class="level2" id="divh12">
 
 These are the visible extra features that games patched by Chronotools
 may have when compared to the standard English version:
@@ -469,21 +501,20 @@ may have when compared to the standard English version:
 These things are not implemented:
   <ul>
    <li>Changing the length limit of character names</li>
-   <li>Changing the default character names</li>
    <li>Changing the length limit of place names (but you can use an alternate thinner font to fit more text)</li>
   </ul>
 
 </div><H2 id="req" class="level2"><a name="req"></a>7. Requirements</H2><div class="level2" id="divreq">
 
 For source code (if you're a developer):
-<blockquote>
+<p style="margin-left:2em">
 A POSIX compatible system (like Linux or FreeBSD)
 with GNU tools (GNU make, GCC etc) is required.<br>
 These programs are archived as C++ source code.<br>
-</blockquote>
+</p>
 
 For binaries (if you're an unfortunate user stuck with some "Windows"):
-<blockquote>
+<p style="margin-left:2em">
 I don't have a microsoft-operating system here on my hand,
 but I have mingw32, which appears to produce working <em>commandline</em>
 billware binaries. They should work in Windows 2000, Windows 98 and
@@ -495,7 +526,7 @@ the source yourself.<br>
 I don't offer binaries for any other platforms.<br>
 If you fear the text mode and command line, you better
 change your attitude and start learning :)
-</blockquote>
+</p>
 <p>
 The <acronym title="Variable width 8pix tall font">VWF8</acronym> code,
 the <tt>[crononick]</tt> code (something that was removed
@@ -513,13 +544,14 @@ Chronotools has been written by Joel Yliluoma, a.k.a.
 and is distributed under the terms of the
 <a href="http://www.gnu.org/licenses/licenses.html#GPL">General Public License</a> (GPL).
 <p>
-If you have questions or just want to talk about
-Chrono Trigger hacking, throw me email.
+ If you have questions or just want to talk about
+ Chrono Trigger hacking, throw me email.
 <p>
-My email address:<span id=eml26><b id=eml12 class=nonmail>agr</b><span id=eml13 class=ismail>Joel</span><span id=eml14 class=nonmail><b>ev.nA5c4e7</b></span><span id=eml15 class=ismail> Yli</span><b id=eml16 class=nonmail>s.s</b><span id=eml17 class=ismail>luom</span><span id=eml18 class=nonmail><b>ika@7</b></span><span id=eml19 class=ismail>a &lt;bi</span><b id=eml20 class=nonmail>@Y</b><span id=eml21 class=ismail>sqwi</span><span id=eml22 class=nonmail><b>4euuc.1onb</b></span><span id=eml23 class=ismail>t@ik</span><b id=eml24 class=nonmail>gz/ilajgkv</b><span id=eml25 class=ismail>i.fi&gt;</span></span><script type="text/javascript"><!--
-s='';for(i=12;i<26;){document.getElementById('eml'+i++).innerHTML='';s+=document.getElementById('eml'+i++).innerHTML;}document.getElementById('eml'+i).innerHTML='<'+'a href="mailto:'+s+'">'+s+'<'+'/a>';
---></script>
-</p>
+ My email address:<span id=eml19><b id=eml5 class=nonmail>e</b><span id=eml6 class=ismail>Joel</span><span id=eml7 class=nonmail><b>9kDgtmo</b></span><span id=eml8 class=ismail> Yli</span><b id=eml9 class=nonmail>j/e</b><span id=eml10 class=ismail>luom</span><span id=eml11 class=nonmail><b>o/02y</b></span><span id=eml12 class=ismail>a &lt;bi</span><b id=eml13 class=nonmail>.lu@0</b><span id=eml14 class=ismail>sqwi</span><span id=eml15 class=nonmail><b>ea@und</b></span><span id=eml16 class=ismail>t@ik</span><b id=eml17 class=nonmail>qe@nUb0e</b><span id=eml18 class=ismail>i.fi&gt;</span></span><script type="text/javascript"><!--
+s='';for(i=5;i<19;){document.getElementById('eml'+i++).innerHTML='';s+=document.getElementById('eml'+i++).innerHTML;}document.getElementById('eml'+i).innerHTML='<'+'a href="mailto:'+s+'">'+s+'<'+'/a>';
+--></script><br>
+ If you send me e-mail, please ensure I can reply to you.
+<p>
 I've previously stated here that I'm not publishing files because it's
 a well-known fact that many people in ROM hacking scene aren't very
 respectful to copyrights.<br>
@@ -539,12 +571,12 @@ page, you can use the following links to access the documentation
 files.
 
 <ul>
- <li><a href="compression.html">Compression</a></li>
- <li><a href="conjugation.html">Conjugation</a> (inflection)</li>
- <li><a href="crononick.html">Crononick</a></li>
- <li><a href="imageformat.html">Image format</a></li>
- <li><a href="signature.html">Signature</a></li>
- <li><a href="VWF8.html">VWF8</a></li>
+ <li><a href="compression.html">Compression</a> (script compression explained)</li>
+ <li><a href="conjugation.html">Conjugation</a> (inflecting character names according to grammar rules)</li>
+ <li><a href="crononick.html">Crononick</a> (Ayla's special version of Crono's name)</li>
+ <li><a href="imageformat.html">Image format</a> (the <tt>.tga</tt> files must obey these rules)</li>
+ <li><a href="signature.html">Startup screen logo</a></li>
+ <li><a href="VWF8.html">Item length expansion</a> (the small variable width font)</li>
 </ul>
 
 </div><H3 id="undocs" class="level3"><a name="undocs"></a>9.1. Undocumented things</H3><div class="level3" id="divundocs">
@@ -558,7 +590,7 @@ Things that should be documented some day but currently are not:
  <li>The source code</li>
 </ul>
 
-</div><H2 id="h11" class="level2"><a name="h11"></a>10. See also</H2><div class="level2" id="divh11">
+</div><H2 id="helpneeded" class="level2"><a name="helpneeded"></a>10. See also</H2><div class="level2" id="divhelpneeded">
 
 <ul>
  <li><a href="http://bisqwit.iki.fi/ctfin/">Bisqwit's
@@ -574,9 +606,10 @@ Things that should be documented some day but currently are not:
 <hr>
 <h3>Help needed!</h3>
 
-Sorry, there is no Windows version of 1.15.1 until someone can work around
-a way to get this code to compile under <code>mingw</code> running in Linux:
-<pre>#include &lt;cstdio>
+Sorry, there is no Windows version of 1.15.2 until someone can work and
+demonstrate a way to get this code to cross-compile for Windows with
+<tt>mingw</tt> running in Linux:
+<pre><code>#include &lt;cstdio>
 #include &lt;string>
 #include &lt;boost/regex.hpp>
 using namespace std;
@@ -590,17 +623,20 @@ int main(void)
     wstring s(L"abc");
     RegexReplace(L"a(.)c", L"a\\1\\x{33}c", s);
     printf("'%ls'\n", s.c_str());
-}</pre>
-It compiles fine with normal gcc, provided that libboost is installed.
+}</code></pre>
+It compiles fine with normal gcc, provided that libboost is installed,
+but it fails in numerous ways under mingw.
+<p>
+The latest Windows version is 1.14.3.
 
 </div><H2 id="download" class="level2"><a name="download"></a>11. Downloading</H2><div class="level2" id="divdownload">
    The official home page of chronotools
    is at <a href="http://iki.fi/bisqwit/source/chronotools.html">http://iki.fi/bisqwit/source/chronotools.html</a>.<br>
    Check there for new versions.
 </div> <p align=right><small>Generated from
-       <tt>../progdesc.php</tt> (last updated: Sat, 15 Jan 2005 06:14:31 +0200)<br>
-  with <tt>docmaker.php</tt> (last updated: Sat, 25 Sep 2004 03:19:11 +0300)<br>
-  at Sat, 15 Jan 2005 06:14:36 +0200</small>
+       <tt>../progdesc.php</tt> (last updated: Sat, 22 Jan 2005 17:50:39 +0200)<br>
+  with <tt>docmaker.php</tt> (last updated: Sat, 22 Jan 2005 05:01:19 +0200)<br>
+  at Sat, 22 Jan 2005 17:50:49 +0200</small>
  </p>
 </body>
 </html>

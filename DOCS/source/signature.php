@@ -25,14 +25,14 @@ in the <code>[linker]</code> section:
 <pre>
 # SIGNATURE
 load_code \"ct-moglogo.o65\"
-add_call_of \"show_moglogo\"       \$FDE62F 0 false
-add_image   \"moglogo.tga\"   \$7F \"TILEDATA_ADDR\"  \"PALETTE_ADDR\" \"PALETTE_SIZE\"
+add_call_of \"show_moglogo\"   \$FDE62F 0 false
+add_image   \"moglogo.tga\"    \"TILEDATA_ADDR\"  \"PALETTE_ADDR\" \"PALETTE_SIZE\"
 </pre>
 
 This tells the insertor that it must include code from <code>ct-moglogo.o65</code>
 and insert a call of the routine <code>show_moglogo</code> at \$FDE62F in the ROM,
 and that it should read and insert the image <code>moglogo.tga</code>, compress
-it (page \$7F) and assign several constants for referring to it.
+it and assign several constants for referring to it.
 <p>
 You can create <code>ct-moglogo.o65</code> by compiling the
 included <code>ct-moglogo.a65</code> file with

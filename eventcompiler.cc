@@ -1,6 +1,6 @@
 #include <vector>
 #include <list>
-#include <set>
+#include <map>
 
 #include "eventcompiler.hh"
 #include "eventdata.hh"
@@ -390,12 +390,16 @@ private:
     }
     void DefineLabel(const std::string& label)
     {
-        cur_labels.push_back(label);
+        // Mark the label pointing to the next line
+        if(labels.find(label) != labels.end())
+        {
+            fprintf(stderr, "Error: Duplicate definition of label '%s'\n", label.c_str());
+        }
+        labels[label] = lines.size();
     }
     void CreateStatement(const std::wstring& text, const std::string& goto_label="")
     {
         Line line;
-        line.names.insert(cur_labels.begin(), cur_labels.end());
         line.text       = text;
         line.goto_label = goto_label;
         
@@ -426,19 +430,17 @@ private:
         lines.push_back(line);
 
         ClearPointerSelection();
-        cur_labels.clear();
     }
     
     unsigned FindLabel(const std::string& s) const
     {
-        for(unsigned a=0; a<lines.size(); ++a)
+        std::map<std::string, unsigned>::const_iterator i = labels.find(s);
+        if(i == labels.end())
         {
-            const Line& l = lines[a];
-            if(l.names.find(s) != l.names.end())
-                return a;
+            fprintf(stderr, "ERROR: Undefined label '%s'\n", s.c_str());
+            return 0;
         }
-        fprintf(stderr, "ERROR: Undefined label '%s'\n", s.c_str());
-        return 0;
+        return i->second;
     }
     
     void TraceLabels()
@@ -455,8 +457,7 @@ private:
              * It is used for patching gotos.
              */
         }
-        for(unsigned a=0; a<lines.size(); ++a)
-            lines[a].names.clear(); // Free unneeded data
+        labels.clear(); // Free unneeded data
     }
     
     void ConvertToBytes()
@@ -491,6 +492,8 @@ private:
     {
         std::vector<unsigned char> result;
         
+        result.reserve(0x1700); // maximum size of the event
+        
         result.push_back(objects.size());
         for(unsigned a=0; a<objects.size(); ++a)
             for(unsigned b=0; b<16; ++b)
@@ -500,6 +503,7 @@ private:
                 result.push_back(offs & 0xFF);
                 result.push_back(offs >> 8);
             }
+        
         for(unsigned a=0; a<lines.size(); ++a)
         {
             const Line& l = lines[a];
@@ -528,9 +532,6 @@ private:
     
     struct Line
     {
-        /* label */
-        std::set<std::string> names;
-        
         /* the encoded data */
         std::vector<unsigned char> bytes;
         unsigned     goto_offset;   //where goto is in
@@ -542,6 +543,7 @@ private:
         unsigned     goto_target; //line number
         bool         goto_backward;
     };
+    
     struct Pointer
     {
         unsigned linenumber;
@@ -566,7 +568,7 @@ private:
     std::vector<Object> objects;
 
     /* Parsed data */
-    std::list<std::string> cur_labels;
+    std::map<std::string, unsigned> labels;
     std::list<AnalysisState> stack;
 };
 
@@ -610,4 +612,9 @@ void EventCompiler::FinishCurrent()
     events.push_back(tmp);
     
     delete cur_ev; cur_ev=NULL;
+}
+
+void EventCompiler::Close()
+{
+    FinishCurrent();
 }

@@ -94,6 +94,8 @@ Last updated:
     <td>40%</td> <td>not all error situations are handled</td></tr>
 <tr><td><a href=\"#docs\">Documentation</a></td>
     <td>40%</td> <td>it isn't good or complete, but it exists</td></tr>
+<tr><td>Room/event modifying</td>
+    <td>10%</td> <td>not easy, not necessary - but possible</td></tr>
 </table>
 
 ", 'changes:1.1. Version history' => "
@@ -210,15 +212,30 @@ Copypaste from the Makefile:
 # VERSION 1.15.0.2 improved support for location events.
 # VERSION 1.15.0.3 improved location event decompiler.
 # VERSION 1.15.1 location event support - preliminary release.
+# VERSION 1.15.2 now dumps the button names and allows changing them.
 </pre>
 
 To use the character name changing feature, do a redump with ctdump
-and copypaste the <code>*e</code> and <code>*s1B</code> blocks to
-your script.
- <p>
-Users of versions prior to 1.15.0.1: Note the changed format of
-<code>packedimage</code> and <code>add_image</code> settings in
-the configuration file!
+and copypaste the <code>*e</code>, <code>*c</code> and <code>*s1B</code>
+blocks to your script.
+
+", '1.1.1. Release notes' => "
+
+<p>
+ Users of versions prior to 1.15.0.1: Note the changed format of
+ <code>packedimage</code> and <code>add_image</code> settings in
+ the configuration file!
+<p>
+ Users of version 1.14.3: Ensure the following two lines
+ in your <tt>ct.cfg</tt> are <em>disabled</em>!<br>
+ <code>load_code \"relocstr.o65\"<br>
+add_call_of \"RoomScriptFunctionB8\" \$C03557 20 true</code><br>
+ Otherwise you'll see wrong texts in wrong places.
+<p>
+ Users who are stuck with a Windows system have to manage with
+ version 1.14.3. There will not be Windows version updates, until
+ the point in <a href=\"#helpneeded\">Help needed</a> is resolved
+ in a way or another.
 
 ", '1. Program list' => "
 
@@ -248,10 +265,8 @@ LARA: Lucca and Taban only care[nl]
    about their silly toys!</pre>
 (Dumped from the English ROM)
 <p>
-The windows version of this program is
-<a href=\"#download\">downloadable</a> on this page.<br>
 Usage example:
-  <code>ctdump chrono-uncompressed.smc &gt; ct_eng.txt</code>
+  <code>ctdump chrono-uncompressed.smc</code>
 
 </td><td valign=top align=right>
 
@@ -311,7 +326,7 @@ dumps to reduce the amount of code written.
 ", 'conj:1.1. Player name inflection' => "
 
 <a href=\"/ctfin/ct-code.txt\">
-<img src=\"/ctfin/dev/ct-taipus2.png\" alt=\"It works!\" align=right>
+<img src=\"/ctfin/dev/ct-taipus2.png\" alt=\"\" title=\"It works!\" align=right>
 </a>  
 It currently has support for conjugating names on fly.<br>
 It's very important in Finnish, where you can't just
@@ -376,7 +391,7 @@ free ROM space or 74&nbsp;kB of free dialog text space.
 
 ", 'wrap:1.1. Automatic paragraph wrapping' => "
 
-<img src=\"/src/chronotools-wrapdemo.png\" alt=\"It works!\" align=right>
+<img src=\"/src/chronotools-wrapdemo.png\" alt=\"\" title=\"It works!\" align=right>
 The program takes automatically care of proper line
 lengths, so you don't have to risk running into unexpected
 too-long-lines or making too short lines in paranoia.<br>
@@ -399,7 +414,7 @@ elämän!</pre>
 
 ", 'vwf8:1.1. Variable width 8pix font' => "
 
-<img src=\"/src/chronotools-vwf8.png\" alt=\"It works!\" align=right>
+<img src=\"/src/chronotools-vwf8.png\" alt=\"\" title=\"It works!\" align=right>
 Item, monster and technique names in Chrono Trigger are limited to 10 characters
 (restriction is enforced by both the screen layout and the ROM space).<br>
 This is way too little for many languages with long words.
@@ -422,6 +437,24 @@ However Chronotools is designed to be able to use all the built features
 within a 32 Mbit ROM. You only need to increase the ROM size if you're
 doing a jumbo translation (increasing the text amount by a big factor)
 or adding lots of custom images.
+
+", '1.1. Location event support' => "
+
+<img src=\"/ctfin/dev/newobj.png\" alt=\"\" title=\"That boy wasn't previously there\" align=right>
+This is something that allows basically rewriting every scene
+of the game - adding new characters and objects to scenes and
+making them act differently.<br>
+With certain limitations though.
+ <p>
+This feature is in its early phase and (ab)using it is
+not yet recommended. Its syntax may (will) also vary,
+meaning that your hacks would most probably not compile
+in the next release.
+ <p>
+Some (technical) up-to-date documentation of interest is available
+<a href=\"http://bisqwit.iki.fi/ctfin/dev/eventdata.xml\">here</a>.
+
+<br clear=all>
 
 ", '1.1. Very configurable' => "
 
@@ -448,21 +481,20 @@ may have when compared to the standard English version:
 These things are not implemented:
   <ul>
    <li>Changing the length limit of character names</li>
-   <li>Changing the default character names</li>
    <li>Changing the length limit of place names (but you can use an alternate thinner font to fit more text)</li>
   </ul>
 
 ", 'req:1. Requirements' => "
 
 For source code (if you're a developer):
-<blockquote>
+<p style=\"margin-left:2em\">
 A POSIX compatible system (like Linux or FreeBSD)
 with GNU tools (GNU make, GCC etc) is required.<br>
 These programs are archived as C++ source code.<br>
-</blockquote>
+</p>
 
 For binaries (if you're an unfortunate user stuck with some \"Windows\"):
-<blockquote>
+<p style=\"margin-left:2em\">
 I don't have a microsoft-operating system here on my hand,
 but I have mingw32, which appears to produce working <em>commandline</em>
 billware binaries. They should work in Windows 2000, Windows 98 and
@@ -474,7 +506,7 @@ the source yourself.<br>
 I don't offer binaries for any other platforms.<br>
 If you fear the text mode and command line, you better
 change your attitude and start learning :)
-</blockquote>
+</p>
 <p>
 The <acronym title=\"Variable width 8pix tall font\">VWF8</acronym> code,
 the <tt>[crononick]</tt> code (something that was removed
@@ -492,11 +524,12 @@ Chronotools has been written by Joel Yliluoma, a.k.a.
 and is distributed under the terms of the
 <a href=\"http://www.gnu.org/licenses/licenses.html#GPL\">General Public License</a> (GPL).
 <p>
-If you have questions or just want to talk about
-Chrono Trigger hacking, throw me email.
+ If you have questions or just want to talk about
+ Chrono Trigger hacking, throw me email.
 <p>
-".GetEmail('My email address:', 'Joel Yliluoma', 'bisqwi'. 't@iki.fi')."
-</p>
+ ".GetEmail('My email address:', 'Joel Yliluoma', 'bisqwi'. 't@iki.fi')."<br>
+ If you send me e-mail, please ensure I can reply to you.
+<p>
 I've previously stated here that I'm not publishing files because it's
 a well-known fact that many people in ROM hacking scene aren't very
 respectful to copyrights.<br>
@@ -516,12 +549,12 @@ page, you can use the following links to access the documentation
 files.
 
 <ul>
- <li><a href=\"compression.html\">Compression</a></li>
- <li><a href=\"conjugation.html\">Conjugation</a> (inflection)</li>
- <li><a href=\"crononick.html\">Crononick</a></li>
- <li><a href=\"imageformat.html\">Image format</a></li>
- <li><a href=\"signature.html\">Signature</a></li>
- <li><a href=\"VWF8.html\">VWF8</a></li>
+ <li><a href=\"compression.html\">Compression</a> (script compression explained)</li>
+ <li><a href=\"conjugation.html\">Conjugation</a> (inflecting character names according to grammar rules)</li>
+ <li><a href=\"crononick.html\">Crononick</a> (Ayla's special version of Crono's name)</li>
+ <li><a href=\"imageformat.html\">Image format</a> (the <tt>.tga</tt> files must obey these rules)</li>
+ <li><a href=\"signature.html\">Startup screen logo</a></li>
+ <li><a href=\"VWF8.html\">Item length expansion</a> (the small variable width font)</li>
 </ul>
 
 ", 'undocs:1.1. Undocumented things' => "
@@ -535,7 +568,7 @@ Things that should be documented some day but currently are not:
  <li>The source code</li>
 </ul>
 
-", '1. See also' => "
+", 'helpneeded:1. See also' => "
 
 <ul>
  <li><a href=\"http://bisqwit.iki.fi/ctfin/\">Bisqwit's
@@ -551,9 +584,10 @@ Things that should be documented some day but currently are not:
 <hr>
 <h3>Help needed!</h3>
 
-Sorry, there is no Windows version of 1.15.1 until someone can work around
-a way to get this code to compile under <code>mingw</code> running in Linux:
-<pre>#include &lt;cstdio>
+Sorry, there is no Windows version of 1.15.2 until someone can work and
+demonstrate a way to get this code to cross-compile for Windows with
+<tt>mingw</tt> running in Linux:
+<pre><code>#include &lt;cstdio>
 #include &lt;string>
 #include &lt;boost/regex.hpp>
 using namespace std;
@@ -567,8 +601,11 @@ int main(void)
     wstring s(L\"abc\");
     RegexReplace(L\"a(.)c\", L\"a\\\\1\\\\x{33}c\", s);
     printf(\"'%ls'\\n\", s.c_str());
-}</pre>
-It compiles fine with normal gcc, provided that libboost is installed.
+}</code></pre>
+It compiles fine with normal gcc, provided that libboost is installed,
+but it fails in numerous ways under mingw.
+<p>
+The latest Windows version is 1.14.3.
 
 ");
 

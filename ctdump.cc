@@ -493,6 +493,18 @@ namespace
                      L";   Magus[0]      ->  Ma[0][0][0][0]\n"
                     );
         DumpC8String(0x3CFA35, L"statusram");
+
+        PutAscii(L";\n\n\n\n"
+                 L";-----------------\n"
+                 L";Button labels - all of them are 1 character long!\n"
+                 L";-----------------\n");
+        DumpFStrings(0x3FD554, L"buttons", 1, 1);
+        DumpFStrings(0x3FD556, L"buttons", 1, 1);
+        DumpFStrings(0x3FD558, L"buttons", 1, 1);
+        DumpFStrings(0x3FD55A, L"buttons", 1, 1);
+        DumpFStrings(0x3FD55C, L"buttons", 1, 1);
+        DumpFStrings(0x3FD55E, L"buttons", 1, 1);
+        DumpFStrings(0x3FD560, L"buttons", 1, 1);
     }
     
     void DumpEvents()

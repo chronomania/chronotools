@@ -1,0 +1,2977 @@
+<?xml version="1.0"?>
+<?xml-stylesheet type='text/xsl' href='eventdata.xsl'?>
+<location_event_commands>
+ <title>Chrono Trigger bytecode for location events</title>
+ 
+ <compiler><name>Joel Yliluoma</name> <url>http://iki.fi/bisqwit/</url> </compiler>
+
+ <sequence length="1" cmd="[Return]">
+  <param pos="0" type="Immed" size="1" min="00" max="00" />
+  <comment type="asm">
+        A = $1C00 of cur obj
+        If A == 7
+        {
+          // There are no more threads.
+          return and loop
+        }
+        X = (A &lt;&lt; 7) + (obj number)
+        $7F0580[X] = word(0) // Mark the current thread as completed
+        &lt;begin&gt;
+         $1C00 of cur obj += 1
+         X += #$80
+         A = $7F0580[X]
+        &lt;while A==0&gt;
+        returns X as A (execution position)
+        return
+  </comment>
+  <comment type="analysis">
+In room initialization, this ends the initialization.
+
+Otherwise, this opcode returns to the function of bigger priority (less urgent).
+There are eight priority levels: 0 1 2 3 4 5 6 7.
+If the current prio is 7 when opcode 00 is called, the op will essentially do the same as op B2.
+  </comment>
+ </sequence>
+
+ <sequence length="3" cmd="[Execute:%func [priority:%prio] [for:%0] [wait:nothing]]">
+  <param pos="0" type="Immed" size="1" min="02" max="02" />
+  <param pos="1" type="ObjectNumber" param="0" size="1" comment="object number whose execution to alter" />
+  <param pos="2" type="NibbleHi" param="prio" size="1" />
+  <param pos="2" type="NibbleLo" param="func" size="1" />
+  <comment type="asm">
+        If ( $1C01 for given obj != #0
+        Or   $1100 for given obj &amp; #$80
+        Or   $1000 for given obj &amp; #$80 )
+        {
+          return
+        }
+        $D9 = $1C00 for given obj // Current thread
+        $DF = hi nibble
+        If $DF == $D9
+        {
+          // Already executing the selected thread
+          return
+        }
+        If $DF &gt;= $D9
+        {
+          // Verify that the thread is undefined
+          $E1 = ($DF &lt;&lt; 7) + param1
+          A = $7F0580[$E1]
+          If(!zero)
+          {
+            // Already defined.
+            return
+          }
+          // Define it.
+          $E3 = (param0 &lt;&lt; 4) + (lo nibble)*2
+          $7F0580[$E1] = given actor's pointer from $7F2001[$E3]
+        }
+        else
+        {
+          // Returning to a previous thread?
+          
+          // Save current code position
+          $E1 = ($D9 &lt;&lt; 7) + param1
+          $7F0580[$E1] = $1180 for given obj
+          
+          // Load new position
+          $E3 = (param0 &lt;&lt; 4) + (lo nibble)*2
+          $1180 for given obj = given actor's pointer from $7F2001[$E3]
+          $1C00 for given obj = $DF
+          $1A80 for given obj = 0 (moving flag)
+          $1A01 for given obj = 0 (magnitude)
+        }
+        return
+  </comment>
+  <comment type="analysis">
+This function meddles with ANOTHER object. It does not alter the execution of SELF.
+If the priority of the current function &lt; %prio
+  Saves the current execution position
+  Calls function %func in slot %prio
+If the priority of the current function = %prio
+  Does not do anything
+If the priority of the current function &gt; %prio
+  Sets the function exit address to point to function %func
+  Only if not defined yet.
+Note that bigger priority number = less urgent.
+  </comment>
+ </sequence>
+
+ <sequence length="3" cmd="[Execute:%func [priority:%prio] [for:%0] [wait:call]]">
+  <param pos="0" type="Immed" size="1" min="03" max="03" />
+  <param pos="1" type="ObjectNumber" param="0" size="1" />
+  <param pos="2" type="NibbleHi" param="prio" size="1" />
+  <param pos="2" type="NibbleLo" param="func" size="1" />
+  <comment type="asm">
+        if ( $1C01 for given obj != #0 )
+          return, loop
+        
+        If ( $1100 for given obj &amp; #$80
+        Or   $1000 for given obj &amp; #$80 )
+        {
+          return
+        }
+        
+        $D9 = $1C00 for given obj // Current thread
+        $DF = hi nibble
+        If $DF &gt;= $D9
+        {
+          return, loop
+        }
+        
+        // Save current code position
+        $E1 = ($D9 &lt;&lt; 7) + param1
+        $7F0580[$E1] = $1180 for given obj
+        
+        // Load new position
+        $E3 = (param1 &lt;&lt; 4) + (lo nibble)*2
+        $1180 for given obj = given actor's pointer from $7F2001[$E3]
+        $1C00 for given obj = $DF
+        $1A80 for given obj = 0 (moving flag)
+        $1A01 for given obj = 0 (magnitude)
+        return
+  </comment>
+  <comment type="analysis">
+Same as op 02, except that if the given object is currently performing a more urgent task, this op will wait until it's completed and then transfer it to the new one.
+  </comment>
+ </sequence>
+
+ <sequence length="3" cmd="[Execute:%func [priority:%prio] [for:%0] [wait:return]]">
+  <param pos="0" type="Immed" size="1" min="04" max="04" />
+  <param pos="1" type="ObjectNumber" param="0" size="1" />
+  <param pos="2" type="NibbleHi" param="prio" size="1" />
+  <param pos="2" type="NibbleLo" param="func" size="1" />
+  <comment type="asm">
+       $DB = param0 // object number
+       
+       $D9 = $1C00 for given obj // Current thread
+       $DD = byte2 (param1 and param2)
+       $DF = param1
+       
+       A = $7F0980 for _current_ object
+       If(A != 0)
+       {
+         If ( $1100 for given obj &amp; #$80
+         Or   $1000 for given obj &amp; #$80 )
+         {
+           $7F0980 for _current_ object = 0
+           return
+         }
+         
+         If $DF &gt;= $D9:
+           return, loop
+         
+         $7F0980 for _current_ obj = 0
+         return
+       }
+       
+       If ( $1C01 for given obj != 0):
+         return, loop
+       
+       If ( $1100 for given obj &amp; #$80
+       Or   $1000 for given obj &amp; #$80 )
+       {
+         return
+       }
+       
+       If $DF &gt;= $D9:
+         return, loop
+       
+       // Save current code position
+       $E1 = ($D9 &lt;&lt; 7) + param0
+       $7F0580[$E1] = $1180 for given obj
+       
+       // Load new position
+       $E3 = (param0 &lt;&lt; 4) + (param2)*2
+       $1180 for given obj = given actor's pointer from $7F2001[$E3]
+       $1C00 for given obj = $DF
+       $1A80 for given obj = 0 (moving flag)
+       $1A01 for given obj = 0 (magnitude)
+       $7F0980 for _current_ obj = 1
+       return, loop
+  </comment>
+  <comment type="analysis">
+Same as op 03, except that it will wait until the target object returns from the function.
+  </comment>
+ </sequence>
+
+ <sequence length="3" cmd="[Execute:%func [priority:%prio] [for:%0] [wait:nothing]]">
+  <param pos="0" type="Immed" size="1" min="05" max="05" />
+  <param pos="1" type="TableReference" param="0" size="1" address="7E0197" comment="target obj" />
+  <param pos="2" type="NibbleHi" param="prio" size="1" />
+  <param pos="2" type="NibbleLo" param="func" size="1" />
+  <comment type="analysis">
+same as op 02, but uses object number from table.
+  </comment>
+ </sequence>
+
+ <sequence length="3" cmd="[Execute:%func [priority:%prio] [for:%0] [wait:call]]">
+  <param pos="0" type="Immed" size="1" min="06" max="06" />
+  <param pos="1" type="TableReference" param="0" size="1" address="7E0197" comment="target obj" />
+  <param pos="2" type="NibbleHi" param="prio" size="1" />
+  <param pos="2" type="NibbleLo" param="func" size="1" />
+  <comment type="analysis">
+same as op 03, but uses object number from table.
+  </comment>
+ </sequence>
+
+ <sequence length="3" cmd="[Execute:%func [priority:%prio] [for:%0] [wait:return]]">
+  <param pos="0" type="Immed" size="1" min="07" max="07" />
+  <param pos="1" type="TableReference" param="0" size="1" address="7E0197" comment="target obj" />
+  <param pos="2" type="NibbleHi" param="prio" size="1" />
+  <param pos="2" type="NibbleLo" param="func" size="1" />
+  <comment type="analysis">
+same as op 04, but uses object number from table.
+  </comment>
+ </sequence>
+
+ <sequence length="1" cmd="[ObjectLetB:%0:%1]">
+  <param pos="0" type="Immed" size="1" min="08" max="08" />
+  <param type="Prop" param="0" value="7E1C01" />
+  <param type="Const" param="1" value="1" />
+ </sequence>
+
+ <sequence length="1" cmd="[ObjectLetB:%0:%1]">
+  <param pos="0" type="Immed" size="1" min="09" max="09" />
+  <param type="Prop" param="0" value="7E1C01" />
+  <param type="Const" param="1" value="0" />
+ </sequence>
+
+ <sequence length="2" cmd="[ObjectRemove [for:%0]]">
+  <param pos="0" type="Immed" size="1" min="0A" max="0A" />
+  <param pos="1" type="ObjectNumber" param="0" size="1" />
+  <comment type="analysis">
+For given obj,
+  Sets 1100=$80 (code execution: dead)
+  And  1A81=$00 (drawing mode: none)
+  </comment>
+ </sequence>
+
+ <sequence length="2" cmd="[ObjectOrB:%0:%1 [for:%2]]">
+  <param pos="0" type="Immed" size="1" min="0B" max="0B" />
+  <param pos="1" type="ObjectNumber" param="2" size="1" />
+  <param type="Prop" param="0" value="7E1000" />
+  <param type="Const" param="1" value="80" />
+ </sequence>
+
+ <sequence length="2" cmd="[ObjectAndB:%0:%1 [for:%2]]">
+  <param pos="0" type="Immed" size="1" min="0C" max="0C" />
+  <param pos="1" type="ObjectNumber" param="2" size="1" />
+  <param type="Prop" param="0" value="7E1000" />
+  <param type="Const" param="1" value="7F" />
+ </sequence>
+
+ <sequence length="2" cmd="[ObjectLetB:%0:%1]">
+  <param pos="0" type="Immed" size="1" min="0D" max="0D" />
+  <param pos="1" type="Immed" param="1" size="1" />
+  <param type="Prop" param="0" value="7E1C80" />
+ </sequence>
+
+ <sequence length="2" cmd="[ObjectLetB:%0:%1]">
+  <param pos="0" type="Immed" size="1" min="0E" max="0E" />
+  <param pos="1" type="Immed" param="1" size="1" />
+  <param type="Prop" param="0" value="7E1C81" />
+ </sequence>
+
+ <sequence length="1" cmd="[ObjectSetFacing:%0]">
+  <param pos="0" type="Immed" size="1" min="0F" max="0F" />
+  <param type="Const" param="0" value="0" />
+  <comment type="analysis">
+puts 1600=0, 1601=0
+  </comment>
+ </sequence>
+
+ <sequence length="2" cmd="">
+  <param pos="0" type="Immed" size="1" min="10" max="10" />
+  <param pos="1" type="GotoForward" size="1" />
+  <comment type="analysis">
+Jumps forward by the given number of bytes.
+  </comment>
+ </sequence>
+
+ <sequence length="2" cmd="">
+  <param pos="0" type="Immed" size="1" min="11" max="11" />
+  <param pos="1" type="GotoBackward" size="1" />
+  <comment type="analysis">
+Jumps backward by the given number of bytes.
+  </comment>
+ </sequence>
+
+ <sequence length="5" cmd="B:%addr %op %value">
+  <param pos="0" type="Immed" size="1" min="12" max="12" />
+  <param pos="1" type="Table2Reference" param="addr" size="1" address="7F0200" />
+  <param pos="2" type="Immed" param="value" size="1" />
+  <param pos="3" type="Operator" param="op" size="1" />
+  <param pos="4" type="ConditionalGoto" size="1" />
+ </sequence>
+
+ <sequence length="6" cmd="W:%addr %op %value">
+  <param pos="0" type="Immed" size="1" min="13" max="13" />
+  <param pos="1" type="Table2Reference" param="addr" size="1" address="7F0200" />
+  <param pos="2" type="Immed" param="value" size="2" />
+  <param pos="4" type="Operator" param="op" size="1" />
+  <param pos="5" type="ConditionalGoto" size="1" />
+ </sequence>
+
+ <sequence length="5" cmd="B:%addr1 %op %addr2">
+  <param pos="0" type="Immed" size="1" min="14" max="14" />
+  <param pos="1" type="Table2Reference" param="addr1" size="1" address="7F0200" />
+  <param pos="2" type="Table2Reference" param="addr2" size="1" address="7F0200" />
+  <param pos="3" type="Operator" param="op" size="1" />
+  <param pos="4" type="ConditionalGoto" size="1" />
+ </sequence>
+
+ <sequence length="5" cmd="W:%addr1 %op %addr2">
+  <param pos="0" type="Immed" size="1" min="15" max="15" />
+  <param pos="1" type="Table2Reference" param="addr1" size="1" address="7F0200" />
+  <param pos="2" type="Table2Reference" param="addr2" size="1" address="7F0200" />
+  <param pos="3" type="Operator" param="op" size="1" />
+  <param pos="4" type="ConditionalGoto" size="1" />
+ </sequence>
+
+ <sequence length="5" cmd="B:%addr %op %value">
+  <param pos="0" type="Immed" size="1" min="16" max="16" />
+  <param pos="1" type="TableReference" param="addr" size="1" address="7E0000" />
+  <param pos="2" type="Immed" param="value" size="1" />
+  <param pos="3" type="Operator" param="op" size="1" />
+  <param pos="4" type="ConditionalGoto" size="1" />
+ </sequence>
+
+ <sequence length="5" cmd="B:%addr %op %value">
+  <param pos="0" type="Immed" size="1" min="16" max="16" />
+  <param pos="1" type="TableReference" param="addr" size="1" address="7E0100" />
+  <param pos="2" type="Immed" param="value" size="1" />
+  <param pos="3" type="Operator" param="op" size="1" highbit="1" />
+  <param pos="4" type="ConditionalGoto" size="1" />
+ </sequence>
+
+ <sequence length="1" cmd="[ObjectSetFacing:%0]">
+  <param pos="0" type="Immed" size="1" min="17" max="17" />
+  <param type="Const" param="0" value="1" />
+  <comment type="asm">
+puts 1600=1, 1601=0
+  </comment>
+ </sequence>
+
+ <sequence length="3" cmd="B:%addr &lt; %0">
+  <param pos="0" type="Immed" size="1" min="18" max="18" />
+  <param pos="1" type="Immed" param="0" size="1" />
+  <param pos="2" type="ConditionalGoto" size="1" />
+  <param type="Const" param="addr" value="7F0000" />
+ </sequence>
+
+ <sequence length="2" cmd="[ObjectLetB:%0:%1]">
+  <param pos="0" type="Immed" size="1" min="19" max="19" />
+  <param pos="1" type="Table2Reference" param="1" size="1" address="7F0200" />
+  <param type="Prop" param="0" value="7F0A80" />
+ </sequence>
+
+ <sequence length="3" cmd="ObjectB:%0 == %1">
+  <param pos="0" type="Immed" size="1" min="1A" max="1A" />
+  <param pos="1" type="Immed" param="1" size="1" />
+  <param pos="2" type="ConditionalGoto" size="1" />
+  <param type="Prop" param="0" value="7F0A80" />
+ </sequence>
+
+ <sequence length="1" cmd="[ObjectSetFacing:%0]">
+  <param pos="0" type="Immed" size="1" min="1B" max="1B" />
+  <param type="Const" param="0" value="2" />
+  <comment type="asm">
+puts 1600=2, 1601=0
+  </comment>
+ </sequence>
+
+ <sequence length="2" cmd="[ObjectLetB:%0:%1]">
+  <param pos="0" type="Immed" size="1" min="1C" max="1C" />
+  <param pos="1" type="TableReference" param="1" size="1" address="7F0000" />
+  <param type="Prop" param="0" value="7F0A80" />
+ </sequence>
+
+ <sequence length="1" cmd="[ObjectSetFacing:%0]">
+  <param pos="0" type="Immed" size="1" min="1D" max="1D" />
+  <param type="Const" param="0" value="3" />
+  <comment type="asm">
+puts 1600=3, 1601=0
+  </comment>
+ </sequence>
+
+ <sequence length="2" cmd="[ObjectSetFacing:%0 [for:%1]]">
+  <param pos="0" type="Immed" size="1" min="1E" max="1E" />
+  <param pos="1" type="ObjectNumber" param="1" size="1" />
+  <param type="Const" param="0" value="0" />
+  <comment type="asm">
+puts 1600=0, 1601=0
+  </comment>
+ </sequence>
+
+ <sequence length="2" cmd="[ObjectSetFacing:%0 [for:%1]]">
+  <param pos="0" type="Immed" size="1" min="1F" max="1F" />
+  <param pos="1" type="ObjectNumber" param="1" size="1" />
+  <param type="Const" param="0" value="1" />
+  <comment type="asm">
+puts 1600=1, 1601=0
+  </comment>
+ </sequence>
+
+ <sequence length="2" cmd="[LetB:%0:%1]">
+  <param pos="0" type="Immed" size="1" min="20" max="20" />
+  <param pos="1" type="Table2Reference" param="0" size="1" address="7F0200" />
+  <param type="Const" param="1" value="7E2980" />
+ </sequence>
+
+ <sequence length="4" cmd="[ObjectGetCoord:%x:%y [for:%0]]">
+  <param pos="0" type="Immed" size="1" min="21" max="21" />
+  <param pos="1" type="ObjectNumber" param="0" size="1" />
+  <param pos="2" type="Table2Reference" param="x" size="1" address="7F0200" />
+  <param pos="3" type="Table2Reference" param="y" size="1" address="7F0200" />
+  <comment type="asm">
+param1 = $1801 for given obj (xcoord)
+param2 = $1881 for given obj (ycoord)
+  </comment>
+ </sequence>
+
+ <sequence length="4" cmd="[ObjectGetCoord:%x:%y [for:%0]]">
+  <param pos="0" type="Immed" size="1" min="22" max="22" />
+  <param pos="1" type="TableReference" param="0" size="1" address="7E0197" />
+  <param pos="2" type="Table2Reference" param="x" size="1" address="7F0200" />
+  <param pos="3" type="Table2Reference" param="y" size="1" address="7F0200" />
+  <comment type="analysis">
+Same as op 21, but gets object from $97 instead.
+  </comment>
+ </sequence>
+
+ <sequence length="3" cmd="[ObjectGetFacing:%1 [for:%0]]">
+  <param pos="0" type="Immed" size="1" min="23" max="23" />
+  <param pos="1" type="ObjectNumber" param="0" size="1" />
+  <param pos="2" type="Table2Reference" param="1" size="1" address="7F0200" />
+  <comment type="analysis">
+Assigns $1600 of given obj to param1.
+  </comment>
+ </sequence>
+
+ <sequence length="3" cmd="[ObjectGetFacing:%1 [for:%0]]">
+  <param pos="0" type="Immed" size="1" min="24" max="24" />
+  <param pos="1" type="TableReference" param="0" size="1" address="7E0197" />
+  <param pos="2" type="Table2Reference" param="1" size="1" address="7F0200" />
+  <comment type="analysis">
+Same as op 23, but gets object from $97 instead.
+  </comment>
+ </sequence>
+
+ <sequence length="2" cmd="[ObjectSetFacing:%0 [for:%1]]">
+  <param pos="0" type="Immed" size="1" min="25" max="25" />
+  <param pos="1" type="ObjectNumber" param="1" size="1" />
+  <param type="Const" param="0" value="2" />
+  <comment type="asm">
+puts 1600=2, 1601=0
+  </comment>
+ </sequence>
+
+ <sequence length="2" cmd="[ObjectSetFacing:%0 [for:%1]]">
+  <param pos="0" type="Immed" size="1" min="26" max="26" />
+  <param pos="1" type="ObjectNumber" param="1" size="1" />
+  <param type="Const" param="0" value="3" />
+  <comment type="asm">
+puts 1600=3, 1601=0
+  </comment>
+ </sequence>
+
+ <sequence length="3" cmd="ObjectB:%0 == %1 [for:%2]">
+  <param pos="0" type="Immed" size="1" min="27" max="27" />
+  <param pos="1" type="ObjectNumber" param="2" size="1" />
+  <param pos="2" type="ConditionalGoto" size="1" />
+  <param type="Const" param="1" value="0" />
+  <param type="Prop" param="0" value="7E0F00" />
+ </sequence>
+
+ <sequence length="3" cmd="ObjectNearUnknown [for:%0]">
+  <param pos="0" type="Immed" size="1" min="28" max="28" />
+  <param pos="1" type="ObjectNumber" param="0" size="1" />
+  <param pos="2" type="ConditionalGoto" size="1" />
+  <comment type="asm">
+        $DB = $1D0A &gt;&gt; 1
+        $DD = $1D0E &gt;&gt; 1
+        x = $1801 for given obj
+        y = $1881 for given obj
+        if (x - $DB) in (0, 1, &gt;= 14)
+        or (y - $DD) in (0, 1, &gt;= 13)
+        {
+          @ 668F
+          goto.
+        }
+        return
+  </comment>
+  <comment type="analysis">
+&lt;evilpeer&gt; Seems to be related to the moving Turrents on the Blackbird's Left Wing.
+  </comment>
+ </sequence>
+
+ <sequence length="2" cmd="[EndingText:%0]">
+  <param pos="0" type="Immed" size="1" min="29" max="29" />
+  <param pos="1" type="Immed" param="0" size="1" />
+ </sequence>
+
+ <sequence length="1" cmd="[OrB:%0:%1]">
+  <param pos="0" type="Immed" size="1" min="2A" max="2A" />
+  <param type="Const" param="0" value="7E0154" />
+  <param type="Const" param="1" value="4" />
+ </sequence>
+
+ <sequence length="1" cmd="[OrB:%0:%1]">
+  <param pos="0" type="Immed" size="1" min="2B" max="2B" />
+  <param type="Const" param="0" value="7E0154" />
+  <param type="Const" param="1" value="8" />
+ </sequence>
+
+ <sequence length="3" cmd="[Unknown2C:%0:%1]">
+  <param pos="0" type="Immed" size="1" min="2C" max="2C" />
+  <param pos="1" type="Immed" param="0" size="1" />
+  <param pos="2" type="Immed" param="1" size="1" />
+  <comment type="asm">
+      $1D3F = 0
+      $1D40 = 0
+      $1D92 = 0
+      $1D8F = word(param1*8)
+      $1D91 = word(param2*8)
+      purpose unknown
+  </comment>
+ </sequence>
+
+ <sequence length="2" cmd="W:%0 &lt;&gt; 00">
+  <param pos="0" type="Immed" size="1" min="2D" max="2D" />
+  <param pos="1" type="ConditionalGoto" size="1" />
+  <param type="Const" param="0" value="7E01F8" />
+ </sequence>
+
+ <sequence length="5" cmd="[PaletteSet:%2:%3 [palette:%1]]">
+  <param pos="0" type="Immed" size="1" min="2E" max="2E" />
+  <param pos="1" type="Immed" size="1" min="80" max="8F" comment="the actual value matters not." />
+  <param pos="2" type="NibbleHi" param="1" size="1" comment="palette number" />
+  <param pos="2" type="NibbleLo" param="2" size="1" comment="starting colour" />
+  <param pos="3" type="Blob" param="3" size="2" />
+  <comment type="analysis">
+writes to 7E2200-&gt; and 7E2000-&gt;
+
+7E2200 is the 512-byte buffer of palettes.
+DMA 7 writes it to PPU port 2122 (CGRAM) all the time.
+  </comment>
+ </sequence>
+
+ <sequence length="6" cmd="[GFXSetup:%0:%1:%2:%3:%4]">
+  <param pos="0" type="Immed" size="1" min="2E" max="2E" />
+  <param pos="1" type="Immed" param="0" size="1" min="40" max="5F" comment="this value matters" />
+  <param pos="2" type="Immed" param="1" size="1" />
+  <param pos="3" type="Immed" param="2" size="1" />
+  <param pos="4" type="Immed" param="3" size="1" />
+  <param pos="5" type="Immed" param="4" size="1" />
+  <comment type="asm">
+      calls function 4B2C.
+         if carry set, returns
+         if carry clear:
+           $0520[Y] = param0 // 0x40..0x5F.
+           $0521[Y] = param1
+           $0522[Y] = param2
+           $0523[Y] = 8
+           $0524[Y] = 0
+           $0525[Y] = param4
+           $0526[Y] = param0
+           $0527[Y] = ((param3 &amp; 0xF0) &gt;&gt; 4) | (param3 &amp; 0xF0)
+           $0528[Y] = ((param3 &amp; 0x0F) &lt;&lt; 4) | (param3 &amp; 0x0F)
+
+        @4B2C: This function is referred often.
+          Y = 0
+          loop:
+            A = $0520[Y]
+            if(zero)
+              return carry-clear
+            Y += #$0C
+          :loop while Y&lt;60
+          return carry-set
+  </comment>
+  <comment type="analysis">          
+I guess this function allocates a new sprite slot for the particular object.
+$0520 = %0           $0521 = %1            $0522 = %2
+$0523 = 8            $0524 = 0             $0525 = %4
+$0526 = %0
+$0527 = double_hi_nibble(%3)     $0528 = double_lo_nibble(%3)
+See also op 88 40-4F
+  </comment>
+ </sequence>
+
+ <sequence length="3" cmd="[LetW:%0:%1]">
+  <param pos="0" type="Immed" size="1" min="2F" max="2F" />
+  <param pos="1" type="Immed" param="1" size="2" />
+  <param type="Const" param="0" value="7E0BE3" />
+ </sequence>
+
+ <sequence length="2" cmd="B:%0 &amp; %1">
+  <param pos="0" type="Immed" size="1" min="30" max="30" />
+  <param pos="1" type="ConditionalGoto" size="1" />
+  <param type="Const" param="0" value="7E01F8" />
+  <param type="Const" param="1" value="02" />
+ </sequence>
+
+ <sequence length="2" cmd="B:%0 &amp; %1">
+  <param pos="0" type="Immed" size="1" min="31" max="31" />
+  <param pos="1" type="ConditionalGoto" size="1" />
+  <param type="Const" param="0" value="7E01F8" />
+  <param type="Const" param="1" value="80" />
+ </sequence>
+
+ <sequence length="1" cmd="[OrB:%0:%1]">
+  <param pos="0" type="Immed" size="1" min="32" max="32" />
+  <param type="Const" param="0" value="7E0154" />
+  <param type="Const" param="1" value="10" />
+ </sequence>
+
+ <sequence length="2" cmd="[ObjectLoadPalette:%0]">
+  <param pos="0" type="Immed" size="1" min="33" max="33" />
+  <param pos="1" type="Immed" param="0" size="1" />
+  <comment type="asm">
+        $54 |= #$80
+        $0F81 for current obj = (param0 * 2) &amp; 0x0E
+        Y = ((param0*2) &amp; 0x0E) &lt;&lt; 4
+        X = $1400 for cur obj
+        Copy 18 bytes from $E4:X to $7E:(#$2102+Y)
+        Copy 18 bytes from $E4:X to $7E:(#$2302+Y)
+        return
+       
+        See also op $88
+  </comment>
+ </sequence>
+
+ <sequence length="2" cmd="ButtonStatus:A">
+  <param pos="0" type="Immed" size="1" min="34" max="34" />
+  <param pos="1" type="ConditionalGoto" size="1" />
+  <comment type="asm">
+    // accesses $F2
+    // Checks for current status of button?
+    // mask $80
+  </comment>
+ </sequence>
+
+ <sequence length="2" cmd="ButtonStatus:B">
+  <param pos="0" type="Immed" size="1" min="35" max="35" />
+  <param pos="1" type="ConditionalGoto" size="1" />
+  <comment type="asm">
+    // mask $08
+  </comment>
+ </sequence>
+
+ <sequence length="2" cmd="ButtonStatus:X">
+  <param pos="0" type="Immed" size="1" min="36" max="36" />
+  <param pos="1" type="ConditionalGoto" size="1" />
+  <comment type="asm">
+    // mask $40
+  </comment>
+ </sequence>
+
+ <sequence length="2" cmd="ButtonStatus:Y">
+  <param pos="0" type="Immed" size="1" min="37" max="37" />
+  <param pos="1" type="ConditionalGoto" size="1" />
+  <comment type="asm">
+    // mask $04
+  </comment>
+ </sequence>
+
+ <sequence length="2" cmd="ButtonStatus:L">
+  <param pos="0" type="Immed" size="1" min="38" max="38" />
+  <param pos="1" type="ConditionalGoto" size="1" />
+  <comment type="asm">
+    // mask $20
+  </comment>
+ </sequence>
+
+ <sequence length="2" cmd="ButtonStatus:R">
+  <param pos="0" type="Immed" size="1" min="39" max="39" />
+  <param pos="1" type="ConditionalGoto" size="1" />
+  <comment type="asm">
+    // accesses $F2
+    // mask $10
+  </comment>
+ </sequence>
+
+ <sequence length="2" cmd="Unknown3B">
+  <param pos="0" type="Immed" size="1" min="3B" max="3B" />
+  <param pos="1" type="ConditionalGoto" size="1" />
+  <comment type="analysis">
+does something for $50, tests for bit #$02
+  </comment>
+ </sequence>
+
+ <sequence length="2" cmd="Unknown3C">
+  <param pos="0" type="Immed" size="1" min="3C" max="3C" />
+  <param pos="1" type="ConditionalGoto" size="1" />
+  <comment type="analysis">
+does something for $50, tests for bit #$80
+// button masks:
+//    $50: 02=left?  80=up?
+//    $51: 01=start, 02=select, 04=y, 08=b
+//         10=r,     20=l,      40=x, 80=a
+  </comment>
+ </sequence>
+
+ <sequence length="2" cmd="ButtonPressed:A">
+  <param pos="0" type="Immed" size="1" min="3F" max="3F" />
+  <param pos="1" type="ConditionalGoto" size="1" />
+  <comment type="asm">
+    // accesses $51
+    // Checks if the button has been pressed?
+    // mask $80 
+  </comment>
+ </sequence>
+
+ <sequence length="2" cmd="ButtonPressed:B">
+  <param pos="0" type="Immed" size="1" min="40" max="40" />
+  <param pos="1" type="ConditionalGoto" size="1" />
+  <comment type="asm">
+    // mask $08
+  </comment>
+ </sequence>
+
+ <sequence length="2" cmd="ButtonPressed:X">
+  <param pos="0" type="Immed" size="1" min="41" max="41" />
+  <param pos="1" type="ConditionalGoto" size="1" />
+  <comment type="asm">
+    // mask $40
+  </comment>
+ </sequence>
+
+ <sequence length="2" cmd="ButtonPressed:Y">
+  <param pos="0" type="Immed" size="1" min="42" max="42" />
+  <param pos="1" type="ConditionalGoto" size="1" />
+  <comment type="asm">
+    // mask $04
+  </comment>
+ </sequence>
+
+ <sequence length="2" cmd="ButtonPressed:L">
+  <param pos="0" type="Immed" size="1" min="43" max="43" />
+  <param pos="1" type="ConditionalGoto" size="1" />
+  <comment type="asm">
+    // mask $20
+  </comment>
+ </sequence>
+
+ <sequence length="2" cmd="ButtonPressed:R">
+  <param pos="0" type="Immed" size="1" min="44" max="44" />
+  <param pos="1" type="ConditionalGoto" size="1" />
+  <comment type="asm">
+    // accesses $F1
+    // mask $10
+  </comment>
+ </sequence>
+
+ <sequence length="2" cmd="[LetB:%0:%1]">
+  <param pos="0" type="Immed" size="1" min="47" max="47" />
+  <param pos="1" type="Immed" param="1" size="1" />
+  <param type="Const" param="0" value="7E016B" />
+ </sequence>
+
+ <sequence length="5" cmd="[LetB:%addr:%long]">
+  <param pos="0" type="Immed" size="1" min="48" max="48" />
+  <param pos="1" type="Immed" param="long" size="3" min="000100" max="FFFFFF" />
+  <param pos="4" type="Table2Reference" param="addr" size="1" address="7F0200" />
+ </sequence>
+
+ <sequence length="5" cmd="[LetW:%addr:%long]">
+  <param pos="0" type="Immed" size="1" min="49" max="49" />
+  <param pos="1" type="Immed" param="long" size="3" min="000100" max="FFFFFF" />
+  <param pos="4" type="Table2Reference" param="addr" size="1" address="7F0200" />
+ </sequence>
+
+ <sequence length="5" cmd="[LetB:%long:%byte]">
+  <param pos="0" type="Immed" size="1" min="4A" max="4A" />
+  <param pos="1" type="Immed" param="long" size="3" min="000100" max="7FFFFF" />
+  <param pos="4" type="Immed" param="byte" size="1" />
+ </sequence>
+
+ <sequence length="6" cmd="[LetW:%long:%word]">
+  <param pos="0" type="Immed" size="1" min="4B" max="4B" />
+  <param pos="1" type="Immed" param="long" size="3" min="000100" max="7FFFFF" />
+  <param pos="4" type="Immed" param="word" size="2" />
+ </sequence>
+
+ <sequence length="5" cmd="[LetB:%long:%addr]">
+  <param pos="0" type="Immed" size="1" min="4C" max="4C" />
+  <param pos="1" type="Immed" param="long" size="3" min="000100" max="7FFFFF" />
+  <param pos="4" type="Table2Reference" param="addr" size="1" address="7F0200" />
+ </sequence>
+
+ <sequence length="5" cmd="[LetW:%long:%addr]">
+  <param pos="0" type="Immed" size="1" min="4D" max="4D" />
+  <param pos="1" type="Immed" param="long" size="3" min="000100" max="7FFFFF" />
+  <param pos="4" type="Table2Reference" param="addr" size="1" address="7F0200" />
+ </sequence>
+
+ <sequence length="6" cmd="[StringStore:%long:%data]">
+  <param pos="0" type="Immed" size="1" min="4E" max="4E" />
+  <param pos="1" type="Immed" param="long" size="3" min="7E2C23" max="7E2C23" comment="show the character name table in plaintext." />
+  <param pos="4" type="Blob" param="data" size="2" text="1" />
+ </sequence>
+
+ <sequence length="6" cmd="[StringStore:%long:%data]">
+  <param pos="0" type="Immed" size="1" min="4E" max="4E" />
+  <param pos="1" type="Immed" param="long" size="3" min="000100" max="7FFFFF" />
+  <param pos="4" type="Blob" param="data" size="2" />
+ </sequence>
+
+ <sequence length="3" cmd="[LetB:%addr:%byte]">
+  <param pos="0" type="Immed" size="1" min="4F" max="4F" />
+  <param pos="1" type="Immed" param="byte" size="1" />
+  <param pos="2" type="Table2Reference" param="addr" size="1" address="7F0200" />
+ </sequence>
+
+ <sequence length="4" cmd="[LetW:%addr:%word]">
+  <param pos="0" type="Immed" size="1" min="50" max="50" />
+  <param pos="1" type="Immed" param="word" size="2" />
+  <param pos="3" type="Table2Reference" param="addr" size="1" address="7F0200" />
+ </sequence>
+
+ <sequence length="3" cmd="[LetB:%1:%0]">
+  <param pos="0" type="Immed" size="1" min="51" max="51" />
+  <param pos="1" type="Table2Reference" param="0" size="1" address="7F0200" />
+  <param pos="2" type="Table2Reference" param="1" size="1" address="7F0200" />
+ </sequence>
+
+ <sequence length="3" cmd="[LetW:%1:%0]">
+  <param pos="0" type="Immed" size="1" min="52" max="52" />
+  <param pos="1" type="Table2Reference" param="0" size="1" address="7F0200" />
+  <param pos="2" type="Table2Reference" param="1" size="1" address="7F0200" />
+ </sequence>
+
+ <sequence length="4" cmd="[LetB:%1:%0]">
+  <param pos="0" type="Immed" size="1" min="53" max="53" />
+  <param pos="1" type="TableReference" param="0" size="2" address="7F0000" />
+  <param pos="3" type="Table2Reference" param="1" size="1" address="7F0200" />
+ </sequence>
+
+ <sequence length="4" cmd="[LetW:%1:%0]">
+  <param pos="0" type="Immed" size="1" min="54" max="54" />
+  <param pos="1" type="TableReference" param="0" size="2" address="7F0000" />
+  <param pos="3" type="Table2Reference" param="1" size="1" address="7F0200" />
+ </sequence>
+
+ <sequence length="2" cmd="[LetB:%0:%1]]">
+  <param pos="0" type="Immed" size="1" min="55" max="55" />
+  <param pos="1" type="Table2Reference" param="1" size="1" address="7F0200" />
+  <param type="Const" param="0" value="7F0000" />
+  <comment type="analysis">
+&quot;story line counter&quot;
+  </comment>
+ </sequence>
+
+ <sequence length="4" cmd="[LetB:%addr:%byte]">
+  <param pos="0" type="Immed" size="1" min="56" max="56" />
+  <param pos="1" type="Immed" param="byte" size="1" />
+  <param pos="2" type="TableReference" param="addr" size="2" address="7F0000" />
+ </sequence>
+
+ <sequence length="1" cmd="[ObjectLoadPC:%0 [IfInParty]]">
+  <param pos="0" type="Immed" size="1" min="57" max="57" />
+  <param type="Const" param="0" value="0" />
+  <comment type="asm">
+    // firsts checks for a party member.
+    // if not a party member:
+    //  puts $1100,X &lt;- #$80 object is now dead
+    //  puts $1101,X &lt;- param0
+    //  returns
+    // if member 1: puts $1100,X &lt;- #$00
+    // if member 2: puts $1100,X &lt;- #$01
+    // if member 3: puts $1100,X &lt;- #$02
+    // puts $1C80,X &lt;- #$00 movement props
+    // puts $1A81,X &lt;- #$01 drawing mode
+    // puts $1B01,X &lt;- #$01 solid
+    // puts $1101,X &lt;- param0
+    // then continues in a complex way.
+  </comment>
+ </sequence>
+
+ <sequence length="4" cmd="[LetB:%1:%0]">
+  <param pos="0" type="Immed" size="1" min="58" max="58" />
+  <param pos="1" type="Table2Reference" param="0" size="1" address="7F0200" />
+  <param pos="2" type="TableReference" param="1" size="2" address="7F0000" />
+ </sequence>
+
+ <sequence length="4" cmd="[LetW:%1:%0]">
+  <param pos="0" type="Immed" size="1" min="59" max="59" />
+  <param pos="1" type="Table2Reference" param="0" size="1" address="7F0200" />
+  <param pos="2" type="TableReference" param="1" size="2" address="7F0000" />
+ </sequence>
+
+ <sequence length="2" cmd="[LetW:%1:%0]">
+  <param pos="0" type="Immed" size="1" min="5A" max="5A" />
+  <param pos="1" type="Immed" param="0" size="1" />
+  <param type="Const" param="1" value="7F0000" />
+  <comment type="analysis">
+&quot;story line counter&quot;
+  </comment>
+ </sequence>
+
+ <sequence length="3" cmd="[AddB:%addr:%byte]">
+  <param pos="0" type="Immed" size="1" min="5B" max="5B" />
+  <param pos="1" type="Immed" param="byte" size="1" />
+  <param pos="2" type="Table2Reference" param="addr" size="1" address="7F0200" />
+ </sequence>
+
+ <sequence length="1" cmd="[ObjectLoadPC:%0 [IfInParty]]">
+  <param pos="0" type="Immed" size="1" min="5C" max="5C" />
+  <param type="Const" param="0" value="1" />
+  <comment type="asm">
+    // @41EC
+    //     $8E &lt;- objno
+    //     A   &lt;- 1
+    //     goto 421A
+  </comment>
+ </sequence>
+
+ <sequence length="3" cmd="[AddB:%1:%0]">
+  <param pos="0" type="Immed" size="1" min="5D" max="5D" />
+  <param pos="1" type="Table2Reference" param="0" size="1" address="7F0200" />
+  <param pos="2" type="Table2Reference" param="1" size="1" address="7F0200" />
+ </sequence>
+
+ <sequence length="3" cmd="[AddW:%1:%0]">
+  <param pos="0" type="Immed" size="1" min="5E" max="5E" />
+  <param pos="1" type="Table2Reference" param="0" size="1" address="7F0200" />
+  <param pos="2" type="Table2Reference" param="1" size="1" address="7F0200" />
+ </sequence>
+
+ <sequence length="3" cmd="[SubB:%addr:%byte]">
+  <param pos="0" type="Immed" size="1" min="5F" max="5F" />
+  <param pos="1" type="Immed" param="byte" size="1" />
+  <param pos="2" type="Table2Reference" param="addr" size="1" address="7F0200" />
+ </sequence>
+
+ <sequence length="4" cmd="[SubW:%addr:%word]">
+  <param pos="0" type="Immed" size="1" min="60" max="60" />
+  <param pos="1" type="Immed" param="word" size="2" />
+  <param pos="3" type="Table2Reference" param="addr" size="1" address="7F0200" />
+ </sequence>
+
+ <sequence length="3" cmd="[SubB:%1:%0]">
+  <param pos="0" type="Immed" size="1" min="61" max="61" />
+  <param pos="1" type="Table2Reference" param="0" size="1" address="7F0200" />
+  <param pos="2" type="Table2Reference" param="1" size="1" address="7F0200" />
+ </sequence>
+
+ <sequence length="1" cmd="[ObjectLoadPC:%0 [IfInParty]]">
+  <param pos="0" type="Immed" size="1" min="62" max="62" />
+  <param type="Const" param="0" value="2" />
+ </sequence>
+
+ <sequence length="3" cmd="[OrB:%addr:%bit]">
+  <param pos="0" type="Immed" size="1" min="63" max="63" />
+  <param pos="1" type="OrBitNumber" param="bit" size="1" />
+  <param pos="2" type="Table2Reference" param="addr" size="1" address="7F0200" />
+  <comment type="asm">
+    // addr |= $FF20[byte]
+  </comment>
+ </sequence>
+
+ <sequence length="3" cmd="[OrB:%addr:%bit]">
+  <param pos="0" type="Immed" size="1" min="63" max="63" />
+  <param pos="1" type="OrBitNumber" param="bit" size="1" />
+  <param pos="2" type="Table2Reference" param="addr" size="1" address="7F0200" />
+  <comment type="asm">
+    // addr |= $FF20[byte]
+  </comment>
+ </sequence>
+
+ <sequence length="3" cmd="[AndB:%addr:%bit]">
+  <param pos="0" type="Immed" size="1" min="64" max="64" />
+  <param pos="1" type="AndBitNumber" param="bit" size="1" />
+  <param pos="2" type="Table2Reference" param="addr" size="1" address="7F0200" />
+  <comment type="asm">
+    // addr &amp;= $FF28[byte]
+  </comment>
+ </sequence>
+
+ <sequence length="3" cmd="[OrB:%addr:%bit]">
+  <param pos="0" type="Immed" size="1" min="65" max="65" />
+  <param pos="1" type="OrBitNumber" param="bit" size="1" />
+  <param pos="2" type="TableReference" param="addr" size="1" address="7E0000" />
+  <comment type="asm">
+    // addr_value |= (byte &amp; 0x80) &lt;&lt; 1
+    // addr |= $FF20[byte &amp; 0x0F]
+    
+  </comment>
+ </sequence>
+
+ <sequence length="3" cmd="[OrB:%addr:%bit]">
+  <param pos="0" type="Immed" size="1" min="65" max="65" />
+  <param pos="1" type="OrBitNumber" param="bit" size="1" highbit="1" />
+  <param pos="2" type="TableReference" param="addr" size="1" address="7E0100" />
+ </sequence>
+
+ <sequence length="3" cmd="[AndB:%addr:%bit]">
+  <param pos="0" type="Immed" size="1" min="66" max="66" />
+  <param pos="1" type="AndBitNumber" param="bit" size="1" />
+  <param pos="2" type="TableReference" param="addr" size="1" address="7E0000" />
+ </sequence>
+
+ <sequence length="3" cmd="[AndB:%addr:%bit]">
+  <param pos="0" type="Immed" size="1" min="66" max="66" />
+  <param pos="1" type="AndBitNumber" param="bit" size="1" highbit="1" />
+  <param pos="2" type="TableReference" param="addr" size="1" address="7E0100" />
+ </sequence>
+
+ <sequence length="3" cmd="[AndB:%addr:%byte]">
+  <param pos="0" type="Immed" size="1" min="67" max="67" />
+  <param pos="1" type="Immed" param="byte" size="1" />
+  <param pos="2" type="Table2Reference" param="addr" size="1" address="7F0200" />
+ </sequence>
+
+ <sequence length="1" cmd="[ObjectLoadPC:%0 [IfInParty]]">
+  <param pos="0" type="Immed" size="1" min="68" max="68" />
+  <param type="Const" param="0" value="3" />
+ </sequence>
+
+ <sequence length="3" cmd="[OrB:%addr:%byte]">
+  <param pos="0" type="Immed" size="1" min="69" max="69" />
+  <param pos="1" type="Immed" param="byte" size="1" />
+  <param pos="2" type="Table2Reference" param="addr" size="1" address="7F0200" />
+ </sequence>
+
+ <sequence length="1" cmd="[ObjectLoadPC:%0 [IfInParty]]">
+  <param pos="0" type="Immed" size="1" min="6A" max="6A" />
+  <param type="Const" param="0" value="4" />
+ </sequence>
+
+ <sequence length="3" cmd="[XorB:%addr:%byte]">
+  <param pos="0" type="Immed" size="1" min="6B" max="6B" />
+  <param pos="1" type="Immed" param="byte" size="1" />
+  <param pos="2" type="Table2Reference" param="addr" size="1" address="7F0200" />
+ </sequence>
+
+ <sequence length="1" cmd="[ObjectLoadPC:%0 [IfInParty]]">
+  <param pos="0" type="Immed" size="1" min="6C" max="6C" />
+  <param type="Const" param="0" value="5" />
+ </sequence>
+
+ <sequence length="1" cmd="[ObjectLoadPC:%0 [IfInParty]]">
+  <param pos="0" type="Immed" size="1" min="6D" max="6D" />
+  <param type="Const" param="0" value="6" />
+ </sequence>
+
+ <sequence length="3" cmd="[ShrB:%addr:%byte]">
+  <param pos="0" type="Immed" size="1" min="6F" max="6F" />
+  <param pos="1" type="Immed" param="byte" size="1" />
+  <param pos="2" type="Table2Reference" param="addr" size="1" address="7F0200" />
+ </sequence>
+
+ <sequence length="2" cmd="[AddB:%addr:%byte]">
+  <param pos="0" type="Immed" size="1" min="71" max="71" />
+  <param pos="1" type="Table2Reference" param="addr" size="1" address="7F0200" />
+  <param type="Const" param="byte" value="1" />
+ </sequence>
+
+ <sequence length="2" cmd="[AddW:%addr:%word]">
+  <param pos="0" type="Immed" size="1" min="72" max="72" />
+  <param pos="1" type="Table2Reference" param="addr" size="1" address="7F0200" />
+  <param type="Const" param="word" value="1" />
+ </sequence>
+
+ <sequence length="2" cmd="[SubB:%addr:%byte]">
+  <param pos="0" type="Immed" size="1" min="73" max="73" />
+  <param pos="1" type="Table2Reference" param="addr" size="1" address="7F0200" />
+  <param type="Const" param="byte" value="1" />
+ </sequence>
+
+ <sequence length="2" cmd="[LetB:%0:%1]">
+  <param pos="0" type="Immed" size="1" min="75" max="75" />
+  <param pos="1" type="Table2Reference" param="0" size="1" address="7F0200" />
+  <param type="Const" param="1" value="1" />
+ </sequence>
+
+ <sequence length="2" cmd="[LetW:%0:%1]">
+  <param pos="0" type="Immed" size="1" min="76" max="76" />
+  <param pos="1" type="Table2Reference" param="0" size="1" address="7F0200" />
+  <param type="Const" param="1" value="1" />
+ </sequence>
+
+ <sequence length="2" cmd="[LetB:%0:%1]">
+  <param pos="0" type="Immed" size="1" min="77" max="77" />
+  <param pos="1" type="Table2Reference" param="0" size="1" address="7F0200" />
+  <param type="Const" param="1" value="0" />
+ </sequence>
+
+ <sequence length="4" cmd="[ObjectJump:%0:%1:%2]">
+  <param pos="0" type="Immed" size="1" min="7A" max="7A" />
+  <param pos="1" type="Immed" param="0" size="1" comment="x" />
+  <param pos="2" type="Immed" param="1" size="1" comment="y" />
+  <param pos="3" type="Immed" param="2" size="1" comment="height" />
+  <comment type="analysis">
+(geometrically &quot;jump&quot;)
+  </comment>
+ </sequence>
+
+ <sequence length="5" cmd="[ObjectPerformMovement:%0:%1:%2:%3]">
+  <param pos="0" type="Immed" size="1" min="7B" max="7B" />
+  <param pos="1" type="Immed" param="0" size="1" comment="$1900 ?" />
+  <param pos="2" type="Immed" param="1" size="1" comment="$1980 ?" />
+  <param pos="3" type="Immed" param="2" size="1" comment="$1B81 ?" />
+  <param pos="4" type="Immed" param="3" size="1" comment="$1A01 magnitude" />
+  <comment type="asm">
+Waits until 1A01 becomes zero again.
+  </comment>
+ </sequence>
+
+ <sequence length="2" cmd="[ObjectLetB:%2:%3 [for:%0]]">
+  <param pos="0" type="Immed" size="1" min="7C" max="7C" />
+  <param pos="1" type="ObjectNumber" param="0" size="1" />
+  <param type="Prop" param="2" value="7E1A81" />
+  <param type="Const" param="3" value="1" />
+  <comment type="analysis">
+Sets drawing &quot;on&quot;
+  </comment>
+ </sequence>
+
+ <sequence length="2" cmd="[ObjectLetB:%2:%3 [for:%0]]">
+  <param pos="0" type="Immed" size="1" min="7D" max="7D" />
+  <param pos="1" type="ObjectNumber" param="0" size="1" />
+  <param type="Prop" param="2" value="7E1A81" />
+  <param type="Const" param="3" value="0" />
+  <comment type="analysis">
+Sets drawing &quot;off&quot;
+  </comment>
+ </sequence>
+
+ <sequence length="1" cmd="[ObjectLetB:%2:%3]">
+  <param pos="0" type="Immed" size="1" min="7E" max="7E" />
+  <param type="Prop" param="2" value="7E1A81" />
+  <param type="Const" param="3" value="80" />
+  <comment type="analysis">
+Sets drawing &quot;hide&quot;
+  </comment>
+ </sequence>
+
+ <sequence length="2" cmd="[GetRandom:%0]">
+  <param pos="0" type="Immed" size="1" min="7F" max="7F" />
+  <param pos="1" type="Table2Reference" param="0" size="1" address="7F0200" />
+  <comment type="asm">
+    // does:
+    //  A  = ++$7E01F8
+    //  %0 = $FE00[A &amp; 0xFF]
+  </comment>
+ </sequence>
+
+ <sequence length="2" cmd="[ObjectLoadPC:%0 [IfInParty]]">
+  <param pos="0" type="Immed" size="1" min="80" max="80" />
+  <param pos="1" type="Immed" param="0" size="1" comment="pc number (0-6)" />
+  <comment type="asm">
+    // @421E
+    // if not a party member:
+    //  puts $1100,X &lt;- #$80   (marks object dead)
+    //  puts $1101,X &lt;- param
+    //  returns
+    // if the given value is 0..6,
+    //  sets $8D+param = current object number
+    // Then follows with the actual thing.
+    // This function is called by opcodes
+    // 57,5C,62,68,6A,6C and 6D.
+    // 
+  </comment>
+  <comment type="analysis">
+If the specified character does not exist in current active party, the object is destroyed.
+  </comment>
+ </sequence>
+
+ <sequence length="2" cmd="[ObjectLoadPC:%0 [As NPC]]">
+  <param pos="0" type="Immed" size="1" min="81" max="81" />
+  <param pos="1" type="Immed" param="0" size="1" comment="pc number (0-6)" />
+  <comment type="asm">
+    // @4476
+    //    Somehow differs from op 80.
+    /*
+           $1100 for cur obj &lt;- 3 (object identifier)
+           $1B01 for cur obj &lt;- 1
+           $1101 for cur obj &lt;- param0
+           $BF = param0 * 5
+           $A = $E4F001[$BF]
+           and so on.
+    */
+  </comment>
+ </sequence>
+
+ <sequence length="2" cmd="[ObjectLoadNPC:%0]">
+  <param pos="0" type="Immed" size="1" min="82" max="82" />
+  <param pos="1" type="Immed" param="0" size="1" comment="npc number" />
+  <comment type="asm">
+   Uses function C04557 (A=4)
+  </comment>
+ </sequence>
+
+ <sequence length="3" cmd="[ObjectLoadEnemy:%0:%1]">
+  <param pos="0" type="Immed" size="1" min="83" max="83" />
+  <param pos="1" type="Immed" param="0" size="1" comment="monster number" />
+  <param pos="2" type="Immed" param="1" size="1" />
+  <comment type="analysis">
+As for the second param:
+ The high bit has a special meaning:
+  If it's set, the $1600 is set as #6, otherwise #5. It could be a "monster niceness" flag.
+  The high bit generally seems to be set for monsters that don't automatically fight, such as Spekkio.
+ As for the lower bits:
+  Assume X = (val &amp; 0x7F) + 1.
+  $0B88[X] = current object number.
+  Assume Y = (X &amp; 0xFE)*16 + (X &amp; 1)*8.
+  $0D00 for current obj = Y.            // 008,020,028,040,048,...,7E0,7E8,800
+  $1700 for current obj = X*32.         // 020,040,060,080,0A0,...,FC0,FE0,1000
+ The lower bits might be some kind of in-battle object number.
+ The values range between 03-0A. Setting it to 00-02 would probably be an error. But why the weird numbering?
+ </comment>
+  <comment type="asm">
+   Uses function C04557 (A=5)
+@C046DF
+Op_83:	{8}A = $5
+@C046E1	;jsr $C04557
+@C046E4	{8}A = $A
+@C046E6	{8}[$4203] = A
+@C046E9	{16}[$C7] = Y
+@C046EB	{16}X = [$6D]
+@C046ED	{8}A = $1
+@C046EF	{8}[$1B01+X] = A
+@C046F2	{16}X = [$4216]
+@C046F5	{16}[$BF] = X
+@C046F7	{8}A = [$E4F601+X]
+@C046FB	;nop (was: rep)
+@C046FD	{16}A = A &amp; $FF
+@C04700	{16}[$D9] = A
+@C04703	{16}A = A+[$D9]
+@C04705	{16}A = A adc [$D9]
+@C04707	{16}Y = A
+@C04708	{16}A = [{24}[$B2+Y]]
+@C0470A	{16}X = [$6D]
+@C0470C	{16}[$1380+X] = A
+@C0470F	;nop (was: sep)
+@C04711	{16}Y = Y+$1
+@C04712	{16}Y = Y+$1
+@C04713	{8}A = [{24}[$B2+Y]]
+@C04715	{8}[$1300+X] = A
+@C04718	{16}X = [$BF]
+@C0471A	{8}A = [$E4F602+X]
+@C0471E	{8}[$4202] = A
+@C04721	{8}A = $18
+@C04723	{8}[$4203] = A
+@C04726	;nop
+@C04727	;nop
+@C04728	;nop
+@C04729	;nop (was: rep)
+@C0472B	{16}A = [$4216]
+@C0472F	{16}A = A+$0
+@C04732	{16}X = [$6D]
+@C04734	{16}[$1400+X] = A
+@C04737	;nop (was: sep)
+@C04739	{16}X = [$BF]
+@C0473B	{8}A = [$E4F603+X]
+@C0473F	;nop (was: rep)
+@C04741	{16}A = A &amp; $FF
+@C04744	{16}A = A * $2
+@C04745	{16}Y = A
+@C04746	{16}Y = Y+$1
+@C04747	{16}Y = Y+$1
+@C04748	{16}A = [{24}[$B5+Y]]
+@C0474A	{16}Y = Y-$1
+@C0474B	{16}Y = Y-$1
+@C0474D	{16}A = A-[{24}[$B5+Y]]
+@C0474F	{16}A = A / $2
+@C04750	{16}A = A / $2
+@C04751	{16}X = [$6D]
+@C04753	{16}[$1480+X] = A
+@C04756	{16}A = [{24}[$B5+Y]]
+@C04758	{16}[$1500+X] = A
+@C0475B	{16}A = [{24}[$B8+Y]]
+@C0475D	{16}[$1580+X] = A
+@C04760	;nop (was: sep)
+@C04762	{16}X = [$BF]
+@C04764	{8}A = [$E4F604+X]
+@C04768	{16}X = [$6D]
+@C0476A	{8}[$1201+X] = A
+@C0476D	{16}X = [$BF]
+@C0476F	{8}A = [$E4F600+X]
+@C04773	{8}[$E3] = A
+@C04775	{16}X = [$6D]
+@C04777	{8}A = [$1101+X]
+@C0477A	{8}cmp A, $F8
+@C0477C	if not carry then goto $C04781 else goto $C04845
+@C04781	; from $C0477C
+	;jsr $C05C90
+@C04784	if carry then goto $C04789 else goto $C047FE
+@C04789	; from $C04784
+	;nop (was: rep)
+@C0478B	{16}A = A &amp; $FF
+@C0478E	{16}X = A
+@C0478F	{16}A = [$1280+X]
+@C04792	{16}X = [$6D]
+@C04794	{16}[$1280+X] = A
+@C04797	;nop (was: sep)
+@C04799	; from $C04840
+	; from $C04861
+	{16}X = [$C7]
+@C0479B	{8}A = [$7F2001+X]
+@C0479F	{8}[$E1] = A
+@C047A1	{8}A = A &amp; $7F
+@C047A3	{8}A = A+$1
+@C047A4	;nop (was: sep)
+@C047A6	{8}X = A
+@C047A7	{8}A = [$6D]
+@C047A9	{8}[$B88+X] = A
+@C047AC	{8}A = X
+@C047AD	;nop (was: rep)
+@C047AF	{16}A = A &amp; $FE
+@C047B2	{16}A = A * $2
+@C047B3	{16}A = A * $2
+@C047B4	{16}A = A * $2
+@C047B5	{16}A = A * $2
+@C047B6	{16}[$D9] = A
+@C047B8	{16}A = X
+@C047B9	{16}A = A &amp; $1
+@C047BC	{16}A = A * $2
+@C047BD	{16}A = A * $2
+@C047BE	{16}A = A * $2
+@C047C0	{16}A = A+[$D9]
+@C047C2	{8}[$D9] = X
+@C047C4	{8}X = [$6D]
+@C047C6	{16}[$D00+X] = A
+@C047C9	;nop (was: sep)
+@C047CB	{8}A = [$D9]
+@C047CD	;nop (was: rep)
+@C047CF	{16}A = A &amp; $FF
+@C047D2	{16}A = A * $2
+@C047D3	{16}A = A * $2
+@C047D4	{16}A = A * $2
+@C047D5	{16}A = A * $2
+@C047D6	{16}A = A * $2
+@C047D7	{16}[$1700+X] = A
+@C047DA	;nop (was: sep)
+@C047DC	{8}A = [$1201+X]
+@C047DF	{8}A = A &amp; $3
+@C047E1	{8}cmp A, $3
+@C047E3	if not carry then goto $C047EC else goto $C047E5
+@C047EC	; from $C047E3
+	; from $C047E9
+	{8}A = [$E1]
+@C047EE	if not sign then goto $C047F7 else goto $C047F0
+@C047F7	; from $C047EE
+	; from $C047F4
+	;nop (was: rep)
+@C047F9	{16}X = [$C7]
+@C047FB	{16}X = X+$1
+@C047FD	sec:rts
+@C047F0	; from $C047EE
+	{8}A = $6
+@C047F2	{8}X = [$6D]
+@C047F4	{8}[$1100+X] = A
+@C047F4	goto $C047F7
+@C047E5	; from $C047E3
+	{8}X = [$6D]
+@C047E7	{8}[$AE] = X
+@C047E9	;jsr $C0E12A
+@C047E9	goto $C047EC
+@C047FE	; from $C04784
+	{8}A = [$E3]
+@C04800	;nop (was: rep)
+@C04802	{16}A = A &amp; $FF
+@C04805	{16}[$D9] = A
+@C04808	{16}A = A+[$D9]
+@C0480A	{16}A = A adc [$D9]
+@C0480C	{16}Y = A
+@C0480D	{16}A = [{24}[$AF+Y]]
+@C0480F	{16}[$300] = A
+@C04812	{16}A = [$71]
+@C04814	{16}[$303] = A
+@C04817	;nop (was: sep)
+@C04819	{16}Y = Y+$1
+@C0481A	{16}Y = Y+$1
+@C0481B	{8}A = [{24}[$AF+Y]]
+@C0481D	{8}[$302] = A
+@C04820	{8}A = $7F
+@C04822	{8}[$305] = A
+@C04825	;jsl $C30002
+@C04829	;nop (was: rep)
+@C0482B	{16}A = [$306]
+@C0482F	{16}A = A+[$71]
+@C04831	{16}[$71] = A
+@C04833	{16}cmp A, $8000
+@C04836	if not sign then goto $C04840 else goto $C04838
+@C04840	; from $C04836
+	;nop (was: sep)
+@C04840	goto $C04799
+@C04838	; from $C04836
+	;nop (was: sep)
+@C0483A	{16}COLOR = $7C1F; CRASH; END
+@C04845	; from $C0477C
+	{8}A = [$E3]
+@C04847	;nop (was: rep)
+@C04849	{16}A = A &amp; $FF
+@C0484C	{16}[$D9] = A
+@C0484F	{16}A = A+[$D9]
+@C04851	{16}A = A adc [$D9]
+@C04853	{16}Y = A
+@C04854	{16}A = [{24}[$AF+Y]]
+@C04856	{16}X = [$6D]
+@C04858	{16}[$1280+X] = A
+@C0485B	;nop (was: sep)
+@C0485D	{16}Y = Y+$1
+@C0485E	{16}Y = Y+$1
+@C0485F	{8}A = [{24}[$AF+Y]]
+@C04861	{8}[$1200+X] = A
+@C04861	goto $C04799
+  </comment>
+ </sequence>
+
+ <sequence length="2" cmd="[ObjectLetB:%0:%1]">
+  <param pos="0" type="Immed" size="1" min="84" max="84" />
+  <param pos="1" type="Immed" param="1" size="1" />
+  <param type="Prop" param="0" value="7E1B01" />
+  <comment type="analysis">
+&quot;npc solid props&quot;
+  </comment>
+ </sequence>
+
+ <sequence length="2" cmd="[ObjectSet1000:%0]">
+  <param pos="0" type="Immed" size="1" min="87" max="87" />
+  <param pos="1" type="Immed" param="0" size="1" />
+  <comment type="asm">
+    // $1000,X  &amp;=  #$80
+    // $1000,X  |=  (param+1)
+    // $1001,X  = $1000,X
+  </comment>
+ </sequence>
+
+ <sequence length="2" cmd="[ObjectResetPalette]">
+  <param pos="0" type="Immed" size="1" min="88" max="88" />
+  <param pos="1" type="Immed" size="1" min="00" max="00" />
+  <comment type="asm">
+        @48C0
+          
+          Y = $7F0B80 for cur obj
+          if Y &amp; #$80
+            return
+          $7F0B80 for cur obj = #$FFFF
+          $0520[Y] = #$00
+          Y = ($0F81 for cur obj) &lt;&lt; 4
+          X = ($1400 for cur obj)
+          Copy 18 bytes from $E4:X to $7E:(#$2102+Y)
+          Copy 18 bytes from $E4:X to $7E:(#$2302+Y)
+          return
+  </comment>
+  <comment type="analysis">
+Seems to load the object's palette from ROM and set it.
+See also op $33.
+  </comment>
+ </sequence>
+
+ <sequence length="4" cmd="[ObjectGFXSetup:%0:%1:%2:%3]">
+  <param pos="0" type="Immed" size="1" min="88" max="88" />
+  <param pos="1" type="Immed" param="0" size="1" min="20" max="20" comment="this value matters" />
+  <param pos="2" type="Immed" param="1" size="1" />
+  <param pos="3" type="NibbleLo" param="2" size="1" />
+  <param pos="3" type="NibbleHi" param="3" size="1" />
+  <comment type="asm">
+        @4919
+        
+          call $4B2C
+          if carry set:
+            return
+          $7F0B80 for cur obj = Y
+          $0520[Y] = param0 // the 0x20,0x30 byte.
+          $0521[Y] = param3 + (($0F81 for cur obj) &lt;&lt; 3) + 0x80
+          $0522[Y] = param2
+          $0524[Y] = 0
+          $0525[Y] = param1
+          return
+  </comment>
+  <comment type="analysis">
+$0520 = 0x20         $0521 = %3+paletteptr  $0522 = %2
+                     $0524 = 0              $0525 = %1
+  </comment>
+ </sequence>
+
+ <sequence length="4" cmd="[ObjectGFXSetup:%0:%1:%2:%3]">
+  <param pos="0" type="Immed" size="1" min="88" max="88" />
+  <param pos="1" type="Immed" param="0" size="1" min="30" max="30" comment="this value matters" />
+  <param pos="2" type="Immed" param="1" size="1" />
+  <param pos="3" type="NibbleLo" param="2" size="1" />
+  <param pos="3" type="NibbleHi" param="3" size="1" />
+  <comment type="analysis">
+$0520 = 0x30         $0521 = %3+paletteptr  $0522 = %2
+                     $0524 = 0              $0525 = %1
+  </comment>
+ </sequence>
+
+ <sequence length="5" cmd="[ObjectGFXSetup:%0:%1:%2:%3:%4]">
+  <param pos="0" type="Immed" size="1" min="88" max="88" />
+  <param pos="1" type="Immed" param="0" size="1" min="40" max="5F" comment="this value matters" />
+  <param pos="2" type="NibbleLo" param="1" size="1" />
+  <param pos="2" type="NibbleHi" param="2" size="1" />
+  <param pos="3" type="Immed" param="3" size="1" />
+  <param pos="4" type="Immed" param="4" size="1" />
+  <comment type="asm">
+        @4970
+        
+          call $4B2C
+          if carry set:
+            return
+          
+          $0520[Y] = param0 &amp; 0xF0 // the 0x40..0x5F byte.
+          $0521[Y] = param2 + (($0F81 for cur obj) &lt;&lt; 3) + 0x80
+          $0522[Y] = param1
+          $0523[Y] = 8
+          $0524[Y] = 0
+          $0525[Y] = param4
+          $0526[Y] = param0 &amp; 0x0F
+          $0527[Y] = ((param3 &amp; 0xF0) &gt;&gt; 4) | (param3 &amp; 0xF0)
+          $0528[Y] = ((param3 &amp; 0x0F) &lt;&lt; 4) | (param3 &amp; 0x0F)
+          return
+  </comment>
+  <comment type="analysis">
+$0520 = %0 &amp; 0xF0    $0521 = %2+paletteptr  $0522 = %1
+$0523 = 8            $0524 = 0              $0525 = %4
+$0526 = %0 &amp; 0x0F
+$0527 = double_hi_nibble(%3)     $0528 = double_lo_nibble(%3)
+See also op 2E 40-5F
+  </comment>
+ </sequence>
+
+ <sequence length="4" cmd="[ObjectPaletteSet:%0:%1]">
+  <param pos="0" type="Immed" size="1" min="88" max="88" />
+  <param pos="1" type="Immed" size="1" min="80" max="8F" comment="actual value matters" />
+  <param pos="1" type="NibbleLo" param="0" size="1" comment="starting colour" />
+  <param pos="2" type="Blob" param="1" size="2" />
+  <comment type="asm">
+       @49F8
+         
+          $DB = (($0F81 for cur obj) &lt;&lt; 3) + 0x80
+          $DD = ((param0 &amp; 0x0F) + $DB) * 2
+          writes the blob into $7E2200+[$DB] and $7E2000+[$DB]
+          
+          7E2200 is the 512-byte buffer of palettes.
+          DMA 7 writes it to PPU port 2122 (CGRAM) all the time.
+  </comment>
+ </sequence>
+
+ <sequence length="2" cmd="[ObjectLetB:%0:%1]">
+  <param pos="0" type="Immed" size="1" min="89" max="89" />
+  <param pos="1" type="Immed" param="1" size="1" />
+  <param type="Prop" param="0" value="7E1A00" />
+  <comment type="analysis">
+&quot;npc speed&quot;
+  </comment>
+ </sequence>
+
+ <sequence length="2" cmd="[ObjectLetB:%0:%1]">
+  <param pos="0" type="Immed" size="1" min="8A" max="8A" />
+  <param pos="1" type="Table2Reference" param="1" size="1" address="7F0200" />
+  <param type="Prop" param="0" value="7E1A00" />
+  <comment type="analysis">
+&quot;npc speed&quot;
+  </comment>
+ </sequence>
+
+ <sequence length="3" cmd="[ObjectSetCoord:%0:%x:%1:%y]">
+  <param pos="0" type="Immed" size="1" min="8B" max="8B" />
+  <param pos="1" type="Immed" param="x" size="1" />
+  <param pos="2" type="Immed" param="y" size="1" />
+  <param type="Const" param="0" value="80" comment="written to $1800" />
+  <param type="Const" param="1" value="FF" comment="written to $1880" />
+  <comment type="asm">
+    // $1800,X = 80xx where xx=%0
+    // $1880,X = FFxx where xx=%1
+  </comment>
+ </sequence>
+
+ <sequence length="3" cmd="[ObjectSetCoord:%0:%x:%1:%y]">
+  <param pos="0" type="Immed" size="1" min="8C" max="8C" />
+  <param pos="1" type="Table2Reference" param="x" size="1" address="7F0200" />
+  <param pos="2" type="Table2Reference" param="y" size="1" address="7F0200" />
+  <param type="Const" param="0" value="80" comment="written to $1800" />
+  <param type="Const" param="1" value="FF" comment="written to $1880" />
+ </sequence>
+
+ <sequence length="5" cmd="[ObjectSetCoord:%0:%x:%1:%y]">
+  <param pos="0" type="Immed" size="1" min="8D" max="8D" />
+  <param pos="1" type="Immed" param="0" size="1" comment="written to $1800" />
+  <param pos="2" type="Immed" param="x" size="1" />
+  <param pos="3" type="Immed" param="1" size="1" comment="written to $1880" />
+  <param pos="4" type="Immed" param="y" size="1" />
+ </sequence>
+
+ <sequence length="2" cmd="[ObjectHide:%0]">
+  <param pos="0" type="Immed" size="1" min="8E" max="8E" />
+  <param pos="1" type="Immed" param="0" size="1" />
+  <comment type="analysis">
+&gt; 03 - bottom half
+&gt; 0C - ???
+&gt; 30 - top half
+&gt; 40 - ???
+&gt; 80 - determines mode
+  </comment>
+ </sequence>
+
+ <sequence length="2" cmd="[ObjectMoveTowards:%0 [facing:keep]]">
+  <param pos="0" type="Immed" size="1" min="8F" max="8F" />
+  <param pos="1" type="TableReference" param="0" size="1" address="7E0197" comment="target obj" />
+  <comment type="asm">
+       if ( $1A01 for current object  &lt;&gt; 0 )
+         return, loop this command.
+       
+       if ( $1100 for given object &amp; #$80 )
+       {
+         // if the object is removed?
+         call $568B
+         return
+       }
+       
+       @5444
+       [$F2] = $1801 for given obj
+       [$F3] = $1881 for given obj
+       [$F0] = $1801 for current object
+       [$F1] = $1881 for current object
+       
+       if ( abs([$F1] - [$F3]) &lt;= 1
+       and  abs([$F0] - [$F2]) &lt;= 1 )
+       {
+         call $568B
+         return
+       }
+       @547C
+       $DB = $1D0A &gt;&gt; 1
+       $DD = $1D0E &gt;&gt; 1
+       if ($F0 - $DB) in (0, 1, &gt;= 14)
+       or ($F1 - $DD) in (0, 1, &gt;= 13)
+       {
+         @ 54B6
+         call $ABA2
+         ...
+         return, loop
+       }
+       call $568B
+       return
+       
+       .....
+  </comment>
+ </sequence>
+
+ <sequence length="1" cmd="[ObjectLetB:%2:%3]">
+  <param pos="0" type="Immed" size="1" min="90" max="90" />
+  <param type="Prop" param="2" value="7E1A81" />
+  <param type="Const" param="3" value="1" />
+  <comment type="analysis">
+Sets drawing &quot;on&quot;
+  </comment>
+ </sequence>
+
+ <sequence length="1" cmd="[ObjectLetB:%2:%3]">
+  <param pos="0" type="Immed" size="1" min="91" max="91" />
+  <param type="Prop" param="2" value="7E1A81" />
+  <param type="Const" param="3" value="0" />
+  <comment type="analysis">
+Sets drawing &quot;off&quot;
+  </comment>
+ </sequence>
+
+ <sequence length="3" cmd="[ObjectMoveAngle:%0:%1 [facing:change]]">
+  <param pos="0" type="Immed" size="1" min="92" max="92" />
+  <param pos="1" type="Immed" param="0" size="1" comment="angle     ($40 = 90 degrees)" />
+  <param pos="2" type="Immed" param="1" size="1" comment="magnitude" />
+ </sequence>
+
+ <sequence length="2" cmd="[ObjectMoveTowards:%0 [facing:change]]">
+  <param pos="0" type="Immed" size="1" min="94" max="94" />
+  <param pos="1" type="ObjectNumber" param="0" size="1" comment="target obj" />
+  <comment type="asm">
+    // included by op B5
+    /*
+       if ( $1A01 for current object  &lt;&gt; 0 )
+         return, loop this command.
+       
+       if ( $1100 for given object &amp; #$80 )
+       {
+         // if the object is removed?
+         call $527B
+         return
+       }
+       
+       @522D
+       [$F2] = $1801 for given obj
+       [$F3] = $1881 for given obj
+       [$F0] = $1801 for current object
+       [$F1] = $1881 for current object
+       
+       if ( abs([$F1] - [$F3]) &gt; 1
+       or   abs([$F0] - [$F2]) &gt; 1 )
+       {
+         @5281
+         call $ABA2 // calculate facing
+         .....
+       }
+       @5265
+       if ( $1C81 for current object &amp; #$02 )
+       {
+         @526E
+         call $30B3
+         if carry set
+         {
+           @527B
+           call $5614
+           return, loop
+         }
+       }
+       call $568B
+       return
+  </comment>
+ </sequence>
+
+ <sequence length="2" cmd="[ObjectMoveTowards:%0 [facing:change]]">
+  <param pos="0" type="Immed" size="1" min="95" max="95" />
+  <param pos="1" type="TableReference" param="0" size="1" address="7E0197" comment="target obj" />
+  <comment type="asm">
+    // included by op B6
+    /*
+       if ( $1A01 for current object &lt;&gt; 0 )
+         return, loop this command.
+       
+       load the object number of the party leader
+       (from $97[param])
+       then goto op $94.
+       $97 is a word. The object number of first party member?
+       Bit $80 means inactive.
+       Ha! Indeed.
+       $9B is a word too - it refers to an object. (?)
+       But it's not used here.
+    */
+    /* Execution continues (maybe) when the goal has been reached. */
+  </comment>
+ </sequence>
+
+ <sequence length="3" cmd="[ObjectMoveTowards:%0:%1 [facing:change]]">
+  <param pos="0" type="Immed" size="1" min="96" max="96" />
+  <param pos="1" type="Immed" param="0" size="1" comment="xcoord" />
+  <param pos="2" type="Immed" param="1" size="1" comment="ycoord" />
+ </sequence>
+
+ <sequence length="3" cmd="[ObjectMoveTowards:%0:%1 [facing:change]]">
+  <param pos="0" type="Immed" size="1" min="97" max="97" />
+  <param pos="1" type="Table2Reference" param="0" size="1" address="7F0200" comment="xcoord from-var" />
+  <param pos="2" type="Table2Reference" param="1" size="1" address="7F0200" comment="ycoord from-var" />
+  <comment type="analysis">
+Same as op 96 but coordinates are loaded from vars.
+  </comment>
+ </sequence>
+
+ <sequence length="3" cmd="[ObjectMoveTowardsBy:%0:%1 [facing:change]]">
+  <param pos="0" type="Immed" size="1" min="98" max="98" />
+  <param pos="1" type="ObjectNumber" param="0" size="1" comment="the target obj." />
+  <param pos="2" type="Immed" param="1" size="1" comment="magnitude" />
+  <comment type="asm">
+    /* The same as op 94, except that 1A80
+     * plays some important part here. */
+    /*
+       if ( $1A80 for current object &lt;&gt; 0)
+       {
+         if ( $1A01 for current object  &lt;&gt; 0 )
+           return, loop this command.
+         $1A80 for current object &lt;- 0
+         return
+       }
+       
+       if ( $1100 for given object &amp; #$80 )
+       { 
+         // if the object is removed?
+         $1A80 for given object &lt;- 0
+         call $568B
+         return
+       }
+       
+       @5370
+       [$F2] = $1801 for given obj
+       [$F3] = $1881 for given obj
+       [$F0] = $1801 for current object
+       [$F1] = $1881 for current object
+       
+       if ( abs([$F1] - [$F3]) &gt; 1
+       or   abs([$F0] - [$F2]) &gt; 1 )
+       {
+         @53CA
+         call $ABA2
+         .....
+       }
+       @53A8
+       if ( $1C81 for current object &amp; #$02 )
+       {
+         @53B1
+         call $30B3
+         if carry set
+         {
+           @53C4
+           call $5614
+           return, loop
+         }
+       }
+       $1A80 for current object &lt;- 0
+       call $568B
+       return
+    */
+  </comment>
+ </sequence>
+
+ <sequence length="3" cmd="[ObjectMoveTowardsBy:%0:%1 [facing:change]]">
+  <param pos="0" type="Immed" size="1" min="99" max="99" />
+  <param pos="1" type="TableReference" param="0" size="1" address="7E0197" comment="the target obj." />
+  <param pos="2" type="Immed" param="1" size="1" comment="magnitude" />
+ </sequence>
+
+ <sequence length="4" cmd="[ObjectMoveTowardsBy:%0:%1:%2 [facing:change]]">
+  <param pos="0" type="Immed" size="1" min="9A" max="9A" />
+  <param pos="1" type="Immed" param="0" size="1" comment="xcoord" />
+  <param pos="2" type="Immed" param="1" size="1" comment="ycoord" />
+  <param pos="3" type="Immed" param="2" size="1" comment="magnitude" />
+ </sequence>
+
+ <sequence length="3" cmd="[ObjectMoveAngle:%0:%1 [facing:unknown]]">
+  <param pos="0" type="Immed" size="1" min="9C" max="9C" />
+  <param pos="1" type="Immed" param="0" size="1" comment="angle ($40 = 90 degrees)" />
+  <param pos="2" type="Immed" param="1" size="1" comment="magnitude" />
+  <comment type="analysis">
+Same as op 92, but with unknown difference
+  </comment>
+ </sequence>
+
+ <sequence length="3" cmd="[ObjectMoveAngle:%0:%1 [facing:unknown]]">
+  <param pos="0" type="Immed" size="1" min="9D" max="9D" />
+  <param pos="1" type="Table2Reference" param="0" size="1" address="7F0200" />
+  <param pos="2" type="Table2Reference" param="1" size="1" address="7F0200" />
+  <comment type="analysis">
+Same as op 9C, but from vars
+  </comment>
+ </sequence>
+
+ <sequence length="2" cmd="[ObjectMoveTowards:%0 [facing:unknown]]">
+  <param pos="0" type="Immed" size="1" min="9E" max="9E" />
+  <param pos="1" type="ObjectNumber" param="0" size="1" comment="target obj" />
+  <comment type="analysis">
+Same as op 94, but with unknown difference
+  </comment>
+ </sequence>
+
+ <sequence length="2" cmd="[ObjectMoveTowards:%0 [facing:unknown]]">
+  <param pos="0" type="Immed" size="1" min="9F" max="9F" />
+  <param pos="1" type="TableReference" param="0" size="1" address="7E0197" comment="target obj" />
+  <comment type="analysis">
+Same as op 9E, but from var (such as party member)
+  </comment>
+ </sequence>
+
+ <sequence length="3" cmd="[ObjectMoveTowards:%0:%1 [facing:keep]]">
+  <param pos="0" type="Immed" size="1" min="A0" max="A0" />
+  <param pos="1" type="Immed" param="0" size="1" comment="xcoord" />
+  <param pos="2" type="Immed" param="1" size="1" comment="ycoord" />
+ </sequence>
+
+ <sequence length="3" cmd="[ObjectMoveTowards:%0:%1 [facing:keep]]">
+  <param pos="0" type="Immed" size="1" min="A1" max="A1" />
+  <param pos="1" type="Table2Reference" param="0" size="1" address="7F0200" comment="xcoord from" />
+  <param pos="2" type="Table2Reference" param="1" size="1" address="7F0200" comment="ycoord from" />
+  <comment type="anylysis">
+Used for Robo's following of party members at End of time
+  </comment>
+ </sequence>
+
+ <sequence length="2" cmd="[ObjectSetFacing:%0]">
+  <param pos="0" type="Immed" size="1" min="A6" max="A6" />
+  <param pos="1" type="Immed" param="0" size="1" />
+ </sequence>
+
+ <sequence length="2" cmd="[ObjectSetFacing:%0]">
+  <param pos="0" type="Immed" size="1" min="A7" max="A7" />
+  <param pos="1" type="Table2Reference" param="0" size="1" address="7F0200" />
+ </sequence>
+
+ <sequence length="2" cmd="[ObjectSetFacingTowards:%0]">
+  <param pos="0" type="Immed" size="1" min="A8" max="A8" />
+  <param pos="1" type="ObjectNumber" param="0" size="1" />
+ </sequence>
+
+ <sequence length="2" cmd="[ObjectSetFacingTowards:%0]">
+  <param pos="0" type="Immed" size="1" min="A9" max="A9" />
+  <param pos="1" type="Table2Reference" param="0" size="1" address="7F0200" />
+ </sequence>
+
+ <sequence length="2" cmd="[ObjectAnimation:%0 [loop]]">
+  <param pos="0" type="Immed" size="1" min="AA" max="AA" />
+  <param pos="1" type="Immed" param="0" size="1" />
+  <comment type="asm">
+         $1680 for cur obj = byte1
+         $1780 for cur obj = 1
+         $1601 for cur obj = 0
+         $1681 for cur obj = 0
+       $7F0B01 for cur obj = 0
+       
+     op B3 is the same with byte1=0 (standing)
+     op B4 is the same with byte1=1 (walking)
+  </comment>
+  <comment type="analysis">
+The character starts repeating the given animation. The script continues executing.
+See also ops B3 and B4.
+  </comment>
+ </sequence>
+
+ <sequence length="2" cmd="[ObjectAnimation:%0 [loop:%1]]">
+  <param pos="0" type="Immed" size="1" min="AB" max="AB" />
+  <param pos="1" type="Immed" param="0" size="1" />
+  <param type="Const" param="1" value="01" />
+  <comment type="analysis">
+Same as op B7 but with hardcoded parameter 1.
+The character performs the given animation once. The script execution will continue after that.
+  </comment>
+ </sequence>
+
+ <sequence length="2" cmd="[ObjectSetPose:%0]">
+  <param pos="0" type="Immed" size="1" min="AC" max="AC" />
+  <param pos="1" type="Immed" param="0" size="1" />
+  <comment type="asm">
+         $1301 for cur obj = byte1
+         $1601 for cur obj = 0
+         $1681 for cur obj = 0
+         if($1780 for cur obj &lt;&gt; 0)
+         {
+           $1680 for cur obj = #$FF
+         }
+         $1780 for cur obj = 3
+         return
+  </comment>
+  <comment type="analysis">
+The character will be set into the given frame of animation (still image).
+  </comment>
+ </sequence>
+
+ <sequence length="2" cmd="[Pause:%length]">
+  <param pos="0" type="Immed" size="1" min="AD" max="AD" />
+  <param pos="1" type="Immed" param="length" size="1" />
+  <comment type="analysis">
+Pauses for given number of cycles.
+Actual length depends on object:
+For party members, unit is (1/64)s, for others it is (1/16)s.
+Your mileage may vary...
+  </comment>
+ </sequence>
+
+ <sequence length="1" cmd="[ObjectAnimationReset]">
+  <param pos="0" type="Immed" size="1" min="AE" max="AE" />
+  <comment type="asm">
+        Puts 0 to $1680, $1681,
+                  $1780,
+                  $1601 and
+                  $7F0B01 for cur obj.
+  </comment>
+  <comment type="analysis">
+Same as AA 00 except that writes 0 to $1780 instead of 1.
+  </comment>
+ </sequence>
+
+ <sequence length="1" cmd="[PartyAction [once]]">
+  <param pos="0" type="Immed" size="1" min="AF" max="AF" />
+  <comment type="analysis">
+Runs one cycle of op B0.
+Used when the script wants to set special conditions to how the characters can be controlled.
+  </comment>
+ </sequence>
+
+ <sequence length="1" cmd="[PartyAction [forever]]">
+  <param pos="0" type="Immed" size="1" min="B0" max="B0" />
+  <comment type="asm">
+        // referred by op B0
+        If $38 &lt;&gt; 0, returns.
+        
+        A = $1100 for current obj. (party identity)
+        switch(A)
+        {
+          case 0: // member1
+            $1A01 for current obj = 1 (movement length)
+            call 9E29
+            A = $1600 for current obj (facing)
+            call 5B8D
+            if carry set:
+              call 3154
+            break;
+          case 1: // member2
+            $1A01 for current obj = 1
+            call A26B
+            break;
+          case 2: // member3
+            $1A01 for current obj = 1
+            call A2C2
+            break;
+        }
+        return, loop.
+  </comment>
+  <comment type="analysis">
+Analysis: This opcode lets the player control the party members.
+If the object is member1, it responds to controls.
+If the object is member2, it imitates member1 with delay.
+If the object is member3, it imitates member2 with delay.
+I did not disassemble those called functions, but I'm quite sure for this...
+  </comment>
+ </sequence>
+
+ <sequence length="1" cmd="[Yield]">
+  <param pos="0" type="Immed" size="1" min="B1" max="B1" />
+  <comment type="analysis">
+This command tells the task manager that this object wants now other objects to execute one cycle of whatever they are doing.
+It is usually issued in loops, before rerunning the loop.
+  </comment>
+ </sequence>
+
+ <sequence length="1" cmd="[Yield [forever]]">
+  <param pos="0" type="Immed" size="1" min="B2" max="B2" />
+  <comment type="analysis">
+This function is used when the current function has nothing to do, but for some reason it doesn't want to [Return] to the lower priority routine.
+It simply will [Yield] forever, without altering the object's state.
+  </comment>
+ </sequence>
+
+ <sequence length="1" cmd="[ObjectAnimation:%0 [loop]]">
+  <param pos="0" type="Immed" size="1" min="B3" max="B3" />
+  <param type="Const" param="0" value="0" />
+  <comment type="analysis">
+Same as op AA, but with hardcoded value 0 (neutral state)
+  </comment>
+ </sequence>
+
+ <sequence length="1" cmd="[ObjectAnimation:%0 [loop]]">
+  <param pos="0" type="Immed" size="1" min="B4" max="B4" />
+  <param type="Const" param="0" value="1" />
+  <comment type="analysis">
+Same as op AA, but with hardcoded value 1 (walking state)
+  </comment>
+ </sequence>
+
+ <sequence length="2" cmd="[ObjectMoveTowards:%0 [facing:change] [forever]]">
+  <param pos="0" type="Immed" size="1" min="B5" max="B5" />
+  <param pos="1" type="ObjectNumber" param="0" size="1" />
+  <comment type="analysis">
+Loops op 94 forever
+  </comment>
+ </sequence>
+
+ <sequence length="2" cmd="[ObjectMoveTowards:%0 [facing:change] [forever]]">
+  <param pos="0" type="Immed" size="1" min="B6" max="B6" />
+  <param pos="1" type="TableReference" param="0" size="1" address="7E0197" />
+  <comment type="analysis">
+Loops op 95 forever
+  </comment>
+ </sequence>
+
+ <sequence length="3" cmd="[ObjectAnimation:%0 [loop:%1]]">
+  <param pos="0" type="Immed" size="1" min="B7" max="B7" />
+  <param pos="1" type="Immed" param="0" size="1" comment="animation index" />
+  <param pos="2" type="Immed" param="1" size="1" comment="duration" />
+  <comment type="asm">
+        A = $7F0B01 of cur obj
+        If(A &gt; 0)
+        {
+          --A
+          If(A == 0)
+          {
+            // end loop.
+            $7F0B01 of cur obj = 0
+            $1601 of cur obj = 0
+            $1681 of cur obj = 0
+            if($1600 of cur obj == #$FF)
+            {
+                $1680 of cur obj = #0
+                $1780 of cur obj = 0
+            }
+            else
+            {
+                $1780 of cur obj = 1
+            }
+            return // end loop.
+          }
+          // wait until the animation frame has changed.
+          if(byte1 == $1781 of cur obj)
+          {
+            return, loop
+          }
+        }
+        $1781 of cur obj = byte1
+        $1681 of cur obj = 0
+        $1601 of cur obj = 0
+        if($1780 of cur obj == 0)
+        {
+          $1680 of cur obj = #$FF
+        }
+        $1780 of cur obj = #2
+        $7F0B01 of cur obj = byte2 + 1
+        return, loop
+  </comment>
+  <comment type="analysis">
+The character performs the given animation %1 times. The script execution will continue after that.
+  </comment>
+ </sequence>
+
+ <sequence length="4" cmd="[DialogSetTable:%0]">
+  <param pos="0" type="Immed" size="1" min="B8" max="B8" />
+  <param pos="1" type="DialogBegin" param="0" size="3" />
+ </sequence>
+
+ <sequence length="1" cmd="[Pause:%length]">
+  <param pos="0" type="Immed" size="1" min="B9" max="B9" />
+  <param type="Const" param="length" value="04" />
+  <comment type="analysis">Same as op AD, but with hardcoded value 4</comment>
+ </sequence>
+
+ <sequence length="1" cmd="[Pause:%length]">
+  <param pos="0" type="Immed" size="1" min="BA" max="BA" />
+  <param type="Const" param="length" value="08" />
+  <comment type="analysis">Same as op AD, but with hardcoded value 8</comment>
+ </sequence>
+
+ <sequence length="2" cmd="[DialogDisplay:%0 [pos:auto]]">
+  <param pos="0" type="Immed" size="1" min="BB" max="BB" />
+  <param pos="1" type="DialogIndex" param="0" size="1" />
+ </sequence>
+
+ <sequence length="1" cmd="[Pause:%length]">
+  <param pos="0" type="Immed" size="1" min="BC" max="BC" />
+  <param type="Const" param="length" value="10" />
+  <comment type="analysis">Same as op AD, but with hardcoded value 16</comment>
+ </sequence>
+
+ <sequence length="1" cmd="[Pause:%length]">
+  <param pos="0" type="Immed" size="1" min="BD" max="BD" />
+  <param type="Const" param="length" value="20" />
+  <comment type="analysis">Same as op AD, but with hardcoded value 32</comment>
+ </sequence>
+
+ <sequence length="3" cmd="[DialogAsk:%0:%target:%line [pos:auto]]">
+  <param pos="0" type="Immed" size="1" min="C0" max="C0" />
+  <param pos="1" type="DialogIndex" param="0" size="1" />
+  <param pos="2" type="Immed" param="line" size="1" />
+  <param type="Prop" param="target" value="7F0A80" />
+  <comment type="analysis">
+%line = line number
+%target = where answer will be stored
+  </comment>
+ </sequence>
+
+ <sequence length="2" cmd="[DialogDisplay:%0 [pos:top]]">
+  <param pos="0" type="Immed" size="1" min="C1" max="C1" />
+  <param pos="1" type="DialogIndex" param="0" size="1" />
+ </sequence>
+
+ <sequence length="2" cmd="[DialogDisplay:%0 [pos:bottom]]">
+  <param pos="0" type="Immed" size="1" min="C2" max="C2" />
+  <param pos="1" type="DialogIndex" param="0" size="1" />
+ </sequence>
+
+ <sequence length="3" cmd="[DialogAsk:%0:%target:%line [pos:top]]">
+  <param pos="0" type="Immed" size="1" min="C3" max="C3" />
+  <param pos="1" type="DialogIndex" param="0" size="1" />
+  <param pos="2" type="Immed" param="line" size="1" />
+  <param type="Prop" param="target" value="7F0A80" />
+  <comment type="analysis">
+%line = line number
+%target = where answer will be stored
+  </comment>
+ </sequence>
+
+ <sequence length="3" cmd="[DialogAsk:%0:%target:%line [pos:bottom]]">
+  <param pos="0" type="Immed" size="1" min="C4" max="C4" />
+  <param pos="1" type="DialogIndex" param="0" size="1" />
+  <param pos="2" type="Immed" param="line" size="1" />
+  <param type="Prop" param="target" value="7F0A80" />
+  <comment type="analysis">
+%line = line number
+%target = where answer will be stored
+  </comment>
+ </sequence>
+
+ <sequence length="2" cmd="[ItemGive:%0]">
+  <param pos="0" type="Immed" size="1" min="C7" max="C7" />
+  <param pos="1" type="Table2Reference" param="0" size="1" address="7F0200" />
+  <comment type="analysis">
+Adds an item from the given location
+  </comment>
+ </sequence>
+
+ <sequence length="2" cmd="[DialogDisplaySpecial:%0]">
+  <param pos="0" type="Immed" size="1" min="C8" max="C8" />
+  <param pos="1" type="Immed" param="0" size="1" />
+  <comment type="analysis">
+Shops, name entries and such.
+  </comment>
+ </sequence>
+
+ <sequence length="3" cmd="HasItem:%0">
+  <param pos="0" type="Immed" size="1" min="C9" max="C9" />
+  <param pos="1" type="Immed" param="0" size="1" />
+  <param pos="2" type="ConditionalGoto" size="1" />
+ </sequence>
+
+ <sequence length="2" cmd="[ItemGive:%0]">
+  <param pos="0" type="Immed" size="1" min="CA" max="CA" />
+  <param pos="1" type="Immed" param="0" size="1" />
+ </sequence>
+
+ <sequence length="2" cmd="[ItemTake:%0]">
+  <param pos="0" type="Immed" size="1" min="CB" max="CB" />
+  <param pos="1" type="Immed" param="0" size="1" />
+ </sequence>
+
+ <sequence length="4" cmd="HasGold:%0">
+  <param pos="0" type="Immed" size="1" min="CC" max="CC" />
+  <param pos="1" type="Immed" param="0" size="2" />
+  <param pos="3" type="ConditionalGoto" size="1" />
+ </sequence>
+
+ <sequence length="3" cmd="[GoldGive:%0]">
+  <param pos="0" type="Immed" size="1" min="CD" max="CD" />
+  <param pos="1" type="Immed" param="0" size="2" />
+ </sequence>
+
+ <sequence length="3" cmd="[GoldTake:%0]">
+  <param pos="0" type="Immed" size="1" min="CE" max="CE" />
+  <param pos="1" type="Immed" param="0" size="2" />
+ </sequence>
+
+ <sequence length="3" cmd="HasMember:%0">
+  <param pos="0" type="Immed" size="1" min="CF" max="CF" />
+  <param pos="1" type="Immed" param="0" size="1" />
+  <param pos="2" type="ConditionalGoto" size="1" />
+ </sequence>
+
+ <sequence length="2" cmd="[GiveMember:%0]">
+  <param pos="0" type="Immed" size="1" min="D0" max="D0" />
+  <param pos="1" type="Immed" param="0" size="1" />
+ </sequence>
+
+ <sequence length="2" cmd="[TakeMember:%0]">
+  <param pos="0" type="Immed" size="1" min="D1" max="D1" />
+  <param pos="1" type="Immed" param="0" size="1" />
+ </sequence>
+
+ <sequence length="3" cmd="HasActiveMember:%0">
+  <param pos="0" type="Immed" size="1" min="D2" max="D2" />
+  <param pos="1" type="Immed" param="0" size="1" />
+  <param pos="2" type="ConditionalGoto" size="1" />
+ </sequence>
+
+ <sequence length="2" cmd="[GiveActiveMember:%0]">
+  <param pos="0" type="Immed" size="1" min="D3" max="D3" />
+  <param pos="1" type="Immed" param="0" size="1" />
+ </sequence>
+
+ <sequence length="2" cmd="[UnactivateMember:%0]">
+  <param pos="0" type="Immed" size="1" min="D4" max="D4" />
+  <param pos="1" type="Immed" param="0" size="1" />
+ </sequence>
+
+ <sequence length="3" cmd="[EquipMember:%0:%1]">
+  <param pos="0" type="Immed" size="1" min="D5" max="D5" />
+  <param pos="1" type="Immed" param="0" size="1" />
+  <param pos="2" type="Immed" param="1" size="1" />
+ </sequence>
+
+ <sequence length="2" cmd="[TakeActiveMember:%0]">
+  <param pos="0" type="Immed" size="1" min="D6" max="D6" />
+  <param pos="1" type="Immed" param="0" size="1" />
+ </sequence>
+
+ <sequence length="3" cmd="[ItemQueryAmount:%byte:%addr]">
+  <param pos="0" type="Immed" size="1" min="D7" max="D7" />
+  <param pos="1" type="Immed" param="byte" size="1" />
+  <param pos="2" type="Table2Reference" param="addr" size="1" address="7F0200" />
+ </sequence>
+
+ <sequence length="3" cmd="[StartBattle:%flags]">
+  <param pos="0" type="Immed" size="1" min="D8" max="D8" />
+  <param pos="1" type="Immed" param="flags" size="2" />
+  <comment type="analysis">
+Known flag bits:
+ 8000 = auto-regroup
+ 4000 = map music
+ 2000 = can lose
+ 0080 = no run
+ 0020 = pre-scripted events (attract mode)
+ 0002 = menu at bottom
+ 0001 = no win pose
+</comment>
+ </sequence>
+
+ <sequence length="7" cmd="[PartyMove:%x1:%y1:%x2:%y2:%x3:%y3]">
+  <param pos="0" type="Immed" size="1" min="D9" max="D9" />
+  <param pos="1" type="Immed" param="x1" size="1" />
+  <param pos="2" type="Immed" param="y1" size="1" />
+  <param pos="3" type="Immed" param="x2" size="1" />
+  <param pos="4" type="Immed" param="y2" size="1" />
+  <param pos="5" type="Immed" param="x3" size="1" />
+  <param pos="6" type="Immed" param="y3" size="1" />
+  <comment type="analysis">
+Moves the party members to the given positions. Writes to 1180...
+  </comment>
+ </sequence>
+
+ <sequence length="1" cmd="[PartySetFollow]">
+  <param pos="0" type="Immed" size="1" min="DA" max="DA" />
+  <comment type="analysis">
+Causes members 2 and 3 to follow member 1 again. Writes to 1180...
+  </comment>
+ </sequence>
+
+ <sequence length="5" cmd="[PartyTeleportDC:%0:%1:%2:%3]">
+  <param pos="0" type="Immed" size="1" min="DC" max="DC" />
+  <param pos="1" type="Immed" param="0" size="1" />
+  <param pos="2" type="Immed" param="1" size="1" />
+  <param pos="3" type="Immed" param="2" size="1" />
+  <param pos="4" type="Immed" param="3" size="1" />
+  <comment type="analysis">
+  %2: 7654321076543210: stored to $0C. (x and y?)
+  %0: 7654321076543210
+             ^^^^^^^^^: stored to $0A.
+      ^  ^^^^         : stored to $0E. (b000zzzz)
+  </comment>
+ </sequence>
+
+ <sequence length="5" cmd="[PartyTeleportDD:%0:%1:%2:%3]">
+  <param pos="0" type="Immed" size="1" min="DD" max="DD" />
+  <param pos="1" type="Immed" param="0" size="1" />
+  <param pos="2" type="Immed" param="1" size="1" />
+  <param pos="3" type="Immed" param="2" size="1" />
+  <param pos="4" type="Immed" param="3" size="1" />
+  <comment type="analysis">
+  %2: 7654321076543210: stored to $02. (x and y?)
+  %0: 7654321076543210
+             ^^^^^^^^^: stored to $00.
+      ^  ^^^^         : stored to $04. (b000zzzz)
+  </comment>
+ </sequence>
+
+ <sequence length="5" cmd="[PartyTeleportDD:%0:%1:%2:%3 [with 1E=1]]">
+  <param pos="0" type="Immed" size="1" min="DE" max="DE" />
+  <param pos="1" type="Immed" param="0" size="1" />
+  <param pos="2" type="Immed" param="1" size="1" />
+  <param pos="3" type="Immed" param="2" size="1" />
+  <param pos="4" type="Immed" param="3" size="1" />
+  <comment type="analysis">
+Same as op DD, but puts $1E = 1
+  </comment>
+ </sequence>
+
+ <sequence length="5" cmd="[PartyTeleportE1:%0:%1:%2:%3 [with 1E=1]]">
+  <param pos="0" type="Immed" size="1" min="DF" max="DF" />
+  <param pos="1" type="Immed" param="0" size="1" />
+  <param pos="2" type="Immed" param="1" size="1" />
+  <param pos="3" type="Immed" param="2" size="1" />
+  <param pos="4" type="Immed" param="3" size="1" />
+  <comment type="analysis">
+Same as E1, but puts $1E = 1
+  </comment>
+ </sequence>
+
+ <sequence length="5" cmd="[PartyTeleportE0:%0:%1:%2:%3]">
+  <param pos="0" type="Immed" size="1" min="E0" max="E0" />
+  <param pos="1" type="Immed" param="0" size="1" />
+  <param pos="2" type="Immed" param="1" size="1" />
+  <param pos="3" type="Immed" param="2" size="1" />
+  <param pos="4" type="Immed" param="3" size="1" />
+  <comment type="analysis">
+ Waits until [$17] &amp; 0x80 = 0.
+  %2: 7654321076543210: stored to $14 (x and y?)
+  %0: 7654321076543210
+             ^^^^^^^^^: stored to $12.
+      ^  ^^^^         : stored to $16. (b000zzzz)
+  Sets   $17 |= 0x80
+  Stores $19 = 0x0F
+  </comment>
+ </sequence>
+
+ <sequence length="5" cmd="[PartyTeleportE1:%0:%1:%2:%3]">
+  <param pos="0" type="Immed" size="1" min="E1" max="E1" />
+  <param pos="1" type="Immed" param="0" size="1" />
+  <param pos="2" type="Immed" param="1" size="1" />
+  <param pos="3" type="Immed" param="2" size="1" />
+  <param pos="4" type="Immed" param="3" size="1" />
+  <comment type="analysis">
+  %2: 7654321076543210: stored to $14. (x and y?)
+  %0: 7654321076543210
+             ^^^^^^^^^: stored to $12.
+      ^  ^^^^         : stored to $16. (b000zzzz)
+  Waits for vrefresh.
+  Calls 0B4E.
+  Sets $05 = 0x0000
+  Sets $07 = 0x0002
+  Sets $09 = [$04]
+  Sets $00 = [$12]
+  Sets $02 = [$14]
+  Sets $04 = [$16]
+  Then restarts the scene (S=0x6FF, goto C0005D).
+  </comment>
+ </sequence>
+
+ <sequence length="5" cmd="[PartyTeleportE0:%0:%1:%2:%3]">
+  <param pos="0" type="Immed" size="1" min="E2" max="E2" />
+  <param pos="1" type="Table2Reference" param="0" size="1" address="7F0200" />
+  <param pos="2" type="Table2Reference" param="1" size="1" address="7F0200" />
+  <param pos="3" type="Table2Reference" param="2" size="1" address="7F0200" />
+  <param pos="4" type="Table2Reference" param="3" size="1" address="7F0200" />
+  <comment type="analysis">
+Same as E0, except the values are loaded from given memory locations.
+
+Op DC: pokes to $0A, $0C, $0E - that's all
+Op DD: pokes to $00, $02, $04 - that's all
+Op E0: pokes to $12, $14, $16 - waits [$17], writes $17 |= 0x80, $19 = 0x0F, that's all.
+Op E1: pokes to $12, $14, $16                                        waits vrefresh
+       pokes to $00, $02, $04, $05, $07, $09
+
+Op DE: [$1E=1], then op DD.
+Op DF: [$1E=1], then op E1.
+
+
+  </comment>
+ </sequence>
+
+ <sequence length="2" cmd="[LetB:%1:%0]">
+  <param pos="0" type="Immed" size="1" min="E3" max="E3" />
+  <param pos="1" type="Immed" param="0" size="1" />
+  <param type="Const" param="1" value="7E011F" />
+  <comment type="analysis">
+&quot;explore mode&quot;
+  </comment>
+ </sequence>
+
+ <sequence length="8" cmd="[CopyTiles:%l:%t:%r:%b:%x:%y:%f [v0]]">
+  <param pos="0" type="Immed" size="1" min="E4" max="E4" />
+  <param pos="1" type="Immed" param="l" size="1" />
+  <param pos="2" type="Immed" param="t" size="1" />
+  <param pos="3" type="Immed" param="r" size="1" />
+  <param pos="4" type="Immed" param="b" size="1" />
+  <param pos="5" type="Immed" param="x" size="1" />
+  <param pos="6" type="Immed" param="y" size="1" />
+  <param pos="7" type="Immed" param="f" size="1" />
+  <comment type="asm">
+    // Pokes the parameters to $3E,$40,$42,$44 and calls $AF4E.
+  </comment>
+ </sequence>
+
+ <sequence length="8" cmd="[CopyTiles:%l:%t:%r:%b:%x:%y:%f [v1]]">
+  <param pos="0" type="Immed" size="1" min="E5" max="E5" />
+  <param pos="1" type="Immed" param="l" size="1" />
+  <param pos="2" type="Immed" param="t" size="1" />
+  <param pos="3" type="Immed" param="r" size="1" />
+  <param pos="4" type="Immed" param="b" size="1" />
+  <param pos="5" type="Immed" param="x" size="1" />
+  <param pos="6" type="Immed" param="y" size="1" />
+  <param pos="7" type="Immed" param="f" size="1" />
+  <comment type="asm">
+    // Pokes the parameters to $3E,$40,$42,$44
+    // then puts (f &amp; 7) to $45 and does [$17] |= 0x20.
+  </comment>
+ </sequence>
+
+ <sequence length="5" cmd="[ScrollLayers:%0:%1:%2]">
+  <param pos="0" type="Immed" size="1" min="E6" max="E6" />
+  <param pos="1" type="Immed" param="0" size="2" />
+  <param pos="3" type="Immed" param="1" size="1" />
+  <param pos="4" type="Immed" param="2" size="1" />
+ </sequence>
+
+ <sequence length="3" cmd="[ScrollScreen:%0:%1]">
+  <param pos="0" type="Immed" size="1" min="E7" max="E7" />
+  <param pos="1" type="Immed" param="0" size="1" comment="x" />
+  <param pos="2" type="Immed" param="1" size="1" comment="y" />
+ </sequence>
+
+ <sequence length="2" cmd="[PlaySound:%a [pan=%p]]">
+  <param pos="0" type="Immed" size="1" min="E8" max="E8" />
+  <param pos="1" type="Immed" param="a" size="1" />
+  <param type="Const" param="p" value="80" />
+  <comment type="asm">
+   Command E8 pokes $1E00..$1E02 as 18:a:80 and calls a sound function
+  </comment>
+ </sequence>
+
+ <sequence length="2" cmd="[SongPlay:%a]">
+  <param pos="0" type="Immed" size="1" min="EA" max="EA" />
+  <param pos="1" type="Immed" param="a" size="1" />
+  <comment type="asm">
+    Command EA pokes $1E00..$1E01 as 10:a
+    and stores a into $7E29AE
+    and calls a sound function
+  </comment>
+ </sequence>
+
+ <sequence length="3" cmd="[SetVolume:%l:%r]">
+  <param pos="0" type="Immed" size="1" min="EB" max="EB" />
+  <param pos="1" type="Immed" param="l" size="1" />
+  <param pos="2" type="Immed" param="r" size="1" />
+  <comment type="asm">
+    Command EA pokes $1E00..$1E03 as 81:l:r:FF
+      calls a sound function
+          then pokes $1E00..$1E02 as 82:00:FF
+  and calls a sound function.
+  </comment>
+ </sequence>
+
+ <sequence length="4" cmd="[SongPlay:%a [generic]]">
+  <param pos="0" type="Immed" size="1" min="EC" max="EC" />
+  <param pos="1" type="Immed" size="1" min="11" max="11" />
+  <param pos="2" type="Immed" param="a" size="1" />
+  <param pos="3" type="Immed" size="1" min="00" max="00" />
+  <comment type="asm">
+Command EC pokes $1E00..$1E02 as a:b:c and calls a sound function.
+  </comment>
+ </sequence>
+
+ <sequence length="4" cmd="[SongPlay:%a [keep pos]]">
+  <param pos="0" type="Immed" size="1" min="EC" max="EC" />
+  <param pos="1" type="Immed" size="1" min="14" max="14" />
+  <param pos="2" type="Immed" param="a" size="1" />
+  <param pos="3" type="Immed" size="1" min="00" max="00" />
+ </sequence>
+
+ <sequence length="4" cmd="[PlaySound:%a [pan=%p]]">
+  <param pos="0" type="Immed" size="1" min="EC" max="EC" />
+  <param pos="1" type="Immed" size="1" min="18" max="19" />
+  <param pos="2" type="Immed" param="a" size="1" />
+  <param pos="3" type="Immed" param="p" size="1" />
+ </sequence>
+
+ <sequence length="4" cmd="[SongFade:%volume [duration=%duration]]">
+  <param pos="0" type="Immed" size="1" min="EC" max="EC" />
+  <param pos="1" type="Immed" size="1" min="82" max="82" />
+  <param pos="2" type="Immed" param="duration" size="1" />
+  <param pos="3" type="Immed" param="volume" size="1" />
+ </sequence>
+
+ <sequence length="4" cmd="[SongChangeTempo:%tempo [duration=%duration]]">
+  <param pos="0" type="Immed" size="1" min="EC" max="EC" />
+  <param pos="1" type="Immed" size="1" min="85" max="86" />
+  <param pos="2" type="Immed" param="duration" size="1" />
+  <param pos="3" type="Immed" param="tempo" size="1" />
+ </sequence>
+
+ <sequence length="4" cmd="[SongChangeState]">
+  <param pos="0" type="Immed" size="1" min="EC" max="EC" />
+  <param pos="1" type="Immed" size="1" min="88" max="88" />
+  <param pos="2" type="Immed" size="1" min="01" max="01" />
+  <param pos="3" type="Immed" size="1" min="01" max="01" />
+ </sequence>
+
+ <sequence length="4" cmd="[SongMute]">
+  <param pos="0" type="Immed" size="1" min="EC" max="EC" />
+  <param pos="1" type="Immed" size="1" min="F0" max="F0" />
+  <param pos="2" type="Immed" size="1" min="00" max="00" />
+  <param pos="3" type="Immed" size="1" min="00" max="00" />
+ </sequence>
+
+ <sequence length="4" cmd="[SoundEffectMute]">
+  <param pos="0" type="Immed" size="1" min="EC" max="EC" />
+  <param pos="1" type="Immed" size="1" min="F2" max="F2" />
+  <param pos="2" type="Immed" size="1" min="00" max="00" />
+  <param pos="3" type="Immed" size="1" min="00" max="00" />
+ </sequence>
+
+ <sequence length="4" cmd="[SongChangeState]">
+  <param pos="0" type="Immed" size="1" min="EC" max="EC" />
+  <param pos="1" type="Immed" size="1" min="88" max="88" />
+  <param pos="2" type="Immed" size="1" min="01" max="01" />
+  <param pos="3" type="Immed" size="1" min="01" max="01" />
+ </sequence>
+
+ <sequence length="4" cmd="[SoundCommand:%a:%b:%c]">
+  <param pos="0" type="Immed" size="1" min="EC" max="EC" />
+  <param pos="1" type="Immed" param="a" size="1" />
+  <param pos="2" type="Immed" param="b" size="1" />
+  <param pos="3" type="Immed" param="c" size="1" />
+ </sequence>
+
+ <sequence length="1" cmd="[WaitSilence]">
+  <param pos="0" type="Immed" size="1" min="ED" max="ED" />
+ </sequence>
+
+ <sequence length="1" cmd="[WaitSongEnd]">
+  <param pos="0" type="Immed" size="1" min="EE" max="EE" />
+ </sequence>
+
+ <sequence length="2" cmd="[FadeOutScreen:%0]">
+  <param pos="0" type="Immed" size="1" min="F0" max="F0" />
+  <param pos="1" type="Immed" param="0" size="1" />
+ </sequence>
+
+ <sequence length="2" cmd="[BrightenScreen:%index]">
+  <param pos="0" type="Immed" size="1" min="F1" max="F1" />
+  <param pos="1" type="Immed" param="index" size="1" min="00" max="00" />
+ </sequence>
+
+ <sequence length="3" cmd="[BrightenScreen:%index:%duration]">
+  <param pos="0" type="Immed" size="1" min="F1" max="F1" />
+  <param pos="1" type="Immed" param="index" size="1" min="01" max="FF" />
+  <param pos="2" type="Immed" param="duration" size="1" />
+ </sequence>
+
+ <sequence length="1" cmd="[FadeOutScreen]">
+  <param pos="0" type="Immed" size="1" min="F2" max="F2" />
+ </sequence>
+
+ <sequence length="1" cmd="[WaitFor18bit08]">
+  <param pos="0" type="Immed" size="1" min="F3" max="F3" />
+ </sequence>
+
+ <sequence length="2" cmd="[ShakeScreen:%0]">
+  <param pos="0" type="Immed" size="1" min="F4" max="F4" />
+  <param pos="1" type="Immed" param="0" size="1" />
+ </sequence>
+
+ <sequence length="1" cmd="[HealHPandMP]">
+  <param pos="0" type="Immed" size="1" min="F8" max="F8" />
+  <comment type="analysis">
+Merely op F9 and op FA combined.
+  </comment>
+ </sequence>
+
+ <sequence length="1" cmd="[HealHP]">
+  <param pos="0" type="Immed" size="1" min="F9" max="F9" />
+  <comment type="asm">
+    /* calls C28004,A=6 */
+  </comment>
+ </sequence>
+
+ <sequence length="1" cmd="[HealMP]">
+  <param pos="0" type="Immed" size="1" min="FA" max="FA" />
+  <comment type="asm">
+    /* calls C28004,A=7 */
+  </comment>
+ </sequence>
+
+ <sequence length="18" cmd="[SetGeometry:%a:%b:%c:%d:%e:%f:%g:%h:%i:%j:%k:%l:%m:%n:%o:%p [divider=%divider]]">
+  <param pos="0" type="Immed" size="1" min="FE" max="FE" />
+  <param pos="1" type="Immed" param="divider" size="1" />
+  <param pos="2" type="Immed" param="a" size="1" />
+  <param pos="3" type="Immed" param="b" size="1" />
+  <param pos="4" type="Immed" param="c" size="1" />
+  <param pos="5" type="Immed" param="d" size="1" />
+  <param pos="6" type="Immed" param="e" size="1" />
+  <param pos="7" type="Immed" param="f" size="1" />
+  <param pos="8" type="Immed" param="g" size="1" />
+  <param pos="9" type="Immed" param="h" size="1" />
+  <param pos="10" type="Immed" param="i" size="1" />
+  <param pos="11" type="Immed" param="j" size="1" />
+  <param pos="12" type="Immed" param="k" size="1" />
+  <param pos="13" type="Immed" param="l" size="1" />
+  <param pos="14" type="Immed" param="m" size="1" />
+  <param pos="15" type="Immed" param="n" size="1" />
+  <param pos="16" type="Immed" param="o" size="1" />
+  <param pos="17" type="Immed" param="p" size="1" />
+  <comment type="asm">
+    /*
+       $F4     = byte1
+       $7F1CE8 = byte1
+       $C7     = pos
+       $F0     = 0
+       $F6     = 0
+       $F7     = 0
+      &lt;begin&gt;
+       pos     = [$C7]
+       $F1     = next byte (high part of $F0)
+       A       = next byte
+       $C7     = pos
+       A(word) = ( word.A - word.$F0 ) / byte.$F4
+       X       = [$F6]
+       [$7F1CF9+X] = word.A
+       [$7F1CE9+X] = word.$F0
+       [$F6]   = X+2
+      &lt;loop 8 times&gt;
+       [$39]   = 6
+       X       = [$C7]
+       
+       The table 7F1CF9 is referred by function at C024A7.
+       It does adds the first (F9) value to the second (E9).
+       Therefore, F9 is the speed of change and E9 is the counter.
+       
+       But why such pointless math with constant values? No idea.
+       If you want to test it, see Lucca's wondershot scene. She
+       invokes this event there.
+       Here is C++ code that simulates this opcode:
+        unsigned char divider = Stream[0];
+        for(unsigned pos=1, c=0; c&lt;8; ++c)
+        {
+            signed short B = Stream[pos++] &lt;&lt; 8; 
+            signed short A = Stream[pos++] &lt;&lt; 8; 
+            A = (A-B) / divider; 
+            printf(&quot;%d %d\n&quot;, F0, A);
+        }
+       
+    */
+  </comment>
+ </sequence>
+
+ <sequence length="5" cmd="[Mode7Scene:%0:%1:%2]">
+  <param pos="0" type="Immed" size="1" min="FF" max="FF" />
+  <param pos="1" type="Immed" param="0" size="1" min="90" max="90" />
+  <param pos="2" type="Immed" param="1" size="2" />
+  <param pos="4" type="Immed" param="2" size="1" />
+  <comment type="asm">
+    //sets $39=1, $3A=paramword, $3D=parambyte $3C=0
+    // &gt;&gt; black circle that opens similar to a portal and covers the entire screen (DNL)
+  </comment>
+ </sequence>
+
+ <sequence length="5" cmd="[Mode7Scene:%0:%1:%2]">
+  <param pos="0" type="Immed" size="1" min="FF" max="FF" />
+  <param pos="1" type="Immed" param="0" size="1" min="97" max="97" />
+  <param pos="2" type="Immed" param="1" size="2" />
+  <param pos="4" type="Immed" param="2" size="1" />
+  <comment type="asm">
+    //sets $39=4, $3A=paramword, $3D=parambyte $3C=0
+  </comment>
+ </sequence>
+
+ <sequence length="2" cmd="[Mode7Scene:%0]">
+  <param pos="0" type="Immed" size="1" min="FF" max="FF" />
+  <param pos="1" type="Immed" param="0" size="1" min="00" max="8F" />
+  <comment type="asm">
+    //Calls a Mode 7 scene.
+    //Causes data at 0x031513 to be decompressed.
+    //A few values:
+  </comment>
+ </sequence>
+
+ <sequence length="2" cmd="[Mode7Scene:%0]">
+  <param pos="0" type="Immed" size="1" min="FF" max="FF" />
+  <param pos="1" type="Immed" param="0" size="1" min="91" max="95" />
+  <comment type="asm">
+    // 0x00: - highway race
+    // 0x01: - none
+    // 0x02: - title screen
+    // 0x03: - top of black omen, &quot;blurs&quot; into view (Does Not Load new graphics, may not be visible)
+    // 0x04: - lavos falls to earth
+    // 0x0A: - fireworks
+    // 0x0C: - credits over moving star background
+    // 0x0D: - programmer's ending credits
+    // 0x25: - lavos summoned to 600AD (DNL)
+    // 0x66: - Epoch, first person view
+    // 0x67: - world globe exploding, &quot;But the future refused to change&quot;
+    // 0x68: - world globe, &quot;But the future refused to change&quot; (short version)
+    // 0x69: - attract mode highway race
+    // 0x80: - long wormhole (first warp to 600 A.D.)
+    // 0x81: - normal wormhole
+    // 0x82: - quick wormhole
+    // 0x89: - wormhole to lavos
+    // 0x91: sets $39 = 2
+    // 0x92: may sometimes not progress
+              - the screen wipe effect used during attract mode (left to right)
+    // 0x93: may sometimes not progress
+              - the screen wipe effect used during attract mode (right to left, open)
+    // 0x94: may sometimes not progress
+              - left to right wipe (close)
+    // 0x95: may sometimes not progress
+              - right to left wipe (close)
+    // 0x96: does not return (resets the system?)
+              - Reset (see Castle Magus Inner Sanctum)
+    // 0x98: sets $39 = 5
+              - used by Taban during Moonlight Parade ending
+    // 0x99: sets $39 = 7
+              - used during Death Peak summit sequence, no noticable effect
+    // 0x9A: sets $39 = 9
+              - used after Crono revived in Death Peak sequence 
+    // 0x9B: sets $39 = 0xB
+              - Massive Portal (see Castle Magus Inner Sanctum)
+    // 0x9C: sets $39 = 0xE
+              - Beam upward (Sunstone) (MAYBE)
+    // 0x9D: sets $54 &amp;= ~2
+    // 0x9E: if $39==0, sets to 0xC. loops if $39!=0xD.
+              - Reality Distortion (see Castle Magus Inner Sanctum)
+    // 0x9F: calls C28004,A=8
+              - used in Tesseract
+    // 0xA0, 0xA1: seems like it halts the system
+    // 0xA2, 0xA3: seems like it halts the system
+  </comment>
+ </sequence>
+
+ <sequence length="2" cmd="[Mode7Scene:%0]">
+  <param pos="0" type="Immed" size="1" min="FF" max="FF" />
+  <param pos="1" type="Immed" param="0" size="1" min="98" max="A3" />
+ </sequence>
+ 
+ <memory_addresses>
+<!--
+  Vars starting with Object are related to the actor.
+  Vars starting with Sprite are related to the GFX sprite.
+ -->
+  <address addr="7E0167" size="1">
+           <comment>Opcode counter</comment></address>
+  <address addr="7E0168" size="1">
+           <comment># of opcodes to execute in this loop</comment></address>
+  <address addr="7E016D" size="1" name="{ObjectID}">
+           <comment>Index of the currently executing object</comment></address>
+  <address addr="7E01BD" size="1" name="{NumObjects}">
+           <comment>Number of objects in the scene</comment></address>
+  <address addr="7E011F" size="1" name="{ExploreMode}" />
+  <address addr="7E0154" size="1" name="{Unknown54}" />
+  <address addr="7E016B" size="1" name="{Unknown6B}" />
+  <address addr="7E0197" size="2" name="{Member1ObjectNo}" />
+  <address addr="7E0199" size="2" name="{Member2ObjectNo}" />
+  <address addr="7E019B" size="2" name="{Member3ObjectNo}" />
+  <address addr="7E01F8" size="1" name="{RandomCounter}" />
+  <address addr="7E0520" size="1" index="sprite" name="{Sprite520}" />
+  <address addr="7E0521" size="1" index="sprite" name="{Sprite521}">
+           <comment>related to palette</comment></address>
+  <address addr="7E0522" size="1" index="sprite" name="{Sprite522}" />
+  <address addr="7E0523" size="1" index="sprite" name="{Sprite523}" />
+  <address addr="7E0524" size="1" index="sprite" name="{Sprite524}" />
+  <address addr="7E0525" size="1" index="sprite" name="{Sprite525}" />
+  <address addr="7E0526" size="1" index="sprite" name="{Sprite526}" />
+  <address addr="7E0527" size="1" index="sprite" name="{Sprite527}" />
+  <address addr="7E0528" size="1" index="sprite" name="{Sprite528}" />
+  <address addr="7E0F00" size="1">
+           <comment>?</comment></address>
+  <address addr="7E0F81" size="1" index="object" name="{ObjectPaletteNumber}" />
+  <address addr="7E1000" size="1" index="object" >
+           <comment>bitmask of unknown purpose (#$80 is a bit, lower bits are value)</comment></address>
+  <address addr="7E1001" size="1" index="object" >
+           <comment>maybe a copy of 1000 (see op 87)</comment></address>
+  <address addr="7E1100" size="1" index="object" name="{ObjectMemberIdentity}">
+           <comment>Identity as a party member
+             //         If bit $80 is set, the object is dead
+             //         and its code will not be interpreted.
+             //         #0: member1
+             //         #1: member2
+             //         #2: member3
+             //         #3: out-party PC
+             //         #4: NPC
+             //         #5: monster
+             //         #6: monster, not willing to fight</comment></address>
+  <address addr="7E1101" size="1" index="object" name="{ObjectPlayerIdentity}">
+           <comment>Identity as a player character
+             //         #0: crono
+             //         #1: marle
+             //         and so on</comment></address>
+  <address addr="7E1180" size="2" index="object" name="{ObjectCodePointer}">
+           <comment>object's current code pointer</comment></address>
+  <address addr="7E1201" size="1" index="object" >
+           <comment>?</comment></address>
+  <address addr="7E1280" size="1" index="object" >
+           <comment>?</comment></address>
+  <address addr="7E1301" size="1" index="object" >
+           <comment>static animation? (like sleeping)</comment></address>
+  <address addr="7E1400" size="2" index="object"  name="{ObjectPalettePointer}">
+           <comment>Pointer to palette in ROM (offset only, page E4)</comment></address>
+  <address addr="7E15C0" size="1" index="object" >
+           <comment>?</comment></address>
+  <address addr="7E1600" size="1" index="object"  name="{ObjectFacing}" />
+  <address addr="7E1601" size="1" index="object" >
+           <comment>possibly a 'facing is up to date' flag</comment></address>
+  <address addr="7E1680" size="1" index="object" >
+           <comment>current animation</comment></address>
+  <address addr="7E1681" size="1" index="object" >
+           <comment>possibly a 'animation is up to date' flag</comment></address>
+  <address addr="7E1700" size="2" index="object" >
+           <comment>monster-related</comment></address>
+  <address addr="7E1780" size="1" index="object" >
+           <comment>?flag</comment></address>
+  <address addr="7E1781" size="1" index="object" >
+           <comment>?</comment></address>
+  <address addr="7E1800" size="1" index="object" >
+           <comment>?flag for x-coord</comment></address>
+  <address addr="7E1801" size="1" index="object"  name="{ObjectXCoord}" />
+  <address addr="7E1880" size="1" index="object" >
+           <comment>?flag for y-coord</comment></address>
+  <address addr="7E1881" size="1" index="object"  name="{ObjectYCoord}" />
+  <address addr="7E1900" size="1" index="object" >
+           <comment>?</comment></address>
+  <address addr="7E1980" size="1" index="object" >
+           <comment>?</comment></address>
+  <address addr="7E1A00" size="1" index="object"  name="{ObjectSpeed}">
+           <comment>Speed of movement</comment></address>
+  <address addr="7E1A01" size="1" index="object"  name="{ObjectMovementLength}">
+           <comment>Length of movement in script ticks</comment></address>
+  <address addr="7E1A80" size="1" index="object" >
+           <comment>Appears to be a 'is moving?' flag</comment></address>
+  <address addr="7E1A81" size="1" index="object"  name="{ObjectDrawingMode}">
+           <comment>Allocated? Drawing mode? 1=on, 0=off, $80=hide</comment></address>
+  <address addr="7E1B01" size="1" index="object"  name="{ObjectSolidProps}" />
+  <address addr="7E1B80" size="1" index="object" >
+           <comment>?flag</comment></address>
+  <address addr="7E1B81" size="1" index="object" >
+           <comment>?</comment></address>
+  <address addr="7E1C00" size="1" index="object"  name="{ObjectPriorityNumber}" />
+  <address addr="7E1C01" size="1" index="object"  name="{ObjectEventFlag}" />
+  <address addr="7E1C80" size="1" index="object"  name="{ObjectMoveProps}" />
+  <address addr="7E1C81" size="1" index="object" >
+           <comment>?</comment></address>
+  <!--
+    7F0200..7F0205
+    are used for dialog params, but they are also
+    used for various temporary meanings.
+  -->
+  <address addr="7F0580" size="2" index="object"  name="{ObjectPriority0Ptr}" >
+           <comment>Priority 0 code pointer (begins as 0)</comment></address>
+  <address addr="7F0600" size="2" index="object"  name="{ObjectPriority1Ptr}">
+           <comment>Priority 1 code pointer (begins as 0)</comment></address>
+  <address addr="7F0680" size="2" index="object"  name="{ObjectPriority2Ptr}">
+           <comment>Priority 2 code pointer (begins as 0)</comment></address>
+  <address addr="7F0700" size="2" index="object"  name="{ObjectPriority3Ptr}">
+           <comment>Priority 3 code pointer (begins as 0)</comment></address>
+  <address addr="7F0780" size="2" index="object"  name="{ObjectPriority4Ptr}">
+           <comment>Priority 4 code pointer (begins as 0)</comment></address>
+  <address addr="7F0800" size="2" index="object"  name="{ObjectPriority5Ptr}">
+           <comment>Priority 5 code pointer (begins as 0)</comment></address>
+  <address addr="7F0880" size="2" index="object"  name="{ObjectPriority6Ptr}">
+           <comment>Priority 6 code pointer (begins as 0)</comment></address>
+  <address addr="7F0900" size="2" index="object"  name="{ObjectPriority7Ptr}">
+           <comment>Priority 7 code pointer (begins as 0)</comment></address>
+  <address addr="7F0980" size="1" index="object" >
+           <comment>flag used by opcode $04</comment></address>
+  <address addr="7F0B80" size="1" index="object" >
+           <comment>Saved code pointer (see op $88)</comment></address>
+  <address addr="7E2980" size="1" name="{Member1ID}" />
+  <address addr="7E2981" size="1" name="{Member2ID}" />
+  <address addr="7E2982" size="1" name="{Member3ID}" />
+  <address addr="7E2983" size="1" name="{Member4ID}" />
+  <address addr="7E2984" size="1" name="{Member5ID}" />
+  <address addr="7E2985" size="1" name="{Member6ID}" />
+  <address addr="7E2986" size="1" name="{Member7ID}" />
+  <address addr="7E2987" size="1" name="{Member8ID}" />
+  <address addr="7E2988" size="1" name="{Member9ID}" />
+  <address addr="7F0000" size="1" name="{StoryLineCounter}" />
+  <address addr="7F0580" size="$1580">
+           <comment>RAM for the script</comment></address>
+  <address addr="7F0A00" size="1" index="object">
+           <comment>Possibly a 'dialog active' flag</comment></address>
+  <address addr="7F0A01" size="1" index="object">
+           <comment>Pause counter</comment></address>
+  <address addr="7F0A80" size="1" index="object" name="{Result}">
+           <comment>'Result' of various tests</comment></address>
+  <address addr="7F0B01" size="1" index="object">
+           <comment>used by op B7</comment></address>
+  <address addr="7F0B80" size="1" index="object">
+           <comment>Current pose number</comment></address>
+  <address addr="7F2000" size="$1700">
+           <comment>The event script data</comment></address>
+ </memory_addresses>
+
+ <!-- list of valid byte positions... needed for proper XSL formatting -->
+ <positions>
+  <value>0</value>
+  <value>1</value>
+  <value>2</value>
+  <value>3</value>
+  <value>4</value>
+  <value>5</value>
+  <value>6</value>
+  <value>7</value>
+  <value>8</value>
+  <value>9</value>
+  <value>10</value>
+  <value>11</value>
+  <value>12</value>
+  <value>13</value>
+  <value>14</value>
+  <value>15</value>
+  <value>16</value>
+  <value>17</value>
+  <value>18</value>
+ </positions>
+</location_event_commands>

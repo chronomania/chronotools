@@ -44,6 +44,7 @@ fclose($fw);
 include 'docmaker-temp.php';
 unlink('docmaker-temp.php');
 
+if(!isset($outset)) $outset='';
 if($outset) ob_start();
 
 ?>

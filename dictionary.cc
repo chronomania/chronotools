@@ -666,7 +666,7 @@ L"uningatar",L"an ",L"en ",L"on ",L"in ",
 NULL);
     num_restarts = dict.size();
     PreloadDict(dict, 
-L"      ",L"e ",L"ta",L"in",L"a ",L": ",L"is",L", ",L"en",L"t ",L"i ",
+L"      ",  L"e ",L"ta",L"in",L"a ",L": ",L"is",L", ",L"en",L"t ",L"i ",
 L"an",L"ä ",L"ll",L"ka",L"er",L"it",L"tä",L"   ",L"va",L"on",L"et",
 L"as",L"o ",L"es",L"tu",L"te",L"ik",L"al",L"ol",L"us",L"ut",L"ha",L"ma",
 L"el",L"or",L"ti",L"ar",L"si",L"ou",L"mm",L"sa",L"os",L"än",L"un",L"ku",L"d ",

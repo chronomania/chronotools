@@ -119,7 +119,12 @@ private:
                           const string& tablename,
                           const string& what);
     
-    /* Used to mark free space in the ROM because of code that is no longer used. */
+    /* Will mark free space in the ROM because of code that is no longer used.
+     * addr and bytes are self-explanatory, but "barrier" tells whether
+     * the block is still reachable. If barrier=true, the function
+     * will generate a BRA over the block. If the block is too small,
+     * it will be filled with NOP and nothing is freed.
+     */
     void ObsoleteCode(unsigned addr, unsigned bytes, bool barrier=false);
     
     void ApplyDictionary();
