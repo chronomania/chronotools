@@ -9,6 +9,7 @@
 #include "space.hh"
 #include "ctinsert.hh"
 #include "conjugate.hh"
+#include "o65.hh"
 
 using namespace std;
 
@@ -186,104 +187,56 @@ void Conjugatemap::Work(ctstring &s)
         Work(s, i);
 }
 
-#include "ctinsert.hh"
-#include "compiler.hh"
-
-namespace
-{
-    const SubRoutine GetConjugateCode(const Conjugatemap *const Conjugater)
-    {
-        SubRoutine result;
-        SNEScode &code = result.code;
-
-        SNEScode::RelativeBranch branchEnd = code.PrepareRelativeBranch();
-        SNEScode::RelativeBranch branchOut = code.PrepareRelativeBranch();
-        
-        const Conjugatemap::formlist &forms = Conjugater->GetForms();
-        
-        bool first=true;
-        
-        Conjugatemap::formlist::const_iterator i;
-        for(i=forms.begin(); i!=forms.end(); ++i)
-        {
-            if(!i->used) continue;
-            
-            SNEScode::RelativeBranch branchSkip = code.PrepareRelativeBranch();
-            code.Set16bit_M();
-            code.EmitCode(0xC9, i->prefix&255, i->prefix>>8); //cmp a, prefix
-            code.EmitCode(0xD0, 0);                           //bne
-            branchSkip.FromHere();
-            
-            if(true)
-            {
-                const ucs4string &funcname = i->func;
-
-                code.EmitCode(0x22, 0,0,0);
-                result.requires[funcname].insert(code.size() - 3);
-                
-                if(first)
-                {
-                    branchOut.ToHere();
-                    code.BitnessUnknown();
-                    code.Set16bit_M();
-                    
-                    // increment the pointer (skip the name printing)
-                    code.EmitCode(0xE6, 0x31);
-
-                    code.EmitCode(0x80, 0); // bra - jump out
-                    branchEnd.FromHere();
-                    
-                    first = false;
-                }
-                else
-                {
-                    code.EmitCode(0x80, 0); // bra - jump out
-                    branchOut.FromHere();
-                }
-            }
-            branchSkip.ToHere();
-            branchSkip.Proceed();
-        }
-
-        code.Set8bit_M();
-        SNEScode::FarToNearCall call = code.PrepareFarToNearCall();
-        call.Proceed(DialogDrawFunctionAddr | 0xC00000);   /* call */
-        
-        branchEnd.ToHere();
-        code.BitnessUnknown();
-        
-        // Ready to return
-        code.Set8bit_M();
-        code.EmitCode(0x6B);       //rtl
-        
-        branchEnd.Proceed();
-        branchOut.Proceed();
-
-        // This function will be called from.
-        code.AddCallFrom(ConjugatePatchAddress | 0xC00000);
-        
-        return result;
-    }
-}
-
 void insertor::GenerateConjugatorCode()
 {
-    string functionfn = WstrToAsc(GetConf("conjugator", "codefn"));
     ucs4string ConjFuncName  = GetConf("conjugator", "funcname");
-    
-    FILE *fp = fopen(functionfn.c_str(), "rt");
+    const string codefile = WstrToAsc(GetConf("conjugator", "file").SField());
+
+    FILE *fp = fopen(codefile.c_str(), "rb");
     if(!fp) return;
+
+    O65 conj_code;
     
-    fprintf(stderr, "Compiling %s...\n", functionfn.c_str());
-    FunctionList Functions = Compile(fp);
+    conj_code.Load(fp);
     fclose(fp);
     
-    SubRoutine conjugator = GetConjugateCode(Conjugater);
-    Functions.Define(ConjFuncName, conjugator);
-
-    Functions.RequireFunction(ConjFuncName);
+    const unsigned Code_Size = conj_code.GetCodeSize();
     
-    LinkAndLocate(Functions);
+    const unsigned Code_Address = freespace.FindFromAnyPage(Code_Size);
+    
+    fprintf(stderr, "Writing conjugater:"
+                    " %u(code)@ $%06X\n",
+        Code_Size,       0xC00000 | Code_Address
+           );
+    
+    conj_code.LocateCode(Code_Address | 0xC00000);
+
+    const Conjugatemap::formlist &forms = Conjugater->GetForms();
+    
+    Conjugatemap::formlist::const_iterator i;
+    for(i=forms.begin(); i!=forms.end(); ++i)
+    {
+        if(!i->used) continue;
+        
+        const ucs4string& funcname = i->func;
+        
+        string CodeName = "CODE_";
+        CodeName += WstrToAsc(funcname);
+        
+        conj_code.LinkSym(CodeName, i->prefix);
+    }
+    
+    conj_code.LinkSym("CHAR_OUTPUT_FUNC", 0xC00000 | GetConst(DIALOG_DRAW_FUNC_ADDR));
+    
+    SNEScode tmpcode;
+    tmpcode.AddCallFrom(ConjugatePatchAddress | 0xC00000);
+    tmpcode.YourAddressIs(conj_code.GetSymAddress(WstrToAsc(ConjFuncName)));
+    codes.push_back(tmpcode);
+
+    // Do not remove Verify() here!
+    // Otherwise you won't know what conjugations do you need!
+    conj_code.Verify();
+    PlaceData(conj_code.GetCode(), Code_Address);
 
     // SEP+JSR takes 5 bytes. We overwrote it with 4 bytes.
     PlaceByte(0xEA, ConjugatePatchAddress + 4); // NOP

@@ -147,6 +147,8 @@ Copypaste from the Makefile:
 # VERSION 1.6.5  is working on an assembler
 # VERSION 1.6.6  has an almost working assembler
 # VERSION 1.6.7  has a complete assembler, doesn't require xa65 anymore
+# VERSION 1.6.8  patch version
+# VERSION 1.6.9  conjugater now partially asm; its compiler is a separate program
 </pre>
 
 ", '1. Program list' => "

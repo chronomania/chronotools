@@ -5,7 +5,7 @@
  * Version 1.1.0 - Aug 18 2003, Sep 4 2003
  */
 
-#define DEBUG_FIXUPS 1
+#define DEBUG_FIXUPS 0
 
 #include <map>
 
@@ -533,12 +533,12 @@ const string O65::GetByteAt(unsigned addr) const
 
 const string O65::GetWordAt(unsigned addr) const
 {
-    char Buf[6]; sprintf(Buf, "$%02X%02X", text->space[addr], text->space[addr+1]);
+    char Buf[6]; sprintf(Buf, "$%02X%02X", text->space[addr+1], text->space[addr]);
     return Buf;
 }
 
 const string O65::GetLongAt(unsigned addr) const
 {
-    char Buf[8]; sprintf(Buf, "$%02X%02X%02X", text->space[addr], text->space[addr+1], text->space[addr+2]);
+    char Buf[8]; sprintf(Buf, "$%02X%02X%02X", text->space[addr+2], text->space[addr+1], text->space[addr]);
     return Buf;
 }

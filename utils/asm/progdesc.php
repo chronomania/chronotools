@@ -174,6 +174,7 @@ There are also some example assembler files
 Sep 23 2003; 0.0.0 started working with the project.<br>
 Sep 28 2003; 1.0.0 initial release. All features working.<br>
 Sep 29 2003; 1.1.0 added feature: branch labels.<br>
+Sep 29 2003; 1.2.0 bugfix: didn't resolve correctly when different scopes had a label with the same name; added warning options<br>
 
 ", 'copying:1. Copying' => "
 

@@ -68,7 +68,7 @@
 #
 # -- Begins here --
 
-# Returns true if the paramater is a vowel.
+# Returns true if the parameter is a vowel.
 FUNCTION IsVowel
 REG c
 ? c aeiouyäöåéAEIOUYÄÖÅÉ0123456

@@ -5,6 +5,7 @@
 #include <list>
 #include <vector>
 #include <string>
+#include <set>
 
 class Object
 {
@@ -100,6 +101,8 @@ private:
 
         // If unresolved, this is nonempty:
         std::string ref;
+        // On which scope level this was created on
+        unsigned level;
         
         // If resolved, ref is empty and these are seg:
         SegmentSelection targetseg;
@@ -120,6 +123,9 @@ private:
         SegmentSelection GetTargetSeg() const { return targetseg; }
         unsigned GetHomeOffset() const { return homeoffset; }
         unsigned GetTargetOffset() const { return targetoffset; }
+        
+        void SetScopeLevel(unsigned n) { level = n; }
+        unsigned GetLevel() const { return level; }
 
         void Resolved(SegmentSelection s, unsigned o);
 
@@ -140,12 +146,18 @@ private:
 private:
     Segment& GetSeg();
     
+    std::set<std::string> UnusedLabels;
+
     bool FindLabel(const std::string& s) const;
 
     bool FindLabel(const std::string& name, unsigned level,
                    SegmentSelection& seg, unsigned& result) const;
-
+    
+    void MarkLabelUsed(const std::string& s);
+    
     void CheckFixups();
+    
+    void ClearLabels(Segment& seg, unsigned level);
     
 public:
     Object(): CurScope(0), CurSegment(CODE)

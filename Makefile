@@ -71,6 +71,7 @@ DEPDIRS = utils/ utils/asm/ utils/asm/argh/
 # VERSION 1.6.6  has an almost working assembler
 # VERSION 1.6.7  has a complete assembler, doesn't require xa65 anymore
 # VERSION 1.6.8  patch version
+# VERSION 1.6.9  conjugater now partially asm; its compiler is a separate program
 
 OPTIM=-O3
 #OPTIM=-O0
@@ -79,7 +80,7 @@ OPTIM=-O3
 
 CXXFLAGS += -I. -Iutils/asm/argh
 
-VERSION=1.6.8
+VERSION=1.6.9
 ARCHFILES=utils/xray.cc utils/xray.h \
           utils/viewer.c \
           utils/vwftest.cc \
@@ -90,6 +91,7 @@ ARCHFILES=utils/xray.cc utils/xray.h \
           utils/makeips.cc \
           utils/unmakeips.cc \
           utils/comprtest.cc \
+          utils/compiler.cc \
           \
           ctcset.cc ctcset.hh \
           miscfun.cc miscfun.hh \
@@ -110,7 +112,6 @@ ARCHFILES=utils/xray.cc utils/xray.h \
           logfiles.cc logfiles.hh \
           conjugate.cc conjugate.hh \
           stringoffs.cc stringoffs.hh \
-          compiler.cc compiler.hh \
           symbols.cc symbols.hh \
           tgaimage.cc tgaimage.hh \
           ctdump.cc ctdump.hh \
@@ -118,6 +119,7 @@ ARCHFILES=utils/xray.cc utils/xray.h \
           signature.cc \
           vwf8.cc \
           ct-vwf8.a65 \
+          ct-conj.a65 \
           config.cc config.hh \
           confparser.cc confparser.hh \
           extras.cc extras.hh \
@@ -145,7 +147,9 @@ ARCHFILES=utils/xray.cc utils/xray.h \
           utils/asm/doc/o65.cc utils/asm/doc/o65.hh \
           utils/asm/doc/o65linker.cc utils/asm/doc/o65linker.hh \
           utils/asm/doc/dumpo65.cc utils/asm/doc/testi.cc \
-          utils/asm/doc/ct-vwf8.a65 utils/asm/doc/ct-moglogo.a65 \
+          utils/asm/doc/ct-vwf8.a65 \
+          utils/asm/doc/ct-moglogo.a65 \
+          utils/asm/doc/bitness.a65 \
           \
           utils/asm/argh/argh.cc utils/asm/argh/argh.hh \
           utils/asm/argh/argh.h utils/asm/argh/argh-c.inc \
@@ -213,16 +217,22 @@ ctinsert: \
 		fonts.o typefaces.o extras.o \
 		rom.o snescode.o signature.o \
 		conjugate.o vwf8.o o65.o o65linker.o \
-		compiler.o symbols.o \
-		logfiles.o settings.o \
+		symbols.o logfiles.o settings.o \
 		config.o confparser.o ctcset.o wstring.o
 	$(CXX) -o $@ $^ $(LDFLAGS) -lm
 
-ct-vwf8.o65: ct-vwf8.a65 utils/assemble
-	utils/assemble $< -o $@
+%.o65: %.a65 utils/assemble
+	utils/assemble -Wall -o $@ $< 
 
-ct-moglogo.o65: ct-moglogo.a65 utils/assemble
-	utils/assemble $< -o $@
+ct-conj1.a65: ct.code utils/compile
+	utils/compile $< $@
+
+ct-conj.o65: ct-conj1.a65 ct-conj.a65 utils/assemble
+	sed 's/#\([^a-z]\)/§\1/g;s/;.*//' < ct-conj1.a65 > .tmptmp
+	sed 's§<CONJUGATER>§#include ".tmptmp"§' < ct-conj.a65 | \
+		utils/assemble -E - | sed 's/§/#/g' | \
+		utils/assemble -Wall -o $@ -
+	rm -f .tmptmp
 
 utils/makeips: utils/makeips.cc
 	$(CXX) -o $@ $^
@@ -240,10 +250,15 @@ utils/sramdump: utils/sramdump.o config.o confparser.o ctcset.o wstring.o
 	$(CXX) $(CXXFLAGS) -g -O -Wall -W -pedantic -o $@ $^ $(LDFLAGS)
 utils/base62: utils/base62.cc
 	$(CXX) $(CXXFLAGS) -g -O -Wall -W -pedantic -o $@ $^ $(LDFLAGS)
+utils/compile: \
+		utils/compiler.o \
+		symbols.o \
+		config.o confparser.o ctcset.o wstring.o
+	$(CXX) $(CXXFLAGS) -g -O -Wall -W -pedantic -o $@ $^ $(LDFLAGS)
 utils/vwftest: \
 		utils/vwftest.o tgaimage.o \
 		fonts.o typefaces.o extras.o conjugate.o \
-		snescode.o symbols.o space.o logfiles.o compiler.o \
+		snescode.o symbols.o space.o logfiles.o \
 		config.o confparser.o ctcset.o wstring.o
 	$(CXX) $(CXXFLAGS) -g -O -Wall -W -pedantic -o $@ $^ $(LDFLAGS)
 utils/facegenerator: \
@@ -288,7 +303,8 @@ utils/asm/argh/libargh.a: FORCE
 
 ctpatch-hdr.ips ctpatch-nohdr.ips: \
 		ctinsert \
-		ct.txt ct.code ct.cfg ct-vwf8.o65 \
+		ct.txt ct.code ct.cfg \
+		ct-vwf8.o65 ct-moglogo.o65 ct-conj.o65 \
 		FIN/ct8fn.tga \
 		FIN/ct16fn.tga \
 		FIN/ct8fnV.tga \

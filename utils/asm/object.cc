@@ -3,6 +3,7 @@
 
 #include "assemble.hh"
 #include "object.hh"
+#include "warning.hh"
 
 void Object::Segment::AddByte(unsigned char byte)
 {
@@ -128,6 +129,11 @@ bool Object::FindLabel(const std::string& s) const
         || BssSeg.FindLabel(s);
 }
 
+void Object::MarkLabelUsed(const std::string& s)
+{
+    UnusedLabels.erase(s);
+}
+
 bool Object::FindLabel(const std::string& name, unsigned level,
                SegmentSelection& seg, unsigned& result) const
 {
@@ -147,7 +153,11 @@ void Object::CheckFixups()
     
     for(fixit i=Fixups.begin(); i!=Fixups.end(); ++i)
     {
+        // If already resolved, skip it
         if(i->IsResolved()) continue;
+        
+        // Skip it also, if it's not its time yet
+        if(i->GetLevel() < CurScope) continue;
         
         const std::string& ref = i->GetName();
         
@@ -157,6 +167,8 @@ void Object::CheckFixups()
             SegmentSelection seg;
             if(FindLabel(ref, scope, seg, addr))
             {
+                MarkLabelUsed(ref);
+                
                 i->Resolved(seg, addr);
                 break;
             }
@@ -169,6 +181,29 @@ void Object::StartScope()
     ++CurScope;
 }
 
+void Object::ClearLabels(Segment& seg, unsigned level)
+{
+    const Segment::LabelList& labels = seg.GetLabels(level);
+    
+    for(Segment::LabelList::const_iterator
+        i = labels.begin(); i !=labels.end(); ++i)
+    {
+        if(UnusedLabels.find(i->first) != UnusedLabels.end())
+        {
+            if(MayWarn("unused-label"))
+            {
+                std::fprintf(stderr,
+                    "Warning: Unused label '%s'\n",
+                        i->first.c_str());
+            }
+            UnusedLabels.erase(i->first);
+        }
+    }
+
+    seg.ClearLabels(level);
+}
+
+
 void Object::EndScope()
 {
     CheckFixups();
@@ -180,10 +215,10 @@ void Object::EndScope()
         // But never forget the global-level labels.
         if(CurScope > 1)
         {
-            CodeSeg.ClearLabels(CurScope-1);
-            DataSeg.ClearLabels(CurScope-1);
-            ZeroSeg.ClearLabels(CurScope-1);
-            BssSeg.ClearLabels(CurScope-1);
+            ClearLabels(CodeSeg, CurScope-1);
+            ClearLabels(DataSeg, CurScope-1);
+            ClearLabels(DataSeg, CurScope-1);
+            ClearLabels(BssSeg, CurScope-1);
         }
     }
     --CurScope;
@@ -193,6 +228,7 @@ void Object::AddFixup(char prefix, const std::string& ref, long value)
 {
     Fixup tmp(CurSegment, GetSeg().GetPos(),
               prefix, ref, value);
+    tmp.SetScopeLevel(CurScope);
     Fixups.push_back(tmp);
 }
 
@@ -218,6 +254,8 @@ void Object::DefineLabel(const std::string& label)
         std::fprintf(stderr, "Error: Label '%s' already defined\n", s.c_str());
         return;
     }
+    
+    UnusedLabels.insert(s);
     
     GetSeg().DefineLabel(scopenum, s);
 }

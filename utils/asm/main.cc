@@ -4,6 +4,7 @@
 
 #include "assemble.hh"
 #include "precompile.hh"
+#include "warning.hh"
 
 #include <argh.hh>
 
@@ -22,6 +23,7 @@ int main(int argc, const char* const *argv)
     Argh.AddLong("temps", 502).SetBool().SetDesc("Short for --submethod=temp");
     Argh.AddLong("pipes", 503).SetBool().SetDesc("Short for --submethod=pipe");
     Argh.AddLong("threads", 504).SetBool().SetDesc("Short for --submethod=thread");
+    Argh.AddString('W').SetDesc("Enable warnings", "<type>");
     
     Argh.StartParse(argc, argv);
     
@@ -81,16 +83,24 @@ int main(int argc, const char* const *argv)
             case 'o':
             {
                 const std::string& filename = Argh.GetString();
-                if(output)
+                if(filename != "-")
                 {
-                    std::fclose(output);
+                    if(output)
+                    {
+                        std::fclose(output);
+                    }
+                    output = std::fopen(filename.c_str(), "wb");
+                    if(!output)
+                    {
+                        std::perror(filename.c_str());
+                        return -1;
+                    }
                 }
-                output = std::fopen(filename.c_str(), "wb");
-                if(!output)
-                {
-                    std::perror(filename.c_str());
-                    return -1;
-                }
+                break;
+            }
+            case 'W':
+            {
+                EnableWarning(Argh.GetString());
                 break;
             }
             default:

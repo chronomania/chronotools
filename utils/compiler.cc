@@ -1,18 +1,21 @@
+#include <cstdio>
 #include <set>
 #include <map>
+#include <list>
 
-#include "compiler.hh"
 #include "wstring.hh"
 #include "config.hh"
 #include "ctcset.hh"
+#include "tristate"
 
 using namespace std;
 
 namespace
 {
+    FILE *OutFile;
+    
     class Assembler
     {
-        SubRoutine *cursub;
         ucs4string CurSubName;
         
         struct variable
@@ -33,17 +36,7 @@ namespace
         // code begun?
         bool started;
         
-        typedef SNEScode::RelativeLongBranch Branch;
-        
-        Branch *loopbegin;
-        Branch *loopend;
-        Branch *endbranch;
-
-        #define CODE cursub->code
-        
-        FunctionList functions;
-
-        typedef list<pair<unsigned, Branch> > branchlist_t;
+        typedef list<pair<unsigned, const char *> > branchlist_t;
         branchlist_t openbranches;
         
         class ConstState
@@ -88,9 +81,9 @@ namespace
             AHstate.Invalidate();
         }
         
-        void AddBranch(const Branch &b, unsigned ind)
+        void AddBranch(const char* name, unsigned ind)
         {
-            openbranches.push_back(make_pair(ind, b));
+            openbranches.push_back(make_pair(ind, name));
         }
         
         void FRAME_BEGIN()
@@ -98,20 +91,19 @@ namespace
             unsigned varcount = vars.size();
             /* Note: All vars will be initialized with A's current value */
         #if 0
-            if(varcount >= 2) CODE.Set16bit_M();
+            if(varcount >= 2) Emit_M(16);
             while(varcount >= 2)
             {
-                CODE.EmitCode(0x48); // PHA
+                Emit("pha");
                 varcount -= 2;
             }
         #endif
-            if(varcount >= 1) CODE.Set8bit_M();
+            if(varcount >= 1) Emit_M(8);
             while(varcount >= 1)
             {
-                CODE.EmitCode(0x48); // PHA
+                Emit("pha");
                 varcount -= 1;
             }
-            endbranch = new Branch(CODE.PrepareRelativeLongBranch());
 
             Invalidate_A();
             ALstate.Var.Set(MagicVarName);
@@ -119,21 +111,21 @@ namespace
         }
         void FRAME_END()
         {
-            endbranch->ToHere();
-            endbranch->Proceed();
-            delete endbranch; endbranch = NULL;
+            if(CurSubName.empty()) return;
+            
+            EmitLabel("End");
             
             unsigned varcount = vars.size();
-            if(varcount >= 2) CODE.Set16bit_X();
+            if(varcount >= 2) Emit_X(16);
             while(varcount >= 2)
             {
-                CODE.EmitCode(0x7A); // PLY
+                Emit("ply");
                 varcount -= 2;
             }
-            if(varcount >= 1) CODE.Set8bit_X();
+            if(varcount >= 1) Emit_X(8);
             while(varcount >= 1)
             {
-                CODE.EmitCode(0x7A); // PLY
+                Emit("ply");
                 varcount -= 1;
             }
             
@@ -162,24 +154,10 @@ namespace
             }
             
             FINISH_BRANCHES();
-            CODE.EmitCode(0x6B);     // RTL
-#if 0
-            fprintf(stderr, "Function %s done:\n", WstrToAsc(CurSubName).c_str());
-            fprintf(stderr, "Code:");
-            for(unsigned a=0; a<CODE.size(); ++a)
-                fprintf(stderr, " %02X", CODE[a]);
-            fprintf(stderr, "\n");
-#endif
+            Emit("rts");
         }
         void FINISH_BRANCHES()
         {
-            for(branchlist_t::iterator
-                a=openbranches.begin();
-                a!=openbranches.end();
-                ++a)
-            {
-                a->second.Proceed();
-            }
             openbranches.clear();
         }
         void CheckCodeStart()
@@ -209,23 +187,133 @@ namespace
             
             return i->second.stackpos;
         }
+        
+        void EmitStack(const char* op, unsigned index)
+        {
+            char Buf[64];
+            sprintf(Buf, "%.5s $%u,s", op, index);;
+            Emit(Buf);
+        }
+        void EmitImmed(const char* op, int value)
+        {
+            char Buf[64];
+            sprintf(Buf, "%.5s #$%X", op, value);
+            Emit(Buf);
+        }
+        void EmitCall(const ucs4string& name)
+        {
+            string tmp = "jsr ";
+            tmp += WstrToAsc(name);
+            Emit(tmp.c_str());
+            EmitUnknownBits();
+            EmitAnyBits();
+        }
+        void EmitFunction(const ucs4string& name)
+        {
+            string tmp = WstrToAsc(name);
+            tmp += ':';
+            Emit(tmp.c_str());
+            EmitUnknownBits();
+            EmitAnyBits();
+        }
+
+        enum { StateUnknown, StateSet, StateUnset, StateAnything }
+            StateX, StateM,
+            WantedX, WantedM;
+        bool newline;
+        unsigned indent;
+
+        void Flushbits()
+        {
+            unsigned rep = 0;
+            unsigned sep = 0;
+            if(WantedX != StateAnything && WantedX != StateX)
+            {
+                if(WantedX == StateSet) sep |= 0x10; else rep |= 0x10;
+                StateX = WantedX;
+            }
+            if(WantedM != StateAnything && WantedM != StateM)
+            {
+                if(WantedM == StateSet) sep |= 0x20; else rep |= 0x20;
+                StateM = WantedM;
+            }
+            if(sep & 0x10) { Emit(".xs"); EmitNoNewline(); }
+            if(sep & 0x20) { Emit(".as"); EmitNoNewline(); }
+            if(rep & 0x10) { Emit(".xl"); EmitNoNewline(); }
+            if(rep & 0x20) { Emit(".al"); EmitNoNewline(); }
+            if(sep)EmitImmed("sep", sep);
+            if(rep)EmitImmed("rep", rep);
+        }
+        
+        void Emit_M(unsigned bitness)
+        {
+            WantedM = bitness==16 ? StateUnset : StateSet;
+        }
+        void Emit_X(unsigned bitness)
+        {
+            WantedX = bitness==16 ? StateUnset : StateSet;
+        }
+        void EmitAnyBits()
+        {
+            WantedX = WantedM = StateAnything;
+            EmitUnknownBits();
+        }
+        void EmitUnknownBits()
+        {
+            StateX = StateM = StateUnknown;
+        }
+        void EmitLabel(const char* name)
+        {
+            string tmp = name;
+            tmp += ':';
+            Emit(tmp.c_str());
+            EmitUnknownBits();
+            EmitAnyBits();
+        }
+        void Emit(const char* code)
+        {
+            Flushbits();
+            
+            if(!strcmp(code, ".)")) if(indent > 0) --indent;
+            
+            if(newline) fputc('\n', OutFile);
+            else fprintf(OutFile, " : ");
+            
+            if(*code != '+' && newline)
+            {
+                fprintf(OutFile, "\t%*s", indent, "");
+            }
+            fprintf(OutFile, "%s", code);
+            newline = true;
+            
+            if(*code == 'c') newline = false;
+            if(strchr(code, ';')) newline = true;
+
+            if(!strcmp(code, ".(")) ++indent;
+        }
 
     public:
+        void EmitNoNewline()
+        {
+            newline = false;
+        }
+        
         const ucs4string LoopHelperName;
         const ucs4string OutcHelperName;
         const ucs4string MagicVarName;
         
         Assembler()
-        : cursub(NULL),
-          LoopHelperName(GetConf("compiler", "loophelpername")),
+        : LoopHelperName(GetConf("compiler", "loophelpername")),
           OutcHelperName(GetConf("compiler", "outchelpername")),
           MagicVarName(GetConf("compiler", "magicvarname"))
         {
+            StateX=StateM=WantedX=WantedM=StateAnything;
+            newline = true;
+            indent = 0;
         }
         
         void BRANCH_LEVEL(unsigned indent)
         {
-            if(!cursub) return;
             for(branchlist_t::iterator
                 a=openbranches.begin();
                 a!=openbranches.end();
@@ -235,7 +323,8 @@ namespace
                 {
                     Invalidate_A();
 
-                    a->second.ToHere();
+                    EmitLabel(a->second);
+                    Emit(".)");
                     a->first = 999; // prevent being reassigned
                 }
             }
@@ -245,21 +334,25 @@ namespace
             CurSubName = name;
             started = false;
             vars.clear();
+            
+            string def = "#ifndef OMIT_" + WstrToAsc(name);
+            Emit(def.c_str());
 
-            cursub = new SubRoutine;
+            EmitFunction(name);
+            Emit(".(");
             
             Invalidate_A();
         }
         void END_FUNCTION()
         {
-            if(!cursub) return;
             CheckCodeStart();
             FRAME_END();
-            
-            functions.Define(CurSubName, *cursub);
-            
-            delete cursub;
-            cursub = NULL;
+            if(!CurSubName.empty())
+            {
+            	Emit(".)");
+            	Emit("#endif");
+            	Emit("\n");
+            }
         }
         void DECLARE_VAR(const ucs4string &name)
         {
@@ -286,19 +379,17 @@ namespace
         void VOID_RETURN()
         {
             CheckCodeStart();
-
-            CODE.EmitCode(0x82, 0,0); // BRL- Jump to end
-            endbranch->FromHere();
-            CODE.BitnessAnything();
+            
+            Emit("brl End");
         }
         void BOOLEAN_RETURN(bool value)
         {
             CheckCodeStart();
             // emit flag, then return
             if(value)
-                CODE.EmitCode(0x18); // CLC - carry nonset = true
+                Emit("clc"); // CLC - carry nonset = true
             else
-                CODE.EmitCode(0x38); // SEC - carry set = false
+                Emit("sec"); // SEC - carry set = false
             VOID_RETURN();
         }
         void LOAD_VAR(const ucs4string &name)
@@ -325,17 +416,22 @@ namespace
                 {
                     if(!ALstate.Const.Is(0))
                     {
-                        CODE.Set8bit_M();
-                        CODE.EmitCode(0xA9, 0);
+                        Emit_M(16);
+                        Emit("lda #0");
+                        ALstate.Const.Set(0);
+                        ALstate.Var.Invalidate();
                         AHstate.Const.Set(0);
                         AHstate.Var.Invalidate();
                     }
-                    CODE.EmitCode(0xEB); // XBA
-                    AHstate = ALstate;
+                    else
+                    {
+                        Emit("xba");
+                        AHstate = ALstate;
+                    }
                 }
                 
-                CODE.Set8bit_M();
-                CODE.EmitCode(0xA3, stackpos); // LDA [00:s+n]
+                Emit_M(8);
+                EmitStack("lda", stackpos);
 
                 ALstate.Var.Set(name);
                 ALstate.Const.Invalidate();
@@ -362,8 +458,8 @@ namespace
             
             if(!AHstate.Const.Is(hi))
             {
-                CODE.Set16bit_M();
-                CODE.EmitCode(0xA9, val&255, val>>8); // LDA A, imm16
+                Emit_M(16);
+                EmitImmed("lda", val);
                 ALstate.Const.Set(lo);
                 ALstate.Var.Invalidate();
                 AHstate.Const.Set(hi);
@@ -373,8 +469,8 @@ namespace
             
             if(!ALstate.Const.Is(lo))
             {
-                CODE.Set8bit_M();
-                CODE.EmitCode(0xA9, lo); // LDA A, imm8
+                Emit_M(8);
+                EmitImmed("lda", lo);
                 ALstate.Const.Set(lo);
                 ALstate.Var.Invalidate();
             }
@@ -388,9 +484,9 @@ namespace
             {
                 CheckCodeStart();
                 // store A to var
-                CODE.Set8bit_M();
+                Emit_M(8);
                 unsigned stackpos = GetStackOffset(name);
-                CODE.EmitCode(0x83, stackpos); // STA [00:s+n]
+                EmitStack("sta", stackpos);
             }
             vars[name].written = true;
             
@@ -401,8 +497,9 @@ namespace
             CheckCodeStart();
             // inc var
             LOAD_VAR(name);
-            CODE.Set8bit_M();
-            CODE.EmitCode(0x1A); // INC A
+            EmitNoNewline();
+            Emit_M(8);
+            Emit("inc");
 
             ALstate.Var.Invalidate();
             ALstate.Const.Inc();
@@ -414,8 +511,9 @@ namespace
             CheckCodeStart();
             // dec var
             LOAD_VAR(name);
-            CODE.Set8bit_M();
-            CODE.EmitCode(0x3A); // DEC A
+            EmitNoNewline();
+            Emit_M(8);
+            Emit("dec");
 
             ALstate.Var.Invalidate();
             ALstate.Const.Dec();
@@ -426,14 +524,14 @@ namespace
         {
             CheckCodeStart();
             
-            CODE.Set16bit_X();
-            CODE.EmitCode(0xDA); // PHX
+            Emit_X(16);
+            Emit("phx");
             
             // leave A unmodified and issue call to function
-            cursub->CallSub(name);
+            EmitCall(name);
             
-            CODE.Set16bit_X();
-            CODE.EmitCode(0xFA); // PLX
+            Emit_X(16);
+            Emit("plx");
 
             Invalidate_A();
         }
@@ -443,12 +541,12 @@ namespace
             
             // process subblock if boolean set
             
-            Branch b = CODE.PrepareRelativeLongBranch();
-            CODE.EmitCode(0x90, 3);   // BCC- Jump to if true
-            CODE.EmitCode(0x82, 0,0); // BRL- Jump to "else"
-            b.FromHere();
-            CODE.BitnessAnything();
-            AddBranch(b, indent);
+            Emit(".(");
+            Emit("bcc +");
+            Emit("brl Else");
+            Emit("+");
+            //EmitAnyBits();
+            AddBranch("Else", indent);
         }
         void COMPARE_EQUAL(const ucs4string &name, unsigned indent)
         {
@@ -457,18 +555,18 @@ namespace
             unsigned stackpos = GetStackOffset(name);
             vars[name].read = vars[name].loaded = true;
             
-            CODE.Set8bit_M();
+            Emit_M(8);
             
             // process subblock if A is equal to given var
             // Note: we're not checking ALstate here, would be mostly useless check
-            CODE.EmitCode(0xC3, stackpos); // CMP [00:s+n]
-
-            Branch b = CODE.PrepareRelativeLongBranch();
-            CODE.EmitCode(0xF0, 3);   // BEQ- Jump to if eq
-            CODE.EmitCode(0x82, 0,0); // BRL- Jump to "else"
-            b.FromHere();
-            CODE.BitnessAnything();
-            AddBranch(b, indent);
+            EmitStack("cmp", stackpos);
+            
+            Emit(".(");
+            Emit("beq +");
+            Emit("brl Else");
+            Emit("+");
+            //EmitAnyBits(); 
+            AddBranch("Else", indent);
         }
         void COMPARE_ZERO(const ucs4string &name, unsigned indent)
         {
@@ -476,15 +574,16 @@ namespace
             
             // process subblock if var is zero
             LOAD_VAR(name);
+            EmitNoNewline();
 
             // Note: we're not checking ALstate here, would be mostly useless check
 
-            Branch b = CODE.PrepareRelativeLongBranch();
-            CODE.EmitCode(0xF0, 3);   // BEQ- Jump to if zero
-            CODE.EmitCode(0x82, 0,0); // BRL- Jump to "else"
-            b.FromHere();
-            CODE.BitnessAnything();
-            AddBranch(b, indent);
+            Emit(".(");
+            Emit("beq +");
+            Emit("brl Else");
+            Emit("+");
+            //EmitAnyBits();
+            AddBranch("Else", indent);
         }
         void COMPARE_GREATER(const ucs4string &name, unsigned indent)
         {
@@ -493,22 +592,21 @@ namespace
             unsigned stackpos = GetStackOffset(name);
             vars[name].read = vars[name].loaded = true;
 
-            CODE.Set8bit_M();
+            Emit_M(8);
             
             // process subblock if A is greater than given var
-            CODE.EmitCode(0xC3, stackpos); // CMP [00:s+n]
+            EmitStack("cmp", stackpos);
             
-            Branch b = CODE.PrepareRelativeLongBranch();
-            CODE.EmitCode(0xB0, 3);   // BCS- Jump to if greater or equal
-            CODE.EmitCode(0x82, 0,0); // BRL- Jump to "else"
-            b.FromHere();
-            CODE.BitnessAnything();
-            CODE.EmitCode(0xD0, 3);   // BCS- Jump to n-eq too (leaving only "greater")
-            CODE.EmitCode(0x82, 0,0); // BRL- Jump to "else"
-            b.FromHere();
-            CODE.BitnessAnything();
-            
-            AddBranch(b, indent);
+            Emit(".(");
+            Emit("bcs +");    // BCS- Jump to if greater or equal
+            Emit("brl Else"); // BRL- Jump to "else"
+            Emit("+");
+            //EmitAnyBits();
+            Emit("bne +");    // BNE- Jump to n-eq too (leaving only "greater")
+            Emit("brl Else"); // BRL- Jump to "else"
+            Emit("+");
+            //EmitAnyBits();
+            AddBranch("Else", indent);
         }
         void SELECT_CASE(const ucs4string &cset, unsigned indent)
         {
@@ -517,149 +615,97 @@ namespace
             CheckCodeStart();
 
             // process subblock if A is in any of given chars
-            Branch b = CODE.PrepareRelativeLongBranch();
             
-            SNEScode::RelativeBranch into = CODE.PrepareRelativeBranch();
+            Emit(".(");
+            
+            vector<ctchar> allowed;
+            
             for(unsigned a=0; a<cset.size(); ++a)
             {
-                // FIXME: Ensure we won't mess up with extrachars here.
                 // Names can only contain 8bit chars!
-
                 // Note: we're not checking ALstate here, would be mostly useless check
                 
                 ctchar c = getchronochar(cset[a], cset_12pix);
-                CODE.Set8bit_M();
-                CODE.EmitCode(0xC9, c);   // CMP A, imm8            
-                CODE.EmitCode(0xF0, 0);   // BEQ - Jump to if equal
-                into.FromHere();
+                allowed.push_back(c);
+            }
+            sort(allowed.begin(), allowed.end());
+            vector<unsigned> rangebegins, rangeends;
+            
+            const ctchar* begin = &*allowed.begin();
+            const ctchar* end   = &*allowed.end();
+            ctchar first=0, last=0; bool eka=true;
+            while(begin < end)
+            {
+                if(eka) { eka=false; NewRange: first=last=*begin++; continue; }
+                if(*begin == last+1) { last=*begin++; continue; }
                 
-                if(a+1 == cset.size())
+                rangebegins.push_back(first); rangeends.push_back(last);
+                goto NewRange;
+            }
+            rangebegins.push_back(first); rangeends.push_back(last);
+            bool used_next = false;
+            for(unsigned a=0; a<rangebegins.size(); ++a)
+            {
+                const bool last = (a+1) == rangebegins.size();
+                const ctchar c1 = rangebegins[a];
+                const ctchar c2 = rangeends[a];
+                Emit_M(8);
+                if(last)
                 {
-                    // If this was the last comparison, do the "else" here.
-                    CODE.EmitCode(0x82, 0,0); // BRL- Jump to "else"
-                    b.FromHere();
-                    CODE.BitnessAnything();
+                    if(c1 == c2)
+                    {
+                        EmitImmed("cmp", c1); Emit("bne Else");
+                    }
+                    else
+                    {
+                        EmitImmed("cmp", c1);   Emit("bcc Else");
+                        if(c2 < 0xFF)
+                        {
+                            EmitImmed("cmp", c2+1); Emit("bcs Else");
+                        }
+                    }
+                }
+                else
+                {
+                    if(c1 == c2)
+                    {
+                    	used_next = true;
+                        EmitImmed("cmp", c1); Emit("beq +");
+                    }
+                    else
+                    {
+                        EmitImmed("cmp", c1);   Emit("bcc Else");
+                        if(c2 >= 0xFF)
+                        {
+                        	used_next = true;
+                            Emit("bra +");
+                        }
+                        else
+                        {
+                            EmitImmed("cmp", c2+1); Emit("bcc +");
+                        }
+                    }
                 }
             }
-            into.ToHere();
-            into.Proceed();
-            AddBranch(b, indent);
+            if(used_next) Emit("+");
+            //EmitAnyBits();
+            AddBranch("Else", indent);
         }
-        
-        void CHARNAME_LOOP_BIG_BLOCK()
-        {
-            // X talteen tämän touhun ajaksi:
-            CODE.Set16bit_X();
-            CODE.Set16bit_M();
-            CODE.EmitCode(0xDA); // PHX
-             // Huom. Tässä välissä eivät muuttujaviittaukset toimi.
-             SNEScode::RelativeBranch branchNonEpoch = CODE.PrepareRelativeBranch();
-             SNEScode::RelativeBranch branchEpoch    = CODE.PrepareRelativeBranch();
-             SNEScode::RelativeBranch branchNonMember= CODE.PrepareRelativeBranch();
-             SNEScode::RelativeBranch branchMemberSkip=CODE.PrepareRelativeBranch();
-             CODE.EmitCode(0xA9,0x00,0x00);  // lda $0000
-             CODE.EmitCode(0xA8);            // tay
-             CODE.Set8bit_M();
-             CODE.EmitCode(0xA7, 0x31); // Id of the name
-             CODE.EmitCode(0xC9, 0x20); // CMP A,$20 - If it's Epoch
-             CODE.EmitCode(0xD0, 0);    // BNE - jump over if not
-             branchNonEpoch.FromHere();
-             // Yes, Epoch.
-             CODE.Set16bit_M();
-             CODE.EmitCode(0xA9, 0x4D, 0x2C);    // Load Epoch address $2C4D
-             CODE.EmitCode(0x80, 0);             // BRA - jump to character name handling
-             branchEpoch.FromHere();
-             CODE.BitnessAnything();
-
-             branchNonEpoch.ToHere();
-             // No Epoch
-             CODE.Set8bit_M();
-             CODE.EmitCode(0xC9, 0x1B); // CMP A,$1B - if it's < [member1]
-             CODE.EmitCode(0x90, 0);    // BCS - jump over if is <
-             branchNonMember.FromHere();
-             // Yes, it's [member1](1B) or [member2](1C) or [member3](1D).
-             CODE.Set8bit_M();
-             CODE.EmitCode(0x38,0xE9,0x1B);      // vähennetään $1B (sec; sbc A,$1B)
-             CODE.EmitCode(0xAA);                // TAX
-             CODE.EmitCode(0xBF,0x80,0x29,0x7E); // haetaan memberin numero
-             CODE.EmitCode(0x80, 0);    // BRA - skip to mul2
-             branchMemberSkip.FromHere();
-             CODE.BitnessAnything();
-             
-             branchNonMember.ToHere();
-             // No member
-             CODE.Set8bit_M();
-             CODE.EmitCode(0x38, 0xE9, 0x13); // vähennetään $13 (sec; sbc A,$13)
-             branchMemberSkip.ToHere();
-             CODE.Set8bit_M();
-             CODE.EmitCode(0x0A, 0xAA);       // ASL A; TAX
-             CODE.Set16bit_M();
-             CODE.EmitCode(0xBF,0xD8,0x5F,0xC2); // haetaan pointteri nimeen
-             branchEpoch.ToHere();
-             CODE.Set16bit_M();
-             CODE.EmitCode(0x8D,0x37,0x02);      // tallennetaan offset ($0237)
-             CODE.Set8bit_M();
-             CODE.EmitCode(0xA9,0x7E);           // tallennetaan segment ($0239)
-             CODE.EmitCode(0x8D,0x39,0x02);
-             branchEpoch.Proceed();
-             branchNonEpoch.Proceed();
-             branchMemberSkip.Proceed();
-             branchNonMember.Proceed();
-            CODE.Set16bit_X();
-            CODE.Set16bit_M();
-            CODE.EmitCode(0xFA); // PLX
-            CODE.EmitCode(0x9B); // TXY
-            
-            // Hakee merkin hahmon nimestä
-            CODE.Set16bit_M();
-            CODE.EmitCode(0xB7,0x37);              //LDA [long[$00:D+$37]+Y]
-            CODE.EmitCode(0x29, 0xFF, 0x00);       //AND A, $00FF
-
-            Invalidate_A();
-            AHstate.Const.Set(0);
-            AHstate.Var.Invalidate();
-        }
-        void OUTBYTE_BIG_CODE()
-        {
-            CODE.Set16bit_X();
-            CODE.Set16bit_M();
-            
-            CODE.EmitCode(0xDA);                   //PHX
-            
-             // Tässä välissä eivät muuttujaviittaukset toimi.
-             CODE.EmitCode(0x85, 0x35);            //STA [$00:D+$35]
-             SNEScode::FarToNearCall call = CODE.PrepareFarToNearCall();
-             
-             // call back the routine
-             call.Proceed(0xC25DC4);
-             CODE.BitnessUnknown();
-
-            CODE.Set16bit_X();
-            CODE.EmitCode(0xFA); // PLX
-
-            Invalidate_A();
-        }
-        
         void START_CHARNAME_LOOP()
         {
             CheckCodeStart();
             
-            loopbegin = new Branch(CODE.PrepareRelativeLongBranch());
-            loopend   = new Branch(CODE.PrepareRelativeLongBranch());
-            
-            // Alkuarvo loopille
-            CODE.Set16bit_M();
-            CODE.EmitCode(0xA9,0x00,0x00);      // LDA $0000
-            CODE.EmitCode(0xAA);                // TAX
-            
-            loopbegin->ToHere();
-            
-            cursub->CallSub(LoopHelperName);
-            
-            CODE.EmitCode(0xD0, 3);    // bne - jatketaan looppia, jos nonzero
-            CODE.EmitCode(0x82, 0,0);  // brl - jump pois loopista.
-            loopend->FromHere();
-            CODE.BitnessAnything();
+            Emit(".(");
+            Emit("; Init loop");
+            Emit_M(16);
+            Emit_X(16);
+            Emit("ldx #0");
+            EmitLabel("LoopBegin");
+            EmitCall(LoopHelperName);
+            Emit("; Continue loop if nonzero");
+            Emit("bne +");
+            Emit("brl LoopEnd");
+            Emit("+");
 
             Invalidate_A();
 
@@ -672,38 +718,28 @@ namespace
         {
             CheckCodeStart();
             
-            CODE.EmitCode(0xE8);      // inx
-            CODE.EmitCode(0x82, 0,0); // brl - jump back to loop
-            loopbegin->FromHere();
-            CODE.BitnessAnything();
-            
-            // loop end is here.        
-            loopend->ToHere();
+            Emit("inx");
+            Emit("brl LoopBegin");
+            EmitLabel("LoopEnd");
 
             Invalidate_A();
             
-            loopbegin->Proceed();
-            loopend->Proceed();
-            
-            delete loopbegin; loopbegin = NULL;
-            delete loopend;   loopend   = NULL;
+            Emit(".)");
         }
         void OUT_CHARACTER()
         {
             CheckCodeStart();
             // outputs character in A
             
-            cursub->CallSub(OutcHelperName);
+            EmitCall(OutcHelperName);
 
             Invalidate_A();
         }
         #undef CODE
-        
-        const FunctionList &GetFunctions() const { return functions; }
     };
 }
 
-const FunctionList Compile(FILE *fp)
+void Compile(FILE *fp)
 {
     Assembler Asm;
     
@@ -760,9 +796,15 @@ const FunctionList Compile(FILE *fp)
             continue;
         }
         
-        if(words[0][0] == '#') continue;
-        
         Asm.BRANCH_LEVEL(indent);
+        
+        if(words[0][0] == '#')
+        {
+            string s = "; ";
+            s += WstrToAsc(Buf).c_str() + 1;
+            fprintf(OutFile, "%s\n", s.c_str());
+            continue;
+        }
         
         const string firstword = WstrToAsc(words[0]);
         
@@ -776,7 +818,11 @@ const FunctionList Compile(FILE *fp)
         }
         else if(firstword == "RETURN")
         {
-            if(words.size() > 1) Asm.LOAD_VAR(words[1]);
+            if(words.size() > 1)
+            {
+                Asm.LOAD_VAR(words[1]);
+                Asm.EmitNoNewline();
+            }
             Asm.VOID_RETURN();
         }
         else if(firstword == "VAR")
@@ -796,17 +842,26 @@ const FunctionList Compile(FILE *fp)
         else if(firstword == "CALL_GET")
         {
             Asm.CALL_FUNC(words[1]);
+            Asm.EmitNoNewline();
             Asm.STORE_VAR(words[2]);
         }
         else if(firstword == "IF")
         {
-            if(words.size() > 2) Asm.LOAD_VAR(words[2]);
+            if(words.size() > 2)
+            {
+                Asm.LOAD_VAR(words[2]);
+                Asm.EmitNoNewline();
+            }
             Asm.CALL_FUNC(words[1]);
             Asm.COMPARE_BOOL(indent);
         }
         else if(firstword == "CALL")
         {
-            if(words.size() > 2) Asm.LOAD_VAR(words[2]);
+            if(words.size() > 2)
+            {
+                Asm.LOAD_VAR(words[2]);
+                Asm.EmitNoNewline();
+            }
             Asm.CALL_FUNC(words[1]);
         }
         else if(firstword == "INC")
@@ -820,6 +875,7 @@ const FunctionList Compile(FILE *fp)
         else if(firstword == "LET")
         {
             Asm.LOAD_VAR(words[2]);
+            Asm.EmitNoNewline();
             Asm.STORE_VAR(words[1]);
         }
         else if(firstword == "=")
@@ -829,12 +885,14 @@ const FunctionList Compile(FILE *fp)
             else
             {
                 Asm.LOAD_VAR(words[2]);
+                Asm.EmitNoNewline();
                 Asm.COMPARE_EQUAL(words[1], indent);
             }
         }
         else if(firstword == ">")
         {
             Asm.LOAD_VAR(words[2]);
+            Asm.EmitNoNewline();
             Asm.COMPARE_GREATER(words[1], indent);
         }
         else if(firstword == "?")
@@ -853,6 +911,7 @@ const FunctionList Compile(FILE *fp)
         else if(firstword == "OUT")
         {
             Asm.LOAD_VAR(words[1]);
+            Asm.EmitNoNewline();
             Asm.OUT_CHARACTER();
         }
         else if(firstword == "FUNCTION")
@@ -864,16 +923,29 @@ const FunctionList Compile(FILE *fp)
             fprintf(stderr, "  ERROR: What's this? '%s'\n", firstword.c_str());
     }
     Asm.END_FUNCTION();
+}
 
-    Asm.START_FUNCTION(Asm.LoopHelperName);
-    Asm.CHARNAME_LOOP_BIG_BLOCK();
-    Asm.VOID_RETURN();
-    Asm.END_FUNCTION();
+int main(int argc, const char *const *argv)
+{
+    if(argc != 3)
+    {
+        fprintf(stderr, "Error: Wrong usage.\n"
+                        "Correct usage:\n"
+                        " utils/compiler <codefile> <asmfile>\n"
+                        "This program reads <codefile> and produces <asmfile>.\n"
+               );
+        return -1;
+    }
+    FILE *fp = fopen(argv[1], "rt"); if(!fp) { perror(argv[1]); return -1; }
+    FILE *fo = fopen(argv[2], "wt"); if(!fo) { perror(argv[2]); return -1; }
     
-    Asm.START_FUNCTION(Asm.OutcHelperName);
-    Asm.OUTBYTE_BIG_CODE();
-    Asm.VOID_RETURN();
-    Asm.END_FUNCTION();
+    OutFile = fo;
     
-    return Asm.GetFunctions();
+    Compile(fp);
+    OutFile = NULL;
+    
+    fclose(fp);
+    fclose(fo);
+    
+    return 0;
 }

@@ -20,6 +20,8 @@ namespace
         {0x0258E0, 0x0258E9},    // Byte: Dictionary table segment
         {0x0258E9, 0x0258F2},    // Byte: Dictionary table segment (duplicate)
         {1,        0       },    // Bool: Use width-table
+        
+        {0x025DC4, 0x025D88}     // Where is the function that draws text
     };
     
     unsigned Lang=0;

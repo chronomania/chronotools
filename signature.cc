@@ -8,7 +8,7 @@
 void insertor::GenerateSignatureCode()
 {
     const ucs4string& imagefn = GetConf("signature", "image");
-    const ucs4string& codefn  = GetConf("signature", "code");
+    const ucs4string& codefn  = GetConf("signature", "file");
     unsigned call_addr        = GetConf("signature", "call");
     unsigned segment          = GetConf("signature", "page");
     

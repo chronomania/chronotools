@@ -1,4 +1,3 @@
-#include "compiler.hh"
 #include "ctinsert.hh"
 #include "config.hh"
 #include "settings.hh"
@@ -21,10 +20,10 @@ void insertor::GenerateVWF8code()
     vwf8_code.Load(fp);
     fclose(fp);
     
-    const unsigned code_size = vwf8_code.GetCodeSize();
+    const unsigned Code_Size = vwf8_code.GetCodeSize();
     
     vector<freespacerec> Organization(3);
-    Organization[0].len = code_size;
+    Organization[0].len = Code_Size;
     Organization[1].len = widths.size();
     Organization[2].len = tiletab.size();
     
@@ -42,7 +41,7 @@ void insertor::GenerateVWF8code()
                     " %u(code)@ $%06X\n",
         widths.size(),   0xC00000 | WidthTab_Address,
         tiletab.size(),  0xC00000 | TileTab_Address,
-        code_size,       0xC00000 | Code_Address
+        Code_Size,       0xC00000 | Code_Address
            );
 
     vwf8_code.LinkSym("WIDTH_ADDR",   WidthTab_Address | 0xC00000);

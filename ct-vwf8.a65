@@ -69,7 +69,6 @@
 #define SET_8_BIT_AX()  sep #$30 : .xs : .as
 #define SET_16_BIT_AX() rep #$30 : .xl : .al
 
-
 ; Input for DrawS_*bit functions:
 ;    Ah:Y = Address of the string
 ;    Al   = Maximum length of the string (nul terminates earlier)

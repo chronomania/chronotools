@@ -4,11 +4,6 @@ namespace
     // Where will the conjugater call go
     const unsigned ConjugatePatchAddress = 0x0258C2;
     
-    // Where is the function that draws text
-    const unsigned DialogDrawFunctionAddr = 0x025DC4;
-    
-    const unsigned GetItemNameFunctionAddr= 0x02F2E2;
-    
     // The rest of the address list is in ctdump.cc
 }
 
@@ -25,7 +20,8 @@ enum
     DICT_OFFSET,
     DICT_SEGMENT1,
     DICT_SEGMENT2,
-    VWF12_WIDTH_USE
+    VWF12_WIDTH_USE,
+    DIALOG_DRAW_FUNC_ADDR
 };
 
 unsigned GetConst(unsigned which);
