@@ -90,8 +90,8 @@ public:
     const ucs4string puts(const string &s) const;
 };
 
-extern ucs4string AscToWstr(const string &s);
-extern string WstrToAsc(const ucs4string &s);
+extern const ucs4string AscToWstr(const string &s);
+extern const string WstrToAsc(const ucs4string &s);
 extern char WcharToAsc(ucs4 c);
 extern ucs4 AscToWchar(char c);
 extern long atoi(const ucs4 *p, int base=10);

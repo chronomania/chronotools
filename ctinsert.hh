@@ -10,6 +10,7 @@
 #include "fonts.hh"
 #include "snescode.hh"
 #include "ctcset.hh"
+#include "conjugate.hh"
 
 using namespace std;
 
@@ -32,6 +33,8 @@ public:
     void PatchROM(class ROM &ROM);
 
     void ReportFreeSpace();
+    
+    insertor();
     
 private:
     struct stringdata
@@ -60,6 +63,8 @@ private:
 
     freespacemap freespace;
     
+    class Conjugatemap Conjugatemap;
+    
     void WriteDictionary(class ROM &ROM);
     void WriteStrings(class ROM &ROM);
     void Write8pixfont(class ROM &ROM) const;
@@ -73,7 +78,7 @@ private:
     void ApplyDictionary();
     void RebuildDictionary();
     
-    const ctstring ParseScriptEntry(const ucs4string &input, const stringdata &model) const;
+    const ctstring ParseScriptEntry(const ucs4string &input, const stringdata &model);
     const ctstring WrapDialogLines(const ctstring &dialog) const;
     
     // Get list of pages having zstrings

@@ -340,6 +340,10 @@ namespace
         expression_reg_Y() { }
         expression_reg_Y(int s) : expression_register(s) { }
     };
+    struct expression_reg_D: public expression_register
+    {
+        expression_reg_D() { }
+    };
     struct expression_reg_B: public expression_nonconst
     {
         expression_reg_B()
@@ -571,21 +575,6 @@ namespace
         }
     };
 
-    struct var_state
-    {
-        bool is_const;
-        unsigned char const_value;
-        
-        var_state() : is_const(false)
-        {
-        }
-        void SetConst(unsigned char n)
-        {
-            is_const    = true;
-            const_value = n;
-        }
-    };
-
     // Variable name -> size-expr
     typedef hash_map<ucs4string, expr_p> vardefmap_t;
     // Variable name translations
@@ -597,6 +586,19 @@ namespace
     {
         codelump code;
         vardefmap_t vars;
+        
+        void Dump() const
+        {
+            fprintf(stderr, "--Code(%u)--\n", code.nodes.size());
+            code.Dump();
+            fprintf(stderr, "--Variables(%u)--\n", vars.size());
+            for(vardefmap_t::const_iterator i=vars.begin(); i!=vars.end(); ++i)
+            {
+                fprintf(stderr, "  %s: ", WstrToAsc(i->first).c_str());
+                i->second->Dump();
+                fprintf(stderr, "\n");
+            }
+        }
     };
 
     bool OptimizeExpression
@@ -651,13 +653,22 @@ namespace
         tester(p, true, false);
         return tester.changes;
     }
-    
-    struct context
+
+    class Compiler
     {
+    private:
+        struct program& prog;
+    public:
+        Compiler(struct program& p): prog(p) { }
+    private:
+        codelump result;
+        
+        transmap_t newnames;
+
         // Variable name -> variable content
         varstatemap_t state;
         // Variable name -> variable size
-        vardefmap_t   vars;
+        //vardefmap_t   vars;
         
         void OptimizeExpressions()
         {
@@ -671,18 +682,7 @@ namespace
                 if(!changes) break;
             }
         }
-    };
 
-    class Compiler
-    {
-    private:
-        struct program& prog;
-    public:
-        codelump result;
-        
-        Compiler(struct program& p): prog(p) { }
-    private:
-        transmap_t newnames;
     private:
         const ucs4string GenerateVarName() const
         {
@@ -735,25 +735,16 @@ namespace
             }
             return 3;
         }
-        
-        void SetVarContent(context& ctx, const ucs4string& varname, expr_p value)
-        {
-            const ucs4string newname = GenerateVarName();
-        
-            ctx.state[newname] = value;
-            newnames[varname]  = newname;
-        }
-        
-        void CheckVarAccess(context& ctx,
-                            const ucs4string& varname,
+
+        void CheckVarAccess(const ucs4string& varname,
                             const vector<code_p>& lines,
                             unsigned firstline)
         {
             // Check if the variable should be loaded.
             
-            varstatemap_t::iterator i = ctx.state.find(varname);
+            varstatemap_t::iterator i = state.find(varname);
             
-            if(i == ctx.state.end())
+            if(i == state.end())
             {
                 // Probably already loaded.
                 return;
@@ -784,18 +775,27 @@ namespace
                 
                 result.nodes.push_back(let);
                 
-                ctx.state.erase(i);
+                state.erase(i);
             }
         }
+
     public:
-        void Compile(context& ctx, codelump& lump)
+        void SetVarContent(const ucs4string& varname, expr_p value)
+        {
+            const ucs4string newname = GenerateVarName();
+        
+            state[newname]    = value;
+            newnames[varname] = newname;
+        }
+
+        void Compile(codelump& lump)
         {
             vector<code_p>& lines = lump.nodes;
             
             fprintf(stderr, "--Compiling\n");
             lump.Dump();
             fprintf(stderr, "--State:\n");
-            for(varstatemap_t::const_iterator i=ctx.state.begin(); i!=ctx.state.end(); ++i)
+            for(varstatemap_t::const_iterator i=state.begin(); i!=state.end(); ++i)
             {
                 fprintf(stderr, "- %s: ", WstrToAsc(i->first).c_str());
                 i->second->Dump();
@@ -814,13 +814,12 @@ namespace
                 
                 struct expr_name_converter: public expr_callback
                 {
-                    context& ctx;
                     transmap_t& newnames;
                     codelump& result;
                     hash_set<ucs4string> vars_read;
                     
-                    expr_name_converter(context& c, transmap_t& n, codelump& r)
-                    : ctx(c), newnames(n), result(r) { }
+                    expr_name_converter(transmap_t& n, codelump& r)
+                    : newnames(n), result(r) { }
                     
                     virtual void operator() (expr_p& p, bool isread, bool iswrite)
                     {
@@ -847,7 +846,7 @@ namespace
                             }
                         }
                     }
-                } expr_name_converter(ctx, newnames, result);
+                } expr_name_converter(newnames, result);
                 
                 line->ForAllExpr(&expr_name_converter);
                 
@@ -856,14 +855,14 @@ namespace
                     i!=expr_name_converter.vars_read.end();
                     ++i)
                 {
-                    CheckVarAccess(ctx, *i, lines, linenumber);
+                    CheckVarAccess(*i, lines, linenumber);
                 }
 
                 struct expr_converter: public expr_callback
                 {
-                    context& ctx;
+                    const varstatemap_t& state;
                     
-                    expr_converter(context &c): ctx(c) { }
+                    expr_converter(const varstatemap_t& s): state(s) { }
                     
                     virtual void operator() (expr_p& p, bool isread, bool iswrite)
                     {
@@ -871,17 +870,15 @@ namespace
                         {
                             if(expression_var *v = dynamic_cast<expression_var *> (&*p))
                             {
-                                varstatemap_t::const_iterator i = ctx.state.find(v->varname);
-                                if(i != ctx.state.end())
+                                varstatemap_t::const_iterator i = state.find(v->varname);
+                                if(i != state.end())
                                 {
                                     p = i->second;
                                 }
                             }
-                            
-                            //OptimizeExpression(p, ctx.state);
                         }
                     }
-                } expr_converter(ctx);
+                } expr_converter(state);
                 
                 expression_binary_swappable* swappable = NULL;
                 codenode_alter_var* altervar = NULL;
@@ -931,7 +928,7 @@ namespace
                             value->ForAllSubExpr(&expr_converter);
                         }
 
-                        SetVarContent(ctx, var->varname, value);
+                        SetVarContent(var->varname, value);
                     }
                     continue;
                 }
@@ -973,15 +970,15 @@ namespace
                     {
                         fprintf(stderr, "Checking var '%s' write: ",
                             WstrToAsc(*i).c_str());
-                        if(ctx.state.find(*i) != ctx.state.end())
-                            ctx.state[*i]->Dump();
+                        if(state.find(*i) != state.end())
+                            state[*i]->Dump();
                         fprintf(stderr, "\n");
-                        CheckVarAccess(ctx, *i, cmd->content.nodes, 0);
+                        CheckVarAccess(*i, cmd->content.nodes, 0);
                     }
                     
                     const codelump outer = result; result.nodes.clear();
 
-                    Compile(ctx, cmd->content);
+                    Compile(cmd->content);
 
                     fprintf(stderr, "--Aliases AFTER:\n");
                     for(transmap_t::const_iterator i=newnames.begin(); i!=newnames.end(); ++i)
@@ -1004,7 +1001,7 @@ namespace
                 {
                     const codelump outer = result; result.nodes.clear();
                     
-                    Compile(ctx, cmd->content);
+                    Compile(cmd->content);
                     
                     codenode_if_eq *newcmd = new codenode_if_eq(*cmd);
                     newcmd->content = result;
@@ -1019,7 +1016,7 @@ namespace
                 {
                     const codelump outer = result; result.nodes.clear();
                     
-                    Compile(ctx, cmd->content);
+                    Compile(cmd->content);
                     
                     codenode_if_gte *newcmd = new codenode_if_gte(*cmd);
                     newcmd->content = result;
@@ -1038,10 +1035,7 @@ namespace
     {
         Compiler comp(prog);
         
-        context ctx;
-        
-        #define def_global(name, expr) SetVarContent(ctx, AscToWstr(name), expr)
-        
+        #define def_global(name, expr) comp.SetVarContent(AscToWstr(name), expr)
 
         parammap_t params;
         def_global("TILEBASE_SEG",  new expression_const(0x11));
@@ -1054,7 +1048,10 @@ namespace
         def_global("OsoiteOffs",    new expression_reg_Y);
         def_global("attr",          new expression_mem
                      (new expression_const(0x00),
-                      new expression_const(0x27E),
+                      new expression_sum(
+                       new expression_const(0x7E),
+                       new expression_reg_D
+                                        ),
                       expression::o_word));
         def_global("tiledest_offs", new expression_reg_X);
         def_global("tiledest_seg",  new expression_reg_B);
@@ -1064,9 +1061,10 @@ namespace
 
         def_global("attr",          new expression_const(0x15));
         
-        comp.Compile(ctx, prog.code);
+        prog.Dump();
         
-        comp.result.Dump();
+        // FIXME: "vars" not handled here
+        comp.Compile(prog.code);
     }
 
 
@@ -1087,7 +1085,7 @@ int main(void)
     inf.Read(fp);
     fclose(fp);
     
-    const ucs4string main_name = AscToWstr("draw_str");
+    ucs4string main_name = AscToWstr("draw_str");
     
     program prog = ParseFile(inf, main_name);
     

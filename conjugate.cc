@@ -1,13 +1,13 @@
 #include <cstdio>
 #include <cstdarg>
 
-#include "conjugate.hh"
 #include "settings.hh"
 #include "symbols.hh"
 #include "miscfun.hh"
 #include "ctcset.hh"
 #include "config.hh"
 #include "space.hh"
+#include "ctinsert.hh"
 
 using namespace std;
 
@@ -159,15 +159,14 @@ void Conjugatemap::Work(ctstring &s)
 
 namespace
 {
-    const SubRoutine GetConjugateCode(const insertor &ins)
+    const SubRoutine GetConjugateCode(const Conjugatemap &Conjugatemap)
     {
-        Conjugatemap Conjugatemap(ins);
-        
         SubRoutine result;
         SNEScode &code = result.code;
 
         SNEScode::RelativeBranch branchEnd = code.PrepareRelativeBranch();
         SNEScode::RelativeBranch branchOut = code.PrepareRelativeBranch();
+        SNEScode::RelativeBranch branchOverCursive = code.PrepareRelativeBranch();
         
         const Conjugatemap::formlist &forms = Conjugatemap.GetForms();
         
@@ -215,6 +214,22 @@ namespace
             branchSkip.Proceed();
         }
         
+        static unsigned const curs_begin = GetConf("font", "cursive_begin");
+        static unsigned const curs_end   = GetConf("font", "cursive_end");
+        
+        code.Set16bit_M();
+        code.EmitCode(0xC9, curs_begin&255, curs_begin>>8); //cmp a, curs_begin
+        code.EmitCode(0x90, 0);                             //bcc out ( < )
+        branchOverCursive.FromHere();
+        code.EmitCode(0xC9, curs_end&255, curs_end>>8);     //cmp a, curs_end
+        code.EmitCode(0xB0, 0);                             //bcs out ( >= )
+        branchOverCursive.FromHere();
+        
+        // Cursive text - rewind one pixel per character!
+        code.EmitCode(0xC6, 0x34); // dec [$00:D+$34]
+        
+        branchOverCursive.ToHere();
+
         code.Set8bit_M();
         SNEScode::FarToNearCall call = code.PrepareFarToNearCall();
         call.Proceed(DialogDrawFunctionAddr | 0xC00000);   /* call */
@@ -228,6 +243,7 @@ namespace
         
         branchEnd.Proceed();
         branchOut.Proceed();
+        branchOverCursive.Proceed();
 
         // This function will be called from.
         code.AddCallFrom(ConjugatePatchAddress | 0xC00000);
@@ -248,7 +264,7 @@ void insertor::GenerateConjugatorCode()
     FunctionList Functions = Compile(fp);
     fclose(fp);
     
-    SubRoutine conjugator = GetConjugateCode(*this);
+    SubRoutine conjugator = GetConjugateCode(this->Conjugatemap);
     Functions.Define(ConjFuncName, conjugator);
 
     Functions.RequireFunction(ConjFuncName);

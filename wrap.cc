@@ -1,7 +1,6 @@
 #include <cstdio>
 
 #include "ctcset.hh"
-#include "conjugate.hh"
 #include "ctinsert.hh"
 #include "logfiles.hh"
 #include "symbols.hh"
@@ -9,10 +8,7 @@
 
 const ctstring insertor::WrapDialogLines(const ctstring &dialog) const
 {
-    static Conjugatemap Conjugatemap(*this);
-    
     ctstring input = dialog;
-    Conjugatemap.Work(input);
     
     // Standard defines that this'll be initialized upon the first call.
     static unsigned MaxTextWidth   = GetConf("wrap", "maxtextwidth");

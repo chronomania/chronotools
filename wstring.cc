@@ -181,7 +181,7 @@ const ucs4string wstringIn::puts(const string &s) const
     return result;
 }
 
-ucs4string AscToWstr(const string &s)
+const ucs4string AscToWstr(const string &s)
 {
     ucs4string result;
     for(unsigned a=0; a<s.size(); ++a)
@@ -189,7 +189,7 @@ ucs4string AscToWstr(const string &s)
     return result;
 }
 
-string WstrToAsc(const ucs4string &s)
+const string WstrToAsc(const ucs4string &s)
 {
     string result;
     for(unsigned a=0; a<s.size(); ++a)

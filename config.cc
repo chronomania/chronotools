@@ -1,4 +1,5 @@
 #include <cstdio>
+#include <cerrno>
 
 #include "ctcset.hh"
 #include "wstring.hh"
@@ -102,7 +103,18 @@ namespace
             FILE *fp = fopen("ct.cfg", "rt");
             if(!fp)
             {
-                perror("ct.cfg");
+                if(errno == ENOENT)
+                {
+                    fprintf(stderr,
+                        "The configuration file 'ct.cfg' doesn't exist.\n"
+                        "You should have one if you are dumping any other ROMs\n"
+                        "than the standard english Chrono Trigger ROM, or if\n"
+                        "you are inserting scripts to ROMs.\n"
+                        "Ask Bisqwit how to create one.\n"
+                        "Using internal defaults for now.\n");
+                }
+                else
+                    perror("ct.cfg");
                 
                 fp = fopen("ct-cfg.tmp", "wt");
                 fwrite(DefaultConfig, strlen(DefaultConfig), 1, fp);

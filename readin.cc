@@ -7,6 +7,7 @@
 #include "ctcset.hh"
 #include "miscfun.hh"
 #include "symbols.hh"
+#include "config.hh"
 
 using namespace std;
 
@@ -72,7 +73,7 @@ namespace
     set<ucs4string> rawcodes;
 }
 
-const ctstring insertor::ParseScriptEntry(const ucs4string &input, const stringdata &model) const
+const ctstring insertor::ParseScriptEntry(const ucs4string &input, const stringdata &model)
 {
     ucs4string content = input;
     
@@ -86,6 +87,8 @@ const ctstring insertor::ParseScriptEntry(const ucs4string &input, const stringd
                        : is_fixed  ? 2
                        : 0);
 
+    bool is_cursive = false;
+    
     if(is_dialog)
     {
         content = str_replace
@@ -156,6 +159,13 @@ const ctstring insertor::ParseScriptEntry(const ucs4string &input, const stringd
         {
             // No code, translate byte.
             ctchar chronoc = getchronochar(c);
+            
+            if(is_cursive)
+            {
+                static const unsigned cursive_offset = GetConf("font", "cursive_offset");
+                chronoc += cursive_offset;
+            }
+            
             result += chronoc;
             continue;
         }
@@ -188,6 +198,9 @@ const ctstring insertor::ParseScriptEntry(const ucs4string &input, const stringd
         static const ucs4string code12= AscToWstr("[stat,");
         static const ucs4string code0 = AscToWstr("[gfx");
         
+        static const ucs4string begin_cursive = AscToWstr("[i]");
+        static const ucs4string end_cursive   = AscToWstr("[/i]");
+        
         if(false) {} // for indentation...
         else if(is_dialog && code.compare(0, delay.size(), delay) == 0)
         {
@@ -203,6 +216,14 @@ const ctstring insertor::ParseScriptEntry(const ucs4string &input, const stringd
         {
             result += (ctchar)0x12;
             result += (ctchar)0x01;
+        }
+        else if(is_dialog && code.compare(0, begin_cursive.size(), begin_cursive) == 0)
+        {
+            is_cursive = true;
+        }
+        else if(is_dialog && code.compare(0, end_cursive.size(), end_cursive) == 0)
+        {
+            is_cursive = false;
         }
         else if(is_8pix && code.compare(0, code0.size(), code0) == 0)
         {
@@ -243,7 +264,10 @@ const ctstring insertor::ParseScriptEntry(const ucs4string &input, const stringd
     }
     
     if(is_dialog)
+    {
+        this->Conjugatemap.Work(result);
         result = WrapDialogLines(result);
+    }
 
     return result;
 }
@@ -436,6 +460,10 @@ void insertor::LoadFile(FILE *fp)
                 // Dictionary record
                 
                 const Symbols::type &symbols = Symbols.GetMap(16);
+                
+                /* FIXME: This symbol parsing is
+                 * DUPLICATE from ParseScriptEntry()
+                 */
 
                 ctstring dictword;
                 for(unsigned a=0; a<content.size(); ++a)

@@ -1,3 +1,6 @@
+#ifndef bqtConjugateHH
+#define bqtConjugateHH
+
 #include <list>
 #include <vector>
 
@@ -12,7 +15,7 @@ using std::vector;
 class Conjugatemap
 {
 public:
-    explicit Conjugatemap(const insertor &ins);
+    explicit Conjugatemap(const class insertor &ins);
 
     void Work(ctstring &s);
 
@@ -40,7 +43,7 @@ private:
 
     void AddForm(const form &form) { forms.push_back(form); }
     void Work(ctstring &s, formit fit);
-    void Load(const insertor &ins);
+    void Load(const class insertor &ins);
 public:
     const formlist &GetForms() const { return forms; }
     bool IsConjChar(ctchar c) const;
@@ -48,3 +51,5 @@ public:
 };
 
 const vector<ctchar> GetConjugateBytesList();
+
+#endif

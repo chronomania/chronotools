@@ -25,8 +25,27 @@ public:
     void RestoreState(const State& s) { ptr = s.p; }
     
     bool IsLast() const { return (ptr+1) == tokens.size(); }
-    const ucs4string& Get() { return tokens[ptr++]; }
-    const ucs4string& Peek() const { return tokens[ptr]; }
+    const ucs4string& Get()
+    {
+        static const ucs4string empty;
+        if(ptr >= tokens.size()) return empty;
+        
+        /*
+        fprintf(stderr, "Got token: ");
+        fprintf(stderr, "'%s'\n", WstrToAsc(tokens[ptr]).c_str());
+        */
+        return tokens[ptr++];
+    }
+    const ucs4string& Peek() const
+    {
+        static const ucs4string empty;
+        if(ptr >= tokens.size()) return empty;
+        /*
+        fprintf(stderr, "Peeked token: ");
+        fprintf(stderr, "'%s'\n", WstrToAsc(tokens[ptr]).c_str());
+        */
+        return tokens[ptr];
+    }
     
     void Read(FILE *fp)
     {
@@ -95,6 +114,8 @@ public:
             tokens.push_back(curtoken);
             CLEARSTR(curtoken);
         }
+        fprintf(stderr, "Read %u tokens.\n", tokens.size());
+        ptr = 0;
     }
 };
 
@@ -501,13 +522,13 @@ namespace
         funcmap_t funcs;
     };
 
-    void TransformCalls(const file& f, codelump& code, codelump& result)
+    void TransformCalls(file& f, codelump& code, codelump& result)
     {
         vector<code_p>& lines = code.nodes;
         for(unsigned a=0; a<lines.size(); ++a)
         {
             code_p& line = lines[a];
-            if(const codenode_do* cmd = dynamic_cast<const codenode_do*> (&*line))
+            if(codenode_do* cmd = dynamic_cast<codenode_do*> (&*line))
             {
                 codelump tmpresult;
                 TransformCalls(f, cmd->content, tmpresult);
@@ -516,7 +537,7 @@ namespace
                 result.nodes.push_back(tmp);
                 continue;
             }
-            if(const codenode_if_eq* cmd = dynamic_cast<const codenode_if_eq*> (&*line))
+            if(codenode_if_eq* cmd = dynamic_cast<codenode_if_eq*> (&*line))
             {
                 codelump tmpresult;
                 TransformCalls(f, cmd->content, tmpresult);
@@ -525,7 +546,7 @@ namespace
                 result.nodes.push_back(tmp);
                 continue;
             }
-            if(const codenode_if_gte* cmd = dynamic_cast<const codenode_if_gte*> (&*line))
+            if(codenode_if_gte* cmd = dynamic_cast<codenode_if_gte*> (&*line))
             {
                 codelump tmpresult;
                 TransformCalls(f, cmd->content, tmpresult);
@@ -534,7 +555,7 @@ namespace
                 result.nodes.push_back(tmp);
                 continue;
             }
-            if(const codenode_call* cmd = dynamic_cast<const codenode_call*> (&*line))
+            if(codenode_call* cmd = dynamic_cast<codenode_call*> (&*line))
             {
                 parammap_t::const_iterator i;
                 
@@ -546,10 +567,11 @@ namespace
                     tmp->value  = i->second;
                     result.nodes.push_back(tmp);
                 }
-                TransformCalls(f, f.find(cmd->funcname)->code, result);
+                
+                TransformCalls(f, f.funcs[cmd->funcname].code, result);
                 continue;
             }
-            result.push_back(line);
+            result.nodes.push_back(line);
         }
     }
 }
@@ -604,11 +626,11 @@ const program ParseFile(infile& inf, const ucs4string& main_name)
             TransformVariables(tmpfun.code, funcname, tmpfile.vars, tmpfun.vars);
             
             tmpfile.funcs.insert(make_pair(funcname, tmpfun));
-            
+/*
             fprintf(stderr, "--%s--\n", WstrToAsc(funcname).c_str());
             tmpfun.Dump();
             fprintf(stderr, "\n\n");
-
+*/
             continue;
         }
         fprintf(stderr, "ParseFile: Expected "
@@ -619,16 +641,19 @@ const program ParseFile(infile& inf, const ucs4string& main_name)
     
     program result;
     
-    TransformCalls(file, funcs[main_name].code, result.code);
+    TransformCalls(tmpfile, tmpfile.funcs[main_name].code, result.code);
     
-    for(vardefmap_t::const_iterator i=file.vars.begin(); i!=file.vars.end(); ++i)
-        result.vars[TransformGlobal(i->first)] = i->second;
+    fprintf(stderr, "Number of globals: %u\n", tmpfile.vars.size());
+    for(vardefmap_t::const_iterator i=tmpfile.vars.begin(); i!=tmpfile.vars.end(); ++i)
+        result.vars.insert(make_pair(TransformGlobal(i->first), i->second));
     
-    for(funcmap_t::const_iterator j=file.funcs.begin(); j!=file.funcs.end(); ++j)
+    for(funcmap_t::const_iterator j=tmpfile.funcs.begin(); j!=tmpfile.funcs.end(); ++j)
     {
         const func& func = j->second;
+        fprintf(stderr, "Number of vars in function %s: %u\n",
+            WstrToAsc(j->first).c_str(), func.vars.size());
         for(vardefmap_t::const_iterator i=func.vars.begin(); i!=func.vars.end(); ++i)
-            result.vars[TransformLocal(i->first, j->first)] = i->second;
+            result.vars.insert(make_pair(TransformLocal(i->first, j->first), i->second));
     }
     
     return result;

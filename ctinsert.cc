@@ -101,6 +101,10 @@ void insertor::ReportFreeSpace()
     freespace.Report();
 }
 
+insertor::insertor(): Conjugatemap(*this)
+{
+}
+
 int main(void)
 {
     std::set_terminate (__gnu_cxx::__verbose_terminate_handler);
