@@ -21,9 +21,9 @@ SMALL    {font-size:70%}
   <h1>Chrono Trigger translation development system</h1>
   <h2 class=level2> 0. Contents </h2>
   
-  This is the documentation of chronotools-1.1.8.
-<div class=toc><table cellspacing=0 cellpadding=0 class=toc><tr><td width="50%" valign=middle align=left nowrap class=toc>&nbsp;&nbsp;&nbsp;1. <a href="#h0">Purpose</a><br>&nbsp;&nbsp;&nbsp;2. <a href="#h1">Program list</a><br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;2.1. <a href="#h2">ctdump</a><br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;2.2. <a href="#h3">ctinsert</a><br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;2.3. <a href="#h4">other</a><br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;2.3.1. <a href="#h5">makeips</a><br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;2.3.2. <a href="#h6">unmakeips</a><br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;2.3.3. <a href="#h7">xray</a><br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;2.3.4. <a href="#h8">viewer</a><br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;2.3.5. <a href="#h9">spacefind</a><br></td>
-<td width="50%" valign=middle align=left nowrap class=toc>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;2.3.6. <a href="#h10">taipus.rb</a><br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;2.3.7. <a href="#h11">sramdump</a><br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;2.3.8. <a href="#h12">base62</a><br>&nbsp;&nbsp;&nbsp;3. <a href="#h13">Technical limitations</a><br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;3.1. <a href="#h14">Space</a><br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;3.2. <a href="#h15">Font</a><br>&nbsp;&nbsp;&nbsp;4. <a href="#h16">Copying</a><br>&nbsp;&nbsp;&nbsp;5. <a href="#h17">Requirements</a><br>&nbsp;&nbsp;&nbsp;6. <a href="#h18">Changelog</a><br>&nbsp;&nbsp;&nbsp;7. <a href="#h19">See also</a><br>&nbsp;&nbsp;&nbsp;8. <a href="#download">Downloading</a><br></td>
+  This is the documentation of chronotools-1.1.9.
+<div class=toc><table cellspacing=0 cellpadding=0 class=toc><tr><td width="50%" valign=middle align=left nowrap class=toc>&nbsp;&nbsp;&nbsp;1. <a href="#h0">Purpose</a><br>&nbsp;&nbsp;&nbsp;2. <a href="#h1">Program list</a><br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;2.1. <a href="#h2">ctdump</a><br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;2.2. <a href="#h3">ctinsert</a><br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;2.3. <a href="#h4">other</a><br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;2.3.1. <a href="#h5">makeips</a><br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;2.3.2. <a href="#h6">unmakeips</a><br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;2.3.3. <a href="#h7">xray</a><br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;2.3.4. <a href="#h8">viewer</a><br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;2.3.5. <a href="#h9">spacefind</a><br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;2.3.6. <a href="#h10">taipus.rb</a><br></td>
+<td width="50%" valign=middle align=left nowrap class=toc>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;2.3.7. <a href="#h11">sramdump</a><br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;2.3.8. <a href="#h12">base62</a><br>&nbsp;&nbsp;&nbsp;3. <a href="#h13">Useful features</a><br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;3.1. <a href="#h14">Name conjugation</a><br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;3.2. <a href="#h15">Font/dictionary skew</a><br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;3.3. <a href="#h16">Automatic paragraph wrapping</a><br>&nbsp;&nbsp;&nbsp;4. <a href="#h17">Copying</a><br>&nbsp;&nbsp;&nbsp;5. <a href="#h18">Requirements</a><br>&nbsp;&nbsp;&nbsp;6. <a href="#h19">Changelog</a><br>&nbsp;&nbsp;&nbsp;7. <a href="#h20">See also</a><br>&nbsp;&nbsp;&nbsp;8. <a href="#download">Downloading</a><br></td>
 </tr></table></div><H2 class="level2"><a name="h0"></a>1. Purpose</H2><div class="level2">
 
 Tools aiding in
@@ -45,15 +45,12 @@ Sample of produced script:<pre class=smallerpre
 >;Battle tutorials, Zeal stuff, party stuff
 *z;39 pointerstrings (12pix font)
 $HSs4:
-Taistelun aikana jokaisen iskun[nl]
-   teho vaihtelee iskun mukaan.
+Taistelun aikana jokaisen iskun teho vaihtelee iskun mukaan.
 $HSs6:
-Ensinnäkin, voit iskeä myös[nl]
-   useampaa, kuin yhtä vihollista[nl]
-   kerralla.
+Ensinnäkin, voit iskeä myös useampaa, kuin
+   yhtä vihollista kerralla.
 $HSs8:
-Voit esimerkiksi tähdätä tätä[nl]
-   hirviötä...</pre>
+Voit esimerkiksi tähdätä tätä hirviötä...</pre>
 (Dumped from
 <a href="http://hallucinat.ionstream.fi/teemu/engine.html?page=13"
 >inf's Finnish Chrono Trigger translation</a>).
@@ -108,53 +105,53 @@ I.e. $C2:5D4C -> rRhU and vice versa.<br>
 This development system uses base62 in the script
 dumps to reduce the amount of code written.
 
-</div><H2 class="level2"><a name="h13"></a>3. Technical limitations</H2><div class="level2">
+</div><H2 class="level2"><a name="h13"></a>3. Useful features</H2><div class="level2">
 
-</div><H3 class="level3"><a name="h14"></a>3.1. Space</H3><div class="level3">
+</div><H3 class="level3"><a name="h14"></a>3.1. Name conjugation</H3><div class="level3">
 
-The ROM doesn't have much space for text.<br>
-It does apply a compression method, but some text
-compresses better than some other.<br>
-This might cause problems if too much different words are used
-in the script, but it isn't a real problem preventing translation.
+It currently has support for conjugating names on fly.<br>
+It's very important in Finnish, where you can't just
+add "'s" to anything to make a genitive.<br>
+For example, genitive of name Matti is "Matin",
+and genitive of name Crono is "Cronon".<br>
+The conjugator-engine is a textual script file
+translated to 65c816 assembly on demand.
 
-</div><H3 class="level3"><a name="h15"></a>3.2. Font</H3><div class="level3">
+</div><H3 class="level3"><a name="h15"></a>3.2. Font/dictionary skew</H3><div class="level3">
 
-The 12-pix font has only 96 characters available.<br>
-Originally the characters are arranged like this:<br>
-<img src="http://bisqwit.iki.fi/src/chronotools-16en.png"
-     alt="(Chrono Trigger English 12pix font)"
-     width=834 height=80
-><br clear=all>
-My font contains currently this slightly rearranged character map:<br>
-<img src="http://bisqwit.iki.fi/src/chronotools-16fi.png"
-     alt="(Chrono Trigger Finnish 12pix font)"
-     width=834 height=80
-><br clear=all>
-You can imagine in your mind, about which characters you would replace
-with another to get support for Thai for example...
+In the script code, there are different 223 bytes available for the script.
 <p>
-Similarly the 8-pix font has undergone some changes.<br>
-It has lots more redundant space though.<br>
-Originally:<br>
-<img src="http://bisqwit.iki.fi/src/chronotools-8en.png"
-     alt="(Chrono Trigger English 8pix font)"
-     width=578 height=146
-><br clear=all>
-Bisqwit's Finnish 8pix Chrono Trigger font:<br>
-<img src="http://bisqwit.iki.fi/src/chronotools-8fi.png"
-     alt="(Chrono Trigger Finnish 8pix font)"
-     width=578 height=146
-><br clear=all>
-
+In normal Chrono Trigger,
+<ul>
+ <li>127 of the are assigned to the dictionary</li>
+ <li>96 of them are visible symbols.</li>
+</ul>
+Which means that you can only have 96 different characters.
+take A-Z, a-z, 0-9 and punctuation symbols and count how
+many you have left for umlauts and accents.
 <p>
-If you are translating to a language that utilizes lots of
-different symbols, you might want to try to base on the
+My insertor however allows to skew that ratio so
+that the dictionary may be smaller and font bigger.
+<p>
+However, shrinking the dictionary means that the script
+compresses worse, and could probably not fit in the ROM.<br>
+It might still be a lifesaver for someone
+doing an Estonian or Portuguese translation.
+<p>
+If you are translating to a language that utilizes <em>lots</em> of
+different symbols, like Chinese, you might want to try to base on the
 Japanese version instead. This utility pack bases on the
 English version.<br>
 (Sorry, I can't help you with the Japanese ROM.)
 
-</div><H2 class="level2"><a name="h16"></a>4. Copying</H2><div class="level2">
+</div><H3 class="level3"><a name="h16"></a>3.3. Automatic paragraph wrapping</H3><div class="level3">
+
+The program takes automatically care of proper line
+lengths, so you don't have to risk running into unexpected
+too-long-lines or making too short lines in paranoia.<br>
+You can force line breaks, but you don't have to.
+
+</div><H2 class="level2"><a name="h17"></a>4. Copying</H2><div class="level2">
 
 If you're interested, throw me email.<br>
 But <em>read the <a href="/ctfin/">translation project page</a> first</em>!
@@ -166,13 +163,19 @@ I'm not publishing files, because it's a well-known
 fact that many people in ROM hacking scene aren't
 very respectful to copyrights.
 
-</div><H2 class="level2"><a name="h17"></a>5. Requirements</H2><div class="level2">
+</div><H2 class="level2"><a name="h18"></a>5. Requirements</H2><div class="level2">
 
 A POSIX compatible system (like Linux or FreeBSD)
 with GNU tools (GNU make, GCC etc) is required.<br>
 These programs are archived as C++ source code only.
+<p>
+I don't have a microsoft-operating system here on my hand,
+so if you are an unfortunate user stuck with some Windows,
+you just have to find a development system
+(<a href="http://www.google.com/search?q=cygwin">cygwin</a>?)
+and compile the program on it to use it.
 
-</div><H2 class="level2"><a name="h18"></a>6. Changelog</H2><div class="level2">
+</div><H2 class="level2"><a name="h19"></a>6. Changelog</H2><div class="level2">
 
 Copypaste from the Makefile:
 
@@ -206,9 +209,10 @@ Copypaste from the Makefile:
 # VERSION 1.1.6  fixed an allocation bug and optimized the code generator a bit
 # VERSION 1.1.7  some translation, more asm changes
 # VERSION 1.1.8  syntax changes in the compiler, optimizations
+# VERSION 1.1.9  support for font/dictionary size skew
 </pre>
 
-</div><H2 class="level2"><a name="h19"></a>7. See also</H2><div class="level2">
+</div><H2 class="level2"><a name="h20"></a>7. See also</H2><div class="level2">
 
 <ul>
  <li><a href="http://bisqwit.iki.fi/ctfin/">Bisqwit's Finnish Chrono Trigger translation project</a>
@@ -222,9 +226,9 @@ Copypaste from the Makefile:
    is at <a href="http://iki.fi/bisqwit/source/chronotools.html">http://iki.fi/bisqwit/source/chronotools.html</a>.<br>
    Check there for new versions.
 </div> <p align=right><small>Generated from
-       <code>progdesc.php</code> (last updated: Tue,  1 Jul 2003 14:07:04 +0300)<br>
+       <code>progdesc.php</code> (last updated: Wed,  2 Jul 2003 02:05:25 +0300)<br>
   with <code>docmaker.php</code> (last updated: Thu, 13 Feb 2003 15:11:29 +0200)<br>
-  at Tue,  1 Jul 2003 14:07:14 +0300</small>
+  at Wed,  2 Jul 2003 02:05:43 +0300</small>
  </p>
 </body>
 </html>

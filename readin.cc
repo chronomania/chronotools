@@ -11,14 +11,10 @@
 
 using namespace std;
 
+#include "settings.hh"
+
 namespace
 {
-    // Ilmoita missä wrapattiin
-    const bool warn_wraps   = false;
-    
-    // Tarkista, aiheuttiko wrap ongelmia
-    const bool verify_wraps = true;
-    
     // How many pixels at max
     const unsigned MaxTextWidth =
       // 256 is the width of the screen
@@ -168,18 +164,19 @@ namespace
                     col += w5width;
                     break;
                 }
-                case 0xA0 ... 0xFF:
-                {
-                    unsigned width = ins.GetFont12width(c);
-                    col += width;
-                    break;
-                }
+                default:
+                    if(c >= (0x100-Num_Characters))
+                    {
+                        unsigned width = ins.GetFont12width(c);
+                        col += width;
+                        break;
+                    }
             }
             if(col >= MaxTextWidth)
             {
                 /*
                 fprintf(stderr, "\nWrap (col=%3u,row=%3u), result=%s\n",
-                    col,row,ins.DispString(result).c_str());
+                    col,row,DispString(result).c_str());
                 */
                 wraps = true;
                 
@@ -198,7 +195,7 @@ namespace
                 ++row;
                 /*
                 fprintf(stderr,  "Now  (col=%3u,row=%3u), result=%s\n",
-                    col,row,ins.DispString(result).c_str());
+                    col,row,DispString(result).c_str());
                 */
             }
             if(row >= 4) linecount_error = true;
@@ -211,7 +208,7 @@ namespace
                 "\n"
                 "Error: Too long text\n"
                 "In: %s\n",
-                    ins.DispString(result).c_str());
+                    DispString(result).c_str());
         }
         
         if(wraps)
@@ -223,8 +220,8 @@ namespace
                   "Warning: Done some wrapping\n"
                   "In:  %s\n"
                   "Out: %s\n",
-                      ins.DispString(dialog).c_str(),
-                      ins.DispString(result).c_str()
+                      DispString(dialog).c_str(),
+                      DispString(result).c_str()
                  );
             }
             if(verify_wraps)
@@ -233,13 +230,13 @@ namespace
             }
         }
         
-        Conjugatemap.Work(result, ins.DispString(result));
+        Conjugatemap.Work(result, DispString(result));
         
 #if 0
         fprintf(stdout, "Rivita('%s')\n"
                         "->     '%s'\n",
-            ins.DispString(dialog).c_str(),
-            ins.DispString(result).c_str());
+            DispString(dialog).c_str(),
+            DispString(result).c_str());
 #endif
         
         return result;
@@ -308,7 +305,7 @@ void insertor::LoadFile(FILE *fp)
             }
             else if(header.size() > 3 && header[0] == 'd')
             {
-                sscanf(header.c_str()+1, "%X:%u", &dictaddr, &dictsize);
+                sscanf(header.c_str()+1, "%u", &dictsize);
             }
             else
             {

@@ -29,10 +29,11 @@ include Makefile.sets
 # VERSION 1.1.6  fixed an allocation bug and optimized the code generator a bit
 # VERSION 1.1.7  some translation, more asm changes
 # VERSION 1.1.8  syntax changes in the compiler, optimizations
+# VERSION 1.1.9  support for font/dictionary size skew
 
 OPTIM=-O3
 
-VERSION=1.1.8
+VERSION=1.1.9
 ARCHFILES=xray.c xray.h \
           viewer.c \
           ctcset.cc ctcset.hh \
@@ -40,7 +41,7 @@ ARCHFILES=xray.c xray.h \
           space.cc space.hh \
           wstring.cc wstring.hh \
           readin.cc \
-          autoptr \
+          settings.hh \
           rom.cc rom.hh \
           fonts.cc fonts.hh \
           conjugate.cc conjugate.hh \
@@ -97,13 +98,13 @@ sramdump: sramdump.cc wstring.o
 base62: base62.cc
 	$(CXX) -g -O -Wall -W -pedantic -o $@ $^
 
-ct.txt: ctdump chrono-dumpee.smc
-	./ctdump >ct_tmp.txt || rm -f ct_tmp.txt && false
-	mv ct_tmp.txt ct.txt
+#ct.txt: ctdump chrono-dumpee.smc
+#	./ctdump >ct_tmp.txt || rm -f ct_tmp.txt && false
+#	mv ct_tmp.txt ct.txt
 
 ctpatch-hdr.ips ctpatch-nohdr.ips: \
-		ctinsert ct.txt ct.code \
-		ct16fn.tga ct8fn.tga
+		ctinsert \
+		ct.txt ct.code ct16fn.tga ct8fn.tga
 	./ctinsert
 
 chrono-patched.smc: unmakeips ctpatch-hdr.ips chrono-dumpee.smc

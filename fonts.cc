@@ -1,5 +1,8 @@
 #include "tgaimage.hh"
+#include "ctinsert.hh"
 #include "fonts.hh"
+
+#include "settings.hh"
 
 void Font12data::Load(const string &filename)
 {
@@ -10,13 +13,19 @@ void Font12data::Load(const string &filename)
     
     static const char palette[] = {0,0,1,2,3,0};
     
-    tiletable.resize(96 * 24  +  96 * 12);
-    widths.resize(96);
+    unsigned boxcount = font12.getboxcount();
+    unsigned boxstart = 0;
+    if(boxcount > Num_Characters) boxstart = boxcount - Num_Characters;
+    
+    tiletab1.resize(Num_Characters * 24);
+    tiletab2.resize(Num_Characters * 12);
+    
+    widths.resize(Num_Characters);
     
     unsigned to=0;
-    for(unsigned a=0; a<96; ++a)
+    for(unsigned a=0; a<Num_Characters; ++a)
     {
-        vector<char> box = font12.getbox(a);
+        vector<char> box = font12.getbox(a + boxstart);
 
         unsigned width=0;
         while(box[width] != 5 && width<12)++width;
@@ -46,17 +55,18 @@ void Font12data::Load(const string &filename)
                 byte4 |= ((box[po]&2)/2) << shift;
                 ++po;
             }
-            tiletable[to++] = byte1;
-            tiletable[to++] = byte2;
+            tiletab1[to++] = byte1;
+            tiletab1[to++] = byte2;
             
             if(a&1)byte3 <<= 4;
-            tiletable[96*24 + (a>>1)*24 + y*2  ] |= byte3;
+            tiletab2[(a>>1)*24 + y*2  ] |= byte3;
             if(a&1)byte4 <<= 4;
-            tiletable[96*24 + (a>>1)*24 + y*2+1] |= byte4;
+            tiletab2[(a>>1)*24 + y*2+1] |= byte4;
         }
         widths[a] = width;
     }
 }
+
 
 void Font8data::Load(const string &filename)
 {
@@ -94,4 +104,9 @@ void Font8data::Load(const string &filename)
             tiletable[to++] = byte2;
         }
     }
+}
+
+unsigned insertor::GetFont12width(unsigned char chronoch) const
+{
+    return Font12.GetWidth(chronoch - (0x100-Num_Characters));
 }

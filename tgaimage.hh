@@ -18,5 +18,6 @@ public:
     void setboxperline(unsigned n) { xbox = n; }
     
     const vector<char> getbox(unsigned boxnum) const;
+    unsigned getboxcount() const;
 };
 

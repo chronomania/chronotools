@@ -9,11 +9,7 @@
 
 using namespace std;
 
-namespace
-{
-    const char functionfn[]            = "ct.code";
-    const unsigned char AllowedBytes[] = {0xFF,0xFE,0xFC,0xFB,0xFA};
-}
+#include "settings.hh"
 
 void Conjugatemap::Load()
 {

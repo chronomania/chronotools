@@ -301,6 +301,7 @@ $C2:5B75 BF 80 29 7E LDA $7E:($2980+x)    ;$7E:2980     A:0000 X:0000 Y:001B D:0
 $C2:5B79 0A          ASL A                              A:0000 X:0000 Y:001B D:0200 DB:00 PB:C2
 $C2:5B7A AA          TAX                                A:0000 X:0000 Y:001B D:0200 DB:00 PB:C2
 $C2:5B7B C2 20       REP $20                            A:0000 X:0000 Y:001B D:0200 DB:00 PB:C2
+// Sama kuin player name-k‰sittelij‰ss‰
 $C2:5B7D BF D8 5F C2 LDA $C2:($5FD8+x)    ;$C2:5FD8     A:0000 X:0000 Y:001B D:0200 DB:00 PB:C2
 $C2:5B81 8D 37 02    STA DB:$0237         ;$00:0237     A:2C23 X:0000 Y:001B D:0200 DB:00 PB:C2
 $C2:5B84 E2 20       SEP $20                            A:2C23 X:0000 Y:001B D:0200 DB:00 PB:C2
@@ -380,7 +381,7 @@ $C2:5DD0 18          CLC                                A:1668 X:0000 Y:0030 D:0
 $C2:5DD1 69 60 20    ADC A, $2060                       A:1668 X:0000 Y:0030 D:0200 DB:7E PB:C2
 // Lis‰t‰‰n fontin osoite.
 $C2:5DD4 85 76       STA [$00:D+$76]      ;$00:0276     A:36C8 X:0000 Y:0030 D:0200 DB:7E PB:C2
-// $0276 sis‰lt‰‰ nyt pointterin merkkiin.
+// $0276 sis‰lt‰‰ nyt pointterin fonttiin...
 $C2:5DD6 A5 35       LDA [$00:D+$35]      ;$00:0235     A:36C8 X:0000 Y:0030 D:0200 DB:7E PB:C2
 $C2:5DD8 4A          LSR A                              A:00EF X:0000 Y:0030 D:0200 DB:7E PB:C2
 $C2:5DD9 0A          ASL A                              A:0077 X:0000 Y:0030 D:0200 DB:7E PB:C2
@@ -392,7 +393,7 @@ $C2:5DDF 65 6C       ADC [$00:D+$6C]      ;$00:026C     A:0770 X:0000 Y:0030 D:0
 $C2:5DE1 18          CLC                                A:0B28 X:0000 Y:0030 D:0200 DB:7E PB:C2
 // A = (merkki/2)*24
 $C2:5DE2 69 60 38    ADC A, $3860                       A:0B28 X:0000 Y:0030 D:0200 DB:7E PB:C2
-// $0279 sis‰lt‰‰ nyt jonkin ihmeen pointterin.
+// $0279 sis‰lt‰‰ nyt pointterin fonttiin (osa 2).
 $C2:5DE5 85 79       STA [$00:D+$79]      ;$00:0279     A:4388 X:0000 Y:0030 D:0200 DB:7E PB:C2
 // $0234 saattaa olla pikselipositio rivill‰.
 $C2:5DE7 A5 34       LDA [$00:D+$34]      ;$00:0234     A:4388 X:0000 Y:0030 D:0200 DB:7E PB:C2
@@ -438,6 +439,7 @@ $C2:5E22 A5 35       LDA [$00:D+$35]      ;$00:0235     A:0000 X:0000 Y:0000 D:0
 $C2:5E24 E9 A0       SBC A, $A0                         A:00EF X:0000 Y:0000 D:0200 DB:7E PB:C2
 $C2:5E26 AA          TAX                                A:004F X:0000 Y:0000 D:0200 DB:7E PB:C2
 $C2:5E27 18          CLC                                A:004F X:004F Y:0000 D:0200 DB:7E PB:C2
+// 60E6 on taulu merkkien leveyksist‰!
 $C2:5E28 BF E6 60 C2 LDA $C2:($60E6+x)    ;$C2:6135     A:004F X:004F Y:0000 D:0200 DB:7E PB:C2
 $C2:5E2C 65 34       ADC [$00:D+$34]      ;$00:0234     A:0004 X:004F Y:0000 D:0200 DB:7E PB:C2
 $C2:5E2E 85 34       STA [$00:D+$34]      ;$00:0234     A:0004 X:004F Y:0000 D:0200 DB:7E PB:C2
@@ -499,19 +501,20 @@ $C2:5E88 60          RTS                                A:0000 X:0000 Y:0000 D:0
 
 // Rutiini 5E89:
 $C2:5E89 A4 60       LDY [$00:D+$60]      ;$00:0260     A:0000 X:0000 Y:0000 D:0200 DB:C2 PB:C2
+// Hakee merkin alkuosan ja yhdist‰‰ siihen edellisen
 $C2:5E8B B7 76       LDA [long[$00:D+$76]+y] ;$FF:36D1  A:0000 X:0000 Y:0009 D:0200 DB:C2 PB:C2
 $C2:5E8D EB          XBA                                A:0000 X:0000 Y:0009 D:0200 DB:C2 PB:C2
 $C2:5E8E A5 62       LDA [$00:D+$62]      ;$00:0262     A:0000 X:0000 Y:0009 D:0200 DB:C2 PB:C2
 $C2:5E90 4A          LSR A                              A:00EF X:0000 Y:0009 D:0200 DB:C2 PB:C2
 $C2:5E91 90 08       BCC $5E9B                          A:0077 X:0000 Y:0009 D:0200 DB:C2 PB:C2
-
+// Hakee merkin loppuosan ylimm‰ksi nelj‰ksi bitiksi
 $C2:5E93 B7 79       LDA [long[$00:D+$79]+y] ;$FF:4391  A:0077 X:0000 Y:0009 D:0200 DB:C2 PB:C2
 $C2:5E95 0A          ASL A                              A:0040 X:0000 Y:0009 D:0200 DB:C2 PB:C2
 $C2:5E96 0A          ASL A                              A:0080 X:0000 Y:0009 D:0200 DB:C2 PB:C2
 $C2:5E97 0A          ASL A                              A:0000 X:0000 Y:0009 D:0200 DB:C2 PB:C2
 $C2:5E98 0A          ASL A                              A:0000 X:0000 Y:0009 D:0200 DB:C2 PB:C2
 $C2:5E99 80 04       BRA $5E9F                          A:0000 X:0000 Y:0009 D:0200 DB:C2 PB:C2
-
+// Hakee merkin loppuosan alemmaksi nelj‰ksi bitiksi
 $C2:5E9B B7 79       LDA [long[$00:D+$79]+y] ;$FF:4148
 $C2:5E9D 29 F0       AND A, $F0
 
@@ -527,12 +530,30 @@ $C2:5EAC 7C AF 5E    JMP [PB:word[PB:$5EAF+x]] ;$C2:5EBF A:0000 X:0000 Y:0000 D:
 $C2:5EBF E2 20       SEP $20                            A:0000 X:0000 Y:0000 D:0200 DB:C2 PB:C2
 $C2:5EC1 A6 6E       LDX [$00:D+$6E]      ;$00:026E     A:0000 X:0000 Y:0000 D:0200 DB:C2 PB:C2
 $C2:5EC3 BC E8 5F    LDY DB:($5FE8+x)     ;$C2:5FE8     A:0000 X:0000 Y:0000 D:0200 DB:C2 PB:C2
+;; 5FE8 n‰ytt‰‰ hakevan luvun (x+2)*8.
 $C2:5EC6 97 73       STA [long[$00:D+$73]+y] ;$7E:7018  A:0000 X:0000 Y:0010 D:0200 DB:C2 PB:C2
 $C2:5EC8 BC E6 5F    LDY DB:($5FE6+x)     ;$C2:5FE6     A:0000 X:0000 Y:0010 D:0200 DB:C2 PB:C2
+;; 5FE6 n‰ytt‰‰ hakevan luvun x*8.
 $C2:5ECB EB          XBA                                A:0000 X:0000 Y:0000 D:0200 DB:C2 PB:C2
 $C2:5ECC 97 73       STA [long[$00:D+$73]+y] ;$7E:7008  A:0000 X:0000 Y:0000 D:0200 DB:C2 PB:C2
 $C2:5ECE 60          RTS                                A:0000 X:0000 Y:0000 D:0200 DB:C2 PB:C2
 
+
+Tiedot fontista:
+
+   $A0 lˆytyy osoitteista:
+        C2:5E25 (byte)
+        C2:58BB (byte)
+   Pointteri merkkien leveystauluun (sis‰lt‰‰ leveydet tavuille $A0-$FF):
+        C2:5E29 (long)
+   Pointteri fonttidataan:
+        C2:5DD2 (word)
+   Pointteri fonttidataan (kakkososa):
+        C2:5DE3
+    
+   Kakkososa sis‰lt‰‰ merkeille toisen puolikkaan,
+   mutta niin ett‰ kaksi per‰kk‰ist‰ merkki‰ jakavat 
+   saman puolikkaan.      
 
    
 [1EFA00]

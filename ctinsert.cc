@@ -6,23 +6,16 @@ using namespace std;
 #include "ctcset.hh"
 #include "rom.hh"
 
+#include "settings.hh"
+
 namespace
 {
-    const char font8fn[]                = "ct8fn.tga";
-    const char font12fn[]               = "ct16fn.tga";
-    const char scriptfn[]               = "ct.txt";
-    
-    const char patchfile_hdr[]          = "ctpatch-hdr.ips";
-    const char patchfile_nohdr[]        = "ctpatch-nohdr.ips";
-
     void GeneratePatches(ROM &ROM)
     {
         /*
         {FILE *fp = fopen("chrono-uncompressed.smc", "rb");
         if(fp){fseek(fp,512,SEEK_SET);fread(&ROM[0], 1, ROM.size(), fp);fclose(fp);}}
         */
-        
-        const unsigned MaxHunkSize = 20000;
         
         /* Now write the patches */
         FILE *fp = fopen(patchfile_nohdr, "wb");
@@ -61,7 +54,7 @@ namespace
     }
 }
 
-string insertor::DispString(const string &s) const
+const string DispString(const string &s)
 {
     string result;
     wstringOut conv;

@@ -8,13 +8,12 @@
 
 using namespace std;
 
+#include "settings.hh"
+
 #define OPTIMIZE_A
 
 namespace
 {
-    const char LoopHelperName[] = "$LoopHelper$";
-    const char OutcHelperName[] = "$OutcHelper$";
-
     class Assembler
     {
         SubRoutine *cursub;
@@ -735,13 +734,9 @@ const FunctionList Compile(FILE *fp)
         {
             Asm.BOOLEAN_RETURN(false);
         }
-        else if(words[0] == "RET")
-        {
-            Asm.VOID_RETURN();
-        }
         else if(words[0] == "RETURN")
         {
-            Asm.LOAD_VAR(words[1]);
+            if(words.size() > 1) Asm.LOAD_VAR(words[1]);
             Asm.VOID_RETURN();
         }
         else if(words[0] == "VAR")
@@ -765,13 +760,13 @@ const FunctionList Compile(FILE *fp)
         }
         else if(words[0] == "IF")
         {
-        	if(words.size() > 2) Asm.LOAD_VAR(words[2]);
+            if(words.size() > 2) Asm.LOAD_VAR(words[2]);
             Asm.CALL_FUNC(words[1]);
             Asm.COMPARE_BOOL(indent);
         }
         else if(words[0] == "CALL")
         {
-        	if(words.size() > 2) Asm.LOAD_VAR(words[2]);
+            if(words.size() > 2) Asm.LOAD_VAR(words[2]);
             Asm.CALL_FUNC(words[1]);
         }
         else if(words[0] == "INC")
@@ -820,14 +815,13 @@ const FunctionList Compile(FILE *fp)
             Asm.LOAD_VAR(words[1]);
             Asm.OUT_CHARACTER();
         }
-        else if(words[0] == ":func_b"
-             || words[0] == ":func_i")
+        else if(words[0] == "FUNCTION")
         {
             Asm.END_FUNCTION();
             Asm.START_FUNCTION(words[1]);
         }
         else
-        	fprintf(stderr, "  ERROR: What's this? '%s'\n", words[0].c_str());
+            fprintf(stderr, "  ERROR: What's this? '%s'\n", words[0].c_str());
     }
     Asm.END_FUNCTION();
 

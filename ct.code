@@ -6,18 +6,17 @@
 #
 #  Syntax
 #
-#  :func_b name
-#     declare function returning boolean.
+## FUNCTION name
+#     declare function.
 #     If parameter given, it's assigned to variable "c".
-#  :func_i name
-#     declare function returning byte
-## OUT name
-#     Outputs character in name
+#     Returns byte/bool/void depending if you use TRUE/FALSE/RET/RETURN.
+## OUT value
+#     Outputs character in value
 ## VAR name..
 #     define local variables
 ## REG name..
 #     define register variables
-## LET name1 value/name2
+## LET name1 value
 #     assign name1 from value
 ## INC name
 #     name++
@@ -29,42 +28,41 @@
 #     end character name loop
 ## ? name characters
 #     If name is in set, process subblock
-## > name value/name2
+## > name value
 #     if(name > value), process subblock
-## = name value/name2
+## = name value
 #     if(name == value), process subblock
 ## TRUE
-#     For boolean funcs, return TRUE
+#     Return TRUE
 ## FALSE
-#     For boolean funcs, return FALSE
-## RET
-#     For boolean funcs, just return
-## RETURN name
-#     For byte funcs, return value of var
-## IF name1 name2
+#     Return FALSE
+## RETURN [name]
+#     If name given, return variable
+#     Return from function.
+## IF name1 [value]
 #     Call bool-func name1
-#     If name2 given, will be passed as param.
+#     If value given, will be passed as param.
 #     Process subblock if true retval
 ## CALL_GET name1 name2
 #     Call integer-func name1, return value to name2.
-## CALL name1 name2
+## CALL name1 [value]
 #     Call bool-func name1
-#     If name2 given, will be passed as param.
+#     If value given, will be passed as param.
 #     Ignore return value
 
-:func_b IsVowel
+FUNCTION IsVowel
 REG c
 ? c aeiouy‰ˆÂÈAEIOUYƒ÷≈…0123456
   TRUE
 FALSE
 
-:func_b IsKPT
+FUNCTION IsKPT
 REG c
 ? c kKpPtT
   TRUE
 FALSE
 
-:func_b IsFront
+FUNCTION IsFront
 VAR VowelType FoundE Finalguess c
 LET VowelType 0
 LET FoundE 0
@@ -90,7 +88,7 @@ LET Finalguess 0
   TRUE
 FALSE
 
-:func_i Length
+FUNCTION Length
 VAR Len
 REG c
 LET Len 0
@@ -99,7 +97,7 @@ LET Len 0
 }
 RETURN Len
 
-:func_i LastChar3
+FUNCTION LastChar3
 VAR c1 c2 c3 c
 LET c1 0
 LET c2 0
@@ -111,7 +109,7 @@ LET c3 0
 }
 RETURN c3
 
-:func_i LastChar2
+FUNCTION LastChar2
 VAR c1 c2 c
 LET c1 0
 LET c2 0
@@ -121,7 +119,7 @@ LET c2 0
 }
 RETURN c2
 
-:func_i LastChar1
+FUNCTION LastChar1
 VAR c1
 REG c
 LET c1 0
@@ -130,7 +128,7 @@ LET c1 0
 }
 RETURN c1
 
-:func_b IsAbbrev
+FUNCTION IsAbbrev
 VAR Len Vowels WasVowel ElseFlag c
 LET Len 0
 LET Vowels 0
@@ -156,7 +154,7 @@ LET WasVowel 0
   TRUE
 FALSE
 
-:func_b IsEs
+FUNCTION IsEs
 REG c2 c
 CALL_GET LastChar2 c2
 IF IsVowel c2
@@ -165,14 +163,14 @@ IF IsVowel c2
     TRUE
 FALSE
 
-:func_b EndWithVowel
+FUNCTION EndWithVowel
 REG c1
 CALL_GET LastChar1 c1
 IF IsVowel c1
   TRUE
 FALSE
 
-:func_b DoubleHard
+FUNCTION DoubleHard
 VAR c3
 REG c2
 IF EndWithVowel
@@ -183,7 +181,7 @@ IF EndWithVowel
       TRUE
 FALSE
 
-:func_b AkiEnd
+FUNCTION AkiEnd
 REG c3 c2 c1
 CALL_GET LastChar3 c3
 ? c3 aA‰ƒ
@@ -194,18 +192,18 @@ CALL_GET LastChar3 c3
       TRUE
 FALSE
 
-:func_b OutWord
+FUNCTION OutWord
 VAR left c
 LET left c
 {
   = left 0
-    RET
+    RETURN
   OUT c
   DEC left
 }
-RET
+RETURN
 
-:func_b HardStem
+FUNCTION HardStem
 VAR Len CaseFound c
 CALL_GET Length Len
 IF IsAbbrev
@@ -220,41 +218,41 @@ IF IsAbbrev
     OUT 'a'
     LET CaseFound 1
   ? c 0123568
-    RET
+    RETURN
   = CaseFound 0
     OUT 't'
-  RET
+  RETURN
 IF IsEs
   CALL OutWord Len
   OUT 't'
-  RET
+  RETURN
 IF EndWithVowel
   IF AkiEnd
     DEC Len
     CALL OutWord Len
     OUT 'e'
-    RET
+    RETURN
   CALL OutWord Len
-  RET
+  RETURN
 CALL OutWord Len
 OUT 'i'
-RET
+RETURN
 
-:func_b SoftStem
+FUNCTION SoftStem
 VAR Len
 REG chr
 CALL_GET Length Len
 IF IsAbbrev
   CALL OutWord Len
   OUT ':'
-  RET
+  RETURN
 IF IsEs
   DEC Len
   CALL OutWord Len
   OUT 'k'
   OUT 's'
   OUT 'e'
-  RET
+  RETURN
 IF EndWithVowel
   IF DoubleHard
     DEC Len
@@ -262,55 +260,55 @@ IF EndWithVowel
     CALL OutWord Len
     CALL_GET LastChar1 chr
     OUT chr
-    RET
+    RETURN
   IF AkiEnd
     DEC Len
     DEC Len
     CALL OutWord Len
     OUT 'e'
-    RET
+    RETURN
   CALL OutWord Len
-  RET
+  RETURN
 CALL OutWord Len
 OUT 'i'
-RET
+RETURN
 
-:func_b Out_A
+FUNCTION Out_A
 IF IsFront
   OUT '‰'
-  RET
+  RETURN
 OUT 'a'
-RET
+RETURN
 
-:func_b Do_N
+FUNCTION Do_N
 CALL SoftStem
 OUT 'n'
-RET
+RETURN
 
-:func_b Do_A
+FUNCTION Do_A
 CALL HardStem
 CALL Out_A
-RET
+RETURN
 
-:func_b Do_LLA
+FUNCTION Do_LLA
 CALL SoftStem
 OUT 'l'
 OUT 'l'
 CALL Out_A
-RET
+RETURN
 
-:func_b Do_LLE
+FUNCTION Do_LLE
 CALL SoftStem
 OUT 'l'
 OUT 'l'
 OUT 'e'
-RET
+RETURN
 
-:func_b Do_STA
+FUNCTION Do_STA
 CALL SoftStem
 OUT 's'
 OUT 't'
 CALL Out_A
-RET
+RETURN
 
 # -- End --

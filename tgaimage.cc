@@ -62,3 +62,8 @@ const vector<char> TGAimage::getbox(unsigned boxnum) const
     }
     return result;
 }
+
+unsigned TGAimage::getboxcount() const
+{
+    return (ydim-1)*(xdim-1) / (ysize+1) / (xsize+1);
+}

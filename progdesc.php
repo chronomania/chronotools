@@ -26,15 +26,12 @@ Sample of produced script:<pre class=smallerpre
 >;Battle tutorials, Zeal stuff, party stuff
 *z;39 pointerstrings (12pix font)
 \$HSs4:
-Taistelun aikana jokaisen iskun[nl]
-   teho vaihtelee iskun mukaan.
+Taistelun aikana jokaisen iskun teho vaihtelee iskun mukaan.
 \$HSs6:
-Ensinnäkin, voit iskeä myös[nl]
-   useampaa, kuin yhtä vihollista[nl]
-   kerralla.
+Ensinnäkin, voit iskeä myös useampaa, kuin
+   yhtä vihollista kerralla.
 \$HSs8:
-Voit esimerkiksi tähdätä tätä[nl]
-   hirviötä...</pre>
+Voit esimerkiksi tähdätä tätä hirviötä...</pre>
 (Dumped from
 <a href=\"http://hallucinat.ionstream.fi/teemu/engine.html?page=13\"
 >inf's Finnish Chrono Trigger translation</a>).
@@ -89,51 +86,51 @@ I.e. \$C2:5D4C -> rRhU and vice versa.<br>
 This development system uses base62 in the script
 dumps to reduce the amount of code written.
 
-", '1. Technical limitations' => "
+", '1. Useful features' => "
 
-", '1.1. Space' => "
+", '1.1. Name conjugation' => "
 
-The ROM doesn't have much space for text.<br>
-It does apply a compression method, but some text
-compresses better than some other.<br>
-This might cause problems if too much different words are used
-in the script, but it isn't a real problem preventing translation.
+It currently has support for conjugating names on fly.<br>
+It's very important in Finnish, where you can't just
+add \"'s\" to anything to make a genitive.<br>
+For example, genitive of name Matti is \"Matin\",
+and genitive of name Crono is \"Cronon\".<br>
+The conjugator-engine is a textual script file
+translated to 65c816 assembly on demand.
 
-", '1.1. Font' => "
+", '1.1. Font/dictionary skew' => "
 
-The 12-pix font has only 96 characters available.<br>
-Originally the characters are arranged like this:<br>
-<img src=\"http://bisqwit.iki.fi/src/chronotools-16en.png\"
-     alt=\"(Chrono Trigger English 12pix font)\"
-     width=834 height=80
-><br clear=all>
-My font contains currently this slightly rearranged character map:<br>
-<img src=\"http://bisqwit.iki.fi/src/chronotools-16fi.png\"
-     alt=\"(Chrono Trigger Finnish 12pix font)\"
-     width=834 height=80
-><br clear=all>
-You can imagine in your mind, about which characters you would replace
-with another to get support for Thai for example...
+In the script code, there are different 223 bytes available for the script.
 <p>
-Similarly the 8-pix font has undergone some changes.<br>
-It has lots more redundant space though.<br>
-Originally:<br>
-<img src=\"http://bisqwit.iki.fi/src/chronotools-8en.png\"
-     alt=\"(Chrono Trigger English 8pix font)\"
-     width=578 height=146
-><br clear=all>
-Bisqwit's Finnish 8pix Chrono Trigger font:<br>
-<img src=\"http://bisqwit.iki.fi/src/chronotools-8fi.png\"
-     alt=\"(Chrono Trigger Finnish 8pix font)\"
-     width=578 height=146
-><br clear=all>
-
+In normal Chrono Trigger,
+<ul>
+ <li>127 of the are assigned to the dictionary</li>
+ <li>96 of them are visible symbols.</li>
+</ul>
+Which means that you can only have 96 different characters.
+take A-Z, a-z, 0-9 and punctuation symbols and count how
+many you have left for umlauts and accents.
 <p>
-If you are translating to a language that utilizes lots of
-different symbols, you might want to try to base on the
+My insertor however allows to skew that ratio so
+that the dictionary may be smaller and font bigger.
+<p>
+However, shrinking the dictionary means that the script
+compresses worse, and could probably not fit in the ROM.<br>
+It might still be a lifesaver for someone
+doing an Estonian or Portuguese translation.
+<p>
+If you are translating to a language that utilizes <em>lots</em> of
+different symbols, like Chinese, you might want to try to base on the
 Japanese version instead. This utility pack bases on the
 English version.<br>
 (Sorry, I can't help you with the Japanese ROM.)
+
+", '1.1. Automatic paragraph wrapping' => "
+
+The program takes automatically care of proper line
+lengths, so you don't have to risk running into unexpected
+too-long-lines or making too short lines in paranoia.<br>
+You can force line breaks, but you don't have to.
 
 ", '1. Copying' => "
 
@@ -152,6 +149,12 @@ very respectful to copyrights.
 A POSIX compatible system (like Linux or FreeBSD)
 with GNU tools (GNU make, GCC etc) is required.<br>
 These programs are archived as C++ source code only.
+<p>
+I don't have a microsoft-operating system here on my hand,
+so if you are an unfortunate user stuck with some Windows,
+you just have to find a development system
+(<a href=\"http://www.google.com/search?q=cygwin\">cygwin</a>?)
+and compile the program on it to use it.
 
 ", '1. Changelog' => "
 
@@ -187,6 +190,7 @@ Copypaste from the Makefile:
 # VERSION 1.1.6  fixed an allocation bug and optimized the code generator a bit
 # VERSION 1.1.7  some translation, more asm changes
 # VERSION 1.1.8  syntax changes in the compiler, optimizations
+# VERSION 1.1.9  support for font/dictionary size skew
 </pre>
 
 ", '1. See also' => "

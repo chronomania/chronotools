@@ -11,6 +11,9 @@
 #include <signal.h>
 #include <slang.h>
 
+static const unsigned CT_HDR = 0;
+/*static const unsigned CT_HDR = 0x200;*/
+
 /*
  Copyright (C) 1992,2003 Bisqwit (http://iki.fi/bisqwit/)
  
@@ -357,8 +360,8 @@ static void display(void)
         && (unsigned char)*s <  0xA0)
         {
         	unsigned dict_ind = (unsigned char)*s - 0x21;
-        	unsigned dict_ptr  = 0x200+0x1EFA00 + dict_ind*2;
-        	unsigned dict_addr = 0x200+0x1E0000 + data[dict_ptr] + 256*data[dict_ptr+1];
+        	unsigned dict_ptr  = CT_HDR+0x1EFA00 + dict_ind*2;
+        	unsigned dict_addr = CT_HDR+0x1E0000 + data[dict_ptr] + 256*data[dict_ptr+1];
         	unsigned count=data[dict_addr++];
         	
         	/*

@@ -6,7 +6,7 @@
 using namespace std;
 
 /* 0 = begin, 1 = end */
-#define EAT_MODE 0
+#define EAT_MODE 1
 
 unsigned freespacemap::Find(unsigned page, unsigned length)
 {

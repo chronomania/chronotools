@@ -65,6 +65,7 @@ void Symbols::Load()
     
     // 21..9F are used by dictionary
     // A0..FF are used by font
+    // (or actually the point depends on Num_Characters)
     
     targets=8;
     defbsym(bladesymbol, 0x20)
