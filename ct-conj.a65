@@ -1,0 +1,174 @@
+; Define functions for handling the bitness...
+#define SET_8_BIT_A()   sep #$20 : .as
+#define SET_16_BIT_A()  rep #$20 : .al
+#define SET_8_BIT_X()   sep #$10 : .xs
+#define SET_16_BIT_X()  rep #$10 : .xl
+
+#define SET_8_BIT_AX()  sep #$30 : .xs : .as
+#define SET_16_BIT_AX() rep #$30 : .xl : .al
+
+; External symbols:
+;   CHAR_OUTPUT_FUNC - The address of the vwf12 character drawing function
+;
+
+#define MEMBER_TABLE            $7E2980 ; Table of member numbers
+#define CHAR_NAME_ADDRESS_TABLE $C25FD8 ; Table of character name addresses
+#define EPOCH_NAME_ADDRESS      $2C4D   ; Where Epoch name is
+
+#define RTL_ADDR_C2             $5841   ; Where RTL can be found in page $C2
+
+; Omit creation of these:
+#define OMIT_Do_LTA
+#define OMIT_Do_SSA
+#define OMIT_Do_NA
+#define OMIT_Do_TTA
+
+Conjugator:
+.(
+        .al
+
+        #define Choice(name) cmp #CODE_##name: bne +: jsr name: bra DidConj
+
+ #ifndef OMIT_Do_N
+      + Choice(Do_N)
+ #endif
+
+ #ifndef OMIT_Do_A
+      + Choice(Do_A)
+ #endif
+
+ #ifndef OMIT_Do_LLA
+      + Choice(Do_LLA)
+ #endif
+ 
+ #ifndef OMIT_Do_LTA
+      + Choice(Do_LTA)
+ #endif
+
+ #ifndef OMIT_Do_SSA
+      + Choice(Do_SSA)
+ #endif
+      
+ #ifndef OMIT_Do_KSI
+      + Choice(Do_KSI)
+ #endif
+      
+ #ifndef OMIT_Do_LLE
+      + Choice(Do_LLE)
+ #endif
+      
+ #ifndef OMIT_Do_STA
+      + Choice(Do_STA)
+ #endif
+      
+ #ifndef OMIT_Do_TTA
+      + Choice(Do_TTA)
+ #endif
+      
+ #ifndef OMIT_Do_NA
+      + Choice(Do_NA)
+ #else
+  #define OMIT_EssiveStem
+ #endif
+      
+      + ; If it was none of the choices, call the original function.
+        jsr Outc
+        
+ConjEnd:SET_8_BIT_A()
+        rtl
+DidConj:inc $31
+        bra ConjEnd
+
+;;;; OUTPUT A CHARACTER
+
+Outc:   phk
+        per (+)-1  ; push return-address
+        ldy #RTL_ADDR_C2-1     ; address of an RTL in seg $C2
+        phy
+        jmp @CHAR_OUTPUT_FUNC  ; This function outputs chars.
++       rts
+
+;;;;;;;;;;;;;;;;;;;;;;;;;
+
+<CONJUGATER> ;Compiled ct.code will be inserted here by Makefile
+
+OutcHelper:
+         ; Outputs the character in A.
+         ; Does not modify X.
+         ; May modify Y.
+         ; May modify A.
+         SET_16_BIT_AX()
+         phx
+          sta $35    ; Param to the fuction
+          jsr Outc
+          SET_16_BIT_AX()
+         plx
+         rts
+
+
+LoopHelper:
+    .(
+        ; Fetches the X'th letter of the character's name in question.
+        ; Does not modify X.
+        ; Does modify Y.
+        ; Returns the letter in A.
+        
+        SET_16_BIT_AX()
+        phx
+         ldy #0
+         SET_8_BIT_A()
+         
+         ; Id of the name
+         lda [$31]
+         
+         cm
+         beq Epoch  ; Is it Epoch?
+         
+         ; Not Epoch.
+         cmp #$1B
+         bcs Member ; If member?
+
+         ; Not a member, just a character name
+         sec: sbc #$13
+
+GetCharName:
+         asl
+         tax
+         
+         SET_16_BIT_A()
+         ; Get the pointer to the name
+         lda @CHAR_NAME_ADDRESS_TABLE,x
+
+GotCharPointer:
+         sta $0237 ; Save offset
+         
+         SET_8_BIT_A()
+         lda #$7E
+         sta $0239 ; Save segment
+         
+         SET_16_BIT_AX()
+        plx
+        txy
+        ; Get char from the name
+        lda [$37],y
+        and #$00FF
+        rts
+
+Member:  ; Yes, member1(1B), member2(1C) or member3(1D)
+         .as
+         sec
+         sbc #$1B
+         tax
+         ; Get member number
+         lda @MEMBER_TABLE,x
+         bra GetCharName
+
+Epoch:   ; Yes, Epoch.
+         SET_16_BIT_A()
+         ; Load Epoch address
+         lda #EPOCH_NAME_ADDRESS
+         ; Continue with character name handling
+         bra GotCharPointer
+   .)
+
+.)

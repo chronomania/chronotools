@@ -1,78 +1,61 @@
-<html><head><meta http-equiv="Content-type" content="text/html; charset=iso-8859-1">
- <title>Chrono Trigger translation development system</title>
- <style type="text/css"><!--
-TABLE.toc {border:0px}
-A:link,A:visited{text-decoration:none;color:#2A3B83}
-A:hover{text-decoration:underline;color:#002040}
-A:active{text-decoration:underline;color:#004060;background:#CCD8FF}
-TD.toc   {font-size:80%; font-family:Tahoma; text-align:left}
-H1       {font-size:250%; font-weight:bold} .level1 {text-align:center}
-H2       {font-size:200%; font-weight:bold} .level2 {margin-left:1%}
-H3       {font-size:160%; font-weight:bold} .level3 {margin-left:2%}
-H4       {font-size:145%; font-weight:bold} .level4 {margin-left:3%}
-H5       {font-size:130%; font-weight:bold} .level5 {margin-left:4%}
-H6       {font-size:110%; font-weight:bold} .level5 {margin-left:5%}
-BODY{background:white;color:black}
-CODE{font-family:lucida console,courier new,courier;color:#105000}
-PRE.smallerpre{font-family:lucida console,courier new,courier;font-size:80%;color:#500010;margin-left:30px}
-SMALL    {font-size:70%}
---></style></head>
- <body>
-  <h1>Chrono Trigger translation development system</h1>
-  <h2 class=level2> 0. Contents </h2>
-  
-  This is the documentation of chronotools-1.8.0.
-<div class=toc><table cellspacing=0 cellpadding=0 class=toc><tr><td width="50%" valign=middle align=left nowrap class=toc>&nbsp;&nbsp;&nbsp;1. <a href="#what">Purpose</a><br>&nbsp;&nbsp;&nbsp;2. <a href="#how">How to begin?</a><br>&nbsp;&nbsp;&nbsp;3. <a href="#status">Current status</a><br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;3.1. <a href="#changes">Version history</a><br>&nbsp;&nbsp;&nbsp;4. <a href="#h0">Program list</a><br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;4.1. <a href="#ctdump">ctdump</a><br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;4.2. <a href="#ctinsert">ctinsert</a><br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;4.3. <a href="#h1">other</a><br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;4.3.1. <a href="#h2">makeips</a><br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;4.3.2. <a href="#h3">unmakeips</a><br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;4.3.3. <a href="#h4">assemble</a><br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;4.3.4. <a href="#h5">xray</a><br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;4.3.5. <a href="#h6">viewer</a><br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;4.3.6. <a href="#h7">spacefind</a><br></td>
-<td width="50%" valign=middle align=left nowrap class=toc>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;4.3.7. <a href="#h8">taipus.rb</a><br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;4.3.8. <a href="#h9">sramdump</a><br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;4.3.9. <a href="#h10">base62</a><br>&nbsp;&nbsp;&nbsp;5. <a href="#h11">Useful features</a><br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;5.1. <a href="#conj">Name conjugation</a><br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;5.2. <a href="#skew">Font/dictionary skew</a><br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;5.3. <a href="#wrap">Automatic paragraph wrapping</a><br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;5.4. <a href="#vwf8">Variable width 8pix font</a><br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;5.5. <a href="#h12">Very configurable</a><br>&nbsp;&nbsp;&nbsp;6. <a href="#req">Requirements</a><br>&nbsp;&nbsp;&nbsp;7. <a href="#copying">Copying</a><br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;7.1. <a href="#parts">If you only are interested in some features/parts</a><br>&nbsp;&nbsp;&nbsp;8. <a href="#h13">See also</a><br>&nbsp;&nbsp;&nbsp;9. <a href="#download">Downloading</a><br></td>
-</tr></table></div><H2 id="what" class="level2"><a name="what"></a>1. Purpose</H2><div class="level2" id="divwhat">
+<?php
+//TITLE=Chrono Trigger translation development system
+
+$title = 'Chrono Trigger translation development system';
+$progname = 'chronotools';
+
+require_once '/WWW/email.php';
+
+$text = array(
+   'what:1. Purpose' => "
 
 Tools aiding in
-<a href="http://bisqwit.iki.fi/ctfin/">Bisqwit's Finnish Chrono Trigger translation</a>.
+<a href=\"http://bisqwit.iki.fi/ctfin/\">Bisqwit's Finnish Chrono Trigger translation</a>.
 <p>
 Meant to be useful for anyone who wants to become
 a translator for Chrono Trigger and translate the
 game to their own language.
 
-</div><H2 id="how" class="level2"><a name="how"></a>2. How to begin?</H2><div class="level2" id="divhow">
+", 'how:1. How to begin?' => "
 
 So here's what you do if you want to translate Chrono Trigger.
 
 <ul>
- <li><a href="#download">Download</a> Chronotools.</li>
+ <li><a href=\"#download\">Download</a> Chronotools.</li>
  <li>You need the Chrono Trigger English ROM. (You won't get it from me.)</li>
  <li>You dump the script and images from the ROM using
-     <a href="#ctdump">ctdump</a>, included in Chronotools.</li>
+     <a href=\"#ctdump\">ctdump</a>, included in Chronotools.</li>
  <li>You redesign the font using an image manipulation
-     program such as <a href="http://www.gimp.org">GIMP</a>,
+     program such as <a href=\"http://www.gimp.org\">GIMP</a>,
      editing <code>ct16fn.tga</code> and <code>ct8fn.tga</code>,
      and update the configuration to match the new character set
      in your font and script files.</li>
  <li>You translate the script, once in a while testing it
-     by creating patches with <a href="#ctinsert">ctinsert</a>.</li>
+     by creating patches with <a href=\"#ctinsert\">ctinsert</a>.</li>
  <li>You ask me how to do this and that what you don't know. :)<br>
      For example, what to do if ctinsert reports errors,
      or if you want features like
-     <a href="#conj">name conjugation</a> or
-     <a href="#vwf8">variable width 8pix font</a>.</li>
+     <a href=\"#conj\">name conjugation</a> or
+     <a href=\"#vwf8\">variable width 8pix font</a>.</li>
 </ul>
 
-Feel free to <a href="#copying">contact me</a> in questions
+Feel free to <a href=\"#copying\">contact me</a> in questions
 you might have about translating/hacking Chrono Trigger.<br>
 
-</div><H2 id="status" class="level2"><a name="status"></a>3. Current status</H2><div class="level2" id="divstatus">
+", 'status:1. Current status' => "
 
-<img src="/src/chronotools-toad.gif" align=left alt="">
+<img src=\"/src/chronotools-toad.gif\" align=left alt=\"\">
 Chronotools is under active development.
 Here's the current situation.<br>
 Last updated:
-2003-10-02
+".date('Y-m-d', filemtime('/WWW/src/.desc-chronotools.php'))."
 
 <p>
 <table>
  <tr>
-  <th align=left style="background:#EEE">Subject</th>
-  <th align=left style="background:#EEE">Percentage</th>
-  <th align=left style="background:#EEE"></th>
+  <th align=left style=\"background:#EEE\">Subject</th>
+  <th align=left style=\"background:#EEE\">Percentage</th>
+  <th align=left style=\"background:#EEE\"></th>
  </tr>
 <tr><td>Dialog handling</td>
     <td>120%</td> <td>everything works, extra features</td></tr>
@@ -96,7 +79,7 @@ Last updated:
     <td>0%</td> <td>practically no documentation; that's why you must contact</td></tr>
 </table>
 
-</div><H3 id="changes" class="level3"><a name="changes"></a>3.1. Version history</H3><div class="level3" id="divchanges">
+", 'changes:1.1. Version history' => "
 
 Copypaste from the Makefile:
 
@@ -107,7 +90,7 @@ Copypaste from the Makefile:
 # VERSION 1.0.6  compressed better
 # VERSION 1.0.7  compressed more carefully
 # VERSION 1.0.8  documented the script
-# VERSION 1.0.9  fixed "..." handling and located the font
+# VERSION 1.0.9  fixed \"...\" handling and located the font
 # VERSION 1.0.10 had knowledge of character sets
 # VERSION 1.0.11 had a working font insertor
 # VERSION 1.0.12 had better knowledge of special codes
@@ -124,7 +107,7 @@ Copypaste from the Makefile:
 # VERSION 1.1.0  did some assembly hacking, support for code patching
 # VERSION 1.1.1  conjugating conjugating conjugating... work goes on
 # VERSION 1.1.2  and so on
-# VERSION 1.1.3  and so on... almost working! "case" still doesn't work.
+# VERSION 1.1.3  and so on... almost working! \"case\" still doesn't work.
 # VERSION 1.1.4  conjugating finally works!
 # VERSION 1.1.5  some bugfixes
 # VERSION 1.1.6  fixed an allocation bug and optimized the code generator a bit
@@ -167,11 +150,11 @@ Copypaste from the Makefile:
 # VERSION 1.8.0  is GPL
 </pre>
 
-</div><H2 id="h0" class="level2"><a name="h0"></a>4. Program list</H2><div class="level2" id="divh0">
+", '1. Program list' => "
 
-</div><H3 id="ctdump" class="level3"><a name="ctdump"></a>4.1. ctdump</H3><div class="level3" id="divctdump">
+", 'ctdump:1.1. ctdump' => "
 
-<table cellspacing=0 cellpadding=0 width="100%">
+<table cellspacing=0 cellpadding=0 width=\"100%\">
 <tr><td valign=top>
 
 Dumps the script and fonts from a given ROM.<br>
@@ -182,36 +165,36 @@ Produces <code>ct_eng.txt</code>,
 Sample of produced script:<pre class=smallerpre
 >;1000ad (Lucca's home)
 *z;106 pointerstrings (12pix font)
-$F1IO:
+\$F1IO:
 [nl]
             You got 1 [item]!
-$F1IQ:
+\$F1IQ:
 LARA: Oh, hi Crono.[nl]
    Lucca's off at Leene Square with[nl]
    her father, Taban, unveiling her new[nl] 
    invention.
-$F1IS:
+\$F1IS:
 LARA: Lucca and Taban only care[nl]
    about their silly toys!</pre>
 (Dumped from the English ROM)
 <p>
 The windows version of this program is
-<a href="#download">downloadable</a> on this page.<br>
+<a href=\"#download\">downloadable</a> on this page.<br>
 Usage example:
   <code>ctdump chrono-uncompressed.smc &gt; ct_eng.txt</code>
 
 </td><td valign=top align=right>
 
 <table><tr><td align=center>
-<img src="/src/chronotools-esp.png"
-     alt="sample" style="padding-right:10px" >
+<img src=\"/src/chronotools-esp.png\"
+     alt=\"sample\" style=\"padding-right:10px\" >
 <br>
 <small> Example screenshot in Spanish </small>
 </td></tr></table>
 
 </td></tr></table>
 
-</div><H3 id="ctinsert" class="level3"><a name="ctinsert"></a>4.2. ctinsert</H3><div class="level3" id="divctinsert">
+", 'ctinsert:1.1. ctinsert' => "
 
 Reinserts the (edited) script and (edited) fonts to a ROM.<br>
 Requires the files referenced by <code>ct.cfg</code>
@@ -221,76 +204,76 @@ Produces <code>ctpatch-hdr.ips</code>
 and <code>ctpatch-nohdr.ips</code>.<br>
 Curiously, it doesn't require the ROM.
 
-</div><H3 id="h1" class="level3"><a name="h1"></a>4.3. other</H3><div class="level3" id="divh1">
+", '1.1. other' => "
 
-</div><H4 id="h2" class="level4"><a name="h2"></a>4.3.1. makeips</H4><div class="level4" id="divh2">
+", '1.1.1. makeips' => "
 
-<a href="/src/makeips.cc">makeips</a>
+<a href=\"/src/makeips.cc\">makeips</a>
 compares two ROMs and produces a patch file in IPS format.
 
-</div><H4 id="h3" class="level4"><a name="h3"></a>4.3.2. unmakeips</H4><div class="level4" id="divh3">
+", '1.1.1. unmakeips' => "
 
-<a href="/src/unmakeips.cc">unmakeips</a>
+<a href=\"/src/unmakeips.cc\">unmakeips</a>
 reads a ROM and an IPS file and produces a patched ROM file.
 
-</div><H4 id="h4" class="level4"><a name="h4"></a>4.3.3. assemble</H4><div class="level4" id="divh4">
+", '1.1.1. assemble' => "
 
 An xa65-compatible 65816 assembler program.<br>
 Full source code can be found in its separate package at
-<a href="http://bisqwit.iki.fi/source/snescom.html"
+<a href=\"http://bisqwit.iki.fi/source/snescom.html\"
   >http://bisqwit.iki.fi/source/snescom.html</a> .
 
-</div><H4 id="h5" class="level4"><a name="h5"></a>4.3.4. xray</H4><div class="level4" id="divh5">
+", '1.1.1. xray' => "
 
 xray is a libggi-requiring application
 for browsing the ROM contents.
 
-</div><H4 id="h6" class="level4"><a name="h6"></a>4.3.5. viewer</H4><div class="level4" id="divh6">
+", '1.1.1. viewer' => "
 
 viewer requires S-Lang and is a textmode ROM browser
 originally developed by me for Pokémon hacking.
 
-</div><H4 id="h7" class="level4"><a name="h7"></a>4.3.6. spacefind</H4><div class="level4" id="divh7">
+", '1.1.1. spacefind' => "
 
-A <a href="/source/jaa3.html">bin-packing</a> algorithm test.
+A <a href=\"/source/jaa3.html\">bin-packing</a> algorithm test.
 
-</div><H4 id="h8" class="level4"><a name="h8"></a>4.3.7. taipus.rb</H4><div class="level4" id="divh8">
+", '1.1.1. taipus.rb' => "
 
-This one is <a href="/ctfin/taipus.rb">publicly available</a>.
+This one is <a href=\"/ctfin/taipus.rb\">publicly available</a>.
 It conjugates names in Finnish.<br>It has now been
-<a href="/ctfin/ct-code.txt">translated</a> to
+<a href=\"/ctfin/ct-code.txt\">translated</a> to
 SNES assembly (or sort of).<br>It works. :)
 
-</div><H4 id="h9" class="level4"><a name="h9"></a>4.3.8. sramdump</H4><div class="level4" id="divh9">
+", '1.1.1. sramdump' => "
 
 Views a sram dump file in a readable format.
 
-</div><H4 id="h10" class="level4"><a name="h10"></a>4.3.9. base62</H4><div class="level4" id="divh10">
+", '1.1.1. base62' => "
 
 Converts addresses between hex and base62 formats.
-I.e. $C2:5D4C -> 0eJI and vice versa.<br>
+I.e. \$C2:5D4C -> 0eJI and vice versa.<br>
 This development system uses base62 in the script
 dumps to reduce the amount of code written.
 
-</div><H2 id="h11" class="level2"><a name="h11"></a>5. Useful features</H2><div class="level2" id="divh11">
+", '1. Useful features' => "
 
-</div><H3 id="conj" class="level3"><a name="conj"></a>5.1. Name conjugation</H3><div class="level3" id="divconj">
+", 'conj:1.1. Name conjugation' => "
 
-<a href="/ctfin/ct-code.txt">
-<img src="/kala/snap/ctdevel/ct-taipus2.png" alt="It works!" align=right>
+<a href=\"/ctfin/ct-code.txt\">
+<img src=\"/kala/snap/ctdevel/ct-taipus2.png\" alt=\"It works!\" align=right>
 </a>  
 It currently has support for conjugating names on fly.<br>
 It's very important in Finnish, where you can't just
-add "'s" to anything to make a genitive.<br>
-For example, genitive of name Matti is "Matin",
-and genitive of name Crono is "Cronon".<br>
+add \"'s\" to anything to make a genitive.<br>
+For example, genitive of name Matti is \"Matin\",
+and genitive of name Crono is \"Cronon\".<br>
 The conjugator-engine is a textual script file
 translated to 65c816 assembly on demand. It can
 be customized to do conjugation in any language,
 not just Finnish.
 <br clear=all>
 
-</div><H3 id="skew" class="level3"><a name="skew"></a>5.2. Font/dictionary skew</H3><div class="level3" id="divskew">
+", 'skew:1.1. Font/dictionary skew' => "
 
 It's quite complicated to explain, but shortly said:
 <p>
@@ -298,7 +281,7 @@ In normal Chrono Trigger, the character set is as follows:
 <ul>
  <li>127 of them are assigned to the dictionary used to compress the script.</li>
  <li><b>96</b> of them are possible
-     <a href="/src/chronotools-16en.png">visible symbols</a>.</li>
+     <a href=\"/src/chronotools-16en.png\">visible symbols</a>.</li>
 </ul>
 <p>
 In Chronotools,
@@ -329,9 +312,9 @@ Japanese version instead. This utility pack bases on the
 English version.<br>
 (Sorry, I can't help you with issues regarding the Japanese ROM.)
 
-</div><H3 id="wrap" class="level3"><a name="wrap"></a>5.3. Automatic paragraph wrapping</H3><div class="level3" id="divwrap">
+", 'wrap:1.1. Automatic paragraph wrapping' => "
 
-<img src="/src/chronotools-wrapdemo.png" alt="It works!" align=right>
+<img src=\"/src/chronotools-wrapdemo.png\" alt=\"It works!\" align=right>
 The program takes automatically care of proper line
 lengths, so you don't have to risk running into unexpected
 too-long-lines or making too short lines in paranoia.<br>
@@ -352,9 +335,9 @@ elämän!</pre>
 
 <br clear=all>
 
-</div><H3 id="vwf8" class="level3"><a name="vwf8"></a>5.4. Variable width 8pix font</H3><div class="level3" id="divvwf8">
+", 'vwf8:1.1. Variable width 8pix font' => "
 
-<img src="/src/chronotools-vwf8.png" alt="It works!" align=right>
+<img src=\"/src/chronotools-vwf8.png\" alt=\"It works!\" align=right>
 Item, monster and technique names in Chrono Trigger are limited to 10 characters
 (restriction is enforced by both the screen layout and the ROM space).<br>
 This is way too little for Finnish, which has long words.
@@ -367,13 +350,13 @@ but this will be fixed eventually.
 
 <br clear=all>
 
-</div><H3 id="h12" class="level3"><a name="h12"></a>5.5. Very configurable</H3><div class="level3" id="divh12">
+", '1.1. Very configurable' => "
 
 I have tried to put almost everything in text-only config files
 instead of hardcoding it in the programs. You won't be depending
 on me to do little updates for your purposes.
 
-</div><H2 id="req" class="level2"><a name="req"></a>6. Requirements</H2><div class="level2" id="divreq">
+", 'req:1. Requirements' => "
 
 For source code (if you're a developer):
 <blockquote>
@@ -382,7 +365,7 @@ with GNU tools (GNU make, GCC etc) is required.<br>
 These programs are archived as C++ source code.<br>
 </blockquote>
 
-For binaries (if you're an unfortunate user stuck with some "Windows"):
+For binaries (if you're an unfortunate user stuck with some \"Windows\"):
 <blockquote>
 I don't have a microsoft-operating system here on my hand,
 but I have mingw32, which appears to produce working <em>commandline</em>
@@ -394,61 +377,52 @@ change your attitude and start learning :)
 </blockquote>
 <p>
 The VWF8 code requires an assembler.
-Previously it had to be <a href="http://www.google.fi/search?q=xa65">xa65</a>
+Previously it had to be <a href=\"http://www.google.fi/search?q=xa65\">xa65</a>
 (which can be found in Debian and compiled for other systems), but now
 Chronotools has its
-<a href="http://bisqwit.iki.fi/source/snescom.html">own assembler</a>.
+<a href=\"http://bisqwit.iki.fi/source/snescom.html\">own assembler</a>.
 
-</div><H2 id="copying" class="level2"><a name="copying"></a>7. Copying</H2><div class="level2" id="divcopying">
+", 'copying:1. Copying' => "
 
 Chronotools has been written by Joel Yliluoma, a.k.a.
-<a href="http://iki.fi/bisqwit/">Bisqwit</a>,<br>
+<a href=\"http://iki.fi/bisqwit/\">Bisqwit</a>,<br>
 and is distributed under the terms of the
-<a href="http://www.gnu.org/licenses/licenses.html#GPL">General Public License</a> (GPL).
+<a href=\"http://www.gnu.org/licenses/licenses.html#GPL\">General Public License</a> (GPL).
 <p>
 If you have questions or just want to talk about
 Chrono Trigger hacking, throw me email.
 <p>
-<table cellspacing=0 cellpadding=0>
-<tr><td class=email>My email address:</td>
-    <td class=email>Joel Ylilu</td>
-    <td class=email>oma &lt;bisqw</td>
-    <td class=email>it@iki.fi&gt;</td>
-</tr></table>
+".GetEmail('My email address:', 'Joel Yliluoma', 'bisqwi'. 't@iki.fi')."
 </p>
 I've previously stated here that I'm not publishing files because it's
 a well-known fact that many people in ROM hacking scene aren't very
 respectful to copyrights.<br>
 Well, left to be seen...
 
-</div><H3 id="parts" class="level3"><a name="parts"></a>7.1. If you only are interested in some features/parts</H3><div class="level3" id="divparts">
+", 'parts:1.1. If you only are interested in some features/parts' => "
 
 This system doesn't contain much reusable material,
 although it now does contain some separate assembly code.<br>
 I have made my own systems to compile and link code.<br>
-If you're uncertain, <a href="#copying">send me email and explain your situation</a>.
+If you're uncertain, <a href=\"#copying\">send me email and explain your situation</a>.
 
-</div><H2 id="h13" class="level2"><a name="h13"></a>8. See also</H2><div class="level2" id="divh13">
+", '1. See also' => "
 
 <ul>
- <li><a href="http://bisqwit.iki.fi/ctfin/">Bisqwit's
+ <li><a href=\"http://bisqwit.iki.fi/ctfin/\">Bisqwit's
   Finnish Chrono Trigger translation project</a>
   (uses these tools)</li>
- <li><a href="http://bisqwit.iki.fi/source/snescom.html">snescom</a>
+ <li><a href=\"http://bisqwit.iki.fi/source/snescom.html\">snescom</a>
   - xa65-compatible 65816 assembler with free source code</li>
- <li><a href="http://bisqwit.iki.fi/jutut/ctcset.html">Chrono Trigger
+ <li><a href=\"http://bisqwit.iki.fi/jutut/ctcset.html\">Chrono Trigger
   technical document</a>
   (publicly available information that these tools base on)</li>
 </ul>
 
-</div><H2 id="download" class="level2"><a name="download"></a>9. Downloading</H2><div class="level2" id="divdownload">
-   The official home page of chronotools
-   is at <a href="http://iki.fi/bisqwit/source/chronotools.html">http://iki.fi/bisqwit/source/chronotools.html</a>.<br>
-   Check there for new versions.
-</div> <p align=right><small>Generated from
-       <code>progdesc.php</code> (last updated: Thu,  2 Oct 2003 15:38:09 +0300)<br>
-  with <code>docmaker.php</code> (last updated: Thu, 13 Feb 2003 15:11:29 +0200)<br>
-  at Thu,  2 Oct 2003 15:41:30 +0300</small>
- </p>
-</body>
-</html>
+");
+
+$pagebegin      = '';
+$contentsheader = '';
+$pageend        = '';
+
+include '/WWW/progdesc.php';

@@ -1,0 +1,200 @@
+{This is a comment}
+
+params
+  TILEBASE_SEG   1
+  TILEBASE_OFFS  2
+  WIDTH_SEG      1
+  WIDTH_OFFS     2
+  BITNESS        1
+  { number means the size of var in bytes; all vars are unsigned integers. }
+end
+
+vars
+  { Tilebuf size is 2*8*BITNESS }
+  { Therefore 16*, that is shl 4 }
+  
+  tilebuf       shl(BITNESS 4)
+  pixoffs       1
+  tilenum       2 {global}
+  VRAMaddr      2 {global}
+  tiledest_seg  1 {global - B-register}
+  tiledest_offs 2 {global - X-register}
+  attr          1 {$00:[D+$7E]}
+  end_x         2
+end
+
+macro vwf8_write
+  vars
+    n      2
+    ind    2
+  end
+  
+  let [$00:$2116].word  sum(shl(tilenum sum(1 BITNESS)) VRAMaddr)
+  
+  let ind  0
+  let n    shl(BITNESS 3)
+  do
+    let [$00:$2118].word  tilebuf[ind].word
+    add ind 2
+    break_if_eq ind n
+  end
+  let n    and(tilenum 0x03FF)
+  let n    or(n shl(attr 8))
+  let [tiledest_seg:tiledest_offs].word  n
+  add tiledest_offs  2
+  add tilenum   1
+end
+
+macro first_init
+  vars
+    n    2
+    ind  2
+  end
+  let n     shl(BITNESS 4)
+  let ind   0
+  do
+    let tilebuf[ind].word  0
+    add ind 2
+    break_if_eq ind n
+  end
+end
+
+macro next_init
+  vars
+    n    2
+    ind  2
+  end
+  let n    shl(BITNESS 3)
+  let ind  0
+  do
+    let tilebuf[ind].word          tilebuf[sum(ind 16)].word
+    let tilebuf[sum(ind 16)].word  $0000
+    add ind 2
+    break_if_eq ind n
+  end
+end
+
+macro check_next
+  { If one tile is now full }
+  if_gte pixoffs  8
+    and pixoffs  7
+    { Flush previous }
+    call vwf8_write()
+    { Initialize next }
+    call next_init()
+  end
+end
+
+macro draw_char
+  params
+    Char     2
+  end
+
+  vars
+    tilebase 2
+    value    2
+    n        2
+    ind      2
+  end
+  
+  let tilebase shl(Char 4)
+  let n        shl(BITNESS 3)
+
+  let ind      0
+  do
+    let value   shl([TILEBASE_SEG:sum(TILEBASE_OFFS tilebase)].byte minus(7 pixoffs))
+    or tilebuf[sum(ind n)].byte value.hi
+    or tilebuf[ind].byte        value.lo
+    add tilebase 1
+    add ind 1
+      
+    break_if_eq ind 16
+  end
+  add pixoffs  [WIDTH_SEG:sum(WIDTH_OFFS Char)].byte
+  
+  call check_next()
+end
+
+macro fill_end
+  vars
+    n         2
+  end
+  
+  let n  or($00FF shl(attr 8))
+  do
+    break_if_gte tiledest_offs end_x
+
+    let [tiledest_seg:tiledest_offs].word   n
+    add tiledest_offs 2
+  end
+end
+
+macro draw_str
+  params
+    Length    1
+    OsoiteSeg 1
+    OsoiteOfs 2
+  end
+
+  vars
+    Char      2
+  end
+  
+  let pixoffs  0
+  let end_x    sum(tiledest_offs shl(Length 1))
+  
+  call first_init()
+  
+{  do
+    break_if_eq Length 0
+    
+    let Char   [OsoiteSeg:OsoiteOfs].byte
+    break_if_eq Char 0
+    
+    call draw_char(Char:Char)
+    
+    add OsoiteOfs 1
+    add Length    -1
+  end
+  
+  call vwf8_write()
+  call fill_end()
+}
+end
+
+
+{
+  Memory addressing:
+  
+   memory:
+   
+    [value8:value16]
+    
+    - always followed with "word" or "byte"
+   
+   variable:
+   
+    varname
+    
+    - can be followed with [value16]
+      index is byterelative,
+      i.e. var16[0] and var16[2] are adjacent.
+    
+    - can be followed with
+        ".word" or ".byte"
+    - if word type, can be followed with
+        ".hi" or ".lo"
+      (".lo" is equal to ".byte")
+
+
+  All function calls are inlined: recursion not allowed.
+  
+  Call syntax:
+    call funcname(params)
+    
+    params:
+      param param param ...
+    
+    param:
+      paramname:value
+}

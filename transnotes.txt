@@ -1,0 +1,76 @@
+TEKNISIÄ OHJEITA
+
+   Skriptirivit:
+
+     - Insertor wrappaa rivit automaattisesti.
+       Niiden pituuksista ei tarvitse kantaa
+       huolta, kunhan tekstiä ei tule vallan
+       kamalasti.
+
+     - Jos dialogissa on kysymys ("kyllä/ei"), älä
+       muuta rivien määrää ennen sitä.
+     
+     - Dialogin riveissä on "   " alussa, jos repliikin
+       ensimmäisellä rivillä on puhujan nimi ja kaksoispiste.
+       Muutoin teksti tulee rivin alkuun.
+     
+     - Nimet tulee kirjoittaa pienillä kirjaimilla
+       mutta isolla alkukirjaimella, vaikka ne olisivat
+       alkuperäisessä olleet kokonaan isoilla
+       kirjaimilla. Tämä koskee kaikkia nimiä,
+       myös tyyliin "GIRL: blahblah".
+
+   Dialogiohjeita:
+
+       Marle - vähän vallaton, rentoa kieltä.
+       Lucca - jäykkää, mutta suorasukaista, välillä
+               vähän tylyä kieltä, mutta ei mitään
+               törkeää kuitenkaan.
+       Crono - ei yleensä puhu ollenkaan.
+       Robo  - mekaanista mutta humoristista kieltä
+       Frog  - mahdollisimman vanhanaikaista ja kankeaa
+               kieltä, välillä th -äänteitä
+       Magus - puhuu asiansa hyvin lyhyesti
+               ja suorasukaisesti.
+       Ayla  - yksinkertaista alkuasukaskieltä, mutta
+               sisällöltään hyvin eläviä lauseita.
+               Käyttää cronosta nicknamea [crononick].
+       Kino - alkuasukasmies/-poika, ajattele intiaanisotilasta.
+       Kuningas Guardia
+             - aikuinen, kokee olevansa auktoriteetti
+               asiassa kuin asiassa, ja puhuu sen mukaisesti.
+       Doan  - vanhus, mutta puhuu modernia kieltä.
+       Belthasar (guru of reason)
+             - Hyvin tietäväinen henkilö, vähän hörhö;
+               professorityyppiä.
+       Melchior (guru of life)
+             - Filosofinen henkilö, sanoo asiat vähän mutkan
+               kautta. Savon murre sopisi ehkä? :)
+       Gaspar (guru of time)
+             - Lämminsydäminen vanha mies, vähän arka
+               välillä sanomaan asioita suoraan.
+       Masa, Mune - poikia
+       Queen Zeal - halpamainen akka
+       Dalton - tyhmä toiminnantäyteinen paha mies
+       Schala - vaikea sanoa... 
+       Janus - sama kuin Magus, vähän nuorempi vain
+       Profeetta - sama kuin Magus.
+       
+
+   Sanastoa:
+       
+       chancellor        = Kansleri
+       millennial fair   = vuosituhatjuhla
+       rainbow shell     = sateenkaarikuori
+       fire              = tuli
+       water             = vesi
+       lightning/thunder = ukkonen
+       shadow            = varjo
+       pendant           = riipus (vai pitäisikö ToPin tyyliin medaljonki?)
+       reptite           = liskos
+       prophet           = Profeetta
+       mammon machine    = Mammonakone
+       ocean palace      = Valtameripalatsi
+       power tab         = voimanappi
+       magic tab         = taikanappi
+       speed tab         = nopsanappi
