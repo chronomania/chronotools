@@ -25,6 +25,14 @@
 #define P_TILEBUF2 $1B
 ; First unused $1E
 
+; NMI uses vars at:
+;       $000Dxx
+;       $0000Fx
+;       $00040x
+; so don't mess them.
+; FIXME - IRQ unclear
+
+
 ; Params from the caller - must be set:
 #define W_TILENUM  $6200
 #define W_VRAMADDR $6202
@@ -160,7 +168,7 @@ EndDrawS:
         ; This is required
         SET_16_BIT_A()
         
-        rtl
+        rts
 .)
 
 
@@ -237,60 +245,60 @@ DrawChar:
               .word Handle16bytes_6, Handle16bytes_7
           ; Each of these cases handles 16 bytes.
 Handle16bytes_0:
-	SET_16_BIT_A()
-	; P_TILEBUF1 = xxxxxxxx P_TILEBUF2 = 00000000  - do direct copy
-	lda [P_FONT],y : sta [P_TILEBUF1],y : iny : iny
-	lda [P_FONT],y : sta [P_TILEBUF1],y : iny : iny
-	lda [P_FONT],y : sta [P_TILEBUF1],y : iny : iny
-	lda [P_FONT],y : sta [P_TILEBUF1],y : iny : iny
-	lda [P_FONT],y : sta [P_TILEBUF1],y : iny : iny
-	lda [P_FONT],y : sta [P_TILEBUF1],y : iny : iny
-	lda [P_FONT],y : sta [P_TILEBUF1],y : iny : iny
-	lda [P_FONT],y : sta [P_TILEBUF1],y : iny : iny
-	brl EndHandle16bytes
+        SET_16_BIT_A()
+        ; P_TILEBUF1 = xxxxxxxx P_TILEBUF2 = 00000000  - do direct copy
+        lda [P_FONT],y : sta [P_TILEBUF1],y : iny : iny
+        lda [P_FONT],y : sta [P_TILEBUF1],y : iny : iny
+        lda [P_FONT],y : sta [P_TILEBUF1],y : iny : iny
+        lda [P_FONT],y : sta [P_TILEBUF1],y : iny : iny
+        lda [P_FONT],y : sta [P_TILEBUF1],y : iny : iny
+        lda [P_FONT],y : sta [P_TILEBUF1],y : iny : iny
+        lda [P_FONT],y : sta [P_TILEBUF1],y : iny : iny
+        lda [P_FONT],y : sta [P_TILEBUF1],y : iny : iny
+        brl EndHandle16bytes
 #define REST() \
-	sep #$20 : .as : ora [P_TILEBUF2],y : sta[P_TILEBUF2],y : \
-	xba :            ora [P_TILEBUF1],y : sta[P_TILEBUF1],y : iny
+        sep #$20 : .as : ora [P_TILEBUF2],y : sta[P_TILEBUF2],y : \
+        xba :            ora [P_TILEBUF1],y : sta[P_TILEBUF1],y : iny
 Handle16bytes_1:
-	; P_TILEBUF1 = 0xxxxxxx P_TILEBUF2 = x0000000  - do swap;1 lsr
-	; The loop is partially unrolled.
-	.as : lda [P_FONT],y : xba : lda #$00 : rep #$20: .al : lsr : REST()
-	.as : lda [P_FONT],y : xba : lda #$00 : rep #$20: .al : lsr : REST()
-	.as : lda [P_FONT],y : xba : lda #$00 : rep #$20: .al : lsr : REST()
-	.as : lda [P_FONT],y : xba : lda #$00 : rep #$20: .al : lsr : REST()
-	cpy #$0010: bcc Handle16bytes_1 : brl EndHandle16bytes
+        ; P_TILEBUF1 = 0xxxxxxx P_TILEBUF2 = x0000000  - do swap;1 lsr
+        ; The loop is partially unrolled.
+        .as : lda [P_FONT],y : xba : lda #$00 : rep #$20: .al : lsr : REST()
+        .as : lda [P_FONT],y : xba : lda #$00 : rep #$20: .al : lsr : REST()
+        .as : lda [P_FONT],y : xba : lda #$00 : rep #$20: .al : lsr : REST()
+        .as : lda [P_FONT],y : xba : lda #$00 : rep #$20: .al : lsr : REST()
+        cpy #$0010: bcc Handle16bytes_1 : brl EndHandle16bytes
 Handle16bytes_2:
-	; P_TILEBUF1 = 00xxxxxx P_TILEBUF2 = xx000000  - do swap;2 lsr
-	.as : lda [P_FONT],y : xba : lda #$00 : rep #$20: .al : lsr : lsr : REST()
-	.as : lda [P_FONT],y : xba : lda #$00 : rep #$20: .al : lsr : lsr : REST()
-	cpy #$0010: bcc Handle16bytes_2 : brl EndHandle16bytes
+        ; P_TILEBUF1 = 00xxxxxx P_TILEBUF2 = xx000000  - do swap;2 lsr
+        .as : lda [P_FONT],y : xba : lda #$00 : rep #$20: .al : lsr : lsr : REST()
+        .as : lda [P_FONT],y : xba : lda #$00 : rep #$20: .al : lsr : lsr : REST()
+        cpy #$0010: bcc Handle16bytes_2 : brl EndHandle16bytes
 Handle16bytes_3:
-	; P_TILEBUF1 = 000xxxxx P_TILEBUF2 = xxx00000  - do swap;3 lsr
-	.as : lda [P_FONT],y : xba : lda #$00 : rep #$20: .al : lsr : lsr : lsr : REST()
-	.as : lda [P_FONT],y : xba : lda #$00 : rep #$20: .al : lsr : lsr : lsr : REST()
-	cpy #$0010: bcc Handle16bytes_3 : brl EndHandle16bytes
+        ; P_TILEBUF1 = 000xxxxx P_TILEBUF2 = xxx00000  - do swap;3 lsr
+        .as : lda [P_FONT],y : xba : lda #$00 : rep #$20: .al : lsr : lsr : lsr : REST()
+        .as : lda [P_FONT],y : xba : lda #$00 : rep #$20: .al : lsr : lsr : lsr : REST()
+        cpy #$0010: bcc Handle16bytes_3 : brl EndHandle16bytes
 Handle16bytes_4:
-	; P_TILEBUF1 = 0000xxxx P_TILEBUF2 = xxxx0000  - do 4 asl
-	rep #$20: .al : lda [P_FONT],y : and #$00FF : asl : asl : asl : asl : REST()
-	rep #$20: .al : lda [P_FONT],y : and #$00FF : asl : asl : asl : asl : REST()
-	cpy #$0010: bcc Handle16bytes_4 : brl EndHandle16bytes
+        ; P_TILEBUF1 = 0000xxxx P_TILEBUF2 = xxxx0000  - do 4 asl
+        rep #$20: .al : lda [P_FONT],y : and #$00FF : asl : asl : asl : asl : REST()
+        rep #$20: .al : lda [P_FONT],y : and #$00FF : asl : asl : asl : asl : REST()
+        cpy #$0010: bcc Handle16bytes_4 : brl EndHandle16bytes
 Handle16bytes_5:
-	; P_TILEBUF1 = 00000xxx P_TILEBUF2 = xxxxx000  - do 3 asl
-	rep #$20: .al : lda [P_FONT],y : and #$00FF : asl : asl : asl : REST()
-	rep #$20: .al : lda [P_FONT],y : and #$00FF : asl : asl : asl : REST()
-	cpy #$0010: bcc Handle16bytes_5 : brl EndHandle16bytes
+        ; P_TILEBUF1 = 00000xxx P_TILEBUF2 = xxxxx000  - do 3 asl
+        rep #$20: .al : lda [P_FONT],y : and #$00FF : asl : asl : asl : REST()
+        rep #$20: .al : lda [P_FONT],y : and #$00FF : asl : asl : asl : REST()
+        cpy #$0010: bcc Handle16bytes_5 : brl EndHandle16bytes
 Handle16bytes_6:
-	; P_TILEBUF1 = 000000xx P_TILEBUF2 = xxxxxx00  - do 2 asl
-	rep #$20: .al : lda [P_FONT],y : and #$00FF : asl : asl : REST()
-	rep #$20: .al : lda [P_FONT],y : and #$00FF : asl : asl : REST()
-	cpy #$0010: bcc Handle16bytes_6 : bra EndHandle16bytes
+        ; P_TILEBUF1 = 000000xx P_TILEBUF2 = xxxxxx00  - do 2 asl
+        rep #$20: .al : lda [P_FONT],y : and #$00FF : asl : asl : REST()
+        rep #$20: .al : lda [P_FONT],y : and #$00FF : asl : asl : REST()
+        cpy #$0010: bcc Handle16bytes_6 : bra EndHandle16bytes
 Handle16bytes_7:
-	; P_TILEBUF1 = 0000000x P_TILEBUF2 = xxxxxxx0  - do 1 asl
-	rep #$20: .al : lda [P_FONT],y : and #$00FF : asl : REST()
-	rep #$20: .al : lda [P_FONT],y : and #$00FF : asl : REST()
-	rep #$20: .al : lda [P_FONT],y : and #$00FF : asl : REST()
-	rep #$20: .al : lda [P_FONT],y : and #$00FF : asl : REST()
-	cpy #$0010: bcc Handle16bytes_7 : ;bra EndHandle16bytes
+        ; P_TILEBUF1 = 0000000x P_TILEBUF2 = xxxxxxx0  - do 1 asl
+        rep #$20: .al : lda [P_FONT],y : and #$00FF : asl : REST()
+        rep #$20: .al : lda [P_FONT],y : and #$00FF : asl : REST()
+        rep #$20: .al : lda [P_FONT],y : and #$00FF : asl : REST()
+        rep #$20: .al : lda [P_FONT],y : and #$00FF : asl : REST()
+        cpy #$0010: bcc Handle16bytes_7 : ;bra EndHandle16bytes
 #undef REST
        EndHandle16bytes:
    .)
@@ -496,3 +504,261 @@ Special:
         sbc #$0020
         rts
 .)
+
+#define ALLOCATE()        \
+        .byt $D4, $10 :        \
+        .byt $D4, $12 :        \
+        .byt $D4, $14 :        \
+        .byt $D4, $16 :        \
+        .byt $D4, $18 :        \
+        .byt $D4, $1A :        \
+        .byt $D4, $1C
+#define UNALLOCATE()        \
+        pla : sta $1C :        \
+        pla : sta $1A :        \
+        pla : sta $18 :        \
+        pla : sta $16 :        \
+        pla : sta $14 :        \
+        pla : sta $12 :        \
+        pla : sta $10
+
+GetItemName:        ; FAR-CALL me please
+        ; In - Al=item number
+        ; Out- Al=maxlen
+        ;      Ah,Y=address of string
+        ;
+        
+        ; This is a copy of the routine at $C2F2E2
+        
+        SET_16_BIT_AX()
+        and #$00FF
+        asl
+        tay
+        lda $7D00,y     ; $7E7D00 HAS ITEM OFFSET LIST.
+        tay
+        lda #$CC0B      ; ITEMLIST SEGMENT, LENGTH
+        ; The table has been built in:
+        ;   
+        rts
+
+EquipLeftHelper:
+.(
+        SET_16_BIT_AX()
+        phx
+         phy
+          phk
+          jsr GetItemNum
+         ply
+         lda $04C9
+         and #$00FF
+         beq Skip
+         iny
+Skip:   pla
+        rtl
+GetItemNum:
+	lda #$5840
+	pha
+	.byt $5C, $9A, $A5, $C2  ;jmp $C2A59A
+.)
+
+EquipLeftItemFunc:
+        ; In - A=item number
+        ;      Y=item position in list
+        
+        SET_16_BIT_AX()
+        sty W_TILENUM ;save Y somewhere safe
+
+        jsr GetItemName
+        
+        SET_8_BIT_A()
+        dec ;skip first char
+        iny
+        SET_16_BIT_A()
+        ALLOCATE()
+        pha
+         lda W_TILENUM
+         jsr DoTilenumber_8line
+         
+         lda #$7000
+         sta W_VRAMADDR
+        pla
+        ;passthru
+DisplayFuncCommon_2bit:
+        jsr DrawS_2bit
+
+        SET_16_BIT_A()
+        UNALLOCATE()
+        SET_8_BIT_A()
+        
+        ; $C2EF65 does this. No idea.
+        lda #$DC
+        trb $7E
+        
+        SET_16_BIT_A()
+
+        rtl
+
+EquipRightItemFunc:        ;also used in shop
+        ; In - A=item number
+.(
+        pha
+         ; Find out if we were called from the routine
+         ; that displays equipment (4 lines)...
+         lda 6,s
+         cmp #$A70F
+         bne Skip1
+         sty $22  ; We were. Do a hack, save Y.
+         
+Skip1:   lda $22   ;counter in create-list
+         clc
+         adc $1041 ;buy-listbegin
+         clc
+         adc $1043 ;sell-listbegin
+         ; This works
+         sta W_TILENUM
+        pla
+.)
+        SET_16_BIT_AX()
+        
+        jsr GetItemName
+        
+        SET_16_BIT_A()
+        ALLOCATE()
+        pha
+         lda W_TILENUM
+         jsr DoTilenumber_8line
+         
+         lda #$0000
+         sta W_VRAMADDR
+        pla
+        brl DisplayFuncCommon_4bit
+
+ItemListFunc:
+        ; In - A=item number
+        
+        ; $000054 (byte) = list scrolling position
+        ; 
+        
+        jsr GetItemName
+        
+        SET_16_BIT_A()
+        ALLOCATE()
+        pha
+         ; THIS WORKS! PLEASE DON'T BREAK THIS.
+         lda $0416  ; scrolling position
+         clc
+         adc $54   ; index in the item list
+         and #$00FF
+         
+         ; Now we have item list scrolling position.
+         .byt $8F,$04,$42,$00  ;sta $4204   ;dividend
+         lda #10
+         .byt $8F,$06,$42,$00  ;sta $4206   ;divisor
+         nop:nop:nop:nop:nop  ;16 cycles
+         nop:nop:nop:nop:nop
+         lda #$0000
+         sta W_VRAMADDR
+         phx
+          phb
+           phk
+           plb
+           .byt $AF,$16,$42,$00  ;lda $4216   ;remainder
+           asl
+           tax
+           lda TileNumberList,x
+          plb
+         plx
+         sta W_TILENUM
+        pla
+        bra DisplayFuncCommon_4bit
+
+TechListFunc:
+        ; In:
+        ;    Al     = tech number
+        ;    $61    = screen address
+        ;    $7700  = table of tech colour attributes
+        
+        ; C2BDB2 does this:
+        
+        SET_8_BIT_AX()
+        phy ;Save Y...
+         
+         ; Get tech address AND tech colour code!
+         ;
+         .byt $8F,$02,$42,$00  ;sta $4202 - tech number
+         tay
+         lda #11
+         .byt $8F,$03,$42,$00  ;sta $4203 - multiply by 11
+         
+         ldx #$0C      ;palette 12
+         lda $7700,y   ;load tech attr
+         bit #$40
+         bne GotAttr
+         ldx #$00      ;palette 0
+         bit #$80
+         beq GotAttr
+         bit $78       ;test if $80 was already given
+         bmi GotAttr
+         ldx #$08      ;palette 8
+GotAttr:
+         stx $7E       ;save attr.
+        ply
+        
+        SET_16_BIT_AX()
+        lda #$15C4    ;TECH LIST OFFSET
+        
+        clc
+        .byt $6F,$16,$42,$00  ;adc $4216 - got technum*11
+        ; A is now our source address...
+        
+        sta W_VRAMADDR ; save source address somewhere
+        
+        lda #$CC0B    ;TECH LIST SEGMENT $CC, LENGTH $0B
+
+        ALLOCATE()
+        pha
+         tya        ; Y just happens to be our position in tech list here
+                    ;   because we so carefully saved it
+         jsr DoTilenumber_8line
+
+         ldy W_VRAMADDR ; Now load the previously saved source address to Y.
+         
+         lda #$0000
+         sta W_VRAMADDR
+        pla
+
+        ldx $61       ;Load screen address (target)
+
+        ;passthru
+DisplayFuncCommon_4bit:
+        jsr DrawS_4bit
+
+        SET_16_BIT_A()
+        UNALLOCATE()
+        SET_8_BIT_A()
+        
+        ; $C2EF65 does this. Resets the attributes (bits $24).
+        lda #$DC
+        trb $7E
+        
+        SET_16_BIT_A()
+        
+        rtl
+
+DoTilenumber_8line:
+         and #$0007 ; modulo 08
+         phx
+          phb
+           phk
+           plb
+           asl
+           tax
+           lda TileNumberList,x
+          plb
+         plx
+         sta W_TILENUM
+         rts
+
+TileNumberList:
+        .word $0030, $003B, $0046, $0051, $005C
+        .word $0067, $0072, $007D, $0088, $0093

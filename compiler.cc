@@ -574,7 +574,7 @@ namespace
              branchNonEpoch.ToHere();
              // No Epoch
              CODE.Set8bit_M();
-             CODE.EmitCode(0xC9, 0x1E); // CMP A,$1B - if it's < [member1]
+             CODE.EmitCode(0xC9, 0x1B); // CMP A,$1B - if it's < [member1]
              CODE.EmitCode(0x90, 0);    // BCS - jump over if is <
              branchNonMember.FromHere();
              // Yes, it's [member1](1B) or [member2](1C) or [member3](1D).

@@ -21,7 +21,7 @@ SMALL    {font-size:70%}
   <h1>Chrono Trigger translation development system</h1>
   <h2 class=level2> 0. Contents </h2>
   
-  This is the documentation of chronotools-1.6.1.
+  This is the documentation of chronotools-1.6.2.
 <div class=toc><table cellspacing=0 cellpadding=0 class=toc><tr><td width="50%" valign=middle align=left nowrap class=toc>&nbsp;&nbsp;&nbsp;1. <a href="#what">Purpose</a><br>&nbsp;&nbsp;&nbsp;2. <a href="#how">How to begin?</a><br>&nbsp;&nbsp;&nbsp;3. <a href="#status">Current status</a><br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;3.1. <a href="#changes">Version history</a><br>&nbsp;&nbsp;&nbsp;4. <a href="#h0">Program list</a><br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;4.1. <a href="#ctdump">ctdump</a><br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;4.2. <a href="#ctinsert">ctinsert</a><br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;4.3. <a href="#h1">other</a><br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;4.3.1. <a href="#h2">makeips</a><br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;4.3.2. <a href="#h3">unmakeips</a><br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;4.3.3. <a href="#h4">xray</a><br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;4.3.4. <a href="#h5">viewer</a><br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;4.3.5. <a href="#h6">spacefind</a><br></td>
 <td width="50%" valign=middle align=left nowrap class=toc>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;4.3.6. <a href="#h7">taipus.rb</a><br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;4.3.7. <a href="#h8">sramdump</a><br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;4.3.8. <a href="#h9">base62</a><br>&nbsp;&nbsp;&nbsp;5. <a href="#h10">Useful features</a><br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;5.1. <a href="#conj">Name conjugation</a><br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;5.2. <a href="#skew">Font/dictionary skew</a><br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;5.3. <a href="#wrap">Automatic paragraph wrapping</a><br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;5.4. <a href="#vwf8">Variable width 8pix font</a><br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;5.5. <a href="#h11">Very configurable</a><br>&nbsp;&nbsp;&nbsp;6. <a href="#req">Requirements</a><br>&nbsp;&nbsp;&nbsp;7. <a href="#copying">Copying</a><br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;7.1. <a href="#parts">If you only are interested in some features/parts</a><br>&nbsp;&nbsp;&nbsp;8. <a href="#h12">See also</a><br>&nbsp;&nbsp;&nbsp;9. <a href="#download">Downloading</a><br></td>
 </tr></table></div><H2 id="what" class="level2"><a name="what"></a>1. Purpose</H2><div class="level2">
@@ -68,7 +68,7 @@ and probably get some of your work done in a much harder way.
 Chronotools is under active development.
 Here's the current situation.<br>
 Last updated:
-2003-08-28
+2003-08-31
 
 <p>
 <table>
@@ -158,6 +158,7 @@ Copypaste from the Makefile:
 # VERSION 1.5.4  another archive-only version
 # VERSION 1.6.0  signature support (custom compressed image on startup screen)
 # VERSION 1.6.1  some remodularizing of code
+# VERSION 1.6.2  fixed the vwf8 scrolling problems and some other bugs
 </pre>
 
 </div><H2 id="h0" class="level2"><a name="h0"></a>4. Program list</H2><div class="level2">
@@ -391,8 +392,12 @@ It can be found in Debian and compiled for other systems.
 
 If you're interested, throw me email.
 <p>
-My email-address (sigh) is:
-<em>bisqwit a<b style="font-weight:lighter">t i</b>ki <small>dot</small> fi</em>
+<table cellspacing=0 cellpadding=0>
+<tr><td class=email>My email address:</td>
+    <td class=email>Joel Ylilu</td>
+    <td class=email>oma &lt;bisqw</td>
+    <td class=email>it@iki.fi&gt;</td>
+</tr></table>
 </p>
 I'm not publishing files on this web page, because it's a well-known fact
 that many people in ROM hacking scene aren't very respectful to copyrights.
@@ -423,9 +428,9 @@ If you're uncertain, <a href="#copying">send me email and explain your situation
    is at <a href="http://iki.fi/bisqwit/source/chronotools.html">http://iki.fi/bisqwit/source/chronotools.html</a>.<br>
    Check there for new versions.
 </div> <p align=right><small>Generated from
-       <code>progdesc.php</code> (last updated: Thu, 28 Aug 2003 01:13:49 +0300)<br>
+       <code>progdesc.php</code> (last updated: Sun, 31 Aug 2003 05:10:14 +0300)<br>
   with <code>docmaker.php</code> (last updated: Thu, 13 Feb 2003 15:11:29 +0200)<br>
-  at Thu, 28 Aug 2003 01:14:04 +0300</small>
+  at Sun, 31 Aug 2003 05:19:21 +0300</small>
  </p>
 </body>
 </html>

@@ -4,6 +4,8 @@
 $title = 'Chrono Trigger translation development system';
 $progname = 'chronotools';
 
+require_once '/WWW/email.php';
+
 $text = array(
    'what:1. Purpose' => "
 
@@ -139,6 +141,7 @@ Copypaste from the Makefile:
 # VERSION 1.5.4  another archive-only version
 # VERSION 1.6.0  signature support (custom compressed image on startup screen)
 # VERSION 1.6.1  some remodularizing of code
+# VERSION 1.6.2  fixed the vwf8 scrolling problems and some other bugs
 </pre>
 
 ", '1. Program list' => "
@@ -372,8 +375,7 @@ It can be found in Debian and compiled for other systems.
 
 If you're interested, throw me email.
 <p>
-My email-address (sigh) is:
-<em>bisqwit a<b style=\"font-weight:lighter\">t i</b>ki <small>dot</small> fi</em>
+".GetEmail('My email address:', 'Joel Yliluoma', 'bisqwi'. 't@iki.fi')."
 </p>
 I'm not publishing files on this web page, because it's a well-known fact
 that many people in ROM hacking scene aren't very respectful to copyrights.

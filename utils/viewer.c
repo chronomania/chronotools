@@ -135,7 +135,6 @@ static unsigned char REV(unsigned char n)
     return n;
 }
 
-
 static int Equal(const unsigned char *s, const unsigned char *s2, unsigned step, int len)
 {
     for(;;)

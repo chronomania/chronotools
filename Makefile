@@ -64,6 +64,7 @@ DEPDIRS = utils/
 # VERSION 1.5.4  another archive-only version
 # VERSION 1.6.0  signature support (custom compressed image on startup screen)
 # VERSION 1.6.1  some remodularizing of code
+# VERSION 1.6.2  fixed the vwf8 scrolling problems and some other bugs
 
 OPTIM=-O3
 #OPTIM=-O0
@@ -72,7 +73,7 @@ OPTIM=-O3
 
 CXXFLAGS += -I.
 
-VERSION=1.6.1
+VERSION=1.6.2
 ARCHFILES=utils/xray.cc utils/xray.h \
           utils/viewer.c \
           utils/vwftest.cc \
@@ -223,6 +224,9 @@ utils/comp2test: utils/compiler2.cc config.o confparser.o ctcset.o wstring.o
 	$(CXX) $(CXXFLAGS) -g -O -Wall -W -pedantic -o $@ $^ $(LDFLAGS)
 
 utils/comprtest: utils/comprtest.o rommap.o compress.o
+	$(CXX) $(CXXFLAGS) -g -O -Wall -W -pedantic -o $@ $^ $(LDFLAGS)
+
+utils/comprtest2: utils/comprtest2.o compress.o
 	$(CXX) $(CXXFLAGS) -g -O -Wall -W -pedantic -o $@ $^ $(LDFLAGS)
 
 utils/xray: utils/xray.o compress.o

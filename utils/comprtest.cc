@@ -9,7 +9,7 @@ typedef unsigned short Word;
 typedef unsigned char Byte;
 typedef unsigned int Ptr;
 
-FILE *scriptout = stdout;
+FILE *scriptout=NULL; //dummy, used by rommap.o
 
 static vector<Byte> Data(65536);
 static unsigned lastsize;
