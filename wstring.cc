@@ -5,6 +5,12 @@
 
 #include "wstring.hh"
 
+#ifdef WIN32
+# define ICONV_INPUTTYPE const char **
+#else
+# define ICONV_INPUTTYPE char **
+#endif
+
 namespace
 {
     const char *const midset
@@ -61,7 +67,7 @@ const string wstringOut::puts(const ucs4string &s) const
         char OutBuf[4096], *outptr = OutBuf;
         unsigned outsize = sizeof OutBuf;
         size_t retval = iconv(converter,
-                              const_cast<char **> (&input),
+                              const_cast<ICONV_INPUTTYPE> (&input),
                               &left,
                               &outptr,
                               &outsize);
@@ -97,7 +103,7 @@ bool wstringOut::isok(ucs4 p) const
     unsigned outsize = sizeof OutBuf;
     unsigned insize = sizeof(p);
     size_t retval = iconv(tester,
-                          const_cast<char **> (&tmp),
+                          const_cast<ICONV_INPUTTYPE> (&tmp),
                           &insize,
                           &outptr,
                           &outsize);
@@ -150,7 +156,7 @@ const ucs4string wstringIn::puts(const string &s) const
         char OutBuf[4096], *outptr = OutBuf;
         unsigned outsize = sizeof OutBuf;
         size_t retval = iconv(converter,
-                              const_cast<char **> (&input),
+                              const_cast<ICONV_INPUTTYPE> (&input),
                               &left,
                               &outptr,
                               &outsize);

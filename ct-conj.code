@@ -419,8 +419,7 @@ RETURN
 # -xxi+xii
 #     +ii
 FUNCTION IllativeStem
-VAR Len
-REG chr
+VAR Len chr
 CALL_GET Length Len
 IF IsAlien
   CALL OutWord Len

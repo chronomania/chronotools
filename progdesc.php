@@ -156,6 +156,7 @@ Copypaste from the Makefile:
 # VERSION 1.9.1  improved the signature feature; added checksum and ROM name feature
 # VERSION 1.9.2  has only documentation updates
 # VERSION 1.9.3  includes the forgotten snescode and dictionary modules.
+# VERSION 1.10.0 implements various assembly optimization techniques
 </pre>
 
 ", '1. Program list' => "

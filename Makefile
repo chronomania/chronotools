@@ -11,6 +11,8 @@ include Makefile.sets
 # Building for native:
 HOST=
 
+
+# Which compiler to use
 CXX=$(HOST)g++
 CC=$(HOST)gcc
 CPP=$(HOST)gcc
@@ -90,6 +92,7 @@ DEPDIRS = utils/
 # VERSION 1.9.1  improved the signature feature; added checksum and ROM name feature
 # VERSION 1.9.2  has only documentation updates
 # VERSION 1.9.3  includes the forgotten snescode and dictionary modules.
+# VERSION 1.10.0 implements various assembly optimization techniques
 
 OPTIM=-O3
 #OPTIM=-O0
@@ -98,7 +101,7 @@ OPTIM=-O3
 
 CXXFLAGS += -I.
 
-VERSION=1.9.3
+VERSION=1.10.0
 ARCHFILES=utils/xray.cc utils/xray.h \
           utils/viewer.c \
           utils/vwftest.cc \
@@ -111,6 +114,10 @@ ARCHFILES=utils/xray.cc utils/xray.h \
           utils/fixchecksum.cc \
           utils/comprtest.cc \
           utils/compiler.cc \
+          utils/codegen.cc utils/codegen.hh \
+          utils/casegen.cc utils/casegen.hh \
+          \
+          autoptr \
           \
           ctcset.cc ctcset.hh \
           miscfun.cc miscfun.hh \
@@ -155,6 +162,8 @@ ARCHFILES=utils/xray.cc utils/xray.h \
           \
           utils/compiler2.cc utils/compiler2-parser.inc utils/ct.code2 \
           utils/o65test.cc utils/dumpo65.cc \
+          \
+          utils/ctxtview.cc \
           \
           README COPYING transnotes.txt Makefile.sets \
           \
@@ -247,7 +256,7 @@ utils/sramdump: utils/sramdump.o config.o confparser.o ctcset.o wstring.o
 utils/base62: utils/base62.cc
 	$(CXX) $(LDOPTS) $(CXXFLAGS) -g -O -Wall -W -pedantic -o $@ $^ $(LDFLAGS)
 utils/compile: \
-		utils/compiler.o \
+		utils/compiler.o utils/casegen.o utils/codegen.o \
 		symbols.o \
 		config.o confparser.o ctcset.o wstring.o
 	$(CXX) $(LDOPTS) $(CXXFLAGS) -g -O -Wall -W -pedantic -o $@ $^ $(LDFLAGS)
@@ -301,7 +310,9 @@ winzip: ctdump ctinsert
 
 fullzip: \
 		ctdump ctinsert \
-		utils/unmakeips utils/makeips \
+		utils/unmakeips utils/makeips utils/fixchecksum \
+		utils/base62 utils/compile \
+		utils/facegenerator \
 		utils/o65test utils/dumpo65 \
 		etc/ct.cfg etc/ct.code \
 		README.html README.TXT
@@ -315,13 +326,14 @@ fullzip: \
 	zip -r9 $(ARCHNAME)-win32.zip $(ARCHNAME)
 	rm -rf $(ARCHNAME)
 	mv -f $(ARCHNAME)-win32.zip archives/
+	- ln -f archives/$(ARCHNAME)-win32.zip /WWW/src/arch/
 
 clean: FORCE
-	rm -f *.o $(PROGS)
+	rm -f *.o $(PROGS) utils/*.o
 distclean: clean
-	rm -f *~
+	rm -f *~ utils/*~
 realclean: distclean
-	rm -f ct_eng.txt ctpatch-hhr.ips ctpatch-nohdr.ips chrono-patched.smc
+	rm -f ct_eng.txt ctpatch-hdr.ips ctpatch-nohdr.ips chrono-patched.smc
 
 include depfun.mak
 

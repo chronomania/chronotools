@@ -8,30 +8,35 @@
 #include "config.hh"
 #include "ctcset.hh"
 
-using namespace std;
-
-#define SIMPLE_OUT_FORMAT 0
-
-/*
-    Optimizations TODO:
-
-        - thread jumps:
-           if bcc/bcs/beq/bne/bra to label that only does bra,
-           modify the label directly to the result
-        - tail optimization:
-           If "jsr" comes immediately before "rts",
-           replace jsr with bra. Ignore "Ret"-label.
-           It doesn't matter.
-           - DONE
-        - rep/sep optimization:
-           keep track of possible bitnesses
-           when entering a label.
-*/
+#include "casegen.hh"
+#include "codegen.hh"
 
 namespace
 {
-    FILE *OutFile;
+    /* Emit any code taking an int param */
+    const std::string CreateImmedIns(const std::string& s, int value)
+    {
+        char Buf[64]; std::sprintf(Buf, " #$%X", value);
+        return s + Buf;
+    }
+
+    const std::string CreateStackIns(const std::string& s, unsigned index)
+    {
+        char Buf[64]; std::sprintf(Buf, " $%u,s", index);
+        return s + Buf;
+    }
     
+    bool A_is_16bit()
+    {
+        const FlagAssumption flags = GetAssumption();
+        return flags.GetA() == Assume16bitA;
+    }
+    bool XY_is_16bit()
+    {
+        const FlagAssumption flags = GetAssumption();
+        return flags.GetXY() == Assume16bitXY;
+    }
+
     class Assembler
     {
         ucs4string CurSubName;
@@ -54,16 +59,22 @@ namespace
         bool started;       // Code begun?
         unsigned LoopCount; // How many loops active
         
-        struct labeldata
+        struct BranchData
         {
-            bool defined, needed;
-            labeldata(): defined(false), needed(false) { }
+            unsigned level;
+            std::string label;
+            
+            FlagAssumption flags;
         };
-        
-        map<string, labeldata> labelstatus;
-        
-        typedef list<pair<unsigned, const char *> > branchlist_t;
+        typedef list<BranchData> branchlist_t;
         branchlist_t openbranches;
+        
+        struct FunctionData
+        {
+            FlagAssumption flags;
+        };
+        typedef map<ucs4string, FunctionData> functionlist_t;
+        functionlist_t functiondata;
         
         class ConstState
         {
@@ -101,8 +112,6 @@ namespace
         
         regstate ALstate, AHstate;
         
-        ucs4string PendingCall;
-        
         void Invalidate_A()
         {
             ALstate.Invalidate();
@@ -118,40 +127,20 @@ namespace
                 if(i->second.is_regvar)
                     --varcount;
             
-            if(varcount != 3 || X_is_16bit())
+            if(XY_is_16bit())
             {
-                if(!X_is_8bit() || varcount > 4)
+                while(varcount >= 2)
                 {
-                    if(varcount >= 2 && !X_is_16bit() && !A_is_known()) Emit_M(16);
-                    while(varcount >= 2)
-                    {
-                        Emit_X(16);
-                        Emit("ply");
-                        varcount -= 2;
-                    }
+                    Emit("ply", Want16bitXY);
+                    varcount -= 2;
                 }
             }
-            // If we're going to do a rep/sep anyway,
-            // set A to a known state (8-bit) now. It's free.
-            if(varcount >= 1 && !X_is_8bit() && !A_is_known()) Emit_M(8);
+
             while(varcount >= 1)
             {
-                Emit_X(8);
-                Emit("ply");
+                Emit("ply", Want8bitXY);
                 varcount -= 1;
             }
-        }
-        
-        bool IsPlainRTS() const
-        {
-            // Count variables
-            unsigned varcount = vars.size();
-            // But don't count register variables
-            for(vars_t::const_iterator i=vars.begin(); i!=vars.end(); ++i)
-                if(i->second.is_regvar)
-                    --varcount;
-
-            return !varcount;
         }
         
         void FRAME_BEGIN()
@@ -168,15 +157,13 @@ namespace
             // That's why this is disabled
             while(varcount >= 2)
             {
-                Emit_M(16);
-                Emit("pha");
+                Emit("pha", Want16bitA);
                 varcount -= 2;
             }
         #endif
             while(varcount >= 1)
             {
-                Emit_M(8);
-                Emit("pha");
+                Emit("pha", Want8bitA);
                 varcount -= 1;
             }
 
@@ -221,29 +208,6 @@ namespace
         }
         void CheckCodeStart()
         {
-            if(!PendingCall.empty())
-            {
-                // X needs to be saved if we're in a loop.
-                if(LoopCount)
-                {
-                    Emit_X(16);
-                    Emit("phx");
-                }
-                EmitCall(PendingCall);
-                LoadFlagsFromFunc(PendingCall);
-                if(LoopCount)
-                {
-                    Emit_X(16);
-                    Emit("plx");
-                }
-                if(PendingCall == OutcHelperName)
-                {
-                    AssumeM(16);
-                    AssumeX(16);
-                }
-                PendingCall.clear();
-                Invalidate_A();
-            }
             if(started) return;
             
             FRAME_BEGIN();
@@ -270,217 +234,47 @@ namespace
             return i->second.stackpos;
         }
         
-        void EmitStack(const char* op, unsigned index)
-        {
-            char Buf[64];
-            sprintf(Buf, "%.32s $%u,s", op, index);;
-            Emit(Buf);
-        }
-        void EmitImmed(const char* op, int value)
-        {
-            char Buf[64];
-            sprintf(Buf, "%.32s #$%X", op, value);
-            Emit(Buf);
-        }
-        void EmitParam(const char* op, const char* param)
-        {
-            string s = op;
-            s += ' ';
-            s += param;
-            Emit(s.c_str());
-        }
-        void EmitCall(const ucs4string& name)
-        {
-            string tmp = "jsr ";
-            tmp += WstrToAsc(name);
-            Emit(tmp.c_str());
-            EmitUnknownBits();
-            EmitAnyBits();
-        }
-        void EmitFunction(const ucs4string& name)
-        {
-            string tmp = WstrToAsc(name);
-            tmp += ':';
-            Emit(tmp.c_str());
-            EmitUnknownBits();
-            EmitAnyBits();
-        }
-
-        typedef enum { StateUnknown, State16, State8, StateAnything } FlagStateType;
-        FlagStateType
-            StateX, StateM,
-            WantedX, WantedM;
-#if !SIMPLE_OUT_FORMAT
-        bool newline;
-        unsigned asmindent;
-#endif
-
-        map<ucs4string, FlagStateType> FuncRetX, FuncRetM;
-        
-        void Flushbits()
-        {
-            unsigned rep = 0;
-            unsigned sep = 0;
-            if(WantedX != StateAnything && WantedX != StateX)
-            {
-                if(WantedX == State16) rep |= 0x10; else sep |= 0x10;
-                StateX = WantedX;
-            }
-            if(WantedM != StateAnything && WantedM != StateM)
-            {
-                if(WantedM == State16) rep |= 0x20; else sep |= 0x20;
-                StateM = WantedM;
-            }
-            /*static int Xflag=0, Aflag=0;*/
-            if(sep & 0x10) { /*if(Xflag!=8){Xflag=8;*/Emit(".xs");/*}*/ EmitNoNewline(); }
-            if(sep & 0x20) { /*if(Aflag!=8){Aflag=8;*/Emit(".as");/*}*/ EmitNoNewline(); }
-            if(rep & 0x10) { /*if(Xflag!=16){Xflag=16;*/Emit(".xl");/*}*/ EmitNoNewline(); }
-            if(rep & 0x20) { /*if(Aflag!=16){Aflag=16;*/Emit(".al");/*}*/ EmitNoNewline(); }
-            if(sep)EmitImmed("sep", sep);
-            if(rep)EmitImmed("rep", rep);
-        }
-        bool A_is_known() const { return A_is_8bit() || A_is_16bit(); }
-        bool x_is_known() const { return X_is_8bit() || X_is_16bit(); }
-        bool A_is_8bit() const { return StateM == State8; }
-        bool X_is_8bit() const { return StateX == State8; }
-        bool A_is_16bit() const { return StateM == State16; }
-        bool X_is_16bit() const { return StateX == State16; }
-        
-        void Emit_M(unsigned bitness)
-        {
-            WantedM = bitness==8 ? State8 : State16;
-        }
-        void Emit_X(unsigned bitness)
-        {
-            WantedX = bitness==8 ? State8 : State16;
-        }
-        void EmitAnyBits()
-        {
-            WantedX = WantedM = StateAnything;
-            EmitUnknownBits();
-        }
-        void EmitUnknownBits()
-        {
-            StateX = StateM = StateUnknown;
-        }
-        void AssumeM(unsigned bitness)
-        {
-            EmitNoNewline();
-            StateM = bitness==8 ? State8 : State16;
-            Emit(StateM == State8 ? ".as" : ".al");
-        }
-        void AssumeX(unsigned bitness)
-        {
-            EmitNoNewline();
-            StateX = bitness==8 ? State8 : State16;
-            Emit(StateX == State8 ? ".xs" : ".xl");
-        }
-        void EmitLabel(const char* name)
-        {
-            string tmp = name;
-            tmp += ':';
-            Emit(tmp.c_str());
-            EmitUnknownBits();
-            EmitAnyBits();
-        }
-        void Emit(const char* code)
-        {
-            Flushbits();
-            
-#if !SIMPLE_OUT_FORMAT
-            if(!strcmp(code, ".)")) if(asmindent > 0) --asmindent;
-
-            if(newline) fputc('\n', OutFile);
-            else fprintf(OutFile, " : ");
-            if(*code != '+' && newline)
-            {
-                for(unsigned a=0; a<asmindent; ++a)
-                    fputc('\t', OutFile);
-            }
-#endif
-            fprintf(OutFile, "%s", code);
-#if !SIMPLE_OUT_FORMAT
-            newline = true;
-            
-            if(*code == 'c' && code[1] == 'm') newline = false;
-            if(strchr(code, ';')) newline = true;
-
-            if(!strcmp(code, ".(")) ++asmindent;
-#else
-            fputc('\n', OutFile);
-#endif
-        }
-        const char *GenLabel() const
-        {
-            static list<string> labels;
-            char Buf[64];
-            sprintf(Buf, "L%u", 1+labels.size());
-            labels.push_front(Buf);
-            return labels.begin()->c_str();
-        }
-
-        void AddBranch(const char* name, unsigned ind)
+        void RememberBranch(const std::string& name, unsigned ind,
+                            const FlagAssumption& flags)
         {
             // Remember that when entering this level,
             // must cancel this label.
-            openbranches.push_back(make_pair(ind, name));
             
-            // Deepen
-            ++asmindent;
+            BranchData tmp;
+            tmp.level = ind;
+            tmp.label = name;
+            tmp.flags = flags;
+            
+            openbranches.push_back(tmp);
+        }
+        void RememberBranch(const std::string& name, unsigned ind)
+        {
+            FlagAssumption flags = GetAssumption();
+            RememberBranch(name, ind, flags);
+        }
+        
+        void EndBranch(BranchData& data)
+        {
+            CheckCodeStart();
+            
+            data.flags.Combine(GetAssumption());
+            
+            Invalidate_A();
+
+            EmitLabel(data.label);
+            Assume(data.flags.GetA(), data.flags.GetXY());
         }
         
         void GenerateComparison
             (unsigned indent,
-             const char* notjump, const char* jump, bool SHORT=true)
+             const char* notjump, const char* jump)
         {
-            if(SHORT)
-            {
-                const char *elselabel = GenLabel();
-                EmitParam(notjump, elselabel);
-                //EmitAnyBits(); 
-                AddBranch(elselabel, indent);
-            }
-            else
-            {
-                const char *shortlabel = GenLabel();
-                const char *elselabel = GenLabel();
-                
-                EmitParam(jump, shortlabel);
-                EmitParam("brl", elselabel);
-                EmitLabel(shortlabel);
-                //EmitAnyBits();
-                AddBranch(elselabel, indent);
-            }
+            std::string elselabel = GenLabel();
+            EmitBranch(notjump, elselabel);
+            RememberBranch(elselabel, indent);
         }
 
-        void LoadFlagsFromFunc(const ucs4string& name)
-        {
-            map<ucs4string, FlagStateType>::const_iterator i;
-            i = FuncRetX.find(name); if(i != FuncRetX.end()) StateX = i->second;
-            i = FuncRetM.find(name); if(i != FuncRetM.end()) StateM = i->second;
-        }
-
-        void DefineInternalLabel(const char* name)
-        {
-            if(!labelstatus[name].defined)
-            {
-                string str;
-                for(unsigned n=0; n<LoopCount; ++n)
-                    str += '&';
-                str += name;
-                
-                EmitLabel(str.c_str());
-                labelstatus[name].defined = true;
-            }
-        }
     public:
-        void EmitNoNewline()
-        {
-#if !SIMPLE_OUT_FORMAT
-            newline = false;
-#endif
-        }
-        
         const ucs4string LoopHelperName;
         const ucs4string OutcHelperName;
         const ucs4string MagicVarName;
@@ -490,38 +284,22 @@ namespace
           OutcHelperName(GetConf("compiler", "outchelpername")),
           MagicVarName(GetConf("compiler", "magicvarname"))
         {
-            StateX=StateM=WantedX=WantedM=StateAnything;
+            Assume(UnknownXY, UnknownA);
             LoopCount=0;
-#if !SIMPLE_OUT_FORMAT
-            newline = true;
-            asmindent = 0;
-#endif
         }
         
-        void BRANCH_LEVEL(unsigned level)
+        void INDENT_LEVEL(unsigned level)
         {
-            //EmitImmed(";INDENT", level);
-            
             // Go the label list in REVERSE order; First-in, last-out
             for(branchlist_t::reverse_iterator
                 a = openbranches.rbegin();
                 a != openbranches.rend();
                 ++a)
             {
-                //string s = ";LABEL "; s += a->second;
-                //EmitImmed(s.c_str(), a->first);
-                
-                if(a->first != 999 && level <= a->first)
+                if(a->level != 999 && level <= a->level)
                 {
-                    CheckCodeStart();
-                    
-                    Invalidate_A();
-
-                    --asmindent; // reduce the indentation of the generated source.
-                    
-                    EmitLabel(a->second);
-                    //Emit(".)");
-                    a->first = 999; // prevent being reassigned
+                    EndBranch(*a);
+                    a->level = 999; // prevent being reassigned
                 }
             }
         }
@@ -531,15 +309,13 @@ namespace
             started = false;
             vars.clear();
             
-            string def = "#ifndef OMIT_" + WstrToAsc(name);
-            Emit(def.c_str());
-
-            EmitFunction(name);
-            Emit(".(");
+            EmitIfNDef(std::string("OMIT_") + WstrToAsc(name));
+            
+            EmitLabel(WstrToAsc(name));
+            KeepLabel(WstrToAsc(name));
+            Assume(UnknownXY, UnknownA);
             
             Invalidate_A();
-            
-            labelstatus.clear();
         }
         void END_FUNCTION()
         {
@@ -547,13 +323,7 @@ namespace
             FRAME_END();
             if(!CurSubName.empty())
             {
-                Emit(".)");
-                Emit("#endif");
-#if !SIMPLE_OUT_FORMAT
-                Emit("\n");
-#endif
-                FuncRetX[CurSubName] = StateX;
-                FuncRetM[CurSubName] = StateM;
+                EmitEndIfDef();
             }
         }
         void DECLARE_VAR(const ucs4string &name)
@@ -580,66 +350,13 @@ namespace
         }
         void VOID_RETURN()
         {
-            if(!PendingCall.empty())
-            {
-                if(IsPlainRTS())
-                {
-                    EmitAnyBits();
-                    EmitParam("bra", WstrToAsc(PendingCall).c_str());
-                    PendingCall.clear();
-                    return;
-                }
-                //if(PendingCall == OutcHelperName)
-                {
-                    string labelname = "End_" + WstrToAsc(PendingCall);
-                    if(labelstatus[labelname].defined)
-                    {
-                        labelstatus[labelname].needed = true;
-                        EmitParam("brl", labelname.c_str());
-                        PendingCall.clear();
-                        return;
-                    }
-                    DefineInternalLabel(labelname.c_str());
-                    DeallocateVars();
-                    EmitParam("bra", WstrToAsc(PendingCall).c_str());
-                    PendingCall.clear();
-                    return;
-                }
-            }
             CheckCodeStart();
             
-            bool inline_end = IsPlainRTS();
-            if(!labelstatus["End"].defined) inline_end = true;
+            DeallocateVars();
             
-            if(inline_end)
-            {
-                if(!IsPlainRTS())
-                {
-                    DefineInternalLabel("End");
-                }
-
-                DeallocateVars();
-                Emit("rts");
-                
-                if(FuncRetX.find(CurSubName) == FuncRetX.end()
-                || ((StateX==State8 || StateX==State16)
-                  && FuncRetX[CurSubName] == StateX))
-                    FuncRetX[CurSubName] = StateX;
-                else
-                    FuncRetX[CurSubName] = StateUnknown;
-
-                if(FuncRetM.find(CurSubName) == FuncRetM.end()
-                || ((StateM==State8 || StateM==State16)
-                  && FuncRetM[CurSubName] == StateM))
-                    FuncRetM[CurSubName] = StateM;
-                else
-                    FuncRetM[CurSubName] = StateUnknown;
-            }
-            else
-            {
-                labelstatus["End"].needed = true;
-                EmitParam("bra", "End");
-            }
+            functiondata[CurSubName].flags.Combine(GetAssumption());
+            Emit("rts");
+            EmitBarrier();
         }
         void BOOLEAN_RETURN(bool value)
         {
@@ -651,32 +368,14 @@ namespace
             if(value)
             {
                 // sec = true
-                if(!labelstatus["SEnd"].defined)
-                {
-                    DefineInternalLabel("SEnd");
-                    Emit("sec");
-                    VOID_RETURN();
-                }
-                else
-                {
-                    labelstatus["SEnd"].needed = true;
-                    EmitParam("bra", "SEnd");
-                }
+                Emit("sec");
+                VOID_RETURN();
             }
             else
             {
                 // clc = false
-                if(!labelstatus["CEnd"].defined)
-                {
-                    DefineInternalLabel("CEnd");
-                    Emit("clc");
-                    VOID_RETURN();
-                }
-                else
-                {
-                    labelstatus["CEnd"].needed = true;
-                    EmitParam("bra", "CEnd");
-                }
+                Emit("clc");
+                VOID_RETURN();
             }
         }
         
@@ -721,9 +420,8 @@ namespace
                         if(A_is_16bit())
                         {
                             /* causes too much bitness changes */
-                            Emit_M(16);
-                            EmitStack("lda", stackpos);
-                            EmitImmed("and", 0xFF);
+                            Emit(CreateStackIns("lda", stackpos), Want16bitA);
+                            Emit(CreateImmedIns("and", 0xFF),     Want16bitA);
                             AHstate.Const.Set(0);
                             AHstate.Var.Invalidate();
                             ALstate.Var.Set(name);
@@ -737,8 +435,7 @@ namespace
                         }
                         else
                         {
-                            Emit_M(8);
-                            Emit("lda #0");
+                            Emit("lda #0",  Want8bitA);
                             Emit("xba");
                             ALstate = AHstate; // AL has now what was in AH
                             AHstate.Const.Set(0); // And AH is 0 as we wanted
@@ -747,8 +444,7 @@ namespace
                     }
                 }
                 
-                Emit_M(8);
-                EmitStack("lda", stackpos);
+                Emit(CreateStackIns("lda", stackpos), Want8bitA);
 
                 ALstate.Var.Set(name);
                 ALstate.Const.Invalidate();
@@ -773,23 +469,19 @@ namespace
             unsigned lo = val&255;
             unsigned hi = val>>8;
             
-            if(need_16bit || A_is_16bit())
+            if(A_is_16bit()
+            || (need_16bit && !AHstate.Const.Is(hi)))
             {
-                if(A_is_16bit() || !AHstate.Const.Is(hi))
-                {
-                    Emit_M(16);
-                    EmitImmed("lda", val);
-                    ALstate.Const.Set(lo);
-                    ALstate.Var.Invalidate();
-                    AHstate.Const.Set(hi);
-                    AHstate.Var.Invalidate();
-                    return;
-                }
+                Emit(CreateImmedIns("lda", val), Want16bitA);
+                ALstate.Const.Set(lo);
+                ALstate.Var.Invalidate();
+                AHstate.Const.Set(hi);
+                AHstate.Var.Invalidate();
+                return;
             }
             if(!ALstate.Const.Is(lo))
             {
-                Emit_M(8);
-                EmitImmed("lda", lo);
+                Emit(CreateImmedIns("lda", lo), Want8bitA);
                 ALstate.Const.Set(lo);
                 ALstate.Var.Invalidate();
             }
@@ -804,9 +496,8 @@ namespace
             || !vars.find(name)->second.is_regvar)
             {
                 // store A to var
-                Emit_M(8);
                 unsigned stackpos = GetStackOffset(name);
-                EmitStack("sta", stackpos);
+                Emit(CreateStackIns("sta", stackpos), Want8bitA);
             }
             vars[name].written = true;
             
@@ -817,9 +508,7 @@ namespace
             CheckCodeStart();
             // inc var
             LOAD_VAR(name);
-            EmitNoNewline();
-            Emit_M(8);
-            Emit("inc");
+            Emit("inc"); // A bitness doesn't really matter here
 
             ALstate.Var.Invalidate();
             ALstate.Const.Inc();
@@ -831,9 +520,7 @@ namespace
             CheckCodeStart();
             // dec var
             LOAD_VAR(name);
-            EmitNoNewline();
-            Emit_M(8);
-            Emit("dec");
+            Emit("dec"); // A bitness doesn't really matter here
 
             ALstate.Var.Invalidate();
             ALstate.Const.Dec();
@@ -844,34 +531,31 @@ namespace
         {
             CheckCodeStart();
             
-#if !SIMPLE_OUT_FORMAT
-            newline = true;
-#endif
-            bool optimize = LoopCount == 0;
-            
             // leave A unmodified and issue call to function
-            if(optimize)
+
+            // X needs to be saved if we're in a loop.
+            if(LoopCount)
             {
-                // Delay the call for possible tail optimization.
-                PendingCall = name;
+                Emit("phx", Want16bitXY);
+            }
+            
+            EmitBranch("jsr", WstrToAsc(name));
+            
+            if(name == OutcHelperName)
+            {
+                Assume(Assume16bitXY, Assume16bitA);
             }
             else
             {
-                // X needs to be saved if we're in a loop.
-                if(LoopCount)
-                {
-                    Emit_X(16);
-                    Emit("phx");
-                }
-                
-                EmitCall(name);
-                LoadFlagsFromFunc(name);
-                if(LoopCount)
-                {
-                    Emit_X(16);
-                    Emit("plx");
-                }
+                const FlagAssumption& flags = functiondata[name].flags;
+                Assume(flags.GetA(), flags.GetXY());
             }
+            
+            if(LoopCount)
+            {
+                Emit("plx", Want16bitXY);
+            }
+            Invalidate_A();
         }
         void COMPARE_BOOL(unsigned indent)
         {
@@ -890,11 +574,9 @@ namespace
                 unsigned stackpos = GetStackOffset(name);
                 vars[name].read = vars[name].loaded = true;
                 
-                Emit_M(8);
-                
                 // process subblock if A is equal to given var
-                // Note: we're not checking ALstate here, would be mostly useless check
-                EmitStack("cmp", stackpos);
+                // Note: Checking ALstate would be useless here.
+                Emit(CreateStackIns("cmp", stackpos), Want8bitA);
             }
             else
             {
@@ -905,14 +587,14 @@ namespace
                 else
                     val = strtol(WstrToAsc(name).c_str(), NULL, 10);
                 
-                if(A_is_8bit() && val >= 256)
+                if(!A_is_16bit() && val >= 256)
                 {
                     fprintf(stderr,
                         "  Warning: In function '%s', numeric constant %u too large (>255)\n",
                         WstrToAsc(CurSubName).c_str(), val);
                 }
-                // bitness is insignificant
-                EmitImmed("cmp", val);
+                // A bitness insignificant
+                Emit(CreateImmedIns("cmp", val));
             }
             
             GenerateComparison(indent, "bne", "beq");
@@ -923,7 +605,6 @@ namespace
             
             // process subblock if var is zero
             LOAD_VAR(name);
-            EmitNoNewline();
 
             // Note: we're not checking ALstate here, would be mostly useless check
 
@@ -932,147 +613,258 @@ namespace
         void COMPARE_GREATER(const ucs4string &name, unsigned indent)
         {
             CheckCodeStart();
+            
+            FlagAssumption flags;
 
             unsigned stackpos = GetStackOffset(name);
             vars[name].read = vars[name].loaded = true;
 
-            Emit_M(8);
-            
             // process subblock if A is greater than given var
-            EmitStack("cmp", stackpos);
+            Emit(CreateStackIns("cmp", stackpos), Want8bitA);
             
-            const char *shortlabel1 = GenLabel();
-            const char *shortlabel2 = GenLabel();
-            const char *elselabel = GenLabel();
-            EmitParam("bcs", shortlabel1); // BCS- Jump to if greater or equal
-            EmitParam("brl", elselabel);   // BRL- Jump to "else"
+            std::string shortlabel1 = GenLabel();
+            std::string shortlabel2 = GenLabel();
+            std::string elselabel = GenLabel();
+            
+            flags = GetAssumption();
+            EmitBranch("bcs", shortlabel1); // BCS- Jump to if greater or equal
+            EmitBranch("bra", elselabel);   // BRL- Jump to "else"
+            EmitBarrier();
+            
             EmitLabel(shortlabel1);
-            //EmitAnyBits();
-            EmitParam("bne", shortlabel2); // BNE- Jump to n-eq too (leaving only "greater")
-            EmitParam("brl", elselabel);   // BRL- Jump to "else"
+
+            EmitBranch("bne", shortlabel2); // BNE- Jump to n-eq too (leaving only "greater")
+            EmitBranch("bra", elselabel);   // BRL- Jump to "else"
+            EmitBarrier();
+            
             EmitLabel(shortlabel2);
-            //EmitAnyBits();
-            AddBranch(elselabel, indent);
+            
+            RememberBranch(elselabel, indent);
         }
         void SELECT_CASE(const ucs4string &cset, unsigned indent)
         {
-            if(cset.empty()) return;
-            
-            CheckCodeStart();
+            class CaseHandler: public CaseGenerator
+            {
+                bool      LastWasBra;
+                bool      ChainCompare;
+                CaseValue LastCompare;
+                bool      BraPending;
+                string    PendingLabel;
+                string    LastCompareType;
+                
+                map<string, FlagAssumption> flags;
+            private:
+                void EmitCompareJump
+                   (CaseValue value,
+                    const std::string& target,
+                    const char *comparetype)
+                {
+                    CheckPendingBra();
+                    if(!ChainCompare || value != LastCompare)
+                    {
+                        Emit(CreateImmedIns("cmp", value), Want8bitA);
+                        LastCompare  = value;
+                        ChainCompare = true;
+                    }
+                    flags[target].Combine(GetAssumption());
+                    EmitBranch(comparetype, target);
+                    LastWasBra      = false;
+                    LastCompareType = comparetype;
+                }
+                void CheckPendingBra()
+                {
+                    if(!BraPending) return;
+                    flags[PendingLabel].Combine(GetAssumption());
+                    EmitBranch("bra", PendingLabel);
+                    EmitBarrier();
+                    BraPending = false;
+                }
 
-            // process subblock if A is in any of given chars
+            public:
+                CaseHandler(class Assembler& a,
+                            const std::string &posilabel)
+                : LastWasBra(false), ChainCompare(false),
+                  BraPending(false),
+                  PendingLabel(posilabel)
+                {
+                }
+                
+                virtual CaseValue GetMinValue()    const { return 0;   }
+                virtual CaseValue GetMaxValue()    const { return 255; }
+                virtual CaseValue GetDefaultCase() const { return -1;  }
+
+                virtual void EmitJump(const std::string& target)
+                {
+                    if(LastWasBra) return;
+                    if(target == PendingLabel)
+                        BraPending = true;
+                    else
+                    {
+                        flags[target].Combine(GetAssumption());
+                        EmitBranch("bra", target);
+                        EmitBarrier();
+                    }
+                    LastWasBra   = true;
+                    ChainCompare = false;
+                }
+                virtual void EmitCompareEQ(CaseValue value, const std::string& target)
+                {
+                    EmitCompareJump(value, target, "beq");
+                }
+                virtual void EmitCompareNE(CaseValue value, const std::string& target)
+                {
+                    EmitCompareJump(value, target, "bne");
+                }
+                virtual void EmitCompareLT(CaseValue value, const std::string& target)
+                {
+                    if(value == GetMinValue())
+                        { /* nothing */ }
+                    else if(value == GetMinValue()+1
+                    && (!ChainCompare || value != LastCompare))
+                        EmitCompareEQ(value-1, target);
+                    else
+                        EmitCompareJump(value, target, "bcc");
+                }
+                virtual void EmitCompareGE(CaseValue value, const std::string& target)
+                {
+                    if(value == GetMinValue())
+                        { EmitJump(target); return; }
+                    else if(value == GetMaxValue())
+                        EmitCompareEQ(value, target);
+                    else
+                        EmitCompareJump(value, target, "bcs");
+                }
+                virtual void EmitCompareLE(CaseValue value, const std::string& target)
+                {
+                    if(value == GetMaxValue())
+                        { EmitJump(target); return; }
+                    else if(value == GetMinValue())
+                        EmitCompareEQ(value, target);
+                    else if(ChainCompare && value == LastCompare && LastCompareType == "beq")
+                        EmitCompareLT(value, target);
+                    else
+                        EmitCompareLT(value+1, target);
+                }
+                virtual void EmitCompareGT(CaseValue value, const std::string& target)
+                {
+                    if(value == GetMaxValue())
+                        { /* nothing */ }
+                    else if(ChainCompare && value == LastCompare && LastCompareType == "beq")
+                        EmitCompareGE(value, target);
+                    else
+                        EmitCompareGE(value+1, target);
+                }
+                virtual void EmitSubtract(CaseValue value)
+                {
+                    CheckPendingBra();
+                    Emit("sec");
+                    Emit(CreateImmedIns("sbc", value));
+                    LastWasBra   = false;
+                }
+                virtual const std::string EmitBlock()
+                {
+                    return GenLabel();
+                }
+                virtual void EmitEndBlock(const std::string& label)
+                {
+                    CheckPendingBra();
+                    EmitLabel(label);
+                    LastWasBra   = false;
+                }
+                virtual void EmitJumpTable(const std::vector<std::string>& table)
+                {
+                    std::string tablelabel = GenLabel();
+                    CheckPendingBra();
+                    Emit("asl");
+                    Emit("tax");
+                    std::string line = "jmp (";
+                    line += tablelabel;
+                    line += ",x)";
+                    Emit(line);
+                    EmitBarrier();
+                    
+                    // This label must be saved, because
+                    // it's embedded in the jmp command above.
+                    EmitLabel(tablelabel);
+                    KeepLabel(tablelabel);
+                    line = "";
+                    for(unsigned a=0; a<table.size(); ++a)
+                    {
+                        if(line.empty()) line += ".word ";else line += ", ";
+                        line += table[a];
+                        KeepLabel(table[a]);
+                        if(line.size() > 60) { Emit(line); line = ""; }
+                    }
+                    if(!line.empty()) Emit(line);
+                    LastWasBra   = true;
+                    
+                    EmitBarrier();
+                }
+                
+                const FlagAssumption& GetFlags(const string& label)
+                {
+                    return flags[label];
+                }
+            };
             
-            vector<ctchar> allowed;
+            std::string positivelabel = GenLabel();
+            std::string negativelabel = GenLabel();
             
+            CaseHandler casehandler(*this, positivelabel);
+            CaseItemList cases;
+            CaseItem tmpcase;
             for(unsigned a=0; a<cset.size(); ++a)
             {
                 // Names can only contain 8bit chars!
                 // Note: we're not checking ALstate here, would be mostly useless check
                 
                 ctchar c = getchronochar(cset[a], cset_12pix);
-                allowed.push_back(c);
+                tmpcase.values.insert(c);
             }
-            sort(allowed.begin(), allowed.end());
-            vector<unsigned> rangebegins, rangeends;
+            tmpcase.target = positivelabel;
+            cases.push_back(tmpcase);
+            casehandler.Generate(cases, negativelabel);
             
-            const ctchar* begin = &*allowed.begin();
-            const ctchar* end   = &*allowed.end();
-            ctchar first=0, last=0; bool eka=true;
-            while(begin < end)
-            {
-                if(eka) { eka=false; NewRange: first=last=*begin++; continue; }
-                if(*begin == last+1) { last=*begin++; continue; }
-                
-                rangebegins.push_back(first); rangeends.push_back(last);
-                goto NewRange;
-            }
-            rangebegins.push_back(first); rangeends.push_back(last);
-            bool used_next = false;
+            FlagAssumption flags = casehandler.GetFlags(positivelabel);
+            EmitLabel(positivelabel);
+            Assume(flags.GetA(), flags.GetXY());
 
-            const char *shortlabel = GenLabel();
-            const char *elselabel = GenLabel();
-
-            for(unsigned a=0; a<rangebegins.size(); ++a)
-            {
-                const bool last = (a+1) == rangebegins.size();
-                const ctchar c1 = rangebegins[a];
-                const ctchar c2 = rangeends[a];
-                
-                // Input characters are always 8-bit. (The output is 16-bit)
-                Emit_M(8);
-                if(last)
-                {
-                    if(c1 == c2)
-                    {
-                        EmitImmed("cmp", c1); EmitParam("bne", elselabel);
-                    }
-                    else if(c1+1 == c2 && c2 < 0xFF)
-                    {
-                        used_next = true;
-                        EmitImmed("cmp", c1); EmitParam("beq", shortlabel);
-                        EmitImmed("cmp", c2); EmitParam("bne", elselabel);
-                    }
-                    else
-                    {
-                        EmitImmed("cmp", c1);   EmitParam("bcc", elselabel);
-                        if(c2 < 0xFF)
-                        {
-                            EmitImmed("cmp", c2+1); EmitParam("bcs", elselabel);
-                        }
-                    }
-                }
-                else
-                {
-                    if(c1 == c2)
-                    {
-                        used_next = true;
-                        EmitImmed("cmp", c1); EmitParam("beq", shortlabel);
-                    }
-                    /*else if(c1+1 == c2) - faster without!
-                    {
-                        used_next = true;
-                        EmitImmed("cmp", c1); EmitParam("beq", shortlabel);
-                        EmitImmed("cmp", c2); EmitParam("beq", shortlabel);
-                    }*/
-                    else
-                    {
-                        EmitImmed("cmp", c1);   EmitParam("bcc", elselabel);
-                        if(c2 >= 0xFF)
-                        {
-                            used_next = true;
-                            EmitParam("bra", shortlabel);
-                        }
-                        else
-                        {
-                            used_next = true;
-                            EmitImmed("cmp", c2+1); EmitParam("bcc", shortlabel);
-                        }
-                    }
-                }
-            }
-            if(used_next) EmitLabel(shortlabel);
-            //EmitAnyBits();
-            AddBranch(elselabel, indent);
+            flags = casehandler.GetFlags(negativelabel);
+            RememberBranch(negativelabel, indent, flags);
         }
+        
+        struct LoopData
+        {
+            std::string BeginLabel;
+            std::string EndLabel;
+            
+            FlagAssumption EndFlags;
+        };
+        
+        std::list<LoopData> LoopStack;
         void START_CHARNAME_LOOP()
         {
             CheckCodeStart();
             
+            LoopData data;
+            data.BeginLabel = GenLabel();
+            data.EndLabel   = GenLabel();
+            
             ++LoopCount;
-            Emit("; Init loop");
-            Emit_M(16);
-            Emit_X(16);
-            Emit("ldx #0");
-            Emit(".(");
-            --asmindent;
-            --asmindent;
-            EmitLabel("LoopBegin");
-            ++asmindent;
-            EmitCall(LoopHelperName);
-            AssumeM(8);
-            Emit("; If zero, break the loop");
-            EmitParam("beq", "LoopEnd");
-            ++asmindent;
+            Emit("ldx #0", Want16bitXY);
+            
+            EmitLabel(data.BeginLabel);
+            // A is not really unknown here, but it's difficult
+            // to fix - and it's not important, as this jsr doesn't
+            // require anything.
+            Assume(Assume16bitXY, UnknownA);
+            
+            EmitBranch("jsr", WstrToAsc(LoopHelperName));
+            Assume(UnknownXY, Assume8bitA);
+            // LoopHelper is known to give A=8-bit and X=unknown.
+            
+            data.EndFlags = GetAssumption();
+            EmitBranch("beq", data.EndLabel);
 
             Invalidate_A();
 
@@ -1080,23 +872,25 @@ namespace
             // mark read, because it indeed has been
             // read (in the loop end condition).
             vars[MagicVarName].read = true;
+            
+            LoopStack.push_front(data);
         }
         void END_CHARNAME_LOOP()
         {
+            LoopData data = *LoopStack.begin();
+            LoopStack.pop_front();
+            
             CheckCodeStart();
             
-            --asmindent;
-            Emit_X(16);
-            Emit("inx");
-            EmitParam("bra", "LoopBegin");
-            --asmindent;
-            EmitLabel("LoopEnd");
-            ++asmindent;
-            ++asmindent;
+            Emit("inx", Want16bitXY);
+            EmitBranch("bra", data.BeginLabel);
+            EmitBarrier();
 
+            EmitLabel(data.EndLabel);
+            Assume(data.EndFlags.GetA(), data.EndFlags.GetXY());
+            
             Invalidate_A();
             
-            Emit(".)");
             --LoopCount;
         }
         void OUT_CHARACTER()
@@ -1166,15 +960,10 @@ void Compile(FILE *fp)
         
         if(words[0][0] == '#')
         {
-#if !SIMPLE_OUT_FORMAT
-            string s = "; ";
-            s += WstrToAsc(Buf).c_str() + 1;
-            fprintf(OutFile, "%s\n", s.c_str());
-#endif
             continue;
         }
         
-        Asm.BRANCH_LEVEL(indent);
+        Asm.INDENT_LEVEL(indent);
         
         const string firstword = WstrToAsc(words[0]);
         
@@ -1191,7 +980,6 @@ void Compile(FILE *fp)
             if(words.size() > 1)
             {
                 Asm.LOAD_VAR(words[1]);
-                Asm.EmitNoNewline();
             }
             Asm.VOID_RETURN();
         }
@@ -1214,10 +1002,8 @@ void Compile(FILE *fp)
             if(words.size() > 3)
             {
                 Asm.LOAD_VAR(words[3]);
-                Asm.EmitNoNewline();
             }
             Asm.CALL_FUNC(words[1]);
-            Asm.EmitNoNewline();
             Asm.STORE_VAR(words[2]);
         }
         else if(firstword == "IF")
@@ -1225,7 +1011,6 @@ void Compile(FILE *fp)
             if(words.size() > 2)
             {
                 Asm.LOAD_VAR(words[2]);
-                Asm.EmitNoNewline();
             }
             Asm.CALL_FUNC(words[1]);
             Asm.COMPARE_BOOL(indent);
@@ -1235,7 +1020,6 @@ void Compile(FILE *fp)
             if(words.size() > 2)
             {
                 Asm.LOAD_VAR(words[2]);
-                Asm.EmitNoNewline();
             }
             Asm.CALL_FUNC(words[1]);
         }
@@ -1250,7 +1034,6 @@ void Compile(FILE *fp)
         else if(firstword == "LET")
         {
             Asm.LOAD_VAR(words[2]);
-            Asm.EmitNoNewline();
             Asm.STORE_VAR(words[1]);
         }
         else if(firstword == "=")
@@ -1266,13 +1049,11 @@ void Compile(FILE *fp)
                 if(lda_param_2)
                 {
                     Asm.LOAD_VAR(words[2]);
-                    Asm.EmitNoNewline();
                     Asm.COMPARE_EQUAL(words[1], indent);
                 }
                 else
                 {
                     Asm.LOAD_VAR(words[1]);
-                    Asm.EmitNoNewline();
                     Asm.COMPARE_EQUAL(words[2], indent);
                 }
             }
@@ -1280,7 +1061,6 @@ void Compile(FILE *fp)
         else if(firstword == ">")
         {
             Asm.LOAD_VAR(words[2]);
-            Asm.EmitNoNewline();
             Asm.COMPARE_GREATER(words[1], indent);
         }
         else if(firstword == "?")
@@ -1299,7 +1079,6 @@ void Compile(FILE *fp)
         else if(firstword == "OUT")
         {
             Asm.LOAD_VAR(words[1], true);
-            Asm.EmitNoNewline();
             Asm.OUT_CHARACTER();
         }
         else if(firstword == "FUNCTION")
@@ -1327,10 +1106,11 @@ int main(int argc, const char *const *argv)
     FILE *fp = fopen(argv[1], "rt"); if(!fp) { perror(argv[1]); return -1; }
     FILE *fo = fopen(argv[2], "wt"); if(!fo) { perror(argv[2]); return -1; }
     
-    OutFile = fo;
+    BeginCode(fo);
     
     Compile(fp);
-    OutFile = NULL;
+    
+    EndCode();
     
     fclose(fp);
     fclose(fo);
