@@ -608,71 +608,69 @@ $C2:5E88 60          RTS                                A:0000 X:0000 Y:0000 D:0
 
 *** TÄHÄN PÄÄTTYY DIALOGIFONTIN TILENMUODOSTUKSEN APURUTIINI ***
 
-*** TÄSTÄ ALKAA DIALOGIFONTIN TILEN PIKSELIRIVIN APURUTIINI ***
+*** THIS ROUTINE DRAWS ONE SCANLINE (8 PIXELS) OF A DIALOG FONT TILE ***
 
-// Rutiini 5E89:
-//  PARAMETREJÄ:
-//    $0260: (word) tavuoffset fonttibufferipointterin päälle
-//    $0262: (byte) merkin järjestysnumero fontissa, alemmat 8 bittiä
-//    $026A: (word) pikselipositio rivillä AND 7
-//    $0273: (long) pointteri pikselibufferiin tämän hetkisen merkin alkuun
-//    $0276: (long) pointteri merkkiin fontissa, part 1
-//    $0279: (long) pointteri merkkiin fontissa, part 2
-//    $026E: (word) tavuoffset pikselibufferipointterin päälle
-//  PAIKALLISIA:
-//    $0263: (word) tähän koostetaan bittejä
+// Routine 5E89:
+//  PARAMETERS:
+//    $0260: (word) byteoffset to the font buffer pointer
+//    $0262: (byte) index of the character in the font, low 8 bits
+//    $026A: (word) pixel position on row AND 7
+//    $0273: (long) pointer to the pixel buffer, start of this char
+//    $0276: (long) pointer to the character in font part 1
+//    $0279: (long) pointer to the character in font part 2
+//    $026E: (word) byte offset to add to the pixel buffer pointer
+//  LOCALS:
+//    $0263: (word) target for some bits
 
 $C2:5E89 A4 60       LDY [$00:D+$60]      ;$00:0260     A:0000 X:0000 Y:0000 D:0200 DB:C2 PB:C2
-// Hakee merkin alkuosan ja yhdistää siihen edellisen
+// Loads the beginning part of the character, combines with previous
 $C2:5E8B B7 76       LDA [long[$00:D+$76]+y] ;$FF:36D1  A:0000 X:0000 Y:0009 D:0200 DB:C2 PB:C2
 $C2:5E8D EB          XBA                                A:0000 X:0000 Y:0009 D:0200 DB:C2 PB:C2
 $C2:5E8E A5 62       LDA [$00:D+$62]      ;$00:0262     A:0000 X:0000 Y:0009 D:0200 DB:C2 PB:C2
 $C2:5E90 4A          LSR A                              A:00EF X:0000 Y:0009 D:0200 DB:C2 PB:C2
 $C2:5E91 90 08       BCC $5E9B                          A:0077 X:0000 Y:0009 D:0200 DB:C2 PB:C2
-// Hakee merkin loppuosan ylimmäksi neljäksi bitiksi
+// Loads the high nibble from font rest-part
 $C2:5E93 B7 79       LDA [long[$00:D+$79]+y] ;$FF:4391  A:0077 X:0000 Y:0009 D:0200 DB:C2 PB:C2
 $C2:5E95 0A          ASL A                              A:0040 X:0000 Y:0009 D:0200 DB:C2 PB:C2
 $C2:5E96 0A          ASL A                              A:0080 X:0000 Y:0009 D:0200 DB:C2 PB:C2
 $C2:5E97 0A          ASL A                              A:0000 X:0000 Y:0009 D:0200 DB:C2 PB:C2
 $C2:5E98 0A          ASL A                              A:0000 X:0000 Y:0009 D:0200 DB:C2 PB:C2
 $C2:5E99 80 04       BRA $5E9F                          A:0000 X:0000 Y:0009 D:0200 DB:C2 PB:C2
-// Hakee merkin loppuosan alemmaksi neljäksi bitiksi
+// Loads the low nibble from font rest-part
 $C2:5E9B B7 79       LDA [long[$00:D+$79]+y] ;$FF:4148
 $C2:5E9D 29 F0       AND A, $F0
 
+// Now A is 12-bit - the one pixel row.
 $C2:5E9F C2 20       REP $20                            A:0000 X:0000 Y:0009 D:0200 DB:C2 PB:C2
 $C2:5EA1 A8          TAY                                A:0000 X:0000 Y:0009 D:0200 DB:C2 PB:C2
 $C2:5EA2 64 63       STZ [$00:D+$63]      ;$00:0263     A:0000 X:0000 Y:0000 D:0200 DB:C2 PB:C2
 $C2:5EA4 A5 6A       LDA [$00:D+$6A]      ;$00:026A     A:0000 X:0000 Y:0000 D:0200 DB:C2 PB:C2
+// Load pixpos (which is 0..7)
 $C2:5EA6 29 FF 00    AND A, $00FF                       A:0000 X:0000 Y:0000 D:0200 DB:C2 PB:C2
 $C2:5EA9 0A          ASL A                              A:0000 X:0000 Y:0000 D:0200 DB:C2 PB:C2
 $C2:5EAA AA          TAX                                A:0000 X:0000 Y:0000 D:0200 DB:C2 PB:C2
 $C2:5EAB 98          TYA                                A:0000 X:0000 Y:0000 D:0200 DB:C2 PB:C2
 $C2:5EAC 7C AF 5E    JMP [PB:word[PB:$5EAF+x]] ;$C2:5EBF A:0000 X:0000 Y:0000 D:0200 DB:C2 PB:C
-// Mikä tämä on?
+
+// Case pixpos=00:
 $C2:5EBF E2 20       SEP $20                            A:0000 X:0000 Y:0000 D:0200 DB:C2 PB:C2
 $C2:5EC1 A6 6E       LDX [$00:D+$6E]      ;$00:026E     A:0000 X:0000 Y:0000 D:0200 DB:C2 PB:C2
 $C2:5EC3 BC E8 5F    LDY DB:($5FE8+x)     ;$C2:5FE8     A:0000 X:0000 Y:0000 D:0200 DB:C2 PB:C2
-// 5FE8 näyttää hakevan luvun (x+2)*8.
-// Tämä asettaa näyttömuistiin tavaraa!
-//   Pointteri tileen on $0273, ja siellä lukee esim. $7000
+// 5FE8[] seems to have (x+2)*8.
 $C2:5EC6 97 73       STA [long[$00:D+$73]+y] ;$7E:7018  A:0000 X:0000 Y:0010 D:0200 DB:C2 PB:C2
-
-// Tapaus x=00:
 $C2:5EC8 BC E6 5F    LDY DB:($5FE6+x)     ;$C2:5FE6     A:0000 X:0000 Y:0010 D:0200 DB:C2 PB:C2
-;; 5FE6 näyttää hakevan luvun x*8.
+;; 5FE6[] seems to have x*8.
 $C2:5ECB EB          XBA                                A:0000 X:0000 Y:0000 D:0200 DB:C2 PB:C2
-// Tämä asettaa näyttömuistiin tavaraa!
 $C2:5ECC 97 73       STA [long[$00:D+$73]+y] ;$7E:7008  A:0000 X:0000 Y:0000 D:0200 DB:C2 PB:C2
 $C2:5ECE 60          RTS                                A:0000 X:0000 Y:0000 D:0200 DB:C2 PB:C2
 
-// Tapaus X=08:
+// Case pixpos=08:
 $C2:5ECF 4A          LSR A                              A:0000 X:0008 Y:0000 D:0200 DB:C2 PB:C2
-// Tapaus X=06:
+// Case pixpos=06:
 $C2:5ED0 4A          LSR A                              A:0000 X:0008 Y:0000 D:0200 DB:C2 PB:C2
-// Tapaus X=04:
+// Case pixpos=04:
 $C2:5ED1 4A          LSR A                              A:0000 X:0008 Y:0000 D:0200 DB:C2 PB:C2
-// Tapaus X=02:
+// Case pixpos=02:
 $C2:5ED2 4A          LSR A                              A:0000 X:0008 Y:0000 D:0200 DB:C2 PB:C2
 $C2:5ED3 E2 20       SEP $20                            A:0000 X:0008 Y:0000 D:0200 DB:C2 PB:C2
 $C2:5ED5 A6 6E       LDX [$00:D+$6E]      ;$00:026E     A:0000 X:0008 Y:0000 D:0200 DB:C2 PB:C2
@@ -684,13 +682,13 @@ $C2:5EE0 17 73       ORA [long[$00:D+$73]+y] ;$7E:7028  A:0000 X:0004 Y:0020 D:0
 $C2:5EE2 97 73       STA [long[$00:D+$73]+y] ;$7E:7028  A:0000 X:0004 Y:0020 D:0200 DB:C2 PB:C2
 $C2:5EE4 60          RTS                                A:0000 X:0004 Y:0020 D:0200 DB:C2 PB:C2
 
-// Tapaus X=0A:
+// Case pixpos=0A:
 $C2:5EE5 0A          ASL A                              A:0000 X:000A Y:0000 D:0200 DB:C2 PB:C2
 $C2:5EE6 26 63       ROL [$00:D+$63]      ;$00:0263     A:0000 X:000A Y:0000 D:0200 DB:C2 PB:C2
-// Tapaus x=0C:
+// Case pixpos=0C:
 $C2:5EE8 0A          ASL A                              A:0000 X:000C Y:0000 D:0200 DB:C2 PB:C2
 $C2:5EE9 26 63       ROL [$00:D+$63]      ;$00:0263     A:0000 X:000C Y:0000 D:0200 DB:C2 PB:C2
-// Tapaus X=0E:
+// Case pixpos=0E:
 $C2:5EEB 0A          ASL A                              A:0000 X:000C Y:0000 D:0200 DB:C2 PB:C2
 $C2:5EEC 26 63       ROL [$00:D+$63]      ;$00:0263     A:0000 X:000C Y:0000 D:0200 DB:C2 PB:C2
 $C2:5EEE E2 20       SEP $20                            A:0000 X:000C Y:0000 D:0200 DB:C2 PB:C2
@@ -706,7 +704,8 @@ $C2:5F02 17 73       ORA [long[$00:D+$73]+y] ;$7E:7008  A:0000 X:0000 Y:0000 D:0
 $C2:5F04 97 73       STA [long[$00:D+$73]+y] ;$7E:7008  A:00E0 X:0000 Y:0000 D:0200 DB:C2 PB:C2
 $C2:5F06 60          RTS                                A:00E0 X:0000 Y:0000 D:0200 DB:C2 PB:C2
 
-*** TÄHÄN PÄÄTTYY DIALOGIFONTIN TILEN PIKSELIRIVIN APURUTIINI ***
+*** END OF THE ROUTINE WHICH DRAWS ONE SCANLINE (8 PIXELS) OF A DIALOG FONT TILE ***
+
 
 
 
@@ -1649,6 +1648,25 @@ $C0:5AC2 E2 30       SEP $30                            A:01C4 X:000A Y:000A D:0
 $C0:5AC4 60          RTS                                A:01C4 X:000A Y:000A D:0100 DB:00 PB:C0 S:06F9 P:envMXdizc HC:428 VC:257 00
 ;endsub
 
+; DMA-function 2DF1:
+$C0:2DF1 A9 00       LDA A, $00                    
+$C0:2DF3 8D 1B 21    STA DB:$211B         ;$00:211B
+$C0:2DF6 8D 1B 21    STA DB:$211B         ;$00:211B
+$C0:2DF9 8D 1C 21    STA DB:$211C         ;$00:211C
+$C0:2DFC 8D 1C 21    STA DB:$211C         ;$00:211C
+$C0:2DFF A9 80       LDA A, $80                    
+$C0:2E01 8D 70 43    STA DB:$4370         ;$00:4370
+$C0:2E04 A9 34       LDA A, $34                    
+$C0:2E06 8D 71 43    STA DB:$4371         ;$00:4371
+$C0:2E09 A6 4B       LDX [$00:D+$4B]      ;$00:014B
+$C0:2E0B 8E 72 43    STX DB:$4372         ;$00:4372
+$C0:2E0E A5 4D       LDA [$00:D+$4D]      ;$00:014D
+$C0:2E10 8D 74 43    STA DB:$4374         ;$00:4374
+$C0:2E13 A6 4E       LDX [$00:D+$4E]      ;$00:014E
+$C0:2E15 8E 75 43    STX DB:$4375         ;$00:4375
+$C0:2E18 A9 80       LDA A, $80                    
+$C0:2E1A 8D 0B 42    STA DB:$420B         ;$00:420B
+$C0:2E1D 60          RTS                           
 
 
 [1B0000]

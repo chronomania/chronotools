@@ -91,7 +91,7 @@ namespace
 
 int main(void)
 {
-	fp = fopen("a.o65", "rb");
+	fp = fopen("ct-vwf8.o65", "rb");
 	
 	fseek(fp, 6, SEEK_SET);
 	

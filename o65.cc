@@ -1,5 +1,51 @@
+/* xa65 object file loader and linker for C++
+ * For loading and linking 65816 object files
+ * Copyright (C) 1992,2003 Bisqwit (http://iki.fi/bisqwit/)
+ *
+ * Version 1.0 - Aug 18 2003
+ */
+
+#define DEBUG_FIXUPS 0
+
+#include <map>
+
 #include "o65.hh"
-#include "ctcset.hh"
+
+using std::map;
+using std::make_pair;
+using std::fprintf;
+#ifndef stderr
+using std::stderr;
+#endif
+
+class O65::segment
+{
+public:
+    vector<unsigned char> space;
+
+    // where it is assumed to start
+    unsigned base;
+    
+    // absolute addresses of all symbols
+    map<string, unsigned> symbols;
+    
+    typedef unsigned Fixup16; //addr
+    vector<Fixup16> Fixups_16;
+    vector<pair<Fixup16, unsigned> > Relocs_16; // fixup,undef_indx
+    
+    typedef unsigned Fixup16lo; //addr
+    vector<Fixup16lo> Fixups_16lo;
+    vector<pair<Fixup16lo, unsigned> > Relocs_16lo; // fixup,undef_indx
+    
+    typedef pair<unsigned,unsigned> Fixup16hi; // addr,lowpart
+    vector<Fixup16hi> Fixups_16hi;
+    vector<pair<Fixup16hi, unsigned> > Relocs_16hi; // fixup,undef_indx
+
+private:
+    friend class O65;
+    void Locate(unsigned newaddress);
+    void LocateSym(unsigned symno, unsigned newaddress);
+};
 
 namespace
 {
@@ -64,27 +110,45 @@ namespace
                     break;
                 }
                 // others are ignored
-                //   3 would be data
+                // FIXME: 3 would be data
             }
         }
     }
+}
+
+O65::O65(): text(NULL), data(NULL)
+{
+}
+
+O65::~O65()
+{
+    delete text;
+    delete data;
 }
 
 void O65::Load(FILE *fp)
 {
     rewind(fp);
     
+    /* FIXME: No validity checks here */
     // Skip header
     LoadWord(fp);LoadWord(fp);LoadWord(fp);
     
+    /* FIXME: No validity checks here */
     // Skip mode
     LoadWord(fp);
     
-    this->text.base = LoadWord(fp);
-    this->text.space.resize(LoadWord(fp));
+    if(this->text) delete this->text;
+    if(this->data) delete this->data;
 
-    this->data.base = LoadWord(fp);
-    this->data.space.resize(LoadWord(fp));
+    this->text = new segment;
+    this->data = new segment;
+    
+    this->text->base = LoadWord(fp);
+    this->text->space.resize(LoadWord(fp));
+
+    this->data->base = LoadWord(fp);
+    this->data->space.resize(LoadWord(fp));
     
     LoadWord(fp); // Skip bss_base
     LoadWord(fp); // Skip bss_len
@@ -97,13 +161,12 @@ void O65::Load(FILE *fp)
     {
         unsigned len = fgetc(fp);
         if(!len)break;
+        /* FIXME: These could be valuable */
         for(unsigned a=0; a<len; ++a) fgetc(fp);
     }
     
-    fread(&this->text.space[0], this->text.space.size(), 1, fp);
-    fread(&this->data.space[0], this->data.space.size(), 1, fp);
-    
-    wstringIn conv(getcharset());
+    fread(&this->text->space[0], this->text->space.size(), 1, fp);
+    fread(&this->data->space[0], this->data->space.size(), 1, fp);
     
     unsigned num_und = LoadWord(fp);
     for(unsigned a=0; a<num_und; ++a)
@@ -111,11 +174,16 @@ void O65::Load(FILE *fp)
         string varname;
         while(int c = fgetc(fp)) varname += (char) c;
         
-        undefines.push_back(make_pair(conv.puts(varname), make_pair(false, 0)));
+        undefines.push_back(make_pair(varname, make_pair(false, 0)));
     }
     
-    LoadRelocations(fp, text);
-    LoadRelocations(fp, data);
+    LoadRelocations(fp, *this->text);
+    LoadRelocations(fp, *this->data);
+    
+    if(!this->data->space.empty())
+    {
+        fprintf(stderr, "Warning: Nonempty data segment completely ignored.\n");
+    }
     
     unsigned num_ext = LoadWord(fp);
     for(unsigned a=0; a<num_ext; ++a)
@@ -129,10 +197,10 @@ void O65::Load(FILE *fp)
         switch(seg)
         {
             case 2:
-                text.symbols[conv.puts(varname)] = value;
+                text->symbols[varname] = value;
                 break;
             case 3:
-                data.symbols[conv.puts(varname)] = value;
+                data->symbols[varname] = value;
                 break;
         }
     }
@@ -140,47 +208,10 @@ void O65::Load(FILE *fp)
 
 void O65::LocateCode(unsigned newaddress)
 {
-    text.Locate(newaddress);
+    text->Locate(newaddress);
 }
 
-void O65::segment::Locate(unsigned newaddress)
-{
-    unsigned diff = newaddress - base;
-    hash_map<ucs4string, unsigned>::iterator i;
-    for(i = symbols.begin(); i != symbols.end(); ++i)
-    {
-        i->second += diff;
-    }
-    for(unsigned a=0; a<Fixups_16.size(); ++a)
-    {
-        unsigned addr = Fixups_16[a];
-        unsigned oldvalue = space[addr] | (space[addr+1] << 8);
-        unsigned newvalue = oldvalue + diff;
-        
-        fprintf(stderr, "Replaced %04X with %04X at %06X\n", oldvalue,newvalue&65535, newaddress+addr+0xC00000);
-        space[addr] = newvalue&255;
-        space[addr+1] = (newvalue>>8) & 255;
-    }
-    for(unsigned a=0; a<Fixups_16lo.size(); ++a)
-    {
-        unsigned addr = Fixups_16lo[a];
-        unsigned oldvalue = space[addr];
-        unsigned newvalue = oldvalue + diff;
-        fprintf(stderr, "Replaced %02X with %02X at %06X\n", oldvalue,newvalue&255, newaddress+addr+0xC00000);
-        space[addr] = newvalue & 255;
-    }
-    for(unsigned a=0; a<Fixups_16hi.size(); ++a)
-    {
-        unsigned addr = Fixups_16hi[a].first;
-        unsigned oldvalue = (space[addr] << 8) | Fixups_16hi[a].second;
-        unsigned newvalue = oldvalue + diff;
-        fprintf(stderr, "Replaced %02X with %02X at %06X\n", space[addr],(newvalue>>8)&255, newaddress+addr+0xC00000);
-        space[addr] = (newvalue>>8) & 255;
-    }
-    base = newaddress;
-}
-
-void O65::LinkSym(const ucs4string& name, unsigned value)
+void O65::LinkSym(const string& name, unsigned value)
 {
     bool found = false;
     
@@ -193,19 +224,62 @@ void O65::LinkSym(const ucs4string& name, unsigned value)
         if(undefines[a].second.first)
         {
             fprintf(stderr, "Attempt to redefine symbol '%s' as %X, old value %X\n",
-                WstrToAsc(name).c_str(),
+                name.c_str(),
                 value,
                 undefines[a].second.second
                    );
         }
-        text.LocateSym(a, value);
+        text->LocateSym(a, value);
         undefines[a].second.first  = true;  // mark defined
         undefines[a].second.second = value; // as this value
     }
     
     if(!found)
         fprintf(stderr, "Attempt to define unknown symbol '%s' as %X\n",
-            WstrToAsc(name).c_str(), value);
+            name.c_str(), value);
+}
+
+void O65::segment::Locate(unsigned newaddress)
+{
+    unsigned diff = newaddress - base;
+    map<string, unsigned>::iterator i;
+    for(i = symbols.begin(); i != symbols.end(); ++i)
+    {
+        i->second += diff;
+    }
+    for(unsigned a=0; a<Fixups_16.size(); ++a)
+    {
+        unsigned addr = Fixups_16[a];
+        unsigned oldvalue = space[addr] | (space[addr+1] << 8);
+        unsigned newvalue = oldvalue + diff;
+        
+#if DEBUG_FIXUPS
+        fprintf(stderr, "Replaced %04X with %04X at %06X\n", oldvalue,newvalue&65535, newaddress+addr+0xC00000);
+#endif
+        space[addr] = newvalue&255;
+        space[addr+1] = (newvalue>>8) & 255;
+    }
+    for(unsigned a=0; a<Fixups_16lo.size(); ++a)
+    {
+        unsigned addr = Fixups_16lo[a];
+        unsigned oldvalue = space[addr];
+        unsigned newvalue = oldvalue + diff;
+#if DEBUG_FIXUPS
+        fprintf(stderr, "Replaced %02X with %02X at %06X\n", oldvalue,newvalue&255, newaddress+addr+0xC00000);
+#endif
+        space[addr] = newvalue & 255;
+    }
+    for(unsigned a=0; a<Fixups_16hi.size(); ++a)
+    {
+        unsigned addr = Fixups_16hi[a].first;
+        unsigned oldvalue = (space[addr] << 8) | Fixups_16hi[a].second;
+        unsigned newvalue = oldvalue + diff;
+#if DEBUG_FIXUPS
+        fprintf(stderr, "Replaced %02X with %02X at %06X\n", space[addr],(newvalue>>8)&255, newaddress+addr+0xC00000);
+#endif
+        space[addr] = (newvalue>>8) & 255;
+    }
+    base = newaddress;
 }
 
 void O65::segment::LocateSym(unsigned symno, unsigned value)
@@ -216,7 +290,9 @@ void O65::segment::LocateSym(unsigned symno, unsigned value)
         unsigned addr = Relocs_16[a].first;
         unsigned oldvalue = space[addr] | (space[addr+1] << 8);
         unsigned newvalue = oldvalue + value;
+#if DEBUG_FIXUPS
         fprintf(stderr, "Replaced %04X with %04X for sym %u\n", oldvalue,newvalue&65535, symno);
+#endif
         space[addr] = newvalue&255;
         space[addr+1] = (newvalue>>8) & 255;
     }
@@ -226,7 +302,9 @@ void O65::segment::LocateSym(unsigned symno, unsigned value)
         unsigned addr = Relocs_16lo[a].first;
         unsigned oldvalue = space[addr];
         unsigned newvalue = oldvalue + value;
+#if DEBUG_FIXUPS
         fprintf(stderr, "Replaced %02X with %02X for sym %u\n", oldvalue,newvalue&255, symno);
+#endif
         space[addr] = newvalue & 255;
     }
     for(unsigned a=0; a<Relocs_16hi.size(); ++a)
@@ -235,10 +313,27 @@ void O65::segment::LocateSym(unsigned symno, unsigned value)
         unsigned addr = Relocs_16hi[a].first.first;
         unsigned oldvalue = (space[addr] << 8) | Relocs_16hi[a].first.second;
         unsigned newvalue = oldvalue + value;
+#if DEBUG_FIXUPS
         fprintf(stderr, "Replaced %02X with %02X for sym %u\n",
             space[addr],(newvalue>>8)&255, symno);
+#endif
         space[addr] = (newvalue>>8) & 255;
     }
+}
+
+const vector<unsigned char>& O65::GetCode() const
+{
+    return text->space;
+}
+
+unsigned O65::GetCodeSize() const
+{
+    return text->space.size();
+}
+
+unsigned O65::GetSymAddress(const string& name) const
+{
+    return text->symbols.find(name)->second;
 }
 
 void O65::Verify() const
@@ -247,6 +342,6 @@ void O65::Verify() const
         if(!undefines[a].second.first)
         {
             fprintf(stderr, "Symbol %s is still not defined\n",
-                WstrToAsc(undefines[a].first).c_str());
+                undefines[a].first.c_str());
         }
 }

@@ -45,6 +45,7 @@ class Font8data
 
     void LoadBoxAs(unsigned boxno, unsigned tileno, class TGAimage &);
     
+    virtual unsigned GetBegin() const;
     virtual unsigned GetCount() const;
     
 public:
@@ -62,6 +63,7 @@ public:
 
 class Font8vdata: public Font8data
 {
+    virtual unsigned GetBegin() const;
     virtual unsigned GetCount() const;
     
 public:

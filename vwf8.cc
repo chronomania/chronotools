@@ -9,39 +9,34 @@ namespace
     unsigned DrawS_2bit;
     unsigned DrawS_4bit;
     
-    #define FIRST_VAR 0x10
+    #define START_VARS  0x10
+    #define END_VARS    0x28
     
     #define TILENUM   0x10 //word
     #define VRAMADDR  0x12 //word
 
     #define CALCTMP   0x14 //word
     
-    #define TILEBUF   0x20 //start of the tile buffer
-
     // NMI käyttää muuttujia osoitteista:
     //    00:0Dxx
     //    00:00Fx
     //    00:040x
     // joten kunhan et sotke niitä, ei hätää NMI:stä.
     
-    void TalletaMuuttujat(unsigned Bitness, SNEScode &code)
+    // FIXME: Selvitä myös IRQ
+    
+    void TalletaMuuttujat(SNEScode &code)
     {
-        const unsigned TileDataSize = 2 * 8 * Bitness;
-        const unsigned Vapaa = TILEBUF + TileDataSize;
-        
-        const int MinPEI = FIRST_VAR;
-        const int MaxPEI = (Vapaa - 1) & ~1;
+        const int MinPEI = START_VARS;
+        const int MaxPEI = (END_VARS - 1) & ~1;
         
         // PEI some space
         for(int a=MinPEI; a<=MaxPEI; a+=2) code.EmitCode(0xD4, a); // pei.
     }
-    void PalautaMuuttujat(unsigned Bitness, SNEScode &code)
+    void PalautaMuuttujat(SNEScode &code)
     {
-        const unsigned TileDataSize = 2 * 8 * Bitness;
-        const unsigned Vapaa = TILEBUF + TileDataSize;
-        
-        const int MinPEI = FIRST_VAR;
-        const int MaxPEI = (Vapaa - 1) & ~1;
+        const int MinPEI = START_VARS;
+        const int MaxPEI = (END_VARS - 1) & ~1;
         
         // Release the borrowed space
         code.Set16bit_X(); //shorten code...
@@ -428,7 +423,7 @@ namespace
         code.EmitCode(0xAF, 0x16, 0x42, 0x00); // Remainder
     }
     
-    void Init_ItemFunc(unsigned Bitness, SNEScode &code)
+    void Init_ItemFunc(SNEScode &code)
     {
         code.Set16bit_M();
         code.Set16bit_X();
@@ -437,12 +432,12 @@ namespace
         // Save X somewhere
         code.EmitCode(0x86,0x65); // STX [$00:D+$65]
 
-        TalletaMuuttujat(Bitness, code);
+        TalletaMuuttujat(code);
     }
     
-    void Done_ItemFunc(unsigned Bitness, SNEScode &code)
+    void Done_ItemFunc(SNEScode &code)
     {
-        PalautaMuuttujat(Bitness, code);
+        PalautaMuuttujat(code);
         
         code.Set8bit_M();
 
@@ -461,7 +456,7 @@ namespace
     {
         SNEScode &code = result.code;
         
-        Init_ItemFunc(Bitness, code);
+        Init_ItemFunc(code);
         
         /////
         code.Set16bit_M();
@@ -517,7 +512,7 @@ namespace
         code.EmitCode(0x8F, Var_Addr&255, Var_Addr/256, Var_Page);
 #endif
         
-        Done_ItemFunc(Bitness, code);
+        Done_ItemFunc(code);
     }
     
     const SubRoutine GetEquipLeftItemFunc()
@@ -627,11 +622,15 @@ namespace
 void insertor::GenerateVWF8code(unsigned widthtab_addr, unsigned tiletab_addr)
 {
     {
-     O65 vwf8_code;
-     
      const string codefile = WstrToAsc(GetConf("vwf8", "file").SField());
      
      FILE *fp = fopen(codefile.c_str(), "rb");
+     if(!fp) return;
+     
+     fprintf(stderr, "Loading '%s'...\n", codefile.c_str());
+     
+     O65 vwf8_code;
+     
      vwf8_code.Load(fp);
      fclose(fp);
      
@@ -639,13 +638,15 @@ void insertor::GenerateVWF8code(unsigned widthtab_addr, unsigned tiletab_addr)
      unsigned code_addr = freespace.FindFromAnyPage(code_size);
      vwf8_code.LocateCode(code_addr);
      
-     vwf8_code.LinkSym(AscToWstr("WIDTH_SEG"),   (widthtab_addr >> 16) | 0xC0);
-     vwf8_code.LinkSym(AscToWstr("WIDTH_OFFS"),  (widthtab_addr & 0xFFFF));
-     vwf8_code.LinkSym(AscToWstr("TILEDATA_SEG"),  (tiletab_addr >> 16) | 0xC0);
-     vwf8_code.LinkSym(AscToWstr("TILEDATA_OFFS"), (tiletab_addr & 0xFFFF));
+     vwf8_code.LinkSym("WIDTH_SEG",   (widthtab_addr >> 16) | 0xC0);
+     vwf8_code.LinkSym("WIDTH_OFFS",  (widthtab_addr & 0xFFFF));
+     vwf8_code.LinkSym("TILEDATA_SEG",  (tiletab_addr >> 16) | 0xC0);
+     vwf8_code.LinkSym("TILEDATA_OFFS", (tiletab_addr & 0xFFFF));
      
-     DrawS_2bit = vwf8_code.GetSymAddress(GetConf("vwf8", "b2_draws"));
-     DrawS_4bit = vwf8_code.GetSymAddress(GetConf("vwf8", "b4_draws"));
+     DrawS_2bit = vwf8_code.GetSymAddress(WstrToAsc(GetConf("vwf8", "b2_draws")));
+     DrawS_4bit = vwf8_code.GetSymAddress(WstrToAsc(GetConf("vwf8", "b4_draws")));
+     
+     vwf8_code.Verify();
      
      {
       SNEScode tmp;

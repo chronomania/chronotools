@@ -249,9 +249,9 @@ void Font8data::Reload(const Rearrangemap_t& arrange)
     image.setboxsize(8, 8);
     image.setboxperline(32);
     
-    unsigned boxstart  = 0;
+    unsigned boxstart  = GetBegin();
     unsigned boxcount  = image.getboxcount();
-    unsigned charcount = GetCount();
+    unsigned charcount = GetCount() - boxstart;
     
     tiletable.clear();
     tiletable.resize(charcount * 16, 0);
@@ -263,16 +263,21 @@ void Font8data::Reload(const Rearrangemap_t& arrange)
     for(Rearrangemap_t::const_iterator
         i = arrange.begin(); i != arrange.end(); ++i)
     {
-        forbid.insert(i->second); // Target: may not be overwritten
-        forbid.insert(i->first);  // Source: already written
+        unsigned b = i->first;
+        unsigned c = i->second;
         
-        unsigned newno = i->second - boxstart;
+        if(c < boxstart) continue;
+        
+        forbid.insert(c); // Target: may not be overwritten
+        forbid.insert(b); // Source: already written
+        
+        unsigned newno = c - boxstart;
         if(newno >= charcount) continue;
         
         LoadBoxAs(i->first, newno, image);
     }
 
-    for(unsigned b=0; b<charcount; ++b)
+    for(unsigned b=0; b<boxcount; ++b)
     {
         if(b < boxstart) continue;
         
@@ -293,11 +298,19 @@ void Font8data::Load(const string &filename)
     Reload(dummy);
 }
 
+unsigned Font8data::GetBegin() const
+{
+    return 0;
+}
 unsigned Font8data::GetCount() const
 {
     return 256;
 }
 
+unsigned Font8vdata::GetBegin() const
+{
+    return font8v_begin;
+}
 unsigned Font8vdata::GetCount() const
 {
     return font8v_end;

@@ -1,60 +1,118 @@
-#include <cstdio>
-#include <utility>
-#include <vector>
+#ifndef bqtO65hh
+#define bqtO65hh
 
-#include "wstring.hh"
-#include "hash.hh"
+/* xa65 object file loader and linker for C++
+ * For loading and linking 65816 object files
+ * Copyright (C) 1992,2003 Bisqwit (http://iki.fi/bisqwit/)
+ *
+ * Version 1.0.1 - Aug 18 2003
+ */
+
+#include <cstdio>
+#include <vector>
+#include <string>
+#include <utility>
 
 using std::FILE;
-using std::pair;
 using std::vector;
+using std::string;
+using std::pair;
+
+/* An xa65 object file loader */
+
+/*
+ * Features:
+ *
+ *    Loading TEXT segment
+ *    Relocating the TEXT segment
+ *    Acquiring symbol pointers
+ *    Defining the undefined numeric constants
+ *    Defining the undefined symbol addresses
+ *
+ * Defects:
+ *
+ *    Only the TEXT segment is handled.
+ *    Only 16-bit, LOW and HIGH type fixups and relocs are supported.
+ *    File validity is not checked.
+ *    Undefined symbols may only be defined once.
+ *
+ */
 
 class O65
 {
 public:
-    struct segment
-    {
-        vector<unsigned char> space;
-
-        // where it is assumed to start
-        unsigned base;
-        
-        // absolute addresses of all symbols
-        hash_map<ucs4string, unsigned> symbols;
-        
-        typedef unsigned Fixup16; //addr
-        vector<Fixup16> Fixups_16;
-        vector<pair<Fixup16, unsigned> > Relocs_16; // fixup,undef_indx
-        
-        typedef unsigned Fixup16lo; //addr
-        vector<Fixup16lo> Fixups_16lo;
-        vector<pair<Fixup16lo, unsigned> > Relocs_16lo; // fixup,undef_indx
-        
-        typedef pair<unsigned,unsigned> Fixup16hi; // addr,lowpart
-        vector<Fixup16hi> Fixups_16hi;
-        vector<pair<Fixup16hi, unsigned> > Relocs_16hi; // fixup,undef_indx
-    private:
-        friend class O65;
-        void Locate(unsigned newaddress);
-        void LocateSym(unsigned symno, unsigned newaddress);
-    };
+    O65();
+    ~O65();
     
+    /* Loads an object file from the specified file */
     void Load(FILE *fp);
     
+    /* Relocated the TEXT segment to new address */
     void LocateCode(unsigned newaddress);
-    void LinkSym(const ucs4string& name, unsigned value);
     
-    const vector<unsigned char>& GetCode() const { return text.space; }
-    unsigned GetCodeSize() const { return text.space.size(); }
+    /* Defines the value of a symbol the TEXT is referring */
+    void LinkSym(const string& name, unsigned value);
     
-    unsigned GetSymAddress(const ucs4string& name) const
-        { return text.symbols.find(name)->second; }
+    /* Returns the TEXT segment */
+    const vector<unsigned char>& GetCode() const;
     
+    /* Returns the TEXT segment size */
+    unsigned GetCodeSize() const;
+    
+    /* Returns the address of a global defined in TEXT segment */
+    unsigned GetSymAddress(const string& name) const;
+    
+    /* Verifies that all symbols have been properly defined */
     void Verify() const;
 
+    class segment;
 private:
     // undefined symbols; sym -> defined_flag -> old value
-    vector<pair<ucs4string, pair<bool, unsigned> > > undefines;
+    vector<pair<string, pair<bool, unsigned> > > undefines;
     
-    segment text, data;
+    // No assigning
+    O65(const O65 &);
+    void operator= (const O65 &);
+    
+    segment *text, *data;
 };
+
+/*
+ Example code:
+
+#include <cstdio>
+#include "o65.hh"
+
+using namespace std;
+
+int main(void)
+{
+    O65 tmp;
+    
+    FILE *fp = fopen("ct-vwf8.o65", "rb");
+    tmp.Load(fp);
+    fclose(fp);
+    
+    const vector<unsigned char>& code = tmp.GetCode();
+    
+    printf("Code size: %u bytes\n", code.size());
+    
+    printf(" Write_4bit is at %06X\n", tmp.GetSymAddress("Write_4bit"));
+    printf(" NextTile is at %06X\n", tmp.GetSymAddress("NextTile"));
+    
+    printf("After relocating code at FF0000:\n");
+    
+    tmp.LocateCode(0xFF0000);
+    
+    printf(" Write_4bit is at %06X\n", tmp.GetSymAddress("Write_4bit"));
+    printf(" NextTile is at %06X\n", tmp.GetSymAddress("NextTile"));
+    
+    tmp.LinkSym("WIDTH_SEG", 0xFF);
+    
+    tmp.Verify();
+    
+    return 0;
+}
+*/
+
+#endif

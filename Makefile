@@ -58,6 +58,7 @@ DEPDIRS = utils/
 # VERSION 1.4.0  image patching support, more font reorganizing support
 # VERSION 1.4.1  lots of more translation (I'm archiving it here for my convenience)
 # VERSION 1.5.0  end of the compiler project; using assembler (xa65) now.
+# VERSION 1.5.1  vwf8 optimizations, assembly experiments
 
 OPTIM=-O3
 #OPTIM=-O0
@@ -66,7 +67,7 @@ OPTIM=-O3
 
 CXXFLAGS += -I.
 
-VERSION=1.5.0
+VERSION=1.5.1
 ARCHFILES=utils/xray.c utils/xray.h \
           utils/viewer.c \
           utils/vwftest.cc \
@@ -153,12 +154,6 @@ PROGS=\
 
 all: $(PROGS)
 
-xray: xray.o
-	$(CC) -o $@ $^ $(LDFLAGS) -lggi
-
-viewer: viewer.o
-	$(CC) -o $@ $^ $(LDFLAGS) -lslang
-
 ctdump: \
 		ctdump.o rommap.o strload.o extras.o \
 		tgaimage.o symbols.o miscfun.o config.o \
@@ -187,6 +182,12 @@ utils/unmakeips: utils/unmakeips.cc
 utils/spacefind: utils/spacefind.o
 	$(CXX) -o $@ $^ $(LDFLAGS) -lm
 
+utils/xray: utils/xray.o
+	$(CC) -o $@ $^ $(LDFLAGS) -lggi
+
+utils/viewer: utils/viewer.o
+	$(CC) -o $@ $^ $(LDFLAGS) -lslang
+
 utils/sramdump: utils/sramdump.cc config.o confparser.o ctcset.o wstring.o
 	$(CXX) $(CXXFLAGS) -g -O -Wall -W -pedantic -o $@ $^ $(LDFLAGS)
 utils/base62: utils/base62.cc
@@ -207,7 +208,7 @@ utils/compiler2.o: utils/compiler2.cc
 utils/comp2test: utils/compiler2.cc config.o confparser.o ctcset.o wstring.o
 	$(CXX) $(CXXFLAGS) -g -O -Wall -W -pedantic -o $@ $^ $(LDFLAGS)
 
-utils/o65test: utils/o65test.cc o65.o config.o confparser.o ctcset.o wstring.o
+utils/o65test: utils/o65test.cc o65.o wstring.o
 	$(CXX) $(CXXFLAGS) -g -O -Wall -W -pedantic -o $@ $^ $(LDFLAGS)
 
 utils/dumpo65: utils/dumpo65.cc
