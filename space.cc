@@ -5,6 +5,9 @@
 
 using namespace std;
 
+/* 0 = begin, 1 = end */
+#define EAT_MODE 0
+
 unsigned freespacemap::Find(unsigned page, unsigned length)
 {
     iterator mapi = find(page);
@@ -56,7 +59,7 @@ unsigned freespacemap::Find(unsigned page, unsigned length)
         return NOWHERE;
     }
     
-#if 0 /* Eat from end */
+#if EAT_MODE==1 /* Eat from end */
     const unsigned bestpos = best->pos + best->len - length;
     freespacerec tmp(best->pos, best->len - length);
 #else /* Eat from begin */
@@ -267,15 +270,6 @@ void freespacemap::OrganizeToAnyPage(vector<freespacerec> &blocks)
     for(const_iterator i=begin(); i!=end(); ++i)
     {
         const freespaceset &pagemap = i->second;
-        
-        if(i->first == 0x1E)
-        {
-            /* FIXME: FOR SOME STRANGE UNKNOWN REASON, THE GAME CRASHES
-             *        IF CODE IS ORGANISED TO THIS PAGE 0x1E
-             */
-            continue;
-        }
-
         freespaceset::const_iterator j;
         for(j=pagemap.begin(); j!=pagemap.end(); ++j)
         {
@@ -307,7 +301,7 @@ void freespacemap::OrganizeToAnyPage(vector<freespacerec> &blocks)
             spaceptr = holeaddrs[holeid] | (pagenum << 16);
             holeaddrs[holeid] += itemsize;
             holes[holeid]     -= itemsize;
-            Del(pagenum, spaceptr, itemsize);
+            Del(pagenum, spaceptr & 0xFFFF, itemsize);
         }
         else
         {

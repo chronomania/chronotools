@@ -74,7 +74,6 @@ class Assembler
     {
         unsigned varcount = vars.size();
         if(varcount >= 2) CODE.Set16bit_M();
-        //CODE.AddCode(0x08);     // PHP
         while(varcount >= 2)
         {
             CODE.AddCode(0x48); // PHA
@@ -107,7 +106,6 @@ class Assembler
             CODE.AddCode(0x7A); // PLY
             varcount -= 1;
         }
-        //CODE.AddCode(0x28);     // PLP
         
         FINISH_BRANCHES();
         CODE.AddCode(0x6B);     // RTL
@@ -172,14 +170,16 @@ public:
             }
         }
     }
-    void START_FUNCTION(const string &name)
+    void START_FUNCTION(const string &name, bool short_one = false)
     {
         CurSubName = name;
         started = false;
         vars.clear();
 
         cursub = new SubRoutine;
-        DECLARE_VAR("c");
+        
+        if(!short_one)
+            DECLARE_VAR("c");
     }
     void END_FUNCTION()
     {
@@ -370,24 +370,9 @@ public:
         into.Proceed();
         AddBranch(b, indent);
     }
-    void START_CHARNAME_LOOP()
+    
+    void CHARNAME_LOOP_BIG_BLOCK()
     {
-        CheckCodeStart();
-        
-        loopbegin = new Branch(CODE.PrepareRelativeLongBranch());
-        loopend   = new Branch(CODE.PrepareRelativeLongBranch());
-        
-        // Alkuarvo loopille
-        CODE.Set16bit_M();
-        CODE.AddCode(0xA9,0x00,0x00);      // LDA $0000
-        CODE.AddCode(0xAA);                // TAX
-        
-        /* FIXME: Not really intelligent to repeat this in all! */
-        
-        loopbegin->ToHere();
-        
-        // TÄHÄN LABEL
-
         // X talteen tämän touhun ajaksi:
         CODE.Set16bit_X();
         CODE.Set16bit_M();
@@ -451,10 +436,51 @@ public:
         // Hakee merkin hahmon nimestä
         CODE.Set8bit_M();
         CODE.AddCode(0xB7,0x37);  // lda [long[$00:D+$37]+y]
+    }
+    void OUTBYTE_BIG_CODE()
+    {
+        CODE.Set16bit_X();
+        CODE.Set8bit_M();
+        CODE.AddCode(0xDA); // PHX
+        
+         // Tässä välissä eivät muuttujaviittaukset toimi.
+         CODE.AddCode(0x85, 0x35); //sta [$00:D+$35]
+         SNEScode::FarToNearCall call = CODE.PrepareFarToNearCall();
+         
+         // call back the routine
+         CODE.Set16bit_M();
+         CODE.AddCode(0xA5, 0x35); //lda [$00:D+$35]
+         
+         call.Proceed(0xC25DC8);
+         CODE.BitnessUnknown();
+
+        CODE.Set16bit_X();
+        CODE.AddCode(0xFA); // PLX
+    }
+    
+    void START_CHARNAME_LOOP()
+    {
+        CheckCodeStart();
+        
+        loopbegin = new Branch(CODE.PrepareRelativeLongBranch());
+        loopend   = new Branch(CODE.PrepareRelativeLongBranch());
+        
+        // Alkuarvo loopille
+        CODE.Set16bit_M();
+        CODE.AddCode(0xA9,0x00,0x00);      // LDA $0000
+        CODE.AddCode(0xAA);                // TAX
+        
+        loopbegin->ToHere();
+        
+        CODE.AddCode(0x22, 0,0,0);
+        cursub->requires["loop_helper"].insert(CODE.size() - 3);
+
+        CODE.BitnessUnknown();
+        
         CODE.AddCode(0xD0, 3);    // bne - jatketaan looppia, jos nonzero
         CODE.AddCode(0x82, 0,0);  // brl - jump pois loopista.
         loopend->FromHere();
-        
+
         STORE_VAR("c"); // talteen c:hen.
     }
     void END_CHARNAME_LOOP()
@@ -479,23 +505,10 @@ public:
         CheckCodeStart();
         // outputs character in A
         
-        CODE.Set16bit_X();
-        CODE.Set8bit_M();
-        CODE.AddCode(0xDA); // PHX
-        
-         // Tässä välissä eivät muuttujaviittaukset toimi.
-         CODE.AddCode(0x85, 0x35); //sta [$00:D+$35]
-         SNEScode::FarToNearCall call = CODE.PrepareFarToNearCall();
-         
-         // call back the routine
-         CODE.Set16bit_M();
-         CODE.AddCode(0xA5, 0x35); //lda [$00:D+$35]
-         
-         call.Proceed(0xC25DC8);
-         CODE.BitnessUnknown();
+        CODE.AddCode(0x22, 0,0,0);
+        cursub->requires["outc_helper"].insert(CODE.size() - 3);
 
-        CODE.Set16bit_X();
-        CODE.AddCode(0xFA); // PLX
+        CODE.BitnessUnknown();
     }
     #undef CODE
     
@@ -633,10 +646,22 @@ const FunctionList Compile(FILE *fp)
              || words[0] == ":Q"
              || words[0] == ":I")
         {
+            bool no_vars = false;
+            if(words.size() == 3 && words[2] == "no_vars") no_vars = true;
             Asm.END_FUNCTION();
-            Asm.START_FUNCTION(words[1]);
+            Asm.START_FUNCTION(words[1], no_vars);
         }
     }
+    Asm.END_FUNCTION();
+
+    Asm.START_FUNCTION("loop_helper", true);
+    Asm.CHARNAME_LOOP_BIG_BLOCK();
+    Asm.VOID_RETURN();
+    Asm.END_FUNCTION();
+    
+    Asm.START_FUNCTION("outc_helper", true);
+    Asm.OUTBYTE_BIG_CODE();
+    Asm.VOID_RETURN();
     Asm.END_FUNCTION();
     
     return Asm.GetFunctions();

@@ -1,12 +1,12 @@
 include Makefile.sets
 
-# VERSION 1.0.3 was the first working! :D
-# VERSION 1.0.4 handled fixed strings too
-# VERSION 1.0.5 found item descriptions
-# VERSION 1.0.6 compressed better
-# VERSION 1.0.7 compressed more carefully
-# VERSION 1.0.8 documented the script
-# VERSION 1.0.9 fixed "..." handling and located the font
+# VERSION 1.0.3  was the first working! :D
+# VERSION 1.0.4  handled fixed strings too
+# VERSION 1.0.5  found item descriptions
+# VERSION 1.0.6  compressed better
+# VERSION 1.0.7  compressed more carefully
+# VERSION 1.0.8  documented the script
+# VERSION 1.0.9  fixed "..." handling and located the font
 # VERSION 1.0.10 had knowledge of character sets
 # VERSION 1.0.11 had a working font insertor
 # VERSION 1.0.12 had better knowledge of special codes
@@ -26,10 +26,11 @@ include Makefile.sets
 # VERSION 1.1.3  and so on... almost working! "case" still doesn't work.
 # VERSION 1.1.4  conjugating finally works!
 # VERSION 1.1.5  some bugfixes
+# VERSION 1.1.6  fixed an allocation bug and optimized the code generator a bit
 
 OPTIM=-O3
 
-VERSION=1.1.5
+VERSION=1.1.6
 ARCHFILES=xray.c xray.h \
           viewer.c \
           ctcset.cc ctcset.hh \

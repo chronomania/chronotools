@@ -335,7 +335,8 @@ void insertor::GenerateCode()
         fprintf(stderr, "  Function %s (%u bytes) will be placed at %02X:%04X\n",
             funcnames[a].c_str(),
             codeblobs[a].size(),
-            addr>>16, addr & 0xFFFF);
+            0xC0 | (addr>>16),
+            addr & 0xFFFF);
     }
     
     // All of them are now placed somewhere.

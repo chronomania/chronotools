@@ -204,43 +204,39 @@ s Hint c
 }
 RET
 
-:Q OutByte
-OUT c
-RET
-
 :B HardStem
 VAR Len Hint Hint2
 ci Length Len
 cb IsAbbrev
   cv OutWord Len
-  cv OutByte ':'
+  OUT ':'
   ci LastChar1 Hint
   s Hint2 0
   ? flmnrswxFLMNRSWX479
-    cv OutByte 'ä'
+    OUT 'ä'
     s Hint2 1
   ? zZ
-    cv OutByte 'a'
+    OUT 'a'
     s Hint2 1
   ? 0123568
     RET
   = Hint2 0
-    cv OutByte 't'
+    OUT 't'
   RET
 cb IsEs
   cv OutWord Len
-  cv OutByte 't'
+  OUT 't'
   RET
 cb EndWithVowel
   cb AkiEnd
     - Len
     cv OutWord Len
-    cv OutByte 'e'
+    OUT 'e'
     RET
   cv OutWord Len
   RET
 cv OutWord Len
-cv OutByte 'i'
+OUT 'i'
 RET
 
 :B SoftStem
@@ -248,14 +244,14 @@ VAR Len Hint
 ci Length Len
 cb IsAbbrev
   cv OutWord Len
-  cv OutByte ':'
+  OUT ':'
   RET
 cb IsEs
   - Len
   cv OutWord Len
-  cv OutByte 'k'
-  cv OutByte 's'
-  cv OutByte 'e'
+  OUT 'k'
+  OUT 's'
+  OUT 'e'
   RET
 cb EndWithVowel
   cb DoubleHard
@@ -263,55 +259,55 @@ cb EndWithVowel
     - Len
     cv OutWord Len
     ci LastChar1 Hint
-    cv OutByte Hint
+    OUT Hint
     RET
   cb AkiEnd
     - Len
     - Len
     cv OutWord Len
-    cv OutByte 'e'
+    OUT 'e'
     RET
   cv OutWord Len
   RET
 cv OutWord Len
-cv OutByte 'i'
+OUT 'i'
 RET
 
-:B Out_A
+:B Out_A no_vars
 cb IsFront
-  cv OutByte 'ä'
+  OUT 'ä'
   RET
-cv OutByte 'a'
+OUT 'a'
 RET
 
-:B Do_N
+:B Do_N no_vars
 cf SoftStem
-cv OutByte 'n'
+OUT 'n'
 RET
 
-:B Do_A
+:B Do_A no_vars
 cf HardStem
 cf Out_A
 RET
 
-:B Do_LLA
+:B Do_LLA no_vars
 cf SoftStem
-cv OutByte 'l'
-cv OutByte 'l'
+OUT 'l'
+OUT 'l'
 cf Out_A
 RET
 
-:B Do_LLE
+:B Do_LLE no_vars
 cf SoftStem
-cv OutByte 'l'
-cv OutByte 'l'
-cv OutByte 'e'
+OUT 'l'
+OUT 'l'
+OUT 'e'
 RET
 
-:B Do_STA
+:B Do_STA no_vars
 cf SoftStem
-cv OutByte 's'
-cv OutByte 't'
+OUT 's'
+OUT 't'
 cf Out_A
 RET
 
