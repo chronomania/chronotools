@@ -88,6 +88,10 @@ I.e. \$C2:5D4C -> rRhU and vice versa.<br>
 This development system uses base62 in the script
 dumps to reduce the amount of code written.
 
+", '1.1.1. compiletest' => "
+
+A test of the inline code compiler.
+
 ", '1. Technical limitations' => "
 
 ", '1.1. Space' => "
@@ -179,6 +183,8 @@ Copypaste from the Makefile:
 # VERSION 1.0.22 more translation, autowrapping support, conjugation detection code
 # VERSION 1.1.0  did some assembly hacking, support for code patching
 # VERSION 1.1.1  conjugating conjugating conjugating... work goes on
+# VERSION 1.1.2  and so on
+# VERSION 1.1.3  and so on... almost working! \"case\" still doesn't work.
 </pre>
 
 ", '1. See also' => "

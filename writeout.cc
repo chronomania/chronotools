@@ -206,22 +206,24 @@ void insertor::WriteCode(ROM &ROM) const
 
 void insertor::Write8pixfont(ROM &ROM) const
 {
-    fprintf(stderr, "Writing 8-pix font...\n");
-
     const vector<unsigned char> &tiletab = Font8.GetTiles();
     
+    fprintf(stderr, "Writing 8-pix font... (%u bytes)\n", tiletab.size());
+
     for(unsigned a=0; a<tiletab.size(); ++a)
         ROM.Write(Font8_Address + a, tiletab[a]);
 }
 
 void insertor::Write12pixfont(ROM &ROM) const
 {
-    fprintf(stderr, "Writing 12-pix font...\n");
+    const vector<unsigned char> &tiletab = Font12.GetTiles();
+    
+    fprintf(stderr, "Writing 12-pix font... (%u+%u bytes)\n",
+        Font12.GetCharCount(),
+        tiletab.size());
 
     for(unsigned a=0; a<Font12.GetCharCount(); ++a)
         ROM.Write(WidthTab_Address+a, Font12.GetWidth(a));
-    
-    const vector<unsigned char> &tiletab = Font12.GetTiles();
     
     for(unsigned a=0; a<tiletab.size(); ++a)
         ROM.Write(Font12_Address+a, tiletab[a]);

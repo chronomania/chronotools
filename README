@@ -8,6 +8,17 @@ Ks transnotes.txt
 
 ----------------
 
+darkforcelta apua:
+   cmp #$80
+   bcc _label_   { branch A < $80}
+   bcs _label_   { branch A >= $80}
+   beq _label_   { branch A = $80}
+   bne _label_   { branch A != $80 }
+
+   lda $7e2000
+   bmi _label_   { branch if (A & $80) = $80 } (similar in 16-bit mode)
+   bpl _label_   { branch if (A & $80) = $00 }
+
 // DIALOGIN PIIRTO - ASSEMBLER
 
 // T‰st‰ hyp‰t‰‰n ->C0:2126
@@ -16,8 +27,7 @@ $C0:2018 20 26 21    JSR [DB:$2126]       ;$00:2126     A:7700 X:07E0 Y:001F D:0
 $C0:201B 6B          RTL                                A:0001 X:0058 Y:0200 D:0100 DB:00 PB:C0
 
 // T‰‰ll‰ tarkistetaan erikoiskoodeja.
-// Jossain v‰liss‰ ilmeisesti 215:een on tallennettu
-// dialogista haettu merkki!
+//  215 = erikoiskoodi, asetettu muualla
 $C0:2126 AD 15 02    LDA [DB:$0215]       ;$00:0215     A:7700 X:07E0 Y:001F D:0100 DB:00 PB:C0
 $C0:2129 D0 03       BNE $212E                          A:7710 X:07E0 Y:001F D:0100 DB:00 PB:C0
 // Ei ollut 0
@@ -187,11 +197,33 @@ $C2:58F8 85 30       STA [$00:D+$30]      ;$00:0230     A:0001 X:0038 Y:001F D:0
 $C2:58FA 4C F5 5B    JMP [DB:$5BF5]       ;$00:5BF5     A:0001 X:0038 Y:001F D:0200 DB:00 PB:C2
 
 // T‰nne saavutaan, jos merkki oli < 0x21.
+// Koskee kaikkia skriptist‰ lˆytyvi‰ merkkej‰,
+// niin 0x20=Epoch kuin 0x05=NL myˆs.
 $C2:58FD A8          TAY                                A:0013 X:0000 Y:001F D:0200 DB:00 PB:C2
 $C2:58FE 0A          ASL A                              A:0013 X:0000 Y:0013 D:0200 DB:00 PB:C2
 $C2:58FF AA          TAX                                A:0026 X:0000 Y:0013 D:0200 DB:00 PB:C2
 $C2:5900 7C 03 59    JMP [PB:word[PB:$5903+x]]  ;$C2:5B15 A:0026 X:0026 Y:0013 D:0200 DB:00 PB:
+// Taulun C2:5903 sis‰ltˆ:
+//  0-7:     594F 5B06 5B06 5945  594F 594F 594F 594F 
+//  8-F:     594F 594F 594F 594F  594F 5953 5985 59C8
+// 10-17:    5B14 5A26 5A4C 5B15  5B15 5B15 5B15 5B15
+// 18-1F:    5B15 5B15 5B3B 5B70  5B70 5B70 5B56 5B9B
+// 20:       5BD6
+//    5B4F: nl/pausenl/cls/pause/nul
+//    5B53: num8
+//    5B85: num16
+//    5BC8: num32
+//    5B14: #$10 ?
+//    5B26: member
+//    5B4C: tech
+//    5B15: player name
+//    5B3B: crononick
+//    5B70: member #n
+//    5B56: Nadia
+//    5B9B: item
+//    5BD6: Epoch
 
+//   PLAYER NAME - KƒSITTELIJƒ
 // y:ss‰ on se kyseinen merkki.
 $C2:5B15 98          TYA                                A:0026 X:0026 Y:0013 D:0200 DB:00 PB:C2
 $C2:5B16 38          SEC                                A:0013 X:0026 Y:0013 D:0200 DB:00 PB:C2
@@ -207,9 +239,10 @@ $C2:5B1D BF D8 5F C2 LDA [$C2:$5FD8+x]    ;$C2:5FD8     A:0000 X:0000 Y:0013 D:0
 // Saatu pointteri talteen
 $C2:5B21 8D 37 02    STA [DB:$0237]       ;$00:0237     A:2C23 X:0000 Y:0013 D:0200 DB:00 PB:C2
 $C2:5B24 E2 20       SEP $20                            A:2C23 X:0000 Y:0013 D:0200 DB:00 PB:C2
-// Mit‰ lie.
+// Segment
 $C2:5B26 A9 7E       LDA A, $7E                         A:2C23 X:0000 Y:0013 D:0200 DB:00 PB:C2
 $C2:5B28 8D 39 02    STA [DB:$0239]       ;$00:0239     A:2C7E X:0000 Y:0013 D:0200 DB:00 PB:C2
+// Merkint‰ "merkkej‰ on j‰ljell‰"
 $C2:5B2B A9 01       LDA A, $01                         A:2C7E X:0000 Y:0013 D:0200 DB:00 PB:C2
 $C2:5B2D 85 30       STA [$00:D+$30]      ;$00:0230     A:2C01 X:0000 Y:0013 D:0200 DB:00 PB:C2
 
@@ -224,6 +257,24 @@ $C2:5B32 8D 3A 02    STA [DB:$023A]       ;$00:023A     A:2C05 X:0000 Y:0005 D:0
 $C2:5B35 A9 00       LDA A, $00                         A:2C05 X:0000 Y:0005 D:0200 DB:00 PB:C2
 $C2:5B37 EB          XBA                                A:2C00 X:0000 Y:0005 D:0200 DB:00 PB:C2
 $C2:5B38 4C F5 5B    JMP [DB:$5BF5]       ;$00:5BF5     A:002C X:0000 Y:0005 D:0200 DB:00 PB:C2
+
+//   EPOCH - KƒSITTELIJƒ
+
+$C2:5BD6 C2 20       REP $20                            A:0040 X:0040 Y:0020 D:0200 DB:00 PB:C2
+$C2:5BD8 A9 4D 2C    LDA A, $2C4D                       A:0040 X:0040 Y:0020 D:0200 DB:00 PB:C2
+$C2:5BDB 8D 37 02    STA DB:$0237         ;$00:0237     A:2C4D X:0040 Y:0020 D:0200 DB:00 PB:C2
+$C2:5BDE E2 20       SEP $20                            A:2C4D X:0040 Y:0020 D:0200 DB:00 PB:C2
+$C2:5BE0 A9 7E       LDA A, $7E                         A:2C4D X:0040 Y:0020 D:0200 DB:00 PB:C2
+$C2:5BE2 8D 39 02    STA DB:$0239         ;$00:0239     A:2C7E X:0040 Y:0020 D:0200 DB:00 PB:C2
+$C2:5BE5 A9 01       LDA A, $01                         A:2C7E X:0040 Y:0020 D:0200 DB:00 PB:C2
+$C2:5BE7 85 30       STA [$00:D+$30]      ;$00:0230     A:2C01 X:0040 Y:0020 D:0200 DB:00 PB:C2
+$C2:5BE9 20 45 5D    JSR DB:$5D45         ;$00:5D45     A:2C01 X:0040 Y:0020 D:0200 DB:00 PB:C2
+// ^ kutsui strleni‰, mutta jatketaan t‰st‰:
+$C2:5BEC 8D 3A 02    STA DB:$023A         ;$00:023A     A:2C05 X:0040 Y:0005 D:0200 DB:00 PB:C2
+$C2:5BEF A9 00       LDA A, $00                         A:2C05 X:0040 Y:0005 D:0200 DB:00 PB:C2
+$C2:5BF1 EB          XBA                                A:2C00 X:0040 Y:0005 D:0200 DB:00 PB:C2
+$C2:5BF2 4C F5 5B    JMP DB:$5BF5         ;$00:5BF5     A:002C X:0040 Y:0005 D:0200 DB:00 PB:C2
+
 
 
 // T‰nne p‰‰dyt‰‰n, kun on jokin merkki,

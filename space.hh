@@ -1,3 +1,6 @@
+#ifndef bqtctSpaceHH
+#define bqtctSpaceHH
+
 #include <map>
 #include <set>
 #include <vector>
@@ -31,7 +34,9 @@ public:
     void Report() const;
     void DumpPageMap(unsigned pagenum) const;
     
+    // Returns segment-relative address (16-bit)
     unsigned Find(unsigned page, unsigned length);
+    // Returns abbsolute address (24-bit)
     unsigned FindFromAnyPage(unsigned length);
     
     unsigned Size() const;
@@ -40,8 +45,15 @@ public:
     const set<unsigned> GetPageList() const;
     const freespaceset GetList(unsigned pagenum) const;
     
+    // Uses segment-relative addresses (16-bit)
     void Add(unsigned page, unsigned begin, unsigned length);
     void Del(unsigned page, unsigned begin, unsigned length);
     
+    // Uses segment-relative addresses (16-bit)
     void Organize(vector<freespacerec> &blocks, unsigned pagenum);
+
+    // Uses abbsolute addresses (24-bit)
+    void OrganizeToAnyPage(vector<freespacerec> &blocks);
 };
+
+#endif

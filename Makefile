@@ -23,8 +23,9 @@ include Makefile.sets
 # VERSION 1.1.0  did some assembly hacking, support for code patching
 # VERSION 1.1.1  conjugating conjugating conjugating... work goes on
 # VERSION 1.1.2  and so on
+# VERSION 1.1.3  and so on... almost working! "case" still doesn't work.
 
-VERSION=1.1.2
+VERSION=1.1.3
 ARCHFILES=xray.c xray.h \
           viewer.c \
           ctcset.cc ctcset.hh \
@@ -36,6 +37,7 @@ ARCHFILES=xray.c xray.h \
           rom.cc rom.hh \
           fonts.cc fonts.hh \
           conjugate.cc conjugate.hh \
+          compiler.cc compiler.hh compiletest.cc \
           symbols.cc symbols.hh \
           tgaimage.cc tgaimage.hh \
           ctdump.cc ctinsert.cc \
@@ -47,14 +49,14 @@ ARCHFILES=xray.c xray.h \
           binpacker.tcc binpacker.hh \
           README transnotes.txt
 EXTRA_ARCHFILES=\
-          ct_eng.txt \
+          ct_try.txt \
           ct8fnFI.tga ct16fnFI.tga
 
 ARCHNAME=chronotools-$(VERSION)
 ARCHDIR=archives/
 
 PROGS=xray viewer ctdump ctinsert makeips unmakeips \
-      spacefind base62 sramdump taipus
+      spacefind base62 sramdump taipus compiletest
 
 all: $(PROGS)
 
@@ -71,7 +73,7 @@ ctinsert: \
 		ctinsert.o miscfun.o readin.o \
 		tgaimage.o space.o writeout.o \
 		dictionary.o fonts.o rom.o snescode.o \
-		conjugate.o symbols.o ctcset.o wstring.o
+		conjugate.o compiler.o symbols.o ctcset.o wstring.o
 	$(CXX) -o $@ $^ $(LDFLAGS) -lm
 
 spacefind: spacefind.o
@@ -88,13 +90,17 @@ base62: base62.cc
 	$(CXX) -g -O -Wall -W -pedantic -o $@ $^
 taipus: taipus.cc
 	$(CXX) -g -O -Wall -W -pedantic -o $@ $^
+compiletest: compiletest.cc compiler.o snescode.o ctcset.o wstring.o
+	$(CXX) -g -O -Wall -W -pedantic -o $@ $^
 
-ct_eng.txt: ctdump chrono-dumpee.smc
-	./ctdump >ct_eng.txt
+ct.txt: ctdump chrono-dumpee.smc
+	./ctdump >ct.txt
+
 ctpatch-hdr.ips ctpatch-nohdr.ips: \
-		ctinsert ct_eng.txt \
-		ct16fnFI.tga ct8fnFI.tga
+		ctinsert ct.txt taipus.txt \
+		ct16fn.tga ct8fn.tga
 	./ctinsert
+
 chrono-patched.smc: unmakeips ctpatch-hdr.ips chrono-dumpee.smc
 	./unmakeips ctpatch-hdr.ips <chrono-dumpee.smc >chrono-patched.smc
 

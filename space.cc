@@ -56,8 +56,13 @@ unsigned freespacemap::Find(unsigned page, unsigned length)
         return NOWHERE;
     }
     
+#if 0 /* Eat from end */
     const unsigned bestpos = best->pos + best->len - length;
     freespacerec tmp(best->pos, best->len - length);
+#else /* Eat from begin */
+    const unsigned bestpos = best->pos;
+    freespacerec tmp(best->pos + length, best->len - length);
+#endif
     spaceset.erase(best);
     if(tmp.len) spaceset.insert(tmp);
     
@@ -212,13 +217,13 @@ void freespacemap::Organize(vector<freespacerec> &blocks, unsigned pagenum)
     
     if(totalspace < totalsize)
     {
-        fprintf(stderr, "Error: Page %02X doesn't have %u bytes of space (only %u there)!\n",
+        fprintf(stderr, "ERROR: Page %02X doesn't have %u bytes of space (only %u there)!\n",
             pagenum, totalsize, totalspace);
     }
     
     vector<unsigned> organization = PackBins(holes, items);
     
-    bool errors = false;
+    bool Errors = false;
     for(unsigned a=0; a<blocks.size(); ++a)
     {
         unsigned itemsize = blocks[a].len;
@@ -234,12 +239,84 @@ void freespacemap::Organize(vector<freespacerec> &blocks, unsigned pagenum)
         }
         else
         {
-            errors = true;
+            Errors = true;
         }
         blocks[a].pos = spaceptr;
     }
-    if(errors)
-        fprintf(stderr, "Error: Organization failed\n");
+    if(Errors)
+        fprintf(stderr, "ERROR: Organization failed\n");
+}
+
+void freespacemap::OrganizeToAnyPage(vector<freespacerec> &blocks)
+{
+    vector<unsigned> items;
+    vector<unsigned> holes;
+    vector<unsigned> holepages;
+    vector<unsigned> holeaddrs;
+    
+    items.reserve(blocks.size());
+    
+    unsigned totalsize = 0;
+    for(unsigned a=0; a<blocks.size(); ++a)
+    {
+        totalsize += blocks[a].len;
+        items.push_back(blocks[a].len);
+    }
+
+    unsigned totalspace = 0;
+    for(const_iterator i=begin(); i!=end(); ++i)
+    {
+        const freespaceset &pagemap = i->second;
+        
+        if(i->first == 0x1E)
+        {
+            /* FIXME: FOR SOME STRANGE UNKNOWN REASON, THE GAME CRASHES
+             *        IF CODE IS ORGANISED TO THIS PAGE 0x1E
+             */
+            continue;
+        }
+
+        freespaceset::const_iterator j;
+        for(j=pagemap.begin(); j!=pagemap.end(); ++j)
+        {
+            totalspace += j->len;
+            holes.push_back(j->len);
+            holepages.push_back(i->first);
+            holeaddrs.push_back(j->pos);
+        }
+    }
+    
+    if(totalspace < totalsize)
+    {
+        fprintf(stderr, "ERROR: No %u bytes of space available (only %u there)!\n",
+            totalsize, totalspace);
+    }
+    
+    vector<unsigned> organization = PackBins(holes, items);
+    
+    bool Errors = false;
+    for(unsigned a=0; a<blocks.size(); ++a)
+    {
+        unsigned itemsize = blocks[a].len;
+        unsigned holeid   = organization[a];
+        
+        unsigned spaceptr = NOWHERE;
+        if(holes[holeid] >= itemsize)
+        {
+            unsigned pagenum = holepages[holeid];
+            spaceptr = holeaddrs[holeid] | (pagenum << 16);
+            holeaddrs[holeid] += itemsize;
+            holes[holeid]     -= itemsize;
+            Del(pagenum, spaceptr, itemsize);
+        }
+        else
+        {
+            Errors = true;
+        }
+        blocks[a].pos = spaceptr;
+    }
+    if(Errors)
+        fprintf(stderr, "ERROR: Organization failed\n");
 }
 
 unsigned freespacemap::FindFromAnyPage(unsigned length)
@@ -247,8 +324,10 @@ unsigned freespacemap::FindFromAnyPage(unsigned length)
     unsigned leastfree=0, bestpage=0; bool first=true;
     for(const_iterator i=begin(); i!=end(); ++i)
     {
+        const freespaceset &pagemap = i->second;
+        
         freespaceset::const_iterator j;
-        for(j=i->second.begin(); j!=i->second.end(); ++j)
+        for(j=pagemap.begin(); j!=pagemap.end(); ++j)
         {
             if(j->len < length) continue;
             if(first || j->len < leastfree)
@@ -264,5 +343,5 @@ unsigned freespacemap::FindFromAnyPage(unsigned length)
         fprintf(stderr, "No %u-byte free space block available!\n", length);
         return NOWHERE;
     }
-    return Find(bestpage, length);
+    return Find(bestpage, length) | (bestpage << 16);
 }

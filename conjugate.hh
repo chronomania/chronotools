@@ -39,8 +39,10 @@ private:
     void Work(string &s, const form &form);
     void Load();
     
+public:
     bool IsUsed(CnjType c) const { return prefixes.find(c)!=prefixes.end(); }
     unsigned char GetByte(CnjType c) const { return prefixes.find(c)->second; }
+    const map<CnjType, unsigned char> &GetPref() const { return prefixes; }
 };
 
 extern Conjugatemap Conjugatemap;

@@ -12,6 +12,7 @@
 
 #ifdef BINPACKER_DUMP
 #include <iostream>
+#include <iomanip>
 #endif
 
 namespace
@@ -53,7 +54,7 @@ namespace
         void MoveItem(unsigned itemno, unsigned holeno);
         double GetCapacity(unsigned holeno) const // in %
         {
-            holes[holeno].used * 100.0 / holes[holeno].size;
+            return holes[holeno].used * 100.0 / holes[holeno].size;
         }
         sizetype GetHoleSize(unsigned holeno) const {  return holes[holeno].size; }
         sizetype GetItemSize(unsigned itemno) const {  return items[itemno].size; }
@@ -156,9 +157,9 @@ namespace
         for(unsigned a=0; a<holes.size(); ++a)
         {
             std::cerr << "  Hole(size(" << GetHoleSize(a)
-                      << ")used(" << std::setprecision(2) << GetCapacity(a)
-                      << ")";
-#if BINPACKER_DUMP_ITEMS
+                      << ")used(" << GetCapacity(a)
+                      << "%)";
+#ifdef BINPACKER_DUMP_ITEMS
             std::cerr << "items(";
             bool first=true,firstout=true;
             sizetype lastitemsize=0;
