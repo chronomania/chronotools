@@ -15,10 +15,10 @@
 
 void insertor::PlaceByte(unsigned char byte,
                          unsigned address,
-                         const string& what)
+                         const std::wstring& what)
 {
     vector<unsigned char> Buf(1, byte);
-    objects.AddLump(Buf, address, what);
+    objects.AddLump(Buf, address, WstrToAsc(what));
 }
 
 void insertor::ObsoleteCode(unsigned address, unsigned bytes, bool barrier)
@@ -105,18 +105,18 @@ struct Image
 {
     TGAimage image;
 
-    ucs4string tab_sym;
-    ucs4string pal_sym;
-    ucs4string palsize_sym;
+    wstring tab_sym;
+    wstring pal_sym;
+    wstring palsize_sym;
 
     vector<unsigned char> ImgData;
     vector<unsigned char> Palette;
     unsigned OriginalSize;
     
     Image(const TGAimage& img,
-          const ucs4string& tabsym,
-          const ucs4string& palsym,
-          const ucs4string& palsizesym)
+          const wstring& tabsym,
+          const wstring& palsym,
+          const wstring& palsizesym)
       : image(img), tab_sym(tabsym), pal_sym(palsym), palsize_sym(palsizesym),
         ImgData(), Palette(), OriginalSize()
     {
@@ -154,7 +154,7 @@ void insertor::WriteUserCode()
         const ConfParser::ElemVec& elems = GetConf("linker", "load_code").Fields();
         for(unsigned a=0; a<elems.size(); a += 1)
         {
-            const ucs4string& codefn  = elems[a];
+            const wstring& codefn  = elems[a];
             const string filename = WstrToAsc(codefn);
             const string what = filename;
             
@@ -199,11 +199,11 @@ void insertor::WriteUserCode()
         const ConfParser::ElemVec& elems = GetConf("linker", "add_image").Fields();
         for(unsigned a=0; a<elems.size(); a += 5)
         {
-            const ucs4string& imagefn     = elems[a];
+            const wstring& imagefn     = elems[a];
             const unsigned segment        = elems[a+1];
-            const ucs4string& tab_sym     = elems[a+2];
-            const ucs4string& pal_sym     = elems[a+3];
-            const ucs4string& palsize_sym = elems[a+4];
+            const wstring& tab_sym     = elems[a+2];
+            const wstring& pal_sym     = elems[a+3];
+            const wstring& palsize_sym = elems[a+4];
         
             const string filename = WstrToAsc(imagefn);
 
@@ -228,7 +228,7 @@ void insertor::WriteUserCode()
         const ConfParser::ElemVec& elems = GetConf("linker", "add_call_of").Fields();
         for(unsigned a=0; a<elems.size(); a += 4)
         {
-            const ucs4string& funcname = elems[a];
+            const wstring& funcname = elems[a];
             unsigned address           = elems[a+1];
             unsigned nopcount          = elems[a+2];
             bool add_rts               = elems[a+3];

@@ -34,6 +34,27 @@ namespace __gnu_cxx
         return h;
     }
   };
+  struct hash<std::wstring>
+  {
+    size_t operator() (const std::wstring &s) const
+    {
+        unsigned h=0;
+        for(unsigned a=0,b=s.size(); a<b; ++a)
+        {
+            unsigned c = s[a];
+            c=h^c;
+            h^=(c*707106);
+        }
+        return h;
+    }
+  };
+  struct hash<wchar_t>
+  {
+    size_t operator() (wchar_t n) const
+    {
+        return hash<unsigned long>() ((unsigned long)n);
+    }
+  };
 }
 struct BitSwapHashFon
 {

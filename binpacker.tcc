@@ -8,7 +8,7 @@
 #define BINPACKER_DUMP_ITEMS 0
 
 #include <set>
-#include <algorithm>
+//#include <algorithm>
 
 #if BINPACKER_DUMP
 #include <iostream>

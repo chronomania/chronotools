@@ -38,14 +38,15 @@ const std::vector<unsigned char> ROM::GetContent(unsigned a, unsigned l) const
 
 
 
-void ROM::Write(unsigned pos, unsigned char value, const std::string& why)
+void ROM::Write(unsigned pos, unsigned char value, const std::wstring& why)
 {
     Data.WriteByte(pos, value);
     MarkProt(pos, 1, why);
 }
 
 
-void ROM::AddPatch(const vector<unsigned char> &code, unsigned addr, const string& what)
+void ROM::AddPatch(const std::vector<unsigned char> &code,
+                   unsigned addr, const std::wstring& what)
 {
     if(code.empty()) return;
     
@@ -60,7 +61,7 @@ void ROM::AddPatch(const vector<unsigned char> &code, unsigned addr, const strin
     MarkProt(rompos, code.size(), what);
 }
 
-void ROM::SetZero(unsigned addr, unsigned len, const std::string& /*why*/)
+void ROM::SetZero(unsigned addr, unsigned len, const std::wstring& /*why*/)
 {
     for(unsigned a=0; a < len; ++a) Write(addr + a, 0);
 }

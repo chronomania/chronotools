@@ -11,13 +11,13 @@
 
 namespace
 {
-    ucs4string dict_converted[256];
+    std::wstring dict_converted[256];
     ctstring dict_unconverted[256];
 }
 
 void LoadDict(unsigned offs, unsigned len)
 {
-    vector<ctstring> strings = LoadPStrings(offs, len, "dictionary(p)");
+    vector<ctstring> strings = LoadPStrings(offs, len, L"dictionary(p)");
     
     for(unsigned a=0; a<strings.size(); ++a)
     {
@@ -25,35 +25,30 @@ void LoadDict(unsigned offs, unsigned len)
         
         dict_unconverted[a + 0x21] = s;
         
-        ucs4string tmp(s.size(), 0);
+        std::wstring tmp(s.size(), 0);
         for(unsigned b=0; b<s.size(); ++b)
-            tmp[b] = getucs4(s[b], cset_12pix);
+            tmp[b] = getwchar_t(s[b], cset_12pix);
         dict_converted[a + 0x21] = tmp;
     }
 }
 
 void DumpDict()
 {
-    StartBlock("d", "dictionary");
-
-    wstringOut conv(getcharset());
+    StartBlock(L"d", L"dictionary");
 
     for(unsigned a=0; a<256; ++a)
     {
-        const ucs4string &s = dict_converted[a];
+        const std::wstring &s = dict_converted[a];
         if(s.empty()) continue;
 
-        string line = conv.puts(s);
-        line += conv.putc(';');
-        
         PutBase16Label(a);
-        PutContent(line, false);
+        PutContent(s + L';', false);
     }
     
     EndBlock();
 }
 
-const ucs4string Disp8Char(ctchar k)
+const std::wstring Disp8Char(ctchar k)
 {
     const Symbols::revtype &symbols = Symbols.GetRev(2);
     
@@ -62,22 +57,20 @@ const ucs4string Disp8Char(ctchar k)
     if(i != symbols.end())
         return i->second;
 
-    if(k == 0x2D) return AscToWstr(":");
+    if(k == 0x2D) return L":";
         
-    ucs4 tmp = getucs4(k, cset_8pix);
+    wchar_t tmp = getwchar_t(k, cset_8pix);
     if(tmp == ilseq)
     {
-        char Buf[32];
-        sprintf(Buf, "[%02X]", k);
-        return AscToWstr(Buf);
+        return wformat(L"%02X", k);
     }
     
-    ucs4string result;
+    std::wstring result;
     result += tmp;
     return result;
 }
 
-const ucs4string Disp12Char(ctchar k)
+const std::wstring Disp12Char(ctchar k)
 {
     // Override these special ones to get proper formatting:
     switch(k)
@@ -89,14 +82,14 @@ const ucs4string Disp12Char(ctchar k)
             [pause] is a pause, then clear screen.
         */
     
-        case 0x05: return AscToWstr("[nl]\n");
-        case 0x06: return AscToWstr("[nl]\n   ");
-        case 0x07: return AscToWstr("[pausenl]\n");
-        case 0x08: return AscToWstr("[pausenl]\n   ");
-        case 0x09: return AscToWstr("\n[cls]\n");
-        case 0x0A: return AscToWstr("\n[cls]\n   ");
-        case 0x0B: return AscToWstr("\n[pause]\n");
-        case 0x0C: return AscToWstr("\n[pause]\n   ");
+        case 0x05: return L"[nl]\n";
+        case 0x06: return L"[nl]\n   ";
+        case 0x07: return L"[pausenl]\n";
+        case 0x08: return L"[pausenl]\n   ";
+        case 0x09: return L"\n[cls]\n";
+        case 0x0A: return L"\n[cls]\n   ";
+        case 0x0B: return L"\n[pause]\n";
+        case 0x0C: return L"\n[pause]\n   ";
     }
     
     const Symbols::revtype &symbols = Symbols.GetRev(16);
@@ -115,15 +108,13 @@ const ucs4string Disp12Char(ctchar k)
     if(k < 256 && !dict_converted[k].empty())
         return dict_converted[k];
 
-    ucs4 tmp = getucs4(k, cset_12pix);
+    wchar_t tmp = getwchar_t(k, cset_12pix);
     if(tmp == ilseq)
     {
-        char Buf[32];
-        sprintf(Buf, "[%02X]", k);
-        return AscToWstr(Buf);
+        return wformat(L"[%02X]", k);
     }
 
-    ucs4string result;
+    std::wstring result;
     result += tmp;
     return result;
 }
@@ -132,13 +123,13 @@ namespace
 {
     const ctstring AttemptUnwrapParagraph(const ctstring& para)
     {
-        const ctchar space  = getchronochar(' ');
-        const ctchar colon  = getchronochar(':');
-        const ctchar period = getchronochar('.');
-        const ctchar que    = getchronochar('?');
-        const ctchar excl   = getchronochar('!');
-        const ctchar lquo   = getchronochar((unsigned char)'«');
-        const ctchar rquo   = getchronochar((unsigned char)'»');
+        const ctchar space  = getctchar(' ');
+        const ctchar colon  = getctchar(':');
+        const ctchar period = getctchar('.');
+        const ctchar que    = getctchar('?');
+        const ctchar excl   = getctchar('!');
+        const ctchar lquo   = getctchar((unsigned char)'«');
+        const ctchar rquo   = getctchar((unsigned char)'»');
         
         ctstring space3(3, space);
         
@@ -217,7 +208,7 @@ namespace
         const bool Attempt = GetConf("dumper", "attempt_unwrap");
         if(!Attempt) return;
         
-        ctstring space3(3, getchronochar(' '));
+        ctstring space3(3, getctchar(' '));
         
         /* Replace all [nl3] with [nl] + 3 spaces and so on */
         for(unsigned a=0; a<line.size(); ++a)
@@ -250,10 +241,10 @@ namespace
         line = result;
     }
     
-    const ucs4string Get12string(const ctstring& value, bool dolf)
+    const std::wstring Get12string(const ctstring& value, bool dolf)
     {
         ctstring s = value;
-        ucs4string result;
+        std::wstring result;
         
         if(dolf) AttemptUnwrap(s);
 
@@ -263,22 +254,18 @@ namespace
             {
                 case 0x03:
                 {
-                    char Buf[64];
-                    sprintf(Buf, "[delay %02X]", (unsigned char)s[++b]);
-                    result += AscToWstr(Buf);
+                    result += wformat(L"[delay %02X]", (unsigned char)s[++b]);
                     break;
                 }
                 case 0x12:
                 {
-                    char Buf[64];
                     ++b;
-                    if(s[b] == 0x00)
-                        strcpy(Buf, "[tech]");
-                    else if(s[b] == 0x01)
-                        strcpy(Buf, "[monster]");
+                    if(s[b] == 0x00) result += L"[tech]";
+                    else if(s[b] == 0x01) result += L"[monster]";
                     else
-                        sprintf(Buf, "[12][%02X]", (unsigned char)s[b]);
-                    result += AscToWstr(Buf);
+                    {
+                        result += wformat(L"[12][%02X]", (unsigned char)s[b]);
+                    }
                     break;
                 }
                 default:
@@ -290,30 +277,29 @@ namespace
         return result;
     }
     
-    const ucs4string Get8string(const ctstring& value)
+    const std::wstring Get8string(const ctstring& value)
     {
         ctstring s = value;
-        ucs4string result;
+        std::wstring result;
         
         unsigned attr=0;
         for(unsigned b=0; b<s.size(); ++b)
         {
-            char Buf[64];
+            
 Retry:
             switch(s[b])
             {
 #if 1
                 case 1:
                 {
-                    result += (AscToWstr("[next]"));
+                    result += L"[next]";
                     break;
                 }
                 case 2:
                 {
                     unsigned c;
                     c = (unsigned char)s[b+1] + 256*(unsigned char)s[b+2]; b+=2;
-                    sprintf(Buf, "[goto,%04X]", c);
-                    result += (AscToWstr(Buf));
+                    result += wformat(L"[goto,%04X]", c);
                     break;
                 }
                 case 3:
@@ -321,8 +307,7 @@ Retry:
                     unsigned c1, c2;
                     c1 = (unsigned char)s[b+1] + 256*(unsigned char)s[b+2]; b+=2;
                     c2 = (unsigned char)s[b+1] + 256*(unsigned char)s[b+2]; b+=2;
-                    sprintf(Buf, "[func1,%04X,%04X]", c1,c2);
-                    result += (AscToWstr(Buf));
+                    result += wformat( L"[func1,%04X,%04X]", c1,c2);
                     break;
                 }
                 case 4:
@@ -337,9 +322,9 @@ Retry:
                         unsigned addr = (SNES2ROMpage(c1) << 16) + c2;
                         
                         unsigned bytes;
-                        ctstring str = LoadZString(addr, bytes, "substring", Extras_8);
+                        ctstring str = LoadZString(addr, bytes, L"substring", Extras_8);
                         
-                        //result += (AscToWchar('{')); //}
+                        //result += L'{'; //}
                         
                         b -= 3;
                         s.erase(b, 4);
@@ -348,63 +333,47 @@ Retry:
                     }
 #endif
                     
-                    sprintf(Buf, "[substr,%02X%04X]", c1,c2);
-                    result += (AscToWstr(Buf));
+                    result += wformat(L"[substr,%02X%04X]", c1,c2);
                     break;
                 }
                 case 5:
                 {
-                    char Buf[64];
                     unsigned c;
                     c = (unsigned char)s[b+1] + 256*(unsigned char)s[b+2]; b+=2;
-                    sprintf(Buf, "[member,%04X]", c);
-                    result += (AscToWstr(Buf));
+                    result += wformat(L"[member,%04X]", c);
                     break;
                 }
                 case 6:
                 {
-                    char Buf[64];
                     unsigned c;
                     c = (unsigned char)s[b+1] + 256*(unsigned char)s[b+2]; b+=2;
-                    sprintf(Buf, "[attrs,%04X]", c);
-                    result += (AscToWstr(Buf));
+                    result += wformat(L"[attrs,%04X]", c);
                     break;
                 }
                 case 7:
                 {
-                    char Buf[64];
                     unsigned c;
                     c = (unsigned char)s[b+1] + 256*(unsigned char)s[b+2]; b+=2;
-                    sprintf(Buf, "[out,%04X]", c);
-                    result += (AscToWstr(Buf));
+                    result += wformat(L"[out,%04X]", c);
                     break;
                 }
                 case 8:
                 {
-                    char Buf[64];
-                    unsigned c;
-                    c = (unsigned char)s[++b];
-                    sprintf(Buf, "[spc,%02X]", c);
-                    result += (AscToWstr(Buf));
+                    unsigned c = (unsigned char)s[++b];
+                    result += wformat(L"[spc,%02X]", c);
                     break;
                 }
                 case 9:
                 {
-                    char Buf[64];
-                    unsigned c;
-                    c = (unsigned char)s[++b];
-                    sprintf(Buf, "[len,%02X]", c);
-                    result += (AscToWstr(Buf));
+                    unsigned c = (unsigned char)s[++b];
+                    result += wformat(L"[len,%02X]", c);
                     break;
                 }
                 case 10:
                 {
-                    char Buf[64];
-                    unsigned c;
-                    c = (unsigned char)s[++b];
-                    sprintf(Buf, "[attr,%02X]", c);
-                    result += (AscToWstr(Buf));
+                    unsigned c = (unsigned char)s[++b];
                     attr = c;
+                    result += wformat(L"[attr,%02X]", c);
                     break;
                 }
                 case 11:
@@ -412,8 +381,7 @@ Retry:
                     unsigned c1, c2;
                     c1 = (unsigned char)s[b+1] + 256*(unsigned char)s[b+2]; b+=2;
                     c2 = (unsigned char)s[b+1] + 256*(unsigned char)s[b+2]; b+=2;
-                    sprintf(Buf, "[func2,%04X,%04X]", c1,c2);
-                    result += (AscToWstr(Buf));
+                    result += wformat(L"[func2,%04X,%04X]", c1,c2);
                     break;
                 }
                 case 12:
@@ -421,36 +389,34 @@ Retry:
                     unsigned c1, c2;
                     c1 = (unsigned char)s[++b];
                     c2 = (unsigned char)s[b+1] + 256*(unsigned char)s[b+2]; b+=2;
-                    sprintf(Buf, "[stat,%02X,%04X]", c1,c2);
-                    result += (AscToWstr(Buf));
+                    result += wformat(L"[stat,%02X,%04X]", c1,c2);
                     break;
                 }
 #endif
                 default:
+                {
 #if 1
                     if(attr & 0x03)
                     {
-                        result += (AscToWstr("[gfx"));
+                        result += L"[gfx";
                         while(b < s.size())
                         {
                             unsigned char byte = s[b];
                             if(byte <= 12) { --b; break; }
 
-                            char Buf[32];
-                            sprintf(Buf, ",%02X", byte);
-                            result += (AscToWstr(Buf));
+                            result += wformat(L",%02X", byte);
                             ++b;
                         }
-                        result += (AscToWchar(']'));
+                        result += L']';
                     }
                     else
                     {
                         result += (Disp8Char(s[b]));
                     }
 #else
-                    sprintf(Buf, "[%02X]", s[b]);
-                    result += (AscToWstr(Buf));
+                    result += wformat(L"[%02X]", s[b]);
 #endif
+                }
             }
         }
         return result;
@@ -458,26 +424,25 @@ Retry:
 }
 
 void DumpZStrings(const unsigned offs,
-                  const string& what,
+                  const std::wstring& what,
                   unsigned len,
                   bool dolf)
 {
     MessageBeginDumpingStrings(offs);
     
-    const string what_tab = what+"(z)";
+    const std::wstring what_tab = what + L"(z)";
     
     vector<ctstring> strings = LoadZStrings(offs, len, what_tab, Extras_12);
 
-    StartBlock("z", what); 
+    StartBlock(L"z", what);
 
-    wstringOut conv(getcharset());    
     for(unsigned a=0; a<strings.size(); ++a)
     {
-        ucs4string line = Get12string(strings[a], dolf);
+        std::wstring line = Get12string(strings[a], dolf);
 
         PutBase62Label(offs + a*2);
         
-        PutContent(conv.puts(line), dolf);
+        PutContent(line, dolf);
     }
     
     EndBlock();
@@ -485,33 +450,30 @@ void DumpZStrings(const unsigned offs,
 }
 
 void DumpMZStrings(const unsigned offs,
-                   const string& what,
+                   const std::wstring& what,
                    unsigned len,
                    bool dolf)
 {
     MessageBeginDumpingStrings(offs);
     
-    const string what_tab = what+"(Z)";
+    const std::wstring what_tab = what + L"(Z)";
     
     vector<ctstring> strings = LoadZStrings(offs, len, what_tab, Extras_12);
 
-    StartBlock("z", what + " (change this to *Z to allow free relocation)"); 
+    StartBlock(L"z", what + L" (change this to *Z to allow free relocation)"); 
 
-    wstringOut conv(getcharset());    
     for(unsigned a=0; a<strings.size(); ++a)
     {
-        ucs4string line = Get12string(strings[a], dolf);
-
+        std::wstring line = Get12string(strings[a], dolf);
         PutBase62Label(offs + a*2);
-        
-        PutContent(conv.puts(line), dolf);
+        PutContent(line, dolf);
     }
     
     EndBlock();
     MessageDone();
 }
 
-void DumpRZStrings(const string& what,
+void DumpRZStrings(const std::wstring& what,
                    unsigned len,
                    bool dolf,
                    ...)
@@ -519,7 +481,7 @@ void DumpRZStrings(const string& what,
     unsigned pageaddr = 0;
     unsigned offsaddr = 0;
     
-    string label = "z";
+    std::wstring label = L"z";
     
     va_list ap;
     va_start(ap, dolf);
@@ -528,8 +490,8 @@ void DumpRZStrings(const string& what,
     {
         char format = va_arg(ap, int);
         if(!format) break;
-        label += ':';
-        label += format;
+        label += L':';
+        label += AscToWchar(format);
         unsigned addr = va_arg(ap, unsigned);
         label += Base62Label(addr);
         if(format == '^') pageaddr = addr;
@@ -544,20 +506,17 @@ void DumpRZStrings(const string& what,
     
     MessageBeginDumpingStrings(offs);
     
-    const string what_tab = what+"(zr)";
+    const std::wstring what_tab = what + L"(zr)";
     
     vector<ctstring> strings = LoadZStrings(offs, len, what_tab, Extras_12);
 
-    StartBlock(label, what); 
+    StartBlock(label, what);
 
-    wstringOut conv(getcharset());    
     for(unsigned a=0; a<strings.size(); ++a)
     {
-        ucs4string line = Get12string(strings[a], dolf);
-
+        std::wstring line = Get12string(strings[a], dolf);
         PutBase62Label(offs + a*2);
-        
-        PutContent(conv.puts(line), dolf);
+        PutContent(line, dolf);
     }
     
     EndBlock();
@@ -565,23 +524,22 @@ void DumpRZStrings(const string& what,
 }
 
 void Dump8Strings(const unsigned offs,
-                  const string& what,
+                  const std::wstring& what,
                   unsigned len)
 {
     MessageBeginDumpingStrings(offs);
     
-    const string what_tab = what+"(r)";
+    const std::wstring what_tab = what + L"(r)";
     
     vector<ctstring> strings = LoadZStrings(offs, len, what_tab, Extras_8);
 
-    StartBlock("r", what);
+    StartBlock(L"r", what);
 
-    wstringOut conv(getcharset());    
     for(unsigned a=0; a<strings.size(); ++a)
     {
-        ucs4string line = Get8string(strings[a]);
+        std::wstring line = Get8string(strings[a]);
         PutBase62Label(offs + a*2);
-        PutContent(conv.puts(line), true);
+        PutContent(line, true);
     }
     EndBlock();
 
@@ -589,31 +547,28 @@ void Dump8Strings(const unsigned offs,
 }
 
 void DumpFStrings(unsigned offs,
-                  const string& what,
+                  const std::wstring& what,
                   unsigned len,
                   unsigned maxcount)
 {
     MessageBeginDumpingStrings(offs);
     
-    const string what_tab = what+"(f)";
+    const std::wstring what_tab = what + L"(f)";
     
     vector<ctstring> strings = LoadFStrings(offs, len, what_tab, maxcount);
     
-    StartBlock("l%u", what, len);
-
-    wstringOut conv(getcharset());
+    StartBlock(L"l%u", what, len);
 
     for(unsigned a=0; a<strings.size(); ++a)
     {
-        ucs4string line;
-        
         const ctstring &s = strings[a];
 
+        std::wstring line;
         for(unsigned b=0; b<s.size(); ++b)
             line += Disp8Char(s[b]);
 
         PutBase62Label(offs + a*len);
-        PutContent(conv.puts(line), false);
+        PutContent(line, false);
     }
     EndBlock();
     MessageDone();

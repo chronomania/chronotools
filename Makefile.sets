@@ -5,8 +5,8 @@ CXX=g++
 #CXX=remotegcc -soktober -- g++
 
 # Options for compiling, generally.
-CPPFLAGS=-DVERSION=\"$(VERSION)\" -pipe -g \
-         -fmessage-length=0
+CPPFLAGS=-DVERSION=\"$(VERSION)\" -pipe -g
+#         -fmessage-length=0
 
 WARNINGS=-Wall -W \
     -pedantic \

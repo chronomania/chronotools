@@ -1,4 +1,5 @@
 #include "msgdump.hh"
+#include "wstring.hh"
 
 namespace
 {
@@ -10,9 +11,9 @@ void MessageBeginDumpingStrings(unsigned offs)
     fprintf(stderr, "Dumping strings at %06X...", offs);
     MsgStateStrDump = true;
 }
-void MessageBeginDumpingImage(const string& filename, const string& what)
+void MessageBeginDumpingImage(const std::string& filename, const std::wstring& what)
 {
-    fprintf(stderr, "Creating %s (%s)...", filename.c_str(), what.c_str());
+    fprintf(stderr, "Creating %s (%s)...", filename.c_str(), WstrToAsc(what).c_str());
 }
 void MessageDone()
 {

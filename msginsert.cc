@@ -100,7 +100,7 @@ namespace
         Resume();
     }
     
-    void SectionMessage(const string& header)
+    void SectionMessage(const std::string& header)
     {
         Back();
         fprintf(stderr, "%s", header.c_str());
@@ -149,44 +149,44 @@ void MessageWritingDict()
     Resume();
 }
 
-void MessageLoadingItem(const string& header)
+void MessageLoadingItem(const std::string& header)
 {
     SectionMessage(header);
 }
-void MessageZSection(const string& header)
+void MessageZSection(const std::string& header)
 {
     SectionMessage(header);
 }
-void MessageRSection(const string& header)
+void MessageRSection(const std::string& header)
 {
     SectionMessage(header);
 }
-void MessageLSection(const string& header)
+void MessageLSection(const std::string& header)
 {
     SectionMessage(header);
 }
-void MessageDSection(const string& header)
+void MessageDSection(const std::string& header)
 {
     SectionMessage(header);
 }
-void MessageSSection(const string& header)
+void MessageSSection(const std::string& header)
 {
     SectionMessage(header);
 }
-void MessageUnknownHeader(const string& header)
+void MessageUnknownHeader(const std::string& header)
 {
     Error();
     fprintf(stderr, "Unknown header '%s'...", header.c_str());
     Resume();
 }
-void MessageInvalidLabelChar(ucs4 c, unsigned label, const string& /*header*/)
+void MessageInvalidLabelChar(wchar_t c, unsigned label, const std::string& /*header*/)
 {
     Error();
     fprintf(stderr,
             "$%X: Got char '%c', invalid is (in label)!", label, c);
     Resume();
 }
-void MessageInvalidLabelChar(ucs4 c, const string& label, const string& /*header*/)
+void MessageInvalidLabelChar(wchar_t c, const std::string& label, const std::string& /*header*/)
 {
     Error();
     fprintf(stderr,
@@ -197,7 +197,7 @@ void MessageWorking()
 {
     Working();
 }
-void MessageUnexpected(const ucs4string& unexpected)
+void MessageUnexpected(const std::wstring& unexpected)
 {
     Error();
     fprintf(stderr, "Unexpected data '%s'", WstrToAsc(unexpected).c_str());
@@ -208,7 +208,7 @@ void MessageDone()
     Back();
     fprintf(stderr, "done.\n");
 }
-void MessageSymbolIgnored(const ucs4string& symbol)
+void MessageSymbolIgnored(const std::wstring& symbol)
 {
     Error();
     fprintf(stderr,
@@ -217,14 +217,14 @@ void MessageSymbolIgnored(const ucs4string& symbol)
             WstrToAsc(symbol).c_str());
     Resume();
 }
-void MessageTFStartError(const ucs4string& tf)
+void MessageTFStartError(const std::wstring& tf)
 {
     Error();
     fprintf(stderr, "Error: Started typeface with '%s' when one was already active.",
             WstrToAsc(tf).c_str());
     Resume();
 }
-void MessageTFEndError(const ucs4string& tf)
+void MessageTFEndError(const std::wstring& tf)
 {
     Error();
     fprintf(stderr, "Error: Ended typeface with '%s' when none was active.",
@@ -244,21 +244,22 @@ void MessageTooLongText(const ctstring& input, const ctstring& output)
     Resume();
 }
 
-void MessageModuleWithoutAddress(const string& name)
+void MessageModuleWithoutAddress(const std::string& name)
 {
     Error();
     fprintf(stderr, "O65 linker: Module %s is still without address\n", name.c_str());
     Resume();
 }
 
-void MessageUndefinedSymbol(const string& name)
+void MessageUndefinedSymbol(const std::string& name, const std::string& modname)
 {
     Error();
-    fprintf(stderr, "O65 linker: Symbol '%s' still undefined\n", name.c_str());
+    fprintf(stderr, "O65 linker: %s: Symbol '%s' still undefined\n",
+        modname.c_str(), name.c_str());
     Resume();
 }
 
-void MessageDuplicateDefinition(const string& name, unsigned nmods, unsigned ndefs)
+void MessageDuplicateDefinition(const std::string& name, unsigned nmods, unsigned ndefs)
 {
     Error();
     fprintf(stderr, "O65 linker: Symbol '%s' defined in %u module(s) and %u global(s)\n",
@@ -266,9 +267,10 @@ void MessageDuplicateDefinition(const string& name, unsigned nmods, unsigned nde
     Resume();
 }
 
-void MessageUndefinedSymbols(unsigned n)
+void MessageUndefinedSymbols(const std::string& modname, unsigned n)
 {
     Error();
-    fprintf(stderr, "O65 linker: Still %u undefined symbol(s)\n", n);
+    fprintf(stderr, "O65 linker: %s: Still %u undefined symbol(s)\n",
+        modname.c_str(), n);
     Resume();
 }

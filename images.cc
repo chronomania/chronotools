@@ -67,7 +67,7 @@ void insertor::WriteImages()
         for(unsigned a=0; a<elems.size(); a += 2)
         {
             unsigned address            = elems[a];
-            const ucs4string& filename  = elems[a+1];
+            const wstring& filename  = elems[a+1];
             
             /* The address must be ROM-based. */
             
@@ -93,7 +93,7 @@ void insertor::WriteImages()
             unsigned space_address     = elems[a+2];
             unsigned orig_size         = elems[a+3];
             unsigned segment           = elems[a+4];
-            const ucs4string& filename = elems[a+5];
+            const wstring& filename = elems[a+5];
             
             /* The addresses must be ROM-based. */
             

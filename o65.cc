@@ -49,8 +49,8 @@ namespace
 
 class O65::Defs
 {
-    std::map<string, unsigned> symno;
-    std::map<unsigned, string> nosym;
+    std::map<std::string, unsigned> symno;
+    std::map<unsigned, std::string> nosym;
     std::set<unsigned> undefines;
     std::map<unsigned, unsigned> defines;
 public:
@@ -58,7 +58,7 @@ public:
     {
     }
     
-    unsigned AddUndefined(const string& name)
+    unsigned AddUndefined(const std::string& name)
     {
         unsigned a = symno.size();
         undefines.insert(a);
@@ -66,9 +66,9 @@ public:
         nosym[a] = name;
         return a;
     }
-    unsigned GetSymno(const string& name) const
+    unsigned GetSymno(const std::string& name) const
     {
-        std::map<string, unsigned>::const_iterator i = symno.find(name);
+        std::map<std::string, unsigned>::const_iterator i = symno.find(name);
         if(i == symno.end()) return ~0U;
         return i->second;
     }
@@ -85,9 +85,9 @@ public:
         undefines.erase(a);
         defines[a] = value;
     }
-    const vector<string> GetExternList() const
+    const vector<std::string> GetExternList() const
     {
-        vector<string> result;
+        vector<std::string> result;
         result.reserve(undefines.size());
         for(std::set<unsigned>::const_iterator
             i = undefines.begin(); i != undefines.end(); ++i)
@@ -119,7 +119,7 @@ public:
     unsigned base;
     
     // absolute addresses of all publics
-    typedef map<string, unsigned> publicmap_t;
+    typedef map<std::string, unsigned> publicmap_t;
     publicmap_t publics;
 
 public:    
@@ -223,7 +223,7 @@ void O65::Load(FILE* fp)
         unsigned char type = fgetc(fp);
         if(len >= 2) len -= 2; else len = 0;
         
-        string data(len, '\0');
+        std::string data(len, '\0');
         
         for(unsigned a=0; a<len; ++a) data[a] = fgetc(fp);
         
@@ -238,7 +238,7 @@ void O65::Load(FILE* fp)
     unsigned num_und = LoadSWord(fp, use32);
     for(unsigned a=0; a<num_und; ++a)
     {
-        string varname;
+        std::string varname;
         while(int c = fgetc(fp)) { if(c==EOF)break; varname += (char) c; }
         
         defs->AddUndefined(varname);
@@ -251,7 +251,7 @@ void O65::Load(FILE* fp)
     unsigned num_global = LoadSWord(fp, use32);
     for(unsigned a=0; a<num_global; ++a)
     {
-        string varname;
+        std::string varname;
         while(int c = fgetc(fp)) { if(c==EOF)break; varname += (char) c; }
         
         SegmentSelection seg = (SegmentSelection)fgetc(fp);
@@ -262,7 +262,7 @@ void O65::Load(FILE* fp)
     }
 }
 
-void O65::DeclareGlobal(SegmentSelection seg, const string& name, unsigned address)
+void O65::DeclareGlobal(SegmentSelection seg, const std::string& name, unsigned address)
 {
     if(Segment**s = GetSegRef(seg))
     {
@@ -283,7 +283,7 @@ void O65::Locate(SegmentSelection seg, unsigned newaddress)
     if(bss)   bss->Locate(seg, diff, seg==BSS);
 }
 
-void O65::LinkSym(const string& name, unsigned value)
+void O65::LinkSym(const std::string& name, unsigned value)
 {
     unsigned symno = defs->GetSymno(name);
     if(symno == ~0U)
@@ -315,7 +315,7 @@ void O65::Segment::Locate(SegmentSelection seg, unsigned diff, bool is_me)
     if(is_me)
     {
         /* Relocate publics */
-        map<string, unsigned>::iterator i;
+        map<std::string, unsigned>::iterator i;
         for(i = publics.begin(); i != publics.end(); ++i)
         {
             i->second += diff;
@@ -494,36 +494,50 @@ unsigned O65::GetSegSize(SegmentSelection seg) const
     return 0;
 }
 
-unsigned O65::GetSymAddress(const string& name) const
+unsigned O65::GetSymAddress(SegmentSelection seg, const std::string& name) const
 {
-    Segment::publicmap_t::const_iterator i = code->publics.find(name);
-    if(i == code->publics.end())
+    if(const Segment*const *s = GetSegRef(seg))
     {
-        fprintf(stderr, "Attempt to find symbol %s which not exists.\n", name.c_str());
-        return 0;
+        Segment::publicmap_t::const_iterator i = (*s)->publics.find(name);
+        if(i == code->publics.end())
+        {
+            fprintf(stderr, "Attempt to find symbol %s which not exists.\n", name.c_str());
+            return 0;
+        }
+        return i->second;
     }
-    return i->second;
+    return 0;
 }
 
-bool O65::HasSym(const string& name) const
+bool O65::HasSym(SegmentSelection seg, const std::string& name) const
 {
-    return code->publics.find(name) != code->publics.end();
-}
-
-const vector<string> O65::GetSymbolList() const
-{
-    vector<string> result;
-    for(map<string, unsigned>::const_iterator
-        i = code->publics.begin();
-        i != code->publics.end();
-        ++i)
+    if(const Segment*const *s = GetSegRef(seg))
     {
-        result.push_back(i->first);
+        const O65::Segment::publicmap_t& pubs = (*s)->publics;
+        return pubs.find(name) != pubs.end();
+    }
+    return false;
+}
+
+const vector<std::string> O65::GetSymbolList(SegmentSelection seg) const
+{
+    vector<std::string> result;
+    if(const Segment*const *s = GetSegRef(seg))
+    {
+        const O65::Segment::publicmap_t& pubs = (*s)->publics;
+        result.reserve(pubs.size());
+        for(O65::Segment::publicmap_t::const_iterator
+            i = pubs.begin();
+            i != pubs.end();
+            ++i)
+        {
+            result.push_back(i->first);
+        }
     }
     return result;
 }
 
-const vector<string> O65::GetExternList() const
+const vector<std::string> O65::GetExternList() const
 {
     return defs->GetExternList();
 }
@@ -593,7 +607,7 @@ void O65::SetError()
     error = true;
 }
 
-void O65::DeclareByteRelocation(SegmentSelection seg, const string& name, unsigned addr)
+void O65::DeclareByteRelocation(SegmentSelection seg, const std::string& name, unsigned addr)
 {
     Segment**s = GetSegRef(seg); if(!s) return;
     
@@ -611,7 +625,7 @@ void O65::DeclareByteRelocation(SegmentSelection seg, const string& name, unsign
     (*s)->R.R16lo.AddReloc(addr, symno);
 }
 
-void O65::DeclareWordRelocation(SegmentSelection seg, const string& name, unsigned addr)
+void O65::DeclareWordRelocation(SegmentSelection seg, const std::string& name, unsigned addr)
 {
     Segment**s = GetSegRef(seg); if(!s) return;
     
@@ -630,7 +644,7 @@ void O65::DeclareWordRelocation(SegmentSelection seg, const string& name, unsign
     (*s)->R.R16.AddReloc(addr, symno);
 }
 
-void O65::DeclareLongRelocation(SegmentSelection seg, const string& name, unsigned addr)
+void O65::DeclareLongRelocation(SegmentSelection seg, const std::string& name, unsigned addr)
 {
     Segment**s = GetSegRef(seg); if(!s) return;
     
@@ -760,7 +774,7 @@ void O65::Segment::LoadRelocations(FILE* fp)
     }
 }
 
-const vector<pair<unsigned char, string> >& O65::GetCustomHeaders() const
+const vector<pair<unsigned char, std::string> >& O65::GetCustomHeaders() const
 {
     return customheaders;
 }

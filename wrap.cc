@@ -22,10 +22,10 @@ const ctstring insertor::WrapDialogLines(const ctstring &dialog) const
     
     ctstring result;
     
-    static const unsigned char spacechar = getchronochar(' ', cset_12pix);
-    static const unsigned char colonchar = getchronochar(':', cset_12pix);
-    static const unsigned char eightchar = getchronochar('8', cset_12pix);
-    static const unsigned char dblw_char = getchronochar('W', cset_12pix);
+    static const unsigned char spacechar = getctchar(' ', cset_12pix);
+    static const unsigned char colonchar = getctchar(':', cset_12pix);
+    static const unsigned char eightchar = getctchar('8', cset_12pix);
+    static const unsigned char dblw_char = getctchar('W', cset_12pix);
 
     unsigned space3width = (GetFont12width( spacechar ) ) * 3;
     unsigned num8width   = (GetFont12width( eightchar ) );
@@ -120,7 +120,7 @@ const ctstring insertor::WrapDialogLines(const ctstring &dialog) const
                 // This name can't be changed by the player
                 for(unsigned a=0; a<nadia.size(); ++a)
                 {
-                    ctchar c = getchronochar(nadia[a], cset_12pix);
+                    ctchar c = getctchar(nadia[a], cset_12pix);
                     col += GetFont12width(c);
                 }
                 break;

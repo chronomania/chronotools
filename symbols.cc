@@ -3,7 +3,7 @@
 #include "symbols.hh"
 #include "config.hh"
 
-void Symbols::AddSym(const ucs4string &sym, ctchar c, int targets)
+void Symbols::AddSym(const std::wstring &sym, ctchar c, int targets)
 {
     // 16 instead of 12 because 12 = 8+4, and 8 is already used.
     if(targets&2) { symbols2[sym]=c;  rev2[c]=sym; }
@@ -79,8 +79,8 @@ void Symbols::Load()
     { const ConfParser::ElemVec& elems = GetConf("font", "def8sym").Fields();
       for(unsigned a=0; a<elems.size(); a+=2)
       {
-          const ucs4string &sym = elems[a+1];
-          unsigned value     = elems[a];
+          const std::wstring &sym = elems[a+1];
+          unsigned value          = elems[a];
           //fprintf(stderr, "Defining sym8 '%s' as 0x%02X\n", WstrToAsc(sym).c_str(),value);
           AddSym(sym, static_cast<ctchar> (value), 2+8);
       }
@@ -89,8 +89,8 @@ void Symbols::Load()
     { const ConfParser::ElemVec& elems = GetConf("font", "def12sym").Fields();
       for(unsigned a=0; a<elems.size(); a+=2)
       {
-          const ucs4string &sym = elems[a+1];
-          unsigned value     = elems[a];
+          const std::wstring &sym = elems[a+1];
+          unsigned value          = elems[a];
           //fprintf(stderr, "Defining sym12 '%s' as 0x%02X\n", WstrToAsc(sym).c_str(),value);
           AddSym(sym, static_cast<ctchar> (value), 16);
       }

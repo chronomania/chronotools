@@ -14,7 +14,7 @@ namespace
 
     class CharacterSet
     {
-        hash_map<ucs4, ctchar> revmap;
+        hash_map<wchar_t, ctchar> revmap;
         vector<ctchar> revmapfirst;
     
     private:
@@ -23,12 +23,12 @@ namespace
             revmapfirst.clear();
             revmapfirst.resize(GetConf("font", "charcachesize"), 0);
              
-            ucs4string noncharstr = GetConf("font", "nonchar");
-            ucs4 nonchar = noncharstr[0];
+            std::wstring noncharstr = GetConf("font", "nonchar");
+            wchar_t nonchar = noncharstr[0];
             
             for(unsigned a = 0; a < cset.size(); ++a)
             {
-                ucs4 c = cset[a];
+                wchar_t c = cset[a];
                 if(c == nonchar) { cset[a] = c = ilseq; }
                 if((unsigned)c < revmapfirst.size()) revmapfirst[(unsigned)c] = a;
                 else if(c != ilseq)revmap[c] = a;
@@ -39,7 +39,7 @@ namespace
         }
 
     protected:
-        ucs4string cset;
+        std::wstring cset;
         virtual void GetCSet() = 0;
         
     public:
@@ -52,7 +52,7 @@ namespace
         
         void Rearrange(const Rearrangemap_t& rearrange)
         {
-            ucs4string newcset(cset.size(), ilseq);
+            std::wstring newcset(cset.size(), ilseq);
             
             hash_set<ctchar> forbid;
             
@@ -86,12 +86,12 @@ namespace
             
             RebuildRevmap();
         }
-        ucs4 operator[] (ctchar ind)
+        wchar_t operator[] (ctchar ind)
         {
             if(cset.empty()) Init();
             return cset[ind];
         }
-        ctchar find(ucs4 p)
+        ctchar find(wchar_t p)
         {
             if(p == ilseq)return 0;
             
@@ -99,7 +99,7 @@ namespace
             
             if((unsigned)p < revmapfirst.size()) return revmapfirst[(unsigned)p];
             
-            hash_map<ucs4, ctchar>::const_iterator i;
+            hash_map<wchar_t, ctchar>::const_iterator i;
             i = revmap.find(p);
             if(i == revmap.end())return 0;
             return i->second;
@@ -211,7 +211,7 @@ void setcharset(const char *newcset)
 }
 
 // Note: Only values 0xA0..0xFF are worth using.
-ucs4 getucs4(ctchar chronochar, cset_class cl)
+wchar_t getwchar_t(ctchar chronochar, cset_class cl)
 {
     switch(cl)
     {
@@ -223,7 +223,7 @@ ucs4 getucs4(ctchar chronochar, cset_class cl)
 }
 
 // Note: Returns 0 for nonpresentible chars.
-ctchar getchronochar(ucs4 ch, cset_class cl)
+ctchar getctchar(wchar_t ch, cset_class cl)
 {
     ctchar result = 0;
     switch(cl)
@@ -311,11 +311,11 @@ const string GetString(const ctstring &word)
     return result;
 }
 
-ctstring getctstring(const ucs4string& s, cset_class cl)
+ctstring getctstring(const std::wstring& s, cset_class cl)
 {
     ctstring result(s.size(), 0);
     for(unsigned a=0; a<s.size(); ++a)
-        result[a] = getchronochar(s[a], cl);
+        result[a] = getctchar(s[a], cl);
     return result;
 }
 

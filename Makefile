@@ -124,19 +124,23 @@ DEPDIRS = utils/
 # VERSION 1.13.5 is another dumper fix, but also finishes the battle VWF8 support
 # VERSION 1.13.6 is yet another fix, but also finishes the monster name code
 # VERSION 1.13.7 brings an improvement to the sluggish VWF8 screens problem
+# VERSION 1.13.8 C++ standard compliance upgrade... also a new eq-related feature
 
 #OPTIM=-Os
 # -fshort-enums
 # -fpack-struct
 #OPTIM=-O0
-#OPTIM=-O0 -pg
+#OPTIM=-O1 -pg
 #OPTIM=-O3 -pg
 #LDFLAGS += -pg
 OPTIM=-O3
 
 CXXFLAGS += -I.
+CFLAGS += -I/usr/include/slang
+LDFLAGS += -L/usr/lib/slang
 
-VERSION=1.13.7
+
+VERSION=1.13.8
 ARCHFILES=utils/xray.cc utils/xray.h \
           utils/viewer.c \
           utils/vwftest.cc \
@@ -166,7 +170,7 @@ ARCHFILES=utils/xray.cc utils/xray.h \
           dataarea.cc dataarea.hh \
           rangemap.hh rangemap.tcc \
           rangeset.hh rangeset.tcc \
-          range.hh \
+          range.hh range.tcc \
           space.cc space.hh \
           crc32.cc crc32.h \
           hash.hh \

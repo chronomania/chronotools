@@ -10,20 +10,21 @@ using std::list;
 using std::map;
 
 #include "hash.hh"
+#include "wstring.hh"
 
 class O65linker::Object
 {
 public:
     O65 object;
 private:
-    string name;
+    std::string name;
 public:
-    vector<string> extlist;
+    vector<std::string> extlist;
     
     LinkageWish linkage;
     
 public:
-    Object(const O65& obj, const string& what, LinkageWish link)
+    Object(const O65& obj, const std::string& what, LinkageWish link)
     : object(obj),
       name(what),
       extlist(obj.GetExternList()),
@@ -39,7 +40,7 @@ public:
     {
     }
     
-    const string& GetName() const { return name; }
+    const std::string& GetName() const { return name; }
     
     void Release()
     {
@@ -52,28 +53,58 @@ public:
     }
 };
 
+class O65linker::definedata
+{
+    std::string name;
+    unsigned address;
+    bool used;
+public:
+    definedata(const std::string& n, unsigned a) : name(n), address(a), used(false)
+    {
+    }
+    const std::string& GetName() const { return name; }
+    const unsigned GetAddress() const { return address; }
+    bool IsUsed() const { return used; }
+    void Use() { used=true; }
+};
+class O65linker::referdata
+{
+    ReferMethod ref;
+    std::string name;
+public:
+    referdata(const ReferMethod& r, const std::string& n): ref(r), name(n)
+    {
+    }
+    const std::string& GetName() const { return name; }
+    const ReferMethod& GetReference() const { return ref; }
+};
+
+
 class O65linker::SymCache
 {
-    typedef hash_map<string, unsigned> cachetype;
+    typedef hash_map<std::string, unsigned> cachetype;
     
     cachetype sym_cache;
 public:
+    /* Caches the symbols of a new object */
     void Update(const Object& o, unsigned objnum)
     {
-        const vector<string> symlist = o.object.GetSymbolList();
+        const vector<std::string> symlist = o.object.GetSymbolList(CODE);
         for(unsigned a=0; a<symlist.size(); ++a)
             sym_cache[symlist[a]] = objnum;
     }
     
-    const pair<unsigned, bool> Find(const string& sym) const
+    /* Resolves which object is defining the given symbol */
+    bool Find(const std::string& sym, unsigned& objnum) const
     {
         cachetype::const_iterator i = sym_cache.find(sym);
-        if(i == sym_cache.end()) return make_pair(0, false);
-        return make_pair(i->second, true);
+        if(i == sym_cache.end()) return false;
+        objnum = i->second;
+        return true;
     }
 };
 
-void O65linker::AddObject(const O65& object, const string& what, LinkageWish linkage)
+void O65linker::AddObject(const O65& object, const std::string& what, LinkageWish linkage)
 {
     if(linked && linkage.type != LinkageWish::LinkHere)
     {
@@ -82,15 +113,14 @@ void O65linker::AddObject(const O65& object, const string& what, LinkageWish lin
             " after linking already done\n", what.c_str());
         return;
     }
-    Object *newobj = new Object(object, what, linkage);
     
-    const vector<string> symlist = newobj->object.GetSymbolList();
+    const vector<std::string> symlist = object.GetSymbolList(CODE);
     
-    unsigned collisions = 0;
+    bool clean = true;
     for(unsigned a=0; a<symlist.size(); ++a)
     {
-        const pair<unsigned, bool> tmp = symcache->Find(symlist[a]);
-        if(tmp.second)
+        unsigned objnum;
+        if(symcache->Find(symlist[a], objnum))
         {
             fprintf(stderr,
                 "O65 linker: ERROR:"
@@ -98,21 +128,24 @@ void O65linker::AddObject(const O65& object, const string& what, LinkageWish lin
                 " is already present in object \"%s\"\n",
                 symlist[a].c_str(),
                 what.c_str(),
-                objects[tmp.first]->GetName().c_str());
-            ++collisions;
+                objects[objnum]->GetName().c_str());
+            clean = false;
         }
     }
-    if(collisions)
+    
+    if(!clean)
     {
-        delete newobj;
         return;
     }
+    
+    Object *newobj = new Object(object, what, linkage);
+    
     objects.push_back(newobj);
 
     symcache->Update(*newobj, objects.size()-1);
 }
 
-void O65linker::AddObject(const O65& object, const string& what, unsigned address)
+void O65linker::AddObject(const O65& object, const std::string& what, unsigned address)
 {
     LinkageWish wish;
     wish.SetAddress(address);
@@ -165,7 +198,7 @@ const vector<unsigned char>& O65linker::GetCode(unsigned objno) const
     return objects[objno]->object.GetSeg(CODE);
 }
 
-const string& O65linker::GetName(unsigned objno) const
+const std::string& O65linker::GetName(unsigned objno) const
 {
     return objects[objno]->GetName();
 }
@@ -175,7 +208,7 @@ void O65linker::Release(unsigned objno)
     objects[objno]->Release();
 }
 
-void O65linker::DefineSymbol(const string& name, unsigned value)
+void O65linker::DefineSymbol(const std::string& name, unsigned value)
 {
     if(linked)
     {
@@ -183,30 +216,33 @@ void O65linker::DefineSymbol(const string& name, unsigned value)
     }
     for(unsigned c=0; c<defines.size(); ++c)
     {
-        if(defines[c].first == name)
+        if(defines[c]->GetName() == name)
         {
-            if(defines[c].second.first != value)
+            /* Already defined */
+            if(defines[c]->GetAddress() != value)
             {
+                /* Different address */
                 fprintf(stderr,
                     "O65 linker: Error: %s previously defined as %X,"
                     " can not redefine as %X\n",
-                        name.c_str(), defines[c].second.first, value);
+                        name.c_str(), defines[c]->GetAddress(), value);
             }
+            /* No need to define again */
             return;
         }
     }
-    defines.push_back(std::make_pair(name, std::make_pair(value, false)));
+    defines.push_back(new definedata(name, value));
 }
 
-void O65linker::AddReference(const string& name, const ReferMethod& reference)
+void O65linker::AddReference(const std::string& name, const ReferMethod& reference)
 {
-    const pair<unsigned, bool> tmp = symcache->Find(name);
-    if(tmp.second)
+    unsigned objnum;
+    if(symcache->Find(name, objnum))
     {
-        const Object& o = *objects[tmp.first];
+        const Object& o = *objects[objnum];
         if(o.linkage.type == LinkageWish::LinkHere)
         {
-            unsigned value = o.object.GetSymAddress(name);
+            unsigned value = o.object.GetSymAddress(CODE, name);
             // resolved referer
             FinishReference(reference, value, name);
             return;
@@ -217,46 +253,27 @@ void O65linker::AddReference(const string& name, const ReferMethod& reference)
     {
         fprintf(stderr, "O65 linker: Attempt to add references after linking\n");
     }
-    referers.push_back(make_pair(reference, name));
+    referers.push_back(new referdata(reference, name));
 }
 
-void O65linker::LinkSymbol(const string& name, unsigned value)
+void O65linker::FinishAndDeleteReference(unsigned refnum, unsigned value)
 {
-    for(unsigned a=0; a<objects.size(); ++a)
-    {
-        Object& o = *objects[a];
-        for(unsigned b=0; b<o.extlist.size(); ++b)
-        {
-            /* If this module is referring to this symbol */
-            if(o.extlist[b] == name)
-            {
-                o.extlist.erase(o.extlist.begin() + b);
-                o.object.LinkSym(name, value);
-                --b;
-            }
-        }
-    }
-    for(unsigned a=0; a<referers.size(); ++a)
-    {
-        if(name == referers[a].second)
-        {
-            // resolved referer
-            FinishReference(referers[a].first, value, name);
-            referers.erase(referers.begin() + a);
-            --a;
-        }
-    }
+    const std::string& name = referers[refnum]->GetName();
+    const ReferMethod& ref = referers[refnum]->GetReference();
+    FinishReference(ref, value, name);
+    delete referers[refnum];
+    referers.erase(referers.begin() + refnum);
 }
 
-void O65linker::FinishReference(const ReferMethod& reference, unsigned target, const string& what)
+void O65linker::FinishReference(const ReferMethod& reference,
+                                unsigned target,
+                                const std::string& what)
 {
     unsigned pos = reference.GetAddr();
     unsigned value = reference.Evaluate(target);
     
-    char Buf[513];
-    sprintf(Buf, "%016X", value);
-
-    std::string title = "ref " + what + ": $" + (Buf + 16-reference.GetSize()*2);
+    std::string title =
+        format("ref %s: $%0*X", what.c_str(), reference.GetSize()*2, value);
 
     vector<unsigned char> bytes;
     for(unsigned n=0; n<reference.GetSize(); ++n)
@@ -270,8 +287,8 @@ void O65linker::FinishReference(const ReferMethod& reference, unsigned target, c
 
 void O65linker::AddLump(const vector<unsigned char>& source,
                         unsigned address,
-                        const string& what,
-                        const string& name)
+                        const std::string& what,
+                        const std::string& name)
 {
     O65 tmp;
     tmp.LoadSegFrom(CODE, source);
@@ -285,12 +302,12 @@ void O65linker::AddLump(const vector<unsigned char>& source,
 }
 
 void O65linker::AddLump(const vector<unsigned char>& source,
-                        const string& what,
-                        const string& name)
+                        const std::string& what,
+                        const std::string& name)
 {
     O65 tmp;
     tmp.LoadSegFrom(CODE, source);
-    if(!name.empty()) tmp.DeclareGlobal(CODE, name, 0);
+    tmp.DeclareGlobal(CODE, name, 0);
     AddObject(tmp, what);
 }
 
@@ -319,32 +336,31 @@ void O65linker::Link()
         
         for(unsigned b=0; b<o.extlist.size(); ++b)
         {
-            const string& ext = o.extlist[b];
+            const std::string& ext = o.extlist[b];
             
             unsigned found=0, addr=0, defcount=0;
             
-            const pair<unsigned, bool> tmp = symcache->Find(ext);
-            if(tmp.second)
+            unsigned objnum;
+            if(symcache->Find(ext, objnum))
             {
-                addr = objects[tmp.first]->object.GetSymAddress(ext);
+                addr = objects[objnum]->object.GetSymAddress(CODE, ext);
                 ++found;
             }
             
             // Or if it was an external definition.
             for(unsigned c=0; c<defines.size(); ++c)
             {
-                if(defines[c].first == ext)
+                if(defines[c]->GetName() == ext)
                 {
-                    addr = defines[c].second.first;
-                    defines[c].second.second = true;
+                    addr = defines[c]->GetAddress();
+                    defines[c]->Use();
                     ++defcount;
                 }
             }
             
             if(found == 0 && !defcount)
             {
-                MessageUndefinedSymbol(ext);
-                // FIXME: where?
+                MessageUndefinedSymbol(ext, o.GetName());
             }
             else if((found+defcount) != 1)
             {
@@ -368,26 +384,24 @@ void O65linker::Link()
         }
         if(!o.extlist.empty())
         {
-            MessageUndefinedSymbols(o.extlist.size());
-            // FIXME: where?
+            MessageUndefinedSymbols(o.GetName(), o.extlist.size());
         }
     }
 
-    for(unsigned c=0; c<referers.size(); ++c)
+    for(unsigned a=0; a<referers.size(); ++a)
     {
-        const string& name = referers[c].second;
-        const pair<unsigned, bool> tmp = symcache->Find(name);
-        if(tmp.second)
+        const std::string& name = referers[a]->GetName();
+        unsigned objnum;
+        if(symcache->Find(name, objnum))
         {
-            const Object& o = *objects[tmp.first];
+            const Object& o = *objects[objnum];
             if(o.linkage.type != LinkageWish::LinkHere) continue;
             
-            unsigned value = o.object.GetSymAddress(name);
-             
+            unsigned value = o.object.GetSymAddress(CODE, name);
+            
             // resolved referer
-            FinishReference(referers[c].first, value, name);
-            referers.erase(referers.begin() + c);
-            --c;
+            FinishAndDeleteReference(a, value);
+            --a;
         }
     }
     
@@ -403,16 +417,18 @@ void O65linker::Link()
         for(unsigned a=0; a<referers.size(); ++a)
             fprintf(stderr,
                 "O65 linker: Unresolved reference: %s\n",
-                    referers[a].second.c_str());
+                    referers[a]->GetName().c_str());
     }
 
     for(unsigned c=0; c<defines.size(); ++c)
-        if(!defines[c].second.second)
+    {
+        if(!defines[c]->IsUsed())
         {
             fprintf(stderr,
                 "O65 linker: Warning: Symbol \"%s\" was defined but never used.\n",
-                defines[c].first.c_str());
+                defines[c]->GetName().c_str());
         }
+    }
 }
 
 O65linker::O65linker()
@@ -428,6 +444,9 @@ O65linker::O65linker()
 O65linker::~O65linker()
 {
     delete symcache;
+    for(unsigned a=0; a<objects.size(); ++a) delete objects[a];
+    for(unsigned a=0; a<defines.size(); ++a) delete defines[a];
+    for(unsigned a=0; a<referers.size(); ++a) delete referers[a];
 }
 
 namespace
@@ -456,13 +475,13 @@ namespace
     
     struct IPS_global: public IPS_item
     {
-        string   name;
+        std::string   name;
      public:
         IPS_global(): IPS_item(), name() { }
     };
     struct IPS_extern: public IPS_item
     {
-        string   name;
+        std::string   name;
         unsigned size;
      public:
         IPS_extern(): IPS_item(), name(), size() { }
@@ -475,7 +494,7 @@ namespace
     };
 }
 
-void O65linker::LoadIPSfile(FILE* fp, const string& what)
+void O65linker::LoadIPSfile(FILE* fp, const std::string& what)
 {
     rewind(fp);
     
@@ -603,13 +622,9 @@ void O65linker::LoadIPSfile(FILE* fp, const string& what)
             }
         }
         
-        char Buf[64];
-        sprintf(Buf, "block $%06X of ", lump.addr); /* | 0xC00000 removed here */
-        
         LinkageWish wish;
         wish.SetAddress(lump.addr);
-        
-        AddObject(tmp, Buf + what, wish);
+        AddObject(tmp, format("block $%06X of ", lump.addr) + what, wish);
     }
 }
 

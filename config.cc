@@ -135,8 +135,8 @@ const ConfParser::Field& GetConf(const char *sect, const char *var)
     }
     catch(ConfParser::invalid_section sect_error)
     {
-        typedef string errortype;
-        static set<errortype> displayed;
+        typedef std::string errortype;
+        static std::set<errortype> displayed;
         
         const errortype ErrorName(sect_error.GetSection());
         
@@ -155,8 +155,8 @@ const ConfParser::Field& GetConf(const char *sect, const char *var)
     }
     catch(ConfParser::invalid_field field_error)
     {
-        typedef pair<string, string> errortype;
-        static set<errortype> displayed;
+        typedef std::pair<std::string, std::string> errortype;
+        static std::set<errortype> displayed;
         
         const errortype ErrorName(field_error.GetField().c_str(),
                                   field_error.GetSection().c_str());
@@ -221,7 +221,7 @@ namespace
 
             config.Parse(fp);
 
-            ucs4string cset = GetConf("general", "characterset");
+            std::wstring cset = GetConf("general", "characterset");
             setcharset(WstrToAsc(cset).c_str());
 
             rewind(fp);

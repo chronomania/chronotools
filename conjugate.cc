@@ -23,9 +23,9 @@ void Conjugatemap::Load(const insertor &ins)
     for(unsigned a=0; a<elems.size(); a += 3)
     {
         form tmp;
-        const ucs4string &func  = elems[a];
-        const ucs4string &data  = elems[a+1];
-        const ucs4string &width = elems[a+2];
+        const wstring &func  = elems[a];
+        const wstring &data  = elems[a+1];
+        const wstring &width = elems[a+2];
         
         tmp.func   = func;
         tmp.used   = false;
@@ -34,7 +34,7 @@ void Conjugatemap::Load(const insertor &ins)
         tmp.maxwidth = 0;
         for(unsigned b=0; b<width.size(); ++b)
         {
-            ctchar c = getchronochar(width[b], cset_12pix);
+            ctchar c = getctchar(width[b], cset_12pix);
             tmp.maxwidth += 1 + ins.GetFont12width(c);
         }
         
@@ -63,9 +63,9 @@ void Conjugatemap::Load(const insertor &ins)
             unsigned c = ++b;
             while(b < data.size() && WcharToAsc(data[b]) != ',') ++b;
             
-            ucs4string s = data.substr(c, b-c);
+            wstring s = data.substr(c, b-c);
             
-            const ucs4string &name = Symbols.GetRev(16).find(person)->second;
+            const wstring &name = Symbols.GetRev(16).find(person)->second;
             
             ctstring key;
             for(unsigned a=0; a<s.size(); ++a)
@@ -75,7 +75,7 @@ void Conjugatemap::Load(const insertor &ins)
                     a += name.size() - 1;
                 }
                 else
-                    key += getchronochar(s[a], cset_12pix);
+                    key += getctchar(s[a], cset_12pix);
             
             tmp.data[key] = person;
         }
@@ -102,7 +102,7 @@ void Conjugatemap::Work(ctstring &s, formit fit)
                 for(;; --byte)
                 {
                     /* If this byte is used... */
-                    if(getucs4(byte, cset_12pix) != ilseq) continue;
+                    if(getwchar_t(byte, cset_12pix) != ilseq) continue;
 
                     bool used = false;
                     
@@ -203,7 +203,7 @@ void insertor::WriteConjugator()
     {
         if(!i->used) continue;
         
-        const ucs4string& funcname = i->func;
+        const wstring& funcname = i->func;
         
         string CodeName = "CODE_";
         CodeName += WstrToAsc(funcname);

@@ -70,13 +70,13 @@ namespace
         void Dump(const std::string& prefix="") const
         {
             if(!specified)
-                Emit(string("nop;")+prefix+"carry insignificant");
+                Emit(std::string("nop;")+prefix+"carry insignificant");
             else if(state == CarrySet)
-                Emit(string("nop;")+prefix+"carry set");
+                Emit(std::string("nop;")+prefix+"carry set");
             else if(state == CarryUnset)
-                Emit(string("nop;")+prefix+"carry unset");
+                Emit(std::string("nop;")+prefix+"carry unset");
             else
-                Emit(string("nop;")+prefix+"carry unknown");
+                Emit(std::string("nop;")+prefix+"carry unknown");
         }
         bool operator== (CarryAssumedState s) const { return state == s; }
         bool operator!= (CarryAssumedState s) const { return state != s; }
@@ -91,7 +91,7 @@ namespace
 
     class Assembler
     {
-        ucs4string CurSubName;
+        std::wstring CurSubName;
         
         struct variable
         {
@@ -105,7 +105,7 @@ namespace
             }
         };
         
-        typedef map<ucs4string, variable> vars_t;
+        typedef map<std::wstring, variable> vars_t;
         vars_t vars;
 
         bool started;       // Code begun?
@@ -134,7 +134,7 @@ namespace
         public:
             BranchData(): level(), label(), state() { }
         };
-        typedef list<BranchData> branchlist_t;
+        typedef std::list<BranchData> branchlist_t;
         branchlist_t openbranches;
         
         struct FunctionData
@@ -144,10 +144,10 @@ namespace
         public:
             FunctionData(): flags(), varcount(0) { }
         };
-        typedef map<ucs4string, FunctionData> functionlist_t;
+        typedef map<std::wstring, FunctionData> functionlist_t;
         functionlist_t functiondata;
         
-        ucs4string PendingCall;
+        std::wstring PendingCall;
         
         class ConstState
         {
@@ -167,13 +167,13 @@ namespace
         class VarState
         {
             bool known;
-            ucs4string var;
+            std::wstring var;
         public:
             VarState() : known(false) {}
             void Invalidate() { known=false; }
             bool Known() const { return known; }
-            void Set(const ucs4string &v) { known=true; var=v; }
-            bool Is(const ucs4string &v) const { return known && var==v; }
+            void Set(const std::wstring &v) { known=true; var=v; }
+            bool Is(const std::wstring &v) const { return known && var==v; }
         };
         
         struct regstate
@@ -332,7 +332,7 @@ namespace
             FRAME_BEGIN();
             started = true;
         }
-        unsigned char GetStackOffset(const ucs4string &varname) const
+        unsigned char GetStackOffset(const std::wstring &varname) const
         {
             vars_t::const_iterator i = vars.find(varname);
             if(i == vars.end())
@@ -450,9 +450,9 @@ namespace
         }
 
     public:
-        const ucs4string LoopHelperName;
-        const ucs4string OutcHelperName;
-        const ucs4string MagicVarName;
+        const std::wstring LoopHelperName;
+        const std::wstring OutcHelperName;
+        const std::wstring MagicVarName;
         
         Assembler()
         : CurSubName(),
@@ -489,7 +489,7 @@ namespace
                 }
             }
         }
-        void START_FUNCTION(const ucs4string &name)
+        void START_FUNCTION(const std::wstring &name)
         {
             CurSubName = name;
             started = false;
@@ -513,7 +513,7 @@ namespace
                 EmitEndIfDef();
             }
         }
-        void DECLARE_VAR(const ucs4string &name)
+        void DECLARE_VAR(const std::wstring &name)
         {
             if(vars.find(name) == vars.end())
             {
@@ -531,7 +531,7 @@ namespace
                 vars[name].stackpos = stackpos;
             }
         }
-        void DECLARE_REGVAR(const ucs4string &name)
+        void DECLARE_REGVAR(const std::wstring &name)
         {
             vars[name].is_regvar = true;
         }
@@ -613,12 +613,12 @@ namespace
             }
         }
         
-        bool IsCached(const ucs4string &name) const
+        bool IsCached(const std::wstring &name) const
         {
             return ALstate.Var.Is(name);
         }
         
-        void LOAD_VAR(const ucs4string &name, bool need_16bit = false)
+        void LOAD_VAR(const std::wstring &name, bool need_16bit = false)
         {
             CheckCodeStart();
             // load var to A
@@ -692,7 +692,7 @@ namespace
             unsigned val = 0;
             
             if(name[0] == '\'')
-                val = getchronochar(name[1], cset_12pix);
+                val = getctchar(name[1], cset_12pix);
             else
                 val = strtol(WstrToAsc(name).c_str(), NULL, 10);
             
@@ -723,7 +723,7 @@ namespace
                 ALstate.Var.Invalidate();
             }
         }
-        void STORE_VAR(const ucs4string &name)
+        void STORE_VAR(const std::wstring &name)
         {
             CheckCodeStart();
             
@@ -740,7 +740,7 @@ namespace
             
             ALstate.Var.Set(name);
         }
-        void INC_VAR(const ucs4string &name)
+        void INC_VAR(const std::wstring &name)
         {
             CheckCodeStart();
             // inc var
@@ -754,7 +754,7 @@ namespace
             
             // curiously, lda&inc&sta don't touch carry.
         }
-        void DEC_VAR(const ucs4string &name)
+        void DEC_VAR(const std::wstring &name)
         {
             CheckCodeStart();
             // dec var
@@ -766,7 +766,7 @@ namespace
 
             STORE_VAR(name);
         }
-        void CALL_FUNC(const ucs4string &name)
+        void CALL_FUNC(const std::wstring &name)
         {
             CheckCodeStart();
             
@@ -780,7 +780,7 @@ namespace
             
             GenerateComparison(indent, "bcc", "bcs");
         }
-        void COMPARE_EQUAL(const ucs4string &name, unsigned indent)
+        void COMPARE_EQUAL(const std::wstring &name, unsigned indent)
         {
             CheckCodeStart();
             
@@ -798,7 +798,7 @@ namespace
                 unsigned val = 0;
                 
                 if(name[0] == '\'')
-                    val = getchronochar(name[1], cset_12pix);
+                    val = getctchar(name[1], cset_12pix);
                 else
                     val = strtol(WstrToAsc(name).c_str(), NULL, 10);
                 
@@ -815,7 +815,7 @@ namespace
             
             GenerateComparison(indent, "bne", "beq");
         }
-        void COMPARE_ZERO(const ucs4string &name, unsigned indent)
+        void COMPARE_ZERO(const std::wstring &name, unsigned indent)
         {
             CheckCodeStart();
             
@@ -826,7 +826,7 @@ namespace
             
             GenerateComparison(indent, "bne", "beq");
         }
-        void SELECT_CASE(const ucs4string &cset, unsigned indent)
+        void SELECT_CASE(const std::wstring &cset, unsigned indent)
         {
             class CaseHandler: public CaseGenerator
             {
@@ -834,8 +834,8 @@ namespace
                 bool      ChainCompare;
                 CaseValue LastCompare;
                 bool      BraPending;
-                string    PendingLabel;
-                string    LastCompareType;
+                std::string    PendingLabel;
+                std::string    LastCompareType;
                 
                 std::map<std::string, BranchStateData> jumps;
                 
@@ -1049,12 +1049,12 @@ namespace
                     EmitSegment("code");
                 }
                 
-                const FlagAssumption& GetFlags(const string& label)
+                const FlagAssumption& GetFlags(const std::string& label)
                 {
                     return jumps[label].flags;
                 }
                 
-                const CarryAssumption& GetCarry(const string& label)
+                const CarryAssumption& GetCarry(const std::string& label)
                 {
                     return jumps[label].carry;
                 }
@@ -1071,7 +1071,7 @@ namespace
                 // Names can only contain 8bit chars!
                 // Note: we're not checking ALstate here, would be mostly useless check
                 
-                ctchar c = getchronochar(cset[a], cset_12pix);
+                ctchar c = getctchar(cset[a], cset_12pix);
                 tmpcase.values.insert(c);
             }
             tmpcase.target = positivelabel;
@@ -1166,9 +1166,9 @@ void Compile(FILE *fp)
 {
     Assembler Asm;
     
-    ucs4string file;
+    std::wstring file;
     
-    if(1) // Read file to ucs4string
+    if(1) // Read file to wstring
     {
         wstringIn conv(getcharset());
         
@@ -1182,7 +1182,7 @@ void Compile(FILE *fp)
     
     for(unsigned a=0; a<file.size(); )
     {
-        ucs4string Buf;
+        std::wstring Buf;
         if(1)
         {
             // Get line
@@ -1193,14 +1193,14 @@ void Compile(FILE *fp)
         if(Buf.empty()) continue;
         
         unsigned indent=0;
-        vector<ucs4string> words;
+        vector<std::wstring> words;
         
         if(1) // Initialize indent, words
         {
-            const ucs4 *s = Buf.data();
+            const wchar_t *s = Buf.data();
             while(*s == ' ') { ++s; ++indent; }
 
-            ucs4string rest = s;
+            std::wstring rest = s;
             for(;;)
             {
                 unsigned spacepos = rest.find(' ');
@@ -1226,7 +1226,7 @@ void Compile(FILE *fp)
         
         Asm.INDENT_LEVEL(indent);
         
-        const string firstword = WstrToAsc(words[0]);
+        const std::string firstword = WstrToAsc(words[0]);
         
         if(firstword == "TRUE")
         {

@@ -22,35 +22,33 @@ void CloseScriptFile()
     fclose(scriptout);
 }
 
-void PutAscii(const string& comment)
+void PutAscii(const std::wstring& comment)
 {
-    wstringOut conv(getcharset());
-    string line = conv.puts(AscToWstr(comment));
-    fprintf(scriptout, "%s", line.c_str());
+    static wstringOut conv(getcharset());
+    fprintf(scriptout, "%s", conv.puts(comment).c_str());
 }
 
-static string CurLabel = "", CurLabelComment = "";
-void BlockComment(const string& comment)
+static std::wstring CurLabel = L"";
+static std::wstring CurLabelComment = L"";
+
+void BlockComment(const std::wstring& comment)
 {
     CurLabelComment = comment;
 }
-void StartBlock(const char* blocktype, const string& reason, unsigned intparam)
+void StartBlock(const std::wstring& blocktype,
+                const std::wstring& reason,
+                unsigned intparam)
 {
-    char *Buf = new char[strlen(blocktype) + 64];
-    sprintf(Buf, blocktype, intparam);
-    
-    StartBlock(Buf, reason);
-    
-    delete[] Buf;
+    StartBlock(wformat(blocktype.c_str(), intparam), reason);
 }
-void StartBlock(const string& blocktype, const string& reason)
+void StartBlock(const std::wstring& blocktype, const std::wstring& reason)
 {
     bool newlabel = true;//CurLabel != Buf;
     bool comment = !CurLabelComment.empty();
     
     if(newlabel)
     {
-        if(!CurLabel.empty()) PutAscii("\n\n");
+        if(!CurLabel.empty()) PutAscii(L"\n\n");
     }
     
     if(newlabel)
@@ -58,63 +56,55 @@ void StartBlock(const string& blocktype, const string& reason)
         // FIXME: iconv here
         if(!blocktype.empty())
         {
-            string blockheader = "*";
+            std::wstring blockheader = L"*";
             blockheader += blocktype;
-            blockheader += ';';
+            blockheader += L';';
             blockheader += reason;
-            blockheader += '\n';
+            blockheader += L'\n';
             PutAscii(blockheader);
         }
         CurLabel = blocktype;
     }
     if(comment)
     {
-        PutAscii(";-----------------\n");
-        PutAscii(CurLabelComment.c_str());
-        PutAscii(";-----------------\n");
+        PutAscii(L";-----------------\n");
+        PutAscii(CurLabelComment);
+        PutAscii(L";-----------------\n");
     }
 }
 void EndBlock()
 {
     //PutAscii("\n\n");
-    CurLabelComment = "";
+    CurLabelComment.clear();
 }
-const string Base62Label(const unsigned noffs)
+const std::wstring Base62Label(const unsigned noffs)
 {
-    string result;
+    std::wstring result;
     for(unsigned k=62*62*62; ; k/=62)
     {
         unsigned dig = (noffs/k)%62;
-        if(dig < 10) result += ('0' + dig);
-        else if(dig < 36) result += ('A' + (dig-10));
-        else result += ('a' + (dig-36));
+        if(dig < 10) result += (L'0' + dig);
+        else if(dig < 36) result += (L'A' + (dig-10));
+        else result += (L'a' + (dig-36));
         if(k==1)break;
     }
     return result;
 }
 void PutBase62Label(const unsigned noffs)
 {
-    string line = "$";
-    line += Base62Label(noffs);
-    line += ':';
-    PutAscii(line);
+    PutAscii(wformat(L"$%s:", Base62Label(noffs).c_str()));
 }
 void PutBase16Label(const unsigned noffs)
 {
-    char Buf[64]; sprintf(Buf, "$%X:", noffs);
-    PutAscii(Buf);
+    PutAscii(wformat(L"$%X:", noffs));
 }
 void PutBase10Label(const unsigned noffs)
 {
-    char Buf[64]; sprintf(Buf, "$%u:", noffs);
-    PutAscii(Buf);
+    PutAscii(wformat(L"$%u:", noffs));
 }
-void PutContent(const string& s, bool dolf)
+void PutContent(const std::wstring& s, bool dolf)
 {
-    // FIXME: iconv here
-    if(dolf) PutAscii("\n");
-
-    // No iconv here - already done.
-    fprintf(scriptout, "%s\n", s.c_str());
+    if(dolf) PutAscii(L"\n");
+    PutAscii(s);
+    PutAscii(L"\n");
 }
-

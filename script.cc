@@ -25,9 +25,9 @@ namespace
         wstringIn conv;
         FILE *fp;
         unsigned cacheptr;
-        ucs4string cache;
+        wstring cache;
         
-        ucs4 getc_priv()
+        wchar_t getc_priv()
         {
             for(;;)
             {
@@ -45,7 +45,7 @@ namespace
                     cache += conv.puts(std::string(Buf, n));
                 }
                 // So now cache may be of arbitrary size.
-                if(cache.empty()) return (ucs4)EOF;
+                if(cache.empty()) return (wchar_t)EOF;
             }
         }
     public:
@@ -57,9 +57,9 @@ namespace
             fprintf(stderr, "Built script character set converter\n");
         */
         }
-        ucs4 getc()
+        wchar_t getc()
         {
-            ucs4 c = getc_priv();
+            wchar_t c = getc_priv();
             if(c == '\r') return getc();
             if(c == ';')
             {
@@ -67,7 +67,7 @@ namespace
                 {
                     c = getc_priv();
                     if(c == '\r') continue;
-                    if(c == '\n' || c == (ucs4)EOF) break;
+                    if(c == '\n' || c == (wchar_t)EOF) break;
                 }
             }
             return c;
@@ -77,7 +77,7 @@ namespace
         ScriptCharGet(const ScriptCharGet& );
     };
     
-    bool CumulateBase62(unsigned& label, const string& header, int c)
+    bool CumulateBase62(unsigned& label, const string& header, char c)
     {
         if(isdigit(c))
             label = label * 62 + c - '0';
@@ -106,7 +106,7 @@ namespace
         return true;
     }
     
-    bool CumulateBase16(unsigned& label, const string& header, int c)
+    bool CumulateBase16(unsigned& label, const string& header, char c)
     {
         if(isdigit(c))
             label = label * 16 + c - '0';
@@ -125,12 +125,12 @@ namespace
 
 namespace
 {
-    set<ucs4string> rawcodes;
+    set<wstring> rawcodes;
 }
 
-const ctstring insertor::ParseScriptEntry(const ucs4string &input, const stringdata &model)
+const ctstring insertor::ParseScriptEntry(const wstring &input, const stringdata &model)
 {
-    ucs4string content = input;
+    wstring content = input;
     
     const bool is_dialog = model.type == stringdata::zptr12;
     const bool is_8pix   = model.type == stringdata::zptr8;
@@ -149,32 +149,32 @@ const ctstring insertor::ParseScriptEntry(const ucs4string &input, const stringd
         str_replace_inplace
         (
           content,
-          AscToWstr(" [pause]"),
-          AscToWstr("[pause]")
+          L" [pause]",
+          L"[pause]"
         );
         str_replace_inplace
         (
           content,
-          AscToWstr("[nl]   "),
-          AscToWstr("[nl3]")
+          L"[nl]   ",
+          L"[nl3]"
         );
         str_replace_inplace
         (
           content,
-          AscToWstr("[pause]   "),
-          AscToWstr("[pause3]")
+          L"[pause]   ",
+          L"[pause3]"
         );
         str_replace_inplace
         (
           content,
-          AscToWstr("[pausenl]   "),
-          AscToWstr("[pausenl3]")
+          L"[pausenl]   ",
+          L"[pausenl3]"
         );
         str_replace_inplace
         (
           content,
-          AscToWstr("[cls]   "),
-          AscToWstr("[cls3]")
+          L"[cls]   ",
+          L"[cls3]"
         );
     }
 
@@ -186,8 +186,8 @@ const ctstring insertor::ParseScriptEntry(const ucs4string &input, const stringd
         {
             bool foundsym = false;
             
-            ucs4string bs; bs += content[a];
-            ucs4string us = content.substr(a);
+            wstring bs; bs += content[a];
+            wstring us = content.substr(a);
             
             Symbols::type::const_iterator
                 i,
@@ -218,8 +218,8 @@ const ctstring insertor::ParseScriptEntry(const ucs4string &input, const stringd
         }
         
         // Next test for [codes].
-        ucs4 c = content[a];
-        if(c != AscToWchar('['))
+        wchar_t c = content[a];
+        if(c != L'[')
         {
             // No code, translate byte.
             ctchar chronoc = 0;
@@ -227,19 +227,19 @@ const ctstring insertor::ParseScriptEntry(const ucs4string &input, const stringd
             switch(model.type)
             {
                 case stringdata::zptr12:
-                    chronoc = getchronochar(c, cset_12pix);
+                    chronoc = getctchar(c, cset_12pix);
                     break;
                 case stringdata::zptr8:
                 case stringdata::fixed:
                 case stringdata::item:
                 case stringdata::tech:
                 case stringdata::monster:
-                    chronoc = getchronochar(c, cset_8pix);
+                    chronoc = getctchar(c, cset_8pix);
                     break;
             }
             
             /* A slight optimization: We're not typeface-changing spaces! */
-            if(current_typeface >= 0 && c != AscToWchar(' '))
+            if(current_typeface >= 0 && c != L' ')
             {
                 unsigned offset = Typefaces[current_typeface].get_offset();
                 chronoc += offset;
@@ -249,33 +249,33 @@ const ctstring insertor::ParseScriptEntry(const ucs4string &input, const stringd
             continue;
         }
         
-        ucs4string code;
+        wstring code;
         for(code += c; ++a < content.size(); )
         {
             c = content[a];
             code += c;
-            if(WcharToAsc(c) == ']')break;
+            if(c == L']')break;
         }
         
         // Codes used by dialog engine
-        static const ucs4string delay = AscToWstr("[delay ");
-        static const ucs4string tech  = AscToWstr("[tech]");
-        static const ucs4string monster=AscToWstr("[monster]");
+        static const wstring delay = L"[delay ";
+        static const wstring tech  = L"[tech]";
+        static const wstring monster=L"[monster]";
         
         // Codes used by status screen engine
-        static const ucs4string code0 = AscToWstr("[gfx");
-        static const ucs4string code1 = AscToWstr("[next");
-        static const ucs4string code2 = AscToWstr("[goto,");
-        static const ucs4string code3 = AscToWstr("[func1,");
-        static const ucs4string code4 = AscToWstr("[substr,");
-        static const ucs4string code5 = AscToWstr("[member,");
-        static const ucs4string code6 = AscToWstr("[attrs,");
-        static const ucs4string code7 = AscToWstr("[out,");
-        static const ucs4string code8 = AscToWstr("[spc,");
-        static const ucs4string code9 = AscToWstr("[len,");
-        static const ucs4string code10= AscToWstr("[attr,");
-        static const ucs4string code11= AscToWstr("[func2,");
-        static const ucs4string code12= AscToWstr("[stat,");
+        static const wstring code0 = L"[gfx";
+        static const wstring code1 = L"[next";
+        static const wstring code2 = L"[goto,";
+        static const wstring code3 = L"[func1,";
+        static const wstring code4 = L"[substr,";
+        static const wstring code5 = L"[member,";
+        static const wstring code6 = L"[attrs,";
+        static const wstring code7 = L"[out,";
+        static const wstring code8 = L"[spc,";
+        static const wstring code9 = L"[len,";
+        static const wstring code10= L"[attr,";
+        static const wstring code11= L"[func2,";
+        static const wstring code12= L"[stat,";
         
         if(false) {} // for indentation...
         else if(is_dialog && !code.compare(0, delay.size(), delay))
@@ -298,8 +298,8 @@ const ctstring insertor::ParseScriptEntry(const ucs4string &input, const stringd
             bool found = false;
             for(unsigned a=0; a<Typefaces.size(); ++a)
             {
-                const ucs4string& begin = Typefaces[a].get_begin_marker();
-                const ucs4string& end   = Typefaces[a].get_end_marker();
+                const wstring& begin = Typefaces[a].get_begin_marker();
+                const wstring& end   = Typefaces[a].get_end_marker();
                 
                 if(code == begin)
                 {
@@ -379,7 +379,7 @@ void insertor::LoadFile(FILE *fp)
     
     string header;
     
-    ucs4 c;
+    wchar_t c;
 
     ScriptCharGet getter(fp);
 #define cget(c) (c=getter.getc())
@@ -390,7 +390,7 @@ void insertor::LoadFile(FILE *fp)
 
     rawcodes.clear();
     
-    ucs4string unexpected;
+    wstring unexpected;
     #define UNEXPECTED(c) unexpected += (c)
     #define EXPECTED() \
         if(!unexpected.empty()) \
@@ -405,7 +405,7 @@ void insertor::LoadFile(FILE *fp)
     {
         MessageWorking();
 
-        if(c == (ucs4)EOF)break;
+        if(c == (wchar_t)EOF)break;
         if(c == '\n')
         {
             EXPECTED();
@@ -420,10 +420,10 @@ void insertor::LoadFile(FILE *fp)
             for(;;)
             {
                 cget(c);
-                if(c == (ucs4)EOF || isspace(c))break;
+                if(c == (wchar_t)EOF || isspace(c))break;
                 header += WcharToAsc(c);
             }
-            while(c != (ucs4)EOF && c != '\n') { cget(c); }
+            while(c != (wchar_t)EOF && c != '\n') { cget(c); }
             
             model.ref_id  = 0;
             model.tab_id  = 0;
@@ -542,7 +542,7 @@ void insertor::LoadFile(FILE *fp)
             for(;;)
             {
                 cget(c);
-                if(c == (ucs4)EOF || c == ':')break;
+                if(c == (wchar_t)EOF || c == ':')break;
                 
                 if(header.size() > 0 && (header[0] == 'd' || header[0] == 's'))
                 {
@@ -556,7 +556,7 @@ void insertor::LoadFile(FILE *fp)
                         break;
                 }
             }
-            ucs4string content;
+            wstring content;
             bool ignore_space=false;
             for(;;)
             {
@@ -567,7 +567,7 @@ void insertor::LoadFile(FILE *fp)
                 bool was_lf = c=='\n';
                 cget(c);
                 if(was_lf && c=='\n') continue;
-                if(c == (ucs4)EOF)break;
+                if(c == (wchar_t)EOF)break;
                 if(beginning && (c == '*' || c == '$'))break;
                 if(c == '\n')
                 {
@@ -592,7 +592,7 @@ void insertor::LoadFile(FILE *fp)
                     {
                         cget(c);
                         content += c;
-                        if(c == ']' || c == (ucs4)EOF)break;
+                        if(c == ']' || c == (wchar_t)EOF)break;
                     }
                     continue;
                 }
@@ -634,8 +634,8 @@ void insertor::LoadFile(FILE *fp)
                     {
                         bool foundsym = false;
                         
-                        ucs4string bs; bs += content[a];
-                        ucs4string us = content.substr(a);
+                        wstring bs; bs += content[a];
+                        wstring us = content.substr(a);
                         
                         Symbols::type::const_iterator
                             i,
@@ -657,21 +657,21 @@ void insertor::LoadFile(FILE *fp)
                     }
                     
                     // Next test for [codes].
-                    ucs4 c = content[a];
-                    if(c != AscToWchar('['))
+                    wchar_t c = content[a];
+                    if(c != L'[')
                     {
                         // No code, translate byte.
-                        ctchar chronoc = getchronochar(c, cset_12pix);
+                        ctchar chronoc = getctchar(c, cset_12pix);
                         dictword += chronoc;
                         continue;
                     }
                     
-                    ucs4string code;
+                    wstring code;
                     for(code += c; ++a < content.size(); )
                     {
                         c = content[a];
                         code += c;
-                        if(WcharToAsc(c) == ']')break;
+                        if(c != L']')break;
                     }
                     
                     dictword += atoi(code.c_str()+1, 16);
@@ -715,7 +715,7 @@ void insertor::LoadFile(FILE *fp)
     if(!rawcodes.empty())
     {
         fprintf(stderr, "Warning: Raw codes encountered:");
-        for(set<ucs4string>::const_iterator i=rawcodes.begin(); i!=rawcodes.end(); ++i)
+        for(set<wstring>::const_iterator i=rawcodes.begin(); i!=rawcodes.end(); ++i)
             fprintf(stderr, " %s", WstrToAsc(*i).c_str());
         fprintf(stderr, "\n");
     }
@@ -898,8 +898,7 @@ void insertor::WriteOtherStrings()
     for(map<unsigned, PagePtrList>::iterator
         i = pagemap.begin(); i != pagemap.end(); ++i)
     {
-        char Buf[64]; sprintf(Buf, "page $%02X", i->first);
-        MessageLoadingItem(Buf);
+        MessageLoadingItem(format("page $%02X", i->first));
         
         MessageWorking();
         
@@ -913,8 +912,8 @@ void insertor::WriteOtherStrings()
         
         //unsigned table_bytes = refstats[ref_id].size;
         unsigned table_start = refstats[ref_id].begin;
-
-        char Symbol[64]; sprintf(Symbol, "reloc_ref_%u_zstring", ref_id);
+        
+        const std::string Symbol = format("reloc_ref_%u_zstring", ref_id);
         MessageLoadingItem(Symbol);
         
         MessageWorking();
@@ -937,7 +936,7 @@ void insertor::WriteOtherStrings()
     {
         unsigned tab_id = i->first - 1;
         
-        char Symbol[64]; sprintf(Symbol, "reloc_tab_%u_zstring", tab_id);
+        const std::string Symbol = format("reloc_tab_%u_zstring", tab_id);
         MessageLoadingItem(Symbol);
         
         unsigned table_bytes = tables[tab_id].size;

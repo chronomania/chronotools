@@ -16,10 +16,10 @@
 #include "deasm-expr.hh"
 
 //dummy, used by rommap.o
-void PutAscii(const string& ) {}
-void BlockComment(const string& ) {}
-void StartBlock(const char*, const string&, unsigned=0) {}
-void StartBlock(const string&, const string& ) {}
+void PutAscii(const std::wstring& ) {}
+void BlockComment(const std::wstring& ) {}
+void StartBlock(const std::wstring&, const std::wstring&, unsigned=0) {}
+void StartBlock(const std::wstring&, const std::wstring& ) {}
 void EndBlock() {}
 std::FILE *GetLogFile(const char*, const char*){return NULL;}
 

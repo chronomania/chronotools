@@ -2,7 +2,7 @@
 #include "ctcset.hh"
 #include "config.hh"
 
-vector<Typeface> Typefaces;
+std::vector<Typeface> Typefaces;
 
 void LoadTypefaces()
 {
@@ -10,8 +10,8 @@ void LoadTypefaces()
     
     for(unsigned a=0; a<elems.size(); a += 6)
     {
-        const ucs4string& begin_marker = elems[a];
-        const ucs4string& end_marker   = elems[a+1];
+        const std::wstring& begin_marker = elems[a];
+        const std::wstring& end_marker   = elems[a+1];
         unsigned offset = elems[a+2];
         unsigned begin  = elems[a+3];
         unsigned end    = elems[a+4];
@@ -19,7 +19,7 @@ void LoadTypefaces()
         
         bool empty = true;
         for(unsigned c=begin; c<end; ++c)
-            if(getucs4(c, cset_12pix) != ilseq)
+            if(getwchar_t(c, cset_12pix) != ilseq)
             {
                 empty = false;
                 break;

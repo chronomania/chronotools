@@ -90,8 +90,9 @@ TGAimage::TGAimage(unsigned x, unsigned y, unsigned char color)
     : xdim(x), ydim(y),
       palsize(0), pixbitness(8),
       data(x*y, color),
-      xsize(8),ysize(18), xbox(32),
-      palette_in()
+      palette_in(),
+      xsize(8),ysize(18),
+      xbox(32)
 {
 }
 

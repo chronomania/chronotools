@@ -1,107 +1,53 @@
-#include <list>
-
 #include "rangeset.hh"
 
 template<typename Key>
-void rangeset<Key>::erase(const Key& lo, const Key& up)
+const typename rangeset<Key>::const_iterator
+    rangeset<Key>::ConstructIterator(typename Cont::const_iterator i) const
 {
-    range newrange;
-    newrange.lower = lo;
-    newrange.upper = up;
-    
-    typedef range tmpelem;
-    typedef std::list<tmpelem> tmplist;
-    tmplist newitems;
-    
-    for(iterator b,a=data.begin(); a!=data.end(); a=b)
+    const_iterator tmp(data);
+    while(i != data.end() && i->second.is_nil()) ++i;
+    tmp.i = i;
+    tmp.Reconstruct();
+    return tmp;
+}
+template<typename Key>
+void rangeset<Key>::const_iterator::Reconstruct()
+{
+    if(i != data.end())
     {
-        b = a; ++b;
-        if(a->coincides(newrange))
-        {
-            if(a->lower < lo)
-            {
-                range lowrange;
-                lowrange.lower = a->lower;
-                lowrange.upper = lo;
-                newitems.push_front(lowrange);
-            }
-            if(a->upper > up)
-            {
-                range uprange;
-                uprange.lower = up;
-                uprange.upper = a->upper;
-                newitems.push_front(uprange);
-            }
-            data.erase(a);
-        }
-    }
-    for(typename tmplist::const_iterator
-            i = newitems.begin();
-            i != newitems.end();
-            ++i)
-    {
-        data.insert(*i);
-    }
-}
-
-template<typename Key>
-void rangeset<Key>::set(const Key& lo, const Key& up)
-{
-    erase(lo, up);
-    
-    range newrange;
-    newrange.lower = lo;
-    newrange.upper = up;
-    data.insert(newrange);
-}
-
-template<typename Key>
-typename rangeset<Key>::const_iterator
-    rangeset<Key>::find(const Key& v) const
-{
-    /* FIXME: Should use lower_bound, upper_bound or something */
-    
-    for(const_iterator a=data.begin(); a!=data.end(); ++a)
-        if(a->contains(v)) return a;
-    return data.end();
-}
-
-template<typename Key>
-template<typename Listtype>
-void rangeset<Key>::find_all_coinciding
-   (const Key& lo, const Key& up,
-    Listtype& target)
-{
-    range newrange;
-    newrange.lower = lo;
-    newrange.upper = up;
-    
-    target.clear();
-    
-    for(const_iterator a=data.begin(); a!=data.end(); ++a)
-        if(a->coincides(newrange))
-            target.push_back(a);
-}
-
-template<typename Key>
-void rangeset<Key>::compact()
-{
-Retry:
-    for(iterator b,a=data.begin(); a!=data.end(); a=b)
-    {
-        b=a; ++b;
+        lower = i->first;
+        typename Cont::const_iterator j = i;
+        if(++j != data.end())
+            upper = j->first;
+        else
+            upper = lower;
         
-        // If the next one is followup to this one
-        if(b->lower == a->upper)
+        if(i->second.is_nil())
         {
-            range newrange;
-            newrange.lower = a->lower;
-            newrange.upper = b->upper;
-            
-            data.insert(newrange);
-            data.erase(a);
-            data.erase(b);
-            goto Retry;
+            fprintf(stderr, "rangeset: internal error\n");
         }
     }
 }
+template<typename Key>
+void rangeset<Key>::const_iterator::operator++ ()
+{
+    /* The last node before end() is always nil. */
+    while(i != data.end())
+    {
+        ++i;
+        if(!i->second.is_nil())break;
+    }
+    Reconstruct();
+}
+template<typename Key>
+void rangeset<Key>::const_iterator::operator-- ()
+{
+    /* The first node can not be nil. */
+    while(i != data.begin())
+    {
+        --i;
+        if(!i->second.is_nil())break;
+    }
+    Reconstruct();
+}
+    

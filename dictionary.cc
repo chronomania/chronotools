@@ -199,7 +199,7 @@ namespace
             const unsigned dictbegin = 0x21;
             const unsigned dictend   = get_font_begin();
             
-            const ctchar spacechar = getchronochar(' ', cset_12pix);
+            const ctchar spacechar = getctchar(' ', cset_12pix);
             
             /* Substrings start from each position in the string */
             for(unsigned begin=0; begin<script.size(); ++begin)
@@ -322,7 +322,7 @@ namespace
             
             // extrachars(0x100-0x2FF) ARE allowed in dictionary keys.
             
-            const ctchar spacechar = getchronochar(' ', cset_12pix);
+            const ctchar spacechar = getctchar(' ', cset_12pix);
             
             fprintf(stderr, " - time used: ");
             for(unsigned a=fprintf(stderr, "%15s",""); a-->0; )putc(8, stderr);
@@ -586,16 +586,16 @@ namespace
 
 #include <cstdarg>
 static void PreloadDict(vector<ctstring>& dict,
-   const char *arg, ...)
+   const wchar_t *arg, ...)
 {
     va_list ap;
     va_start(ap, arg);
     
     while(arg)
     {
-        dict.push_back(getctstring(AscToWstr(arg)));
+        dict.push_back(getctstring(arg));
         
-        arg = va_arg(ap, const char *);
+        arg = va_arg(ap, const wchar_t *);
     }
     va_end(ap);
 }
@@ -658,21 +658,21 @@ void insertor::RebuildDictionary()
     
 #if PRELOAD_DICTIONARY_TEST
     PreloadDict(dict,
-"t‰ ", "it‰ ",
-"kun","min",": H","is ","'s ","Sateenkaarikuor","et ","you ",
-": M","Schal","Lavo","ing ","Kuningas",": T","ell","the ",
-"‰n ","   Kyll‰.","Melchior","Kansleri: ","ta ",
-"uningatar","an ","en ","on ","in ",
+L"t‰ ", L"it‰ ",
+L"kun",L"min",L": H",L"is ",L"'s ",L"Sateenkaarikuor",L"et ",L"you ",
+L": M",L"Schal",L"Lavo",L"ing ",L"Kuningas",L": T",L"ell",L"the ",
+L"‰n ",L"   Kyll‰.",L"Melchior",L"Kansleri: ",L"ta ",
+L"uningatar",L"an ",L"en ",L"on ",L"in ",
 NULL);
     num_restarts = dict.size();
     PreloadDict(dict, 
-"      ","e ","ta","in","a ",": ","is",", ","en","t ","i ",
-"an","‰ ","ll","ka","er","it","t‰","   ","va","on","et",
-"as","o ","es","tu","te","ik","al","ol","us","ut","ha","ma",
-"el","or","ti","ar","si","ou","mm","sa","os","‰n","un","ku","d ",
-"ki","ko","y ","at","k‰","ks","v‰","th","to","ei","vi","vo","yt",
-"a!","jo","s ","le","ai","om","ur","ni","of ","‰‰","Ozzie","ja",
-"!!","ys","li","ne","ow","mi","pa","ke",
+L"      ",L"e ",L"ta",L"in",L"a ",L": ",L"is",L", ",L"en",L"t ",L"i ",
+L"an",L"‰ ",L"ll",L"ka",L"er",L"it",L"t‰",L"   ",L"va",L"on",L"et",
+L"as",L"o ",L"es",L"tu",L"te",L"ik",L"al",L"ol",L"us",L"ut",L"ha",L"ma",
+L"el",L"or",L"ti",L"ar",L"si",L"ou",L"mm",L"sa",L"os",L"‰n",L"un",L"ku",L"d ",
+L"ki",L"ko",L"y ",L"at",L"k‰",L"ks",L"v‰",L"th",L"to",L"ei",L"vi",L"vo",L"yt",
+L"a!",L"jo",L"s ",L"le",L"ai",L"om",L"ur",L"ni",L"of ",L"‰‰",L"Ozzie",L"ja",
+L"!!",L"ys",L"li",L"ne",L"ow",L"mi",L"pa",L"ke",
 NULL);
     reapply = true;
 #endif

@@ -45,7 +45,7 @@ void Font12data::LoadBoxAs(unsigned boxno, unsigned tileno, class TGAimage &imag
     
     static const char palette[] = {0,0,1,2,3,0};
     
-    vector<unsigned char> box = image.getbox(boxno);
+    std::vector<unsigned char> box = image.getbox(boxno);
     
     //fprintf(stderr, "Char $%X: dest index $%X\n", boxno, tileno);
 
@@ -218,7 +218,7 @@ void Font8data::LoadBoxAs(unsigned boxno, unsigned tileno, class TGAimage &image
 {
     static const char palette[] = {0,0,1,2,3,0};
 
-    vector<unsigned char> box = image.getbox(boxno);
+    std::vector<unsigned char> box = image.getbox(boxno);
     
     unsigned width=0;
     while(box[width] != 1 && width < 8)++width;
@@ -301,7 +301,7 @@ void Font8data::Reload(const Rearrangemap_t& arrange)
     }
 }
 
-void Font8data::Load(const string &filename)
+void Font8data::Load(const std::string &filename)
 {
     fn = filename;
     
@@ -358,7 +358,7 @@ namespace
         charset_t result;
         for(unsigned a=0; a<elems.size(); ++a)
         {
-            const ucs4string &str = elems[a];
+            const std::wstring &str = elems[a];
             
             if(!str.size())
             {
@@ -369,7 +369,7 @@ namespace
             {
                 for(unsigned b=0; b<str.size(); ++b)
                 {
-                    ctchar c = getchronochar(str[b], cl);
+                    ctchar c = getctchar(str[b], cl);
                     result.insert(c);
                 }
             }
@@ -388,7 +388,7 @@ namespace
         }
     };
     
-    typedef vector<UsageData> usagemap_t;
+    typedef std::vector<UsageData> usagemap_t;
     
     typedef hash_map<ctchar, unsigned> usagemap_by_char_t;
     
@@ -410,29 +410,29 @@ namespace
     /* Rearrangemap_t is defined in fonts.hh */
     
     void Arrange(Rearrangemap_t& result,
-                 set<ctchar>& patients,
+                 std::set<ctchar>& patients,
                  const charset_t& slots,
-                 const set<ctchar>& ControlCodes)
+                 const std::set<ctchar>& ControlCodes)
     {
         if(patients.size() > slots.size())
         {
             fprintf(stderr, "Error: Arrange(): More patients than doctors\n");
         }
         
-        set<ctchar> slots2;
+        std::set<ctchar> slots2;
         for(charset_t::const_iterator i = slots.begin(); i != slots.end(); ++i)
             slots2.insert(*i);
         
         // Save first <n> slots, erase rest (the excess)
         unsigned n = 0;
-        for(set<ctchar>::iterator b, a = slots2.begin(); a != slots2.end(); a = b)
+        for(std::set<ctchar>::iterator b, a = slots2.begin(); a != slots2.end(); a = b)
         {
             b = a; ++b;
             if(n++ >= patients.size()) slots2.erase(a);
         }
         
         // Place the control codes at end of the slot list
-        for(set<ctchar>::const_iterator b, a = patients.begin(); a != patients.end(); a = b)
+        for(std::set<ctchar>::const_iterator b, a = patients.begin(); a != patients.end(); a = b)
         {
             b = a; ++b;
             
@@ -454,7 +454,7 @@ namespace
 
         // If the patient's home slot is one of the patient's
         // target choices, don't move that patient anywhere
-        for(set<ctchar>::iterator b, a = slots2.begin(); a != slots2.end(); a = b)
+        for(std::set<ctchar>::iterator b, a = slots2.begin(); a != slots2.end(); a = b)
         {
             b = a; ++b;
             
@@ -469,8 +469,8 @@ namespace
 #endif
         
         // Assign everything else straightforwardly
-        set<ctchar>::const_iterator dest = slots2.begin();
-        for(set<ctchar>::const_iterator j = patients.begin(); j != patients.end(); ++j)
+        std::set<ctchar>::const_iterator dest = slots2.begin();
+        for(std::set<ctchar>::const_iterator j = patients.begin(); j != patients.end(); ++j)
         {
             ctchar orig = *j;
             result[orig] = *dest++;
@@ -480,7 +480,7 @@ namespace
     const Rearrangemap_t Rearrange(const usagemap_t& usages,
                                    const charset_t& free,
                                    charset_t& fixed,
-                                   const set<ctchar>& ControlCodes)
+                                   const std::set<ctchar>& ControlCodes)
     {
         Rearrangemap_t result;
         
@@ -506,8 +506,8 @@ namespace
         unsigned left1 = OneByteSlots.size();
         unsigned left2 = TwoByteSlots.size();
         
-        set<ctchar> OneBytePatients;
-        set<ctchar> TwoBytePatients;
+        std::set<ctchar> OneBytePatients;
+        std::set<ctchar> TwoBytePatients;
         
         /* Allocate slots */
         for(usagemap_t::const_iterator i = usages.end(); i-- != usages.begin(); )
@@ -555,7 +555,7 @@ namespace
         return result;
     }
 
-    void DumpFreeMap(const string& label, const string& map)
+    void DumpFreeMap(const std::string& label, const std::string& map)
     {
         static const char MapChars[8+1] = "-LMm" "cKCy";
         static const char *const MapDescs[8] =
@@ -571,12 +571,12 @@ namespace
         
         unsigned ndec = map.size() > 256 ? 3 : 2;
         
-        vector<string> labels;
-        vector<string> lines;
-        vector<string> legend;
+        std::vector<std::string> labels;
+        std::vector<std::string> lines;
+        std::vector<std::string> legend;
 
         // Build the text lines
-        string cur_line, cur_label;
+        std::string cur_line, cur_label;
         unsigned col=0;
         for(unsigned c=0; c<map.size(); ++c)
         {
@@ -588,7 +588,7 @@ namespace
                 cur_line  = "";
             }
             cur_line += MapChars[(unsigned char)map[c]];
-            used[map[c]] = true;
+            used[(unsigned char)map[c]] = true;
             if(++col >= width)
             {
                 col=0; 
@@ -643,7 +643,7 @@ namespace
         fprintf(log, "\n");
     }
     
-    void DumpMovableMaps(const usagemap_t& Usages, cset_class type, const string& what)
+    void DumpMovableMaps(const usagemap_t& Usages, cset_class type, const std::string& what)
     {
         FILE *log = GetLogFile("font", "log_rearrange");
         if(!log) return;
@@ -653,7 +653,7 @@ namespace
         fprintf(log, "%s:\n", what.c_str());
         for(usagemap_t::const_iterator i = Usages.begin(); i != Usages.end(); ++i)
         {
-            ucs4 c = getucs4(i->ch, type);
+            wchar_t c = getwchar_t(i->ch, type);
             if(c == ilseq)
                 fprintf(log,  "     (%0*X): %u\n",                width, i->ch, i->count);
             else
@@ -664,7 +664,7 @@ namespace
     
     void DumpRearranges(const Rearrangemap_t& Rearranges,
                         const usagemap_by_char_t& usages,
-                        const string& what)
+                        const std::string& what)
     {
         FILE *log = GetLogFile("font", "log_rearrange");
         if(!log) return;
@@ -789,7 +789,7 @@ void insertor::ReorganizeFonts()
         // All symbols which can't be displayed
         // Or which are never used
         
-        if(getucs4(c, cset_12pix) == ilseq
+        if(getwchar_t(c, cset_12pix) == ilseq
         || UsagesByChar_12.find(c) == UsagesByChar_12.end())
         {
             // Can be redefined.
@@ -802,7 +802,7 @@ void insertor::ReorganizeFonts()
     {
         if(Fixed_8.find(c) != Fixed_8.end()) continue;
         
-        if(getucs4(c, cset_8pix) == ilseq
+        if(getwchar_t(c, cset_8pix) == ilseq
         || UsagesByChar_8.find(c) == UsagesByChar_8.end())
         {
             Free_8.insert(c);
@@ -1007,15 +1007,15 @@ void insertor::WriteVWF12()
     */
 
     // patch dialog engine
-    PlaceByte(font_begin,  GetConst(CSET_BEGINBYTE), "vwf12 beginbyte");
+    PlaceByte(font_begin,  GetConst(CSET_BEGINBYTE), L"vwf12 beginbyte");
     
     // patch font engine
-    PlaceByte(0xC2, GetConst(VWF12_WIDTH_INDEX)-7, "vwf12 patch"); // rep $20
-    PlaceByte(0x20, GetConst(VWF12_WIDTH_INDEX)-6, "vwf12 patch");
-    PlaceByte(0xEA, GetConst(VWF12_WIDTH_INDEX)-5, "vwf12 patch"); // nop
-    PlaceByte(0xEA, GetConst(VWF12_WIDTH_INDEX)-4, "vwf12 patch"); // nop
-    PlaceByte(0xE2, GetConst(VWF12_WIDTH_INDEX)-1, "vwf12 patch"); // sep $20
-    PlaceByte(0x20, GetConst(VWF12_WIDTH_INDEX)  , "vwf12 patch");
+    PlaceByte(0xC2, GetConst(VWF12_WIDTH_INDEX)-7, L"vwf12 patch"); // rep $20
+    PlaceByte(0x20, GetConst(VWF12_WIDTH_INDEX)-6, L"vwf12 patch");
+    PlaceByte(0xEA, GetConst(VWF12_WIDTH_INDEX)-5, L"vwf12 patch"); // nop
+    PlaceByte(0xEA, GetConst(VWF12_WIDTH_INDEX)-4, L"vwf12 patch"); // nop
+    PlaceByte(0xE2, GetConst(VWF12_WIDTH_INDEX)-1, L"vwf12 patch"); // sep $20
+    PlaceByte(0x20, GetConst(VWF12_WIDTH_INDEX)  , L"vwf12 patch");
     /* Done with code patches. */
 
     /* Create a patch for the width table. */
@@ -1056,4 +1056,13 @@ void insertor::WriteVWF8()
 {
     objects.AddLump(Font8v.GetWidths(), "vwf8 widths",  "WIDTH_ADDR");
     objects.AddLump(Font8v.GetTiles(),  "vwf8 tiles",   "TILEDATA_ADDR");
+    
+    const bool DisplayEqCount = GetConf("font", "display_eq_count");
+    
+    objects.DefineSymbol("VWF8_DISPLAY_EQ_COUNT", DisplayEqCount ? 2 : 0);
 }
+
+
+Font8data::Font8data(): tiletable(), widths(), fn() { }
+Font8data::~Font8data() {}
+Font8vdata::~Font8vdata() {}

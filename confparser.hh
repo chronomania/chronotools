@@ -49,26 +49,27 @@ class ConfParser
         {
             unsigned IField;
             double DField;
-            ucs4string SField;
+            std::wstring SField;
 
             operator bool() const { return IField; }
             operator unsigned() const { return IField; }
             operator double() const { return DField; }
-            operator const ucs4string& () const { return SField; }
+            operator const std::wstring& () const { return SField; }
          public:
             Element(): IField(0), DField(0), SField() { }
         };
 
         unsigned IField() const;
         double DField() const;
-        const ucs4string& SField() const;
+        const std::wstring& SField() const;
 
         const std::vector<Element>& Fields() const { return elements; }
         
         operator bool() const { return IField(); }
         operator double() const { return DField(); }
         operator unsigned() const { return IField(); }
-        operator const ucs4string& () const { return SField(); }
+        operator const std::wstring& () const { return SField(); }
+        operator const std::string () const { return WstrToAsc(SField()); }
 
      private:
         friend class ConfParser;

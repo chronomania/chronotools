@@ -23,7 +23,7 @@ public:
     struct form
     {
         datamap_t     data;
-        ucs4string    func;
+        wstring    func;
         bool          used;
         ctchar        prefix;
         unsigned      maxwidth;

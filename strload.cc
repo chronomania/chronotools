@@ -25,11 +25,11 @@ namespace
         rangeset<unsigned> ranges;
         
     public:
-        TableDumper(const string& type, unsigned offset)
+        TableDumper(const std::wstring& type, unsigned offset)
             : col(maxco), log(GetLogFile("mem", "log_addrs"))
         {
             if(log)
-                fprintf(log, "-- %s at %06X\n", type.c_str(), offset);
+                fprintf(log, "-- %s at %06X\n", WstrToAsc(type).c_str(), offset);
         }
         void AddPtr(unsigned ptrnum, unsigned where, unsigned target, unsigned bytes)
         {
@@ -39,8 +39,8 @@ namespace
                 else if(!col)fprintf(log, "%5u ", ptrnum);
                 if(!col)
                 {
-                    string label = Base62Label(where);
-                    fprintf(log, "%s", label.c_str());
+                    std::wstring label = Base62Label(where);
+                    fprintf(log, "%s", WstrToAsc(label).c_str());
                 }
                 if(col == maxco/2)fputc(' ', log);
                 fprintf(log, " $%04X-%04X", target, target+bytes-1);
@@ -54,22 +54,17 @@ namespace
         {
             if(log)
             {
-                ranges.compact();
-                
                 if(col)fprintf(log, "\n");
                 fprintf(log, "-- Table ends at %06X\n", where);
-
-                list<rangeset<unsigned>::const_iterator> rangelist;
-                ranges.find_all_coinciding(0,0x10000, rangelist);
-
-                for(list<rangeset<unsigned>::const_iterator>::const_iterator
-                    j = rangelist.begin();
-                    j != rangelist.end();
-                    ++j)
+                
+                for(rangeset<unsigned>::const_iterator
+                    i = ranges.begin();
+                    i != ranges.end();
+                    ++i)
                 {
                     fprintf(log, "--  Uses memory range $%04X-%04X\n",
-                        (*j)->lower,
-                        (*j)->upper-1);
+                        i->lower,
+                        i->upper-1);
                 }
                 
                 fprintf(log, "\n");
@@ -81,7 +76,7 @@ namespace
     
     const ctstring LoadPString(unsigned offset,
                                unsigned& bytes,
-                               const string& what)
+                               const std::wstring& what)
     {
         ctstring foundstring;
 
@@ -105,14 +100,14 @@ namespace
 }
 
 const vector<ctstring> LoadPStrings(unsigned offset, unsigned count,
-                                    const string& what
+                                    const std::wstring& what
                                    )
 {
     unsigned segment = offset & 0xFF0000;
     vector<ctstring> result;
     result.reserve(count);
-    const string what_p = what+" pointers";
-    const string what_d = what+" data";
+    const std::wstring what_p = what + L" pointers";
+    const std::wstring what_d = what + L" data";
     
 #if LOADP_DEBUG
     TableDumper logger(what_p, offset);
@@ -141,7 +136,7 @@ const vector<ctstring> LoadPStrings(unsigned offset, unsigned count,
          || ROM[freebyte] == 0xFF //space
          || ROM[freebyte] == 0xEF //also space
          ; ++freebyte,++freebytecount);
-        MarkFree(freebytepos, freebytecount, "extra space");
+        MarkFree(freebytepos, freebytecount, L"extra space");
 #endif
     }
 #if LOADP_DEBUG
@@ -152,7 +147,7 @@ const vector<ctstring> LoadPStrings(unsigned offset, unsigned count,
 
 const ctstring LoadZString(unsigned beginoffs,
                            unsigned &bytes,
-                           const string& what,
+                           const std::wstring& what,
                            const extrasizemap_t& extrasizes)
 {
     ctstring foundstring;
@@ -199,11 +194,11 @@ const ctstring LoadZString(unsigned beginoffs,
 }
 
 const vector<ctstring> LoadZStrings(unsigned offset, unsigned count,
-                                    const string& what,
+                                    const std::wstring& what,
                                     const extrasizemap_t& extrasizes)
 {
-    const string what_p = what+" pointers";
-    const string what_d = what+" data";
+    const std::wstring what_p = what + L" pointers";
+    const std::wstring what_d = what + L" data";
     
     bool relocated = false;
     unsigned real_offset = offset;
@@ -266,7 +261,7 @@ const vector<ctstring> LoadZStrings(unsigned offset, unsigned count,
          || ROM[freebyte] == 0xFF //space
          || ROM[freebyte] == 0xEF //also space
          ; ++freebyte,++freebytecount);
-        MarkFree(freebytepos, freebytecount, "extra space");
+        MarkFree(freebytepos, freebytecount, L"extra space");
 #endif
         result.push_back(foundstring);
     }
@@ -287,7 +282,7 @@ const vector<ctstring> LoadZStrings(unsigned offset, unsigned count,
 }
 
 const vector<ctstring> LoadFStrings(unsigned offset, unsigned len,
-                                    const string& what,
+                                    const std::wstring& what,
                                     unsigned maxcount)
 {
     ctstring str;

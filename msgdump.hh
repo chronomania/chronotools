@@ -1,8 +1,6 @@
-#include <string>
-
-using std::string;
+#include "wstring.hh"
 
 void MessageBeginDumpingStrings(unsigned offs);
-void MessageBeginDumpingImage(const string& filename, const string& what);
+void MessageBeginDumpingImage(const std::string& filename, const std::wstring& what);
 void MessageDone();
 void MessageWorking();

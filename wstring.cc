@@ -2,6 +2,7 @@
 #include <cerrno>
 #include <cstdio>
 #include <cstdlib>
+#include <cstdarg>
 
 #include "wstring.hh"
 
@@ -50,18 +51,18 @@ void wstringOut::SetSet(const char *setname)
     tester = iconv_open(setname, midset);
 }
 
-const string wstringOut::putc(ucs4 p) const
+const std::string wstringOut::putc(wchar_t p) const
 {
-    ucs4string tmp;
+    std::wstring tmp;
     tmp += p;
     return puts(tmp);
 }
 
-const string wstringOut::puts(const ucs4string &s) const
+const std::string wstringOut::puts(const std::wstring &s) const
 {
     const char *input = (const char *)(s.data());
-    size_t left = s.size() * sizeof(ucs4);
-    string result;
+    size_t left = s.size() * sizeof(wchar_t);
+    std::string result;
     while(left > 0)
     {
         char OutBuf[4096], *outptr = OutBuf;
@@ -72,7 +73,7 @@ const string wstringOut::puts(const ucs4string &s) const
                               &outptr,
                               &outsize);
         
-        string tmp(OutBuf, outptr-OutBuf);
+        std::string tmp(OutBuf, outptr-OutBuf);
         result += tmp;
         
         if(retval == (size_t)-1)
@@ -83,8 +84,8 @@ const string wstringOut::puts(const ucs4string &s) const
             }
             if(errno == EILSEQ)
             {
-                input += sizeof(ucs4);
-                left -= sizeof(ucs4);
+                input += sizeof(wchar_t);
+                left -= sizeof(wchar_t);
                 result += '?';
             }
             if(errno == EINVAL)
@@ -96,7 +97,7 @@ const string wstringOut::puts(const ucs4string &s) const
     return result;
 }
 
-bool wstringOut::isok(ucs4 p) const
+bool wstringOut::isok(wchar_t p) const
 {
     char OutBuf[256], *outptr = OutBuf;
     const char *tmp = (const char *)(&p);
@@ -139,18 +140,18 @@ void wstringIn::SetSet(const char *setname)
     }
 }
 
-const ucs4string wstringIn::putc(char p) const
+const std::wstring wstringIn::putc(char p) const
 {
-    string tmp;
+    std::string tmp;
     tmp += p;
     return puts(tmp);
 }
 
-const ucs4string wstringIn::puts(const string &s) const
+const std::wstring wstringIn::puts(const std::string &s) const
 {
     const char *input = (const char *)(s.data());
     size_t left = s.size();
-    ucs4string result;
+    std::wstring result;
     while(left > 0)
     {
         char OutBuf[4096], *outptr = OutBuf;
@@ -163,7 +164,7 @@ const ucs4string wstringIn::puts(const string &s) const
         
         //unsigned bytes = (sizeof OutBuf) - outsize;
         unsigned bytes = outptr-OutBuf;
-        ucs4string tmp((const ucs4 *)(&OutBuf), bytes / (sizeof(ucs4)));
+        std::wstring tmp((const wchar_t *)(&OutBuf), bytes / (sizeof(wchar_t)));
         result += tmp;
         
         if(retval == (size_t)-1)
@@ -174,8 +175,8 @@ const ucs4string wstringIn::puts(const string &s) const
             }
             if(errno == EILSEQ)
             {
-                input += sizeof(ucs4);
-                left -= sizeof(ucs4);
+                input += sizeof(wchar_t);
+                left -= sizeof(wchar_t);
                 result += ilseq;
             }
             if(errno == EINVAL)
@@ -187,23 +188,25 @@ const ucs4string wstringIn::puts(const string &s) const
     return result;
 }
 
-const ucs4string AscToWstr(const string &s)
+const std::wstring AscToWstr(const std::string &s)
 {
-    ucs4string result;
+    std::wstring result;
+    result.reserve(s.size());
     for(unsigned a=0; a<s.size(); ++a)
         result += AscToWchar(s[a]);
     return result;
 }
 
-const string WstrToAsc(const ucs4string &s)
+const std::string WstrToAsc(const std::wstring &s)
 {
-    string result;
+    std::string result;
+    result.reserve(s.size());
     for(unsigned a=0; a<s.size(); ++a)
         result += WcharToAsc(s[a]);
     return result;
 }
 
-char WcharToAsc(ucs4 c)
+char WcharToAsc(wchar_t c)
 {
     // jis ascii
     if(c >= 0xFF10 && c <= 0xFF19) return c - 0xFF10 + '0';
@@ -213,7 +216,7 @@ char WcharToAsc(ucs4 c)
     return static_cast<char> (c);
 }
 
-long atoi(const ucs4 *p, int base)
+long atoi(const wchar_t *p, int base)
 {
     long ret=0, sign=1;
     while(*p == '-') { sign=-sign; ++p; }
@@ -228,7 +231,7 @@ long atoi(const ucs4 *p, int base)
     return ret * sign;
 }
 
-int Whex(ucs4 p)
+int Whex(wchar_t p)
 {
     char c = WcharToAsc(p);
     if(c >= '0' && c <= '9') return (c-'0');
@@ -237,67 +240,23 @@ int Whex(ucs4 p)
     return -1;
 }
 
-int ucs4cmp(const ucs4* s1, const ucs4* s2, size_t n)
+const std::wstring wformat(const wchar_t* fmt, ...)
 {
-    for(unsigned c=0; c<n; ++c)
-        if(s1[c] != s2[c])
-            return s1[c] < s2[c] ? -1 : 1;
-    return 0;
+    wchar_t Buf[4096];
+    va_list ap;
+    va_start(ap, fmt);
+    vswprintf(Buf, 4096, fmt, ap);
+    va_end(ap);
+    return Buf;
 }
 
-size_t ucs4len(const ucs4* s)
+const std::string format(const char* fmt, ...)
 {
-    size_t result=0;
-    while(*s) { ++result; ++s; }
-    return result;
+    char Buf[4096];
+    va_list ap;
+    va_start(ap, fmt);
+    vsnprintf(Buf, 4096, fmt, ap);
+    va_end(ap);
+    return Buf;
 }
 
-const ucs4* ucs4chr(const ucs4* s, const ucs4 a, size_t n)
-{
-    for(unsigned c=0; c<n; ++c)if(s[c]==a)return s+c;
-    return 0;
-}
-
-ucs4* ucs4cpy(ucs4* s1, const ucs4* s2, size_t n)
-{
-    for(unsigned c=0; c<n; ++c)s1[c] = s2[c];
-    return s1;
-}
-
-ucs4* ucs4move(ucs4* s1, const ucs4* s2, unsigned n)
-{
-    if(s1 < s2) return ucs4cpy(s1,s2,n);
-    for(unsigned c=n; c-->0; )s1[c] = s2[c];
-    return s1;
-}
-
-ucs4* ucs4set(ucs4* s, ucs4 a, size_t n)
-{
-    for(unsigned c=0; c<n; ++c) s[c] = a;
-    return s;
-}
-
-#if WSTRING_METHOD==3
-namespace std
-{
-  template<> 
-  int char_traits<ucs4>::
-  compare(const ucs4* s1, const ucs4* s2, size_t n)
-  { return ucs4cmp(s1,s2, n); }
-  
-  template<>
-  ucs4* char_traits<ucs4>::
-  copy(ucs4* s1, const ucs4* s2, size_t n)
-  { return ucs4cpy(s1, s2, n); }
-  
-  template<>
-  ucs4* char_traits<ucs4>::
-  move(ucs4* s1, const ucs4* s2, size_t n)
-  { return ucs4move(s1, s2, n); }
-  
-  template<>
-  ucs4* char_traits<ucs4>::
-  assign(ucs4* s, size_t n, ucs4 a)
-  { return ucs4set(s, a, n); }
-}
-#endif

@@ -16,7 +16,7 @@
 
 using namespace std;
 
-const string DispString(const ctstring &s, unsigned symbols_type=16);
+const std::string DispString(const ctstring &s, unsigned symbols_type=16);
 
 class insertor
 {
@@ -78,8 +78,12 @@ private:
     Font8vdata Font8v;
     Font12data Font12;
     
-    void PlaceData(const vector<unsigned char>&, unsigned address, const string& reason="");
-    void PlaceByte(unsigned char byte, unsigned address, const string& reason="");
+    void PlaceData(const vector<unsigned char>&,
+        unsigned address,
+        const std::wstring& reason = L"");
+    void PlaceByte(unsigned char byte,
+        unsigned address,
+        const std::wstring& reason = L"");
 
     freespacemap freespace;
     
@@ -107,7 +111,7 @@ private:
     void ApplyDictionary();
     void RebuildDictionary();
     
-    const ctstring ParseScriptEntry(const ucs4string &input, const stringdata &model);
+    const ctstring ParseScriptEntry(const std::wstring &input, const stringdata &model);
     const ctstring WrapDialogLines(const ctstring &dialog) const;
 
     unsigned CalculateScriptSize() const;

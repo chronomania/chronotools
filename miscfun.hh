@@ -29,6 +29,20 @@ str_replace_inplace(basic_string<CharT>& where,
                     const basic_string<CharT>& search,
                     const basic_string<CharT>& with);
 
+
+inline void
+str_replace_inplace(std::string& a, const std::string& b, const std::string& c)
+{
+    str_replace_inplace<char> (a,b,c);
+}
+
+
+inline void
+str_replace_inplace(std::wstring& a, const std::wstring& b, const std::wstring& c)
+{
+    str_replace_inplace<wchar_t> (a,b,c);
+}
+
 #include "miscfun.tcc"
 
 #endif

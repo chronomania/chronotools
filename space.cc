@@ -30,12 +30,12 @@ unsigned freespacemap::Find(unsigned page, unsigned length)
         return NOWHERE;
     }
     freespaceset &spaceset = mapi->second;
-    freespaceset::const_iterator reci;
 
     unsigned bestscore = 0;
     unsigned bestpos   = NOWHERE;
     
-    for(reci = spaceset.begin(); reci != spaceset.end(); ++reci)
+    for(freespaceset::const_iterator reci = spaceset.begin();
+        reci != spaceset.end(); ++reci)
     {
         const unsigned recpos = reci->lower;
         const unsigned reclen = reci->upper - recpos;
@@ -93,10 +93,10 @@ void freespacemap::DumpPageMap(unsigned pagenum) const
     }
 
     const freespaceset &spaceset = mapi->second;
-    freespaceset::const_iterator reci;
     
     fprintf(stderr, "Map of page %02X:\n", pagenum);
-    for(reci = spaceset.begin(); reci != spaceset.end(); ++reci)
+    for(freespaceset::const_iterator
+        reci = spaceset.begin(); reci != spaceset.end(); ++reci)
     {
         unsigned recpos = reci->lower;
         unsigned reclen = reci->upper - recpos;
@@ -114,15 +114,16 @@ void freespacemap::VerboseDump() const
     {
         unsigned page = i->first;
         const freespaceset &spaceset = i->second;
-        freespaceset::const_iterator reci;
-        for(reci = spaceset.begin(); reci != spaceset.end(); ++reci)
+
+        for(freespaceset::const_iterator reci = spaceset.begin();
+            reci != spaceset.end(); ++reci)
         {
             unsigned recpos = reci->lower;
             unsigned reclen = reci->upper - recpos;
             
             unsigned pos = (page << 16) | recpos;
             
-            MarkFree(pos, reclen, "free");
+            MarkFree(pos, reclen, L"free");
         }
     }
 }
@@ -134,9 +135,9 @@ void freespacemap::Report() const
     unsigned total=0;
     for(i=begin(); i!=end(); ++i)
     {
-        freespaceset::const_iterator j;
         unsigned thisfree = 0, hunkcount = 0;
-        for(j=i->second.begin(); j!=i->second.end(); ++j)
+        for(freespaceset::const_iterator j=i->second.begin();
+            j!=i->second.end(); ++j)
         {
             thisfree += j->length();
             ++hunkcount;
@@ -156,9 +157,9 @@ unsigned freespacemap::Size() const
     unsigned total=0;
     for(i=begin(); i!=end(); ++i)
     {
-        freespaceset::const_iterator j;
         unsigned thisfree = 0;
-        for(j=i->second.begin(); j!=i->second.end(); ++j)
+        for(freespaceset::const_iterator j=i->second.begin();
+            j!=i->second.end(); ++j)
         {
             thisfree += j->length();
         }
@@ -173,8 +174,8 @@ unsigned freespacemap::Size(unsigned page) const
     unsigned total=0;
     if(i != end())
     {
-        freespaceset::const_iterator j;
-        for(j=i->second.begin(); j!=i->second.end(); ++j)
+        for(freespaceset::const_iterator
+            j=i->second.begin(); j!=i->second.end(); ++j)
         {
             total += j->length();
         }
@@ -205,7 +206,6 @@ void freespacemap::Add(unsigned page, unsigned begin, unsigned length)
 {
     //fprintf(stderr, "Adding %u bytes of free space at %02X:%04X\n", length, page, begin);
     operator[] (page).set(begin, begin+length);
-    operator[] (page).compact();
 }
 void freespacemap::Add(unsigned longaddr, unsigned length)
 {
@@ -220,7 +220,6 @@ void freespacemap::Del(unsigned page, unsigned begin, unsigned length)
     freespaceset &spaceset = i->second;
     
     spaceset.erase(begin, begin+length);
-    spaceset.compact();
 }
 void freespacemap::Del(unsigned longaddr, unsigned length)
 {
@@ -229,8 +228,10 @@ void freespacemap::Del(unsigned longaddr, unsigned length)
 
 void freespacemap::Compact()
 {
+/*
     for(iterator i = begin(); i != end(); ++i)
         i->second.compact();
+*/
 }
 
 bool freespacemap::Organize(vector<freespacerec> &blocks, unsigned pagenum)
@@ -344,8 +345,7 @@ bool freespacemap::OrganizeToAnyPage(vector<freespacerec> &blocks)
     {
         unsigned pagenum = i->first;
         const freespaceset &pagemap = i->second;
-        freespaceset::const_iterator j;
-        for(j=pagemap.begin(); j!=pagemap.end(); ++j)
+        for(freespaceset::const_iterator j=pagemap.begin(); j!=pagemap.end(); ++j)
         {
             const unsigned recpos = j->lower;
             const unsigned reclen = j->upper - recpos;
@@ -429,8 +429,8 @@ bool freespacemap::OrganizeToAnySamePage(vector<freespacerec> &blocks, unsigned 
             const freespaceset &pagemap = find(pagenum)->second;
             
             unsigned freesize = 0;
-            freespaceset::const_iterator j;
-            for(j=pagemap.begin(); j!=pagemap.end(); ++j)
+            for(freespaceset::const_iterator j=pagemap.begin();
+                j!=pagemap.end(); ++j)
             {
                 unsigned reclen = j->length();
                 freesize += reclen;
@@ -469,8 +469,8 @@ unsigned freespacemap::FindFromAnyPage(unsigned length)
     {
         const freespaceset &pagemap = i->second;
         
-        freespaceset::const_iterator j;
-        for(j=pagemap.begin(); j!=pagemap.end(); ++j)
+        for(freespaceset::const_iterator j=pagemap.begin();
+            j!=pagemap.end(); ++j)
         {
             unsigned reclen = j->length();
             if(reclen < length) continue;

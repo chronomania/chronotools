@@ -8,8 +8,8 @@
 /* address is rom-based */
 void DumpGFX_2bit(unsigned addr,
                   unsigned xtile, unsigned ytile,
-                  const string& what,
-                  const string& fn)
+                  const std::wstring& what,
+                  const std::string& fn)
 {
     MessageBeginDumpingImage(fn, what);
     
@@ -46,8 +46,8 @@ void DumpGFX_2bit(unsigned addr,
 /* address is rom-based */
 void DumpGFX_4bit(unsigned addr,
                   unsigned xtile, unsigned ytile,
-                  const string& what, 
-                  const string& fn,
+                  const std::wstring& what, 
+                  const std::string& fn,
                   const unsigned *palette /* = NULL */)
 {
     MessageBeginDumpingImage(fn, what);
@@ -92,8 +92,8 @@ void DumpGFX_4bit(unsigned addr,
 /* address is rom-based */
 void DumpGFX_Compressed_4bit(unsigned addr,
                              unsigned xtile,
-                             const string& what,
-                             const string& fn,
+                             const std::wstring& what,
+                             const std::string& fn,
                              const unsigned *palette /* = NULL */)
 {
     vector<unsigned char> Target;

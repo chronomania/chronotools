@@ -9,8 +9,8 @@
 
 void Dump8x8sprites(unsigned spriteoffs, unsigned count)
 {
-    const string filename = WstrToAsc(GetConf("dumper", "font8fn"));
-    const string what     = "8pix font";
+    const std::string filename = GetConf("dumper", "font8fn");
+    const std::wstring what = L"8pix font";
     
     MessageBeginDumpingImage(filename, what);
 
@@ -54,20 +54,21 @@ void Dump12Font(unsigned begin,unsigned end,
                 unsigned offs1, unsigned offs2,
                 unsigned sizeoffs)
 {
-    const string filename = WstrToAsc(GetConf("dumper", "font12fn"));
-    const string what = "12pix font";
+    const std::string filename = GetConf("dumper", "font12fn");
+    const std::wstring what = L"12pix font";
     
     MessageBeginDumpingImage(filename, what);
 
     const unsigned count = (end+1) - begin;
     
     unsigned maxwidth = 12;
+    unsigned maxheight = 12;
     
     const unsigned xdim = 32;
     const unsigned ydim = (count+xdim-1)/xdim;
     
-    const unsigned xpixdim = xdim*maxwidth + (xdim+1);
-    const unsigned ypixdim = ydim*maxwidth + (ydim+1);
+    const unsigned xpixdim = xdim*maxwidth  + (xdim+1);
+    const unsigned ypixdim = ydim*maxheight + (ydim+1);
     
     const char palette[] = {1,2,3,4};
     const char bordercolor=0;
@@ -86,10 +87,10 @@ void Dump12Font(unsigned begin,unsigned end,
             width = 12;
         
         if(width > maxwidth)width = maxwidth;
-        for(unsigned y=0; y<12; ++y)
+        for(unsigned y=0; y<maxheight; ++y)
         {
-            unsigned xpos = ((a-begin)%xdim) * (maxwidth+1) + 1;
-            unsigned ypos = ((a-begin)/xdim) * (maxwidth+1) + 1+y;
+            unsigned xpos = ((a-begin)%xdim) * (maxwidth +1) + 1;
+            unsigned ypos = ((a-begin)/xdim) * (maxheight+1) + 1+y;
             
             unsigned char byte1 = ROM[hioffs];
             unsigned char byte2 = ROM[hioffs+1];
@@ -114,7 +115,7 @@ void Dump12Font(unsigned begin,unsigned end,
                      [((byte1 >> (7-(x&7)))&1)
                    | (((byte2 >> (7-(x&7)))&1) << 1)]);
             }
-            for(unsigned x=width; x<12; ++x)
+            for(unsigned x=width; x<maxwidth; ++x)
                 image.PSet(xpos+x, ypos, fillercolor);
         }
     }

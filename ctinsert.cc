@@ -41,17 +41,17 @@ namespace
         //for(unsigned a=0; a<n; ++a) PutC(s[a], fp);
     }
 
-    void GeneratePatch(class ROM& ROM, unsigned offset, const char *fn)
+    void GeneratePatch(class ROM& ROM, unsigned offset, const string& fn)
     {
-        fprintf(stderr, "Creating %s\n", fn);
+        fprintf(stderr, "Creating %s\n", fn.c_str());
         
         unsigned MaxHunkSize = GetConf("patch",   "maxhunksize");
 
         /* Now write the patch */
-        FILE *fp = fopen(fn, "wb");
+        FILE *fp = fopen(fn.c_str(), "wb");
         if(!fp)
         {
-            perror(fn);
+            perror(fn.c_str());
             return;
         }
         fwrite("PATCH", 1, 5, fp);
@@ -108,14 +108,14 @@ namespace
     
     void WriteGameName(class ROM& ROM)
     {
-        const string Name = WstrToAsc(GetConf("general", "gamename"));
+        const string Name = GetConf("general", "gamename");
         
         /* Set game name */
         vector<unsigned char> Buf(21, ' ');
         for(unsigned a=0; a < Buf.size() && a < Name.size(); ++a)
             Buf[a] = Name[a];
         
-        ROM.AddPatch(Buf, 0xFFC0, "game name");
+        ROM.AddPatch(Buf, 0xFFC0, L"game name");
     }
     
     void WriteROMsize(class ROM& ROM)
@@ -126,10 +126,10 @@ namespace
         
         if(size >= 0x600000)
         {
-            ROM.Write(0xFFD5, 0x35, "rom speed&type tag");
-            ROM.Write(size-1, 0xFF, "EOF");
+            ROM.Write(0xFFD5, 0x35, L"rom speed&type tag");
+            ROM.Write(size-1, 0xFF, L"EOF");
         }
-        ROM.Write(0xFFD7, sizebyte, "rom size tag");
+        ROM.Write(0xFFD7, sizebyte, L"rom size tag");
     }
     
     void GeneratePatches(class ROM& ROM)
@@ -140,20 +140,18 @@ namespace
         /* Should there be a language code at $FFB5? */
         /* No - it would affect PAL/NTSC things */
         
-        GeneratePatch(ROM, 0,   WstrToAsc(GetConf("patch", "patchfn_nohdr")).c_str());
-        GeneratePatch(ROM, 512, WstrToAsc(GetConf("patch", "patchfn_hdr")).c_str());
+        GeneratePatch(ROM, 0,   GetConf("patch", "patchfn_nohdr"));
+        GeneratePatch(ROM, 512, GetConf("patch", "patchfn_hdr"));
         
         ShowProtMap2();
     }
 }
 
-const string DispString(const ctstring &s, unsigned symbols_type)
+const std::string DispString(const ctstring &s, unsigned symbols_type)
 {
     const Symbols::revtype &symbols = Symbols.GetRev(symbols_type);
     
-    static wstringOut conv(getcharset());
-
-    string result;
+    std::wstring result;
     for(unsigned a=0; a<s.size(); ++a)
     {
         ctchar c = s[a];
@@ -161,29 +159,20 @@ const string DispString(const ctstring &s, unsigned symbols_type)
         Symbols::revtype::const_iterator i = symbols.find(c);
         if(i != symbols.end())
         {
-            result += conv.puts(i->second);
+            result += i->second;
             continue;
         }
 
-        ucs4 u = ilseq;
         switch(symbols_type)
         {
-            case 16: u = getucs4(c, cset_12pix); break;
-            case  8: u = getucs4(c, cset_8pix); break;
-            case  2: u = getucs4(c, cset_8pix); break;
+            case 16: result += getwchar_t(c, cset_12pix); break;
+            case  8: result += getwchar_t(c, cset_8pix); break;
+            case  2: result += getwchar_t(c, cset_8pix); break;
+            default: result += wformat(L"[%02X]", c); break;
         }
-        
-        if(u != ilseq)
-        {
-            result += conv.putc(u);
-            continue;
-        }
-
-        char Buf[8];
-        sprintf(Buf, "[%02X]", c);
-        result += conv.puts(AscToWstr(Buf));
     }
-    return result;
+    wstringOut conv(getcharset());
+    return conv.puts(result);
 }
 
 void insertor::ReportFreeSpace()
@@ -223,10 +212,10 @@ int main(void)
     /* Ensure the ROM size */
     ins->ExpandROM();
     
-    const string font8fn  = WstrToAsc(GetConf("font",   "font8fn"));
-    const string font8vfn = WstrToAsc(GetConf("font",   "font8vfn"));
-    const string font12fn = WstrToAsc(GetConf("font",   "font12fn"));
-    const string scriptfn = WstrToAsc(GetConf("readin", "scriptfn"));
+    const string font8fn  = GetConf("font",   "font8fn");
+    const string font8vfn = GetConf("font",   "font8vfn");
+    const string font12fn = GetConf("font",   "font12fn");
+    const string scriptfn = GetConf("readin", "scriptfn");
     
     LoadTypefaces();
     

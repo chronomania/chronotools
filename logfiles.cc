@@ -6,13 +6,8 @@
 #include "wstring.hh"
 #include "config.hh"
 
-using std::map;
-using std::pair;
-using std::perror;
-using std::fopen;
-
-typedef pair<string, string> setup_t;
-typedef map<setup_t, FILE *> handles;
+typedef std::pair<std::string, std::string> setup_t;
+typedef std::map<setup_t, std::FILE *> handles;
 
 static class Logs
 {
@@ -25,7 +20,7 @@ public:
     {
         handles::const_iterator i;
         for(i=data.begin(); i!=data.end(); ++i)
-            fclose(i->second);
+            std::fclose(i->second);
     }
     FILE *Get(const char *sect, const char *key)
     {
@@ -33,22 +28,22 @@ public:
         handles::const_iterator i = data.find(setup);
         if(i != data.end()) return i->second;
         
-        FILE *result = 0;
-        ucs4string fn = GetConf(sect, key);
+        std::FILE *result = 0;
+        std::wstring fn = GetConf(sect, key);
         if(!fn.empty())
         {
-            string fn2 = WstrToAsc(fn);
-            result = fopen(fn2.c_str(), "wt");
+            std::string fn2 = WstrToAsc(fn);
+            result = std::fopen(fn2.c_str(), "wt");
             if(!result)
-                perror(fn2.c_str());
+                std::perror(fn2.c_str());
             else
-                setbuf(result, NULL);
+                std::setbuf(result, NULL);
         }
         return data[setup] = result;
     }
 } Logfiles;
 
-FILE *GetLogFile(const char *sect, const char *key)
+std::FILE *GetLogFile(const char *sect, const char *key)
 {
     return Logfiles.Get(sect, key);
 }

@@ -1,4 +1,3 @@
-#include <algorithm>
 #include <cstdio>
 #include <map>
 
@@ -123,14 +122,12 @@ namespace
     const string CreateRefName() /* anonymous pointer */
     {
         static unsigned refcounter = 0;
-        char Buf[64];
-        std::sprintf(Buf, "<ref%u>", ++refcounter);
-        return Buf;
+        return format("<ref%u>", ++refcounter);
     }
     const string CreateRefName(unsigned address)
     {
         string result = "$";
-        result += Base62Label(address);
+        result += WstrToAsc(Base62Label(address));
         return result;
     }
 }
@@ -261,9 +258,7 @@ void PagePtrList::Create(insertor& ins,
 #if 0
             for(unsigned a=0; a<d.data.size(); ++a)
             {
-                char Buf[8];
-                sprintf(Buf, " %02X", d.data[a]);
-                detail += Buf;
+                detail += format(" %02X", d.data[a]);
             }
 #endif
         }

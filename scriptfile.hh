@@ -1,19 +1,17 @@
-#include <string>
+#include "wstring.hh"
 
-using std::string;
-
-void OpenScriptFile(const string& filename);
+void OpenScriptFile(const std::string& filename);
 void CloseScriptFile();
 
-void PutAscii(const string& comment);
+void PutAscii(const std::wstring& comment);
 
-void BlockComment(const string& comment);
-void StartBlock(const char* blocktype, const string& reason, unsigned intparam);
-void StartBlock(const string& blocktype, const string& reason);
+void BlockComment(const std::wstring& comment);
+void StartBlock(const std::wstring& blocktype, const std::wstring& reason, unsigned intparam);
+void StartBlock(const std::wstring& blocktype, const std::wstring& reason);
 void PutBase62Label(const unsigned noffs);
 void PutBase16Label(const unsigned noffs);
 void PutBase10Label(const unsigned noffs);
-void PutContent(const string& s, bool dolf = true);
+void PutContent(const std::wstring& s, bool dolf = true);
 void EndBlock();
 
-const string Base62Label(const unsigned noffs);
+const std::wstring Base62Label(const unsigned noffs);

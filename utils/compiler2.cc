@@ -264,11 +264,11 @@ namespace
 
     struct expression_var: public expression_nonconst
     {
-        ucs4string varname;
+        wstring varname;
         expr_p index;
         
         expression_var() { }
-        expression_var(const ucs4string& name): varname(name) { }
+        expression_var(const wstring& name): varname(name) { }
         
         virtual bool is_lvalue() const { return true; }
         
@@ -460,7 +460,7 @@ namespace
         }
     };
     
-    typedef hash_map<ucs4string, expr_p> parammap_t;
+    typedef hash_map<wstring, expr_p> parammap_t;
 
     struct codenode: public ptrable
     {
@@ -645,7 +645,7 @@ namespace
     
     struct codenode_call: public codenode
     {
-        ucs4string funcname;
+        wstring funcname;
         parammap_t params;
         
         virtual void Dump() const
@@ -683,11 +683,11 @@ namespace
     };
 
     // Variable name -> size-expr
-    typedef hash_map<ucs4string, expr_p> vardefmap_t;
+    typedef hash_map<wstring, expr_p> vardefmap_t;
     // Variable name translations
-    typedef hash_map<ucs4string, ucs4string> transmap_t;
+    typedef hash_map<wstring, wstring> transmap_t;
     // Variable name -> contents
-    typedef hash_map<ucs4string, expr_p> varstatemap_t;
+    typedef hash_map<wstring, expr_p> varstatemap_t;
 
     bool OptimizeExpression
         (expr_p &p, const varstatemap_t& states)
@@ -723,7 +723,7 @@ namespace
                 
                 if(expression_var *v = dynamic_cast<expression_var *> (&*p))
                 {
-                    const ucs4string& varname = v->varname;
+                    const wstring& varname = v->varname;
                     
                     varstatemap_t::const_iterator i = states.find(varname);
                     if(i != states.end()
@@ -742,7 +742,7 @@ namespace
         return tester.changes;
     }
 
-    const ucs4string CreateVarName()
+    const wstring CreateVarName()
     {
         static unsigned counter = 0;
         char Buf[128];
@@ -776,7 +776,7 @@ namespace
         struct TargetVar
         {
             bool needs_word, only_bytes;
-            ucs4string Name;
+            wstring Name;
             expr_p target;
             
             const program &prog;
@@ -803,7 +803,7 @@ namespace
                 
                 if(expression_var *var = dynamic_cast<expression_var*> (e))
                 {
-                    const ucs4string& varname = var->varname;
+                    const wstring& varname = var->varname;
                     vardefmap_t::const_iterator i = prog.vars.find(varname);
                     if(i != prog.vars.end())
                     {
@@ -831,7 +831,7 @@ namespace
             }
             
             operator const expr_p& () const { return target; }
-            operator const ucs4string& () const { return Name; }
+            operator const wstring& () const { return Name; }
             
             unsigned GetSize() const
             {
@@ -1077,7 +1077,7 @@ int main(void)
     inf.Read(fp);
     fclose(fp);
     
-    ucs4string main_name = AscToWstr("draw_str");
+    wstring main_name = AscToWstr("draw_str");
     
     program prog = ParseFile(inf, main_name);
     

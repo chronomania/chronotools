@@ -16,7 +16,6 @@
 
 using std::FILE;
 using std::vector;
-using std::string;
 using std::pair;
 
 /* An xa65 object file loader */
@@ -65,27 +64,27 @@ public:
     
     /* Defines the value of a symbol. */
     /* The symbol must have been accessed in order to be defined. */
-    void LinkSym(const string& name, unsigned value);
+    void LinkSym(const std::string& name, unsigned value);
     
     /* Declares a global label in the selected segment */
-    void DeclareGlobal(SegmentSelection seg, const string& name, unsigned address);
+    void DeclareGlobal(SegmentSelection seg, const std::string& name, unsigned address);
     
     /* Declares a 8-bit relocation to given symbol */
-    void DeclareByteRelocation(SegmentSelection seg, const string& name, unsigned addr);
+    void DeclareByteRelocation(SegmentSelection seg, const std::string& name, unsigned addr);
     /* Declares a 16-bit relocation to given symbol */
-    void DeclareWordRelocation(SegmentSelection seg, const string& name, unsigned addr);
+    void DeclareWordRelocation(SegmentSelection seg, const std::string& name, unsigned addr);
     /* Declares a 24-bit relocation to given symbol */
-    void DeclareLongRelocation(SegmentSelection seg, const string& name, unsigned addr);
+    void DeclareLongRelocation(SegmentSelection seg, const std::string& name, unsigned addr);
     
     /* Returns the contents of a segment */
     const vector<unsigned char>& GetSeg(SegmentSelection seg) const;
-    const vector<pair<unsigned char, string> >& GetCustomHeaders() const;
+    const vector<pair<unsigned char, std::string> >& GetCustomHeaders() const;
     
     /* Returns the segment size */
     unsigned GetSegSize(SegmentSelection seg) const;
     
-    /* Returns the address of a global defined in TEXT segment */
-    unsigned GetSymAddress(const string& name) const;
+    /* Returns the address of a global */
+    unsigned GetSymAddress(SegmentSelection seg, const std::string& name) const;
     
     /* Resizes a segment */
     void Resize(SegmentSelection seg, unsigned newsize);
@@ -96,10 +95,10 @@ public:
     /* Redefine a segment. Warning: Does not change symbols. */
     void LoadSegFrom(SegmentSelection seg, const vector<unsigned char>& buf);
     
-    bool HasSym(const string& name) const;
+    bool HasSym(SegmentSelection seg, const std::string& name) const;
     
-    const vector<string> GetSymbolList() const;
-    const vector<string> GetExternList() const;
+    const vector<std::string> GetSymbolList(SegmentSelection seg) const;
+    const vector<std::string> GetExternList() const;
     
     /* Verifies that all symbols have been properly defined */
     void Verify() const;
@@ -114,7 +113,7 @@ private:
     class Defs;
     class Segment;
     
-    vector<pair<unsigned char, string> > customheaders;
+    vector<pair<unsigned char, std::string> > customheaders;
     
     Defs *defs;
     Segment *code, *data, *zero, *bss;

@@ -199,6 +199,7 @@ Copypaste from the Makefile:
 # VERSION 1.13.5 is another dumper fix, but also finishes the battle VWF8 support
 # VERSION 1.13.6 is yet another fix, but also finishes the monster name code
 # VERSION 1.13.7 brings an improvement to the sluggish VWF8 screens problem
+# VERSION 1.13.8 C++ standard compliance upgrade... also a new eq-related feature
 </pre>
 
 Users of previous versions are advised to do the following:

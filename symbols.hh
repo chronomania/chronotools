@@ -9,14 +9,14 @@ class Symbols
 {
 public:
     // upper_bound, lower_bound needed; thus hash_map doesn't qualify
-    typedef map<ucs4string, ctchar> type;
+    typedef map<std::wstring, ctchar> type;
     // no visible benefit using hash_map here
-    typedef map<ctchar, ucs4string> revtype;
+    typedef map<ctchar, std::wstring> revtype;
 private:
     type symbols2, symbols8, symbols16;
     revtype rev2, rev8, rev16;
 
-    void AddSym(const ucs4string& sym, ctchar c, int targets);
+    void AddSym(const std::wstring& sym, ctchar c, int targets);
     void Load();
 public:
     Symbols();

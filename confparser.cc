@@ -12,31 +12,31 @@ class ConfParser::CharIStream
 
     bool good();
 
-    ucs4 peekChar() const;
-    ucs4 getChar();
+    wchar_t peekChar() const;
+    wchar_t getChar();
 
-    const ucs4string getLine();
+    const std::wstring getLine();
 
-    bool equal(ucs4 c1, char c2) const;
-    bool isSpace(ucs4 c) const;
-    bool isDigit(ucs4 c) const;
-    ucs4 toUpper(ucs4 c) const;
+    bool equal(wchar_t c1, char c2) const;
+    bool isSpace(wchar_t c) const;
+    bool isDigit(wchar_t c) const;
+    wchar_t toUpper(wchar_t c) const;
 
     void skipWS();
 
-    // Convert ucs4string to std::string
-    std::string toString(const ucs4string& s) const { return WstrToAsc(s); }
+    // Convert wstring to std::string
+    std::string toString(const std::wstring& s) const { return WstrToAsc(s); }
 
     unsigned getLineNumber() const;
 
  private:
     wstringIn conv;
     FILE *fp;
-    ucs4string cache;
+    std::wstring cache;
     unsigned cacheptr;
-    ucs4 getC();
+    wchar_t getC();
     
-    ucs4 nextChar;
+    wchar_t nextChar;
     unsigned line;
  private:
     const CharIStream& operator=(const CharIStream&);
@@ -51,7 +51,7 @@ ConfParser::CharIStream::CharIStream(FILE *f):
 {
 }
 
-ucs4 ConfParser::CharIStream::getC()
+wchar_t ConfParser::CharIStream::getC()
 {
     for(;;)
     {
@@ -69,33 +69,33 @@ ucs4 ConfParser::CharIStream::getC()
             cache += conv.puts(std::string(Buf, n));
         }
         // So now cache may be of arbitrary size.
-        if(cache.empty()) return (ucs4)EOF;      
+        if(cache.empty()) return (wchar_t)EOF;      
     }
 }
 
 bool ConfParser::CharIStream::good()
 {
     if(!cache.empty()) return true;
-    if(nextChar != (ucs4)EOF) return true;
+    if(nextChar != (wchar_t)EOF) return true;
     return false;
 }
 
-ucs4 ConfParser::CharIStream::peekChar() const
+wchar_t ConfParser::CharIStream::peekChar() const
 {
     return nextChar;
 }
 
-ucs4 ConfParser::CharIStream::getChar()
+wchar_t ConfParser::CharIStream::getChar()
 {
-    ucs4 retval = nextChar;
+    wchar_t retval = nextChar;
     nextChar = getC();
     if(retval == '\n') ++line;
     return retval;
 }
 
-const ucs4string ConfParser::CharIStream::getLine()
+const std::wstring ConfParser::CharIStream::getLine()
 {
-    ucs4string result;
+    std::wstring result;
     for(;;)
     {
         if(nextChar == '\r') { getChar(); continue; }
@@ -106,22 +106,22 @@ const ucs4string ConfParser::CharIStream::getLine()
     return result;
 }
 
-bool ConfParser::CharIStream::equal(ucs4 c1, char c2) const
+bool ConfParser::CharIStream::equal(wchar_t c1, char c2) const
 {
     return c1 == (unsigned char)c2;
 }
 
-bool ConfParser::CharIStream::isSpace(ucs4 c) const
+bool ConfParser::CharIStream::isSpace(wchar_t c) const
 {
     return c == ' ' || c == '\t' || c == '\r' || c == '\n';
 }
 
-bool ConfParser::CharIStream::isDigit(ucs4 c) const
+bool ConfParser::CharIStream::isDigit(wchar_t c) const
 {
     return c >= '0' && c <= '9';
 }
 
-ucs4 ConfParser::CharIStream::toUpper(ucs4 c) const
+wchar_t ConfParser::CharIStream::toUpper(wchar_t c) const
 {
     if(c < 'a') return c;
     if(c > 'z') return c;
@@ -178,9 +178,9 @@ double ConfParser::Field::DField() const
     return 0;
 }
 
-const ucs4string& ConfParser::Field::SField() const
+const std::wstring& ConfParser::Field::SField() const
 {
-    static const ucs4string empty;
+    static const std::wstring empty;
     if(!elements.empty()) return elements[0].SField;
     return empty;
 }
@@ -196,7 +196,7 @@ bool ConfParser::ParseField(CharIStream& is, Field& field, bool mergeStrings)
 {
     while(true)
     {
-        ucs4 c = is.getChar();
+        wchar_t c = is.getChar();
         if(!is.good()) return false;
         if(is.equal(c, '\n')) return true;
         if(is.isSpace(c)) continue;
@@ -308,9 +308,9 @@ void ConfParser::ParseSection(CharIStream& is, const std::string& secName)
         is.skipWS();
         if(!is.good()) break;
 
-        ucs4string fieldNameString;
+        std::wstring fieldNameString;
 
-        ucs4 c = is.peekChar();
+        wchar_t c = is.peekChar();
         
         // Section name?
         if(is.equal(c, '[')) break;
@@ -368,7 +368,7 @@ void ConfParser::Parse(FILE *fp)
     while(true)
     {
         is.skipWS();
-        ucs4 c = is.getChar();
+        wchar_t c = is.getChar();
 
         if(!is.good()) break;
 
@@ -382,7 +382,7 @@ void ConfParser::Parse(FILE *fp)
         // Expect section name:
         if(is.equal(c, '['))
         {
-            ucs4string secName;
+            std::wstring secName;
             while(true)
             {
                 c = is.getChar();

@@ -25,7 +25,7 @@ void insertor::ClearROM(class ROM& ROM) const
             const unsigned reclen = j->upper - recpos;
             unsigned offs = (*i << 16) | recpos;
             
-            ROM.SetZero(offs, reclen, "clear free space");
+            ROM.SetZero(offs, reclen, L"clear free space");
         }
     }
 }
@@ -57,7 +57,7 @@ void insertor::PatchROM(class ROM& ROM) const
             objects.GetName(a).c_str());
         */
         
-        ROM.AddPatch(objects.GetCode(a), romaddr, objects.GetName(a));
+        ROM.AddPatch(objects.GetCode(a), romaddr, AscToWstr(objects.GetName(a)));
         //objects.Release(a);
     }
     
@@ -81,11 +81,11 @@ void insertor::WriteEverything()
     
     if(UseThinNumbers)
     {
-        PlaceByte(0x73, 0x02F21B, "thin '0'");
+        PlaceByte(0x73, 0x02F21B, L"thin '0'");
     }
     else
     {
-        //PlaceByte(0xD4, 0x02F21B, "thick '0'");
+        //PlaceByte(0xD4, 0x02F21B, L"thick '0'");
     }
 
     /* Everything has been written. */
