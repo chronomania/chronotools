@@ -142,6 +142,7 @@ Copypaste from the Makefile:
 # VERSION 1.6.0  signature support (custom compressed image on startup screen)
 # VERSION 1.6.1  some remodularizing of code
 # VERSION 1.6.2  fixed the vwf8 scrolling problems and some other bugs
+# VERSION 1.6.3  battle item lister fixed - no vwf8 problems there now
 </pre>
 
 ", '1. Program list' => "

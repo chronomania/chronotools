@@ -8,7 +8,6 @@
 ;    www.floodgap.com/retrotech/xa/
 ;
 
-; Note - Caller is assumed to use PEI .
 ;   The functions to be called are:
 ;        DrawS_2bit - for 2bit screens
 ;        DrawS_4bit - for 4bit screens
@@ -23,7 +22,8 @@
 #define P_FONT     $15
 #define P_TILEBUF1 $18
 #define P_TILEBUF2 $1B
-; First unused $1E
+#define W_WRITEOFS $1E
+#define W_ENDDRAWS $20
 
 ; NMI uses vars at:
 ;       $000Dxx
@@ -72,15 +72,15 @@
 
 ; ENTRY - Draw string, create 2bit tiles
 DrawS_2bit:
-        jsr DrawS_boot  ;store registers to vars
-        jsr DrawS_2bit_setup
+        jsr DrawS_boot        ;store regs to vars (B_LENGTH, P_STR, W_ENDX)
+        jsr DrawS_2bit_setup  ;sets W_ONESIZE and W_DATASIZE
         jsr DrawS_initdma
         bra DrawS_common
 
 ; ENTRY - Draw string, create 4bit tiles
 DrawS_4bit:
-        jsr DrawS_boot  ;store registers to vars
-        jsr DrawS_4bit_setup
+        jsr DrawS_boot        ;store regs to vars (B_LENGTH, P_STR, W_ENDX)
+        jsr DrawS_4bit_setup  ;sets W_ONESIZE and W_DATASIZE
         jsr DrawS_initdma
         asl
 DrawS_common:
@@ -91,8 +91,7 @@ DrawS_common:
         asl
         clc
         adc W_VRAMADDR
-        ; Tell PPU what we're going to write
-        .byt $8F,$16,$21,$00   ;sta $002116
+        sta W_VRAMADDR
 
         SET_8_BIT_A()
 CharLoop:
@@ -118,19 +117,30 @@ ContinueWithChar:
         ; Character should be 16bit by now
         jsr Trans
         jsr DrawChar
+        ; A-flag undefined now
 
         ; Print more characters, if desired.
         SET_8_BIT_A()
         dec B_LENGTH
         bne CharLoop
 
-Zero:   jsr Write ; write last tile
+Zero:   .byt $62,2,0  ;there's no indirect-jsr...
+        jmp (W_WRITEOFS)   ;write last tile
+        
+        ; A-flag undefined now
+
         ; ^FIXME - don't do if PIXOFFS=0
 
         SET_16_BIT_A()
         
+        jmp (W_ENDDRAWS)   ;end of draw-string
+.)
+
+
+DrawS_normalEnd:
+.(
         cpx W_ENDX
-        bcs EndDrawS     ; if >=
+        bcs DrawS_normalDone     ; if >=
         
         ; Note - If $FF isn't space in the normal 8pix font, change this.
         lda #$FF00 ;byteswapped #$00FF
@@ -140,10 +150,12 @@ Zero:   jsr Write ; write last tile
         SET_16_BIT_A()
         
         tay
-EndLoop:
+DrawS_filler_loop:
         tya
+        ;;; FIXME - this doesn't work if WRITEOFS doesn't refer to Write
         jsr WriteOne
         
+        SET_16_BIT_A()
         lda W_DATASIZE
         sec
         sbc W_ONESIZE
@@ -151,12 +163,16 @@ EndLoop:
                         ; (generate a smaller dma transfer)
         
         cpx W_ENDX
-        bcc EndLoop      ; if <
+        bcc DrawS_filler_loop      ; if <
 
-EndDrawS:
+DrawS_normalDone:
         ; Should be 16-bit here
+
+        lda W_VRAMADDR
+        .byt $8F,$16,$21,$00 ;sta $002116 - Tell PPU what we're going to write
+
         lda W_DATASIZE
-        .byt $8F,$75,$43,$00   ;sta $004375
+        .byt $8F,$75,$43,$00 ;sta $004375
         ; ^ dma config size
 
         SET_8_BIT_A()
@@ -170,8 +186,6 @@ EndDrawS:
         
         rts
 .)
-
-
 
 
 
@@ -345,6 +359,8 @@ Handle16bytes_7:
         clc
         adc P_TILEBUF2
         sta P_TILEBUF2
+        
+        jmp (W_WRITEOFS)
 
 ; Moves to next tile.
 Write:
@@ -424,8 +440,10 @@ DrawS_setup_common:
         rts
 
 DrawS_initdma:
+.(
+        SET_8_BIT_A()
+        
         phb
-         SET_8_BIT_A()
          pla               ;target page
          sta P_TILEBUF1+2
          sta P_TILEBUF2+2
@@ -439,6 +457,9 @@ DrawS_initdma:
          sty $211B  ;so that $2134 will give zero for dma
          sty $211B
          
+         ;lda #$7F
+         ;trb $420C  ; disable H-DMA 4
+         
          ldy #$3480 ; $34 = $2134; mode = reading bytes to mem
          sty $4370  ; dma config setup
 
@@ -451,9 +472,9 @@ DrawS_initdma:
 
          ldy W_DATASIZE
          lda #$80
+         
          sty $4375  ; dma config size
          sta $420B  ; dma proceed - clears TILEBUF
-         
          ;;;
          
          ; Prepare DMA settings for PPU write
@@ -464,7 +485,8 @@ DrawS_initdma:
          sty $4372  ; dma config new source
                     ;  page already set
         plb
-
+.)        ; passthru
+DrawS_init_common:
         lda #<TILEDATA_SEG
         sta P_FONT+2     ; Early handling
 
@@ -483,6 +505,36 @@ DrawS_initdma:
 
         lda W_TILENUM
         rts
+
+DrawS_initnondma:
+.(
+        SET_8_BIT_A()
+        
+        phb
+        pla               ;target page
+        sta P_TILEBUF1+2
+        sta P_TILEBUF2+2
+        
+        SET_16_BIT_A()
+        
+        lda #TILEBUF     ;target offs = tilebuf
+        sta P_TILEBUF1   ;   initialize P_TILEBUF1
+
+        sta P_TILEBUF2
+        
+        lda #$0000
+        tay
+Loop:
+        sta (P_TILEBUF2),y : iny : iny
+        sta (P_TILEBUF2),y : iny : iny
+        sta (P_TILEBUF2),y : iny : iny
+        sta (P_TILEBUF2),y : iny : iny
+        cpy W_DATASIZE
+        bcc Loop
+
+        SET_8_BIT_A()
+        bra DrawS_init_common
+.)
 
 Trans:
 .(
@@ -512,8 +564,12 @@ Special:
         .byt $D4, $16 :        \
         .byt $D4, $18 :        \
         .byt $D4, $1A :        \
-        .byt $D4, $1C
+        .byt $D4, $1C :        \
+        .byt $D4, $1E :        \
+        .byt $D4, $20
 #define UNALLOCATE()        \
+        pla : sta $20 :        \
+        pla : sta $1E :        \
         pla : sta $1C :        \
         pla : sta $1A :        \
         pla : sta $18 :        \
@@ -522,7 +578,7 @@ Special:
         pla : sta $12 :        \
         pla : sta $10
 
-GetItemName:        ; FAR-CALL me please
+GetItemName:
         ; In - Al=item number
         ; Out- Al=maxlen
         ;      Ah,Y=address of string
@@ -540,6 +596,26 @@ GetItemName:        ; FAR-CALL me please
         ; The table has been built in:
         ;   
         rts
+GetItemName2:
+        ; In - Al=item number
+        ; Out- Al=maxlen
+        ;      Ah,Y=address of string
+        ;
+        ; This is a copy of the code at $C109C1
+        SET_16_BIT_A()
+        and #$00FF
+        sta $84
+        asl
+        asl
+        sta $8E
+        asl
+        clc:adc $8E
+        sec:sbc $84
+        clc
+        adc #$0B5E  ;ITEM LIST OFFSET
+        tay
+        lda #$CC0B  ;ITEM LIST SEGMENT, LENGTH
+        rts
 
 EquipLeftHelper:
 .(
@@ -556,9 +632,9 @@ EquipLeftHelper:
 Skip:   pla
         rtl
 GetItemNum:
-	lda #$5840
-	pha
-	.byt $5C, $9A, $A5, $C2  ;jmp $C2A59A
+        lda #$5840
+        pha
+        .byt $5C, $9A, $A5, $C2  ;jmp $C2A59A
 .)
 
 EquipLeftItemFunc:
@@ -585,18 +661,7 @@ EquipLeftItemFunc:
         ;passthru
 DisplayFuncCommon_2bit:
         jsr DrawS_2bit
-
-        SET_16_BIT_A()
-        UNALLOCATE()
-        SET_8_BIT_A()
-        
-        ; $C2EF65 does this. No idea.
-        lda #$DC
-        trb $7E
-        
-        SET_16_BIT_A()
-
-        rtl
+        brl DisplayFuncCommonEnd
 
 EquipRightItemFunc:        ;also used in shop
         ; In - A=item number
@@ -655,9 +720,13 @@ ItemListFunc:
          lda #10
          .byt $8F,$06,$42,$00  ;sta $4206   ;divisor
          nop:nop:nop:nop:nop  ;16 cycles
-         nop:nop:nop:nop:nop
+         nop
          lda #$0000
          sta W_VRAMADDR
+         lda #Write
+         sta W_WRITEOFS
+         lda #DrawS_normalEnd
+         sta W_ENDDRAWS
          phx
           phb
            phk
@@ -690,16 +759,16 @@ TechListFunc:
          lda #11
          .byt $8F,$03,$42,$00  ;sta $4203 - multiply by 11
          
-         ldx #$0C      ;palette 12
-         lda $7700,y   ;load tech attr
+         ldx #4*3      ;palette 3
+         lda $7700,y   ;load tech attribute
          bit #$40
          bne GotAttr
-         ldx #$00      ;palette 0
+         ldx #4*0      ;palette 0
          bit #$80
          beq GotAttr
          bit $78       ;test if $80 was already given
          bmi GotAttr
-         ldx #$08      ;palette 8
+         ldx #4*2      ;palette 2
 GotAttr:
          stx $7E       ;save attr.
         ply
@@ -725,6 +794,10 @@ GotAttr:
          
          lda #$0000
          sta W_VRAMADDR
+         lda #Write
+         sta W_WRITEOFS
+         lda #DrawS_normalEnd
+         sta W_ENDDRAWS
         pla
 
         ldx $61       ;Load screen address (target)
@@ -732,7 +805,7 @@ GotAttr:
         ;passthru
 DisplayFuncCommon_4bit:
         jsr DrawS_4bit
-
+DisplayFuncCommonEnd:
         SET_16_BIT_A()
         UNALLOCATE()
         SET_8_BIT_A()
@@ -745,7 +818,138 @@ DisplayFuncCommon_4bit:
         
         rtl
 
+BattleItemFunc:
+        ; Code here
+        ;In:
+        ;    A = item number
+        ;  $86 = item-line counter (ignore)
+        ;  $80 = something that runs with step 5, goes to X
+        ;  $82 = ($86+1)*128 ?
+        ; $1580=table(index with X):
+        ;          $1580 = item number
+        ;          $1582 = disabled-flags (& $80)
+        ;          $1583 = ?
+        ;          $1584 = katakana thing
+        ;Usable:
+        ;  $84 = item number (temp)
+        ;  $8E = item number*4 (temp)
+        ;Todo:
+        ;    write tile numbers to $7E94A0
+        ;   VRAM - $7000 = tile table
+        ;          $5000 = bitmap table
+        ;Assume:
+        ;    DB=7E
+        ;Can use:
+        ;    X, Y, A
+        
+        SET_16_BIT_AX()
+        
+        ;ldy #$0B5E
+        ;lda #$CC0B
+        jsr GetItemName2
+
+        SET_16_BIT_A()
+        ALLOCATE()
+        
+        pha
+         lda $80
+         and #$00FF
+
+         ; Now we have item list scrolling position.
+         .byt $8F,$04,$42,$00  ;sta $4204   ;dividend
+         lda #3
+         .byt $8F,$06,$42,$00  ;sta $4206   ;divisor
+         nop:nop:nop:nop:nop  ;16 cycles
+         nop
+
+         lda #$5000
+         sta W_VRAMADDR
+         
+         lda #BattleWrite
+         sta W_WRITEOFS
+
+         lda #BattleWriteEnd
+         sta W_ENDDRAWS
+         
+         phx
+          phb
+           phk
+           plb
+           .byt $AF,$16,$42,$00  ;lda $4216   ;remainder
+           asl
+           tax
+           lda TileNumberListInBattle,x
+          plb
+         plx
+         sta W_TILENUM
+         
+        pla
+
+        jsr DrawS_boot        ;store regs to vars (B_LENGTH, P_STR, W_ENDX)
+        
+        ldx #$0000
+        
+        jsr DrawS_2bit_setup  ;sets W_ONESIZE and W_DATASIZE
+        jsr DrawS_initnondma
+        jsr DrawS_common
+        
+        SET_16_BIT_A()
+        UNALLOCATE()
+        SET_8_BIT_A()
+        
+        ; Must leave with A=8bit, X=16bit
+        rtl
+BattleWrite:
+        SET_8_BIT_A()
+        lda W_TILENUM
+        inc W_TILENUM
+        sta $94A0,x
+        lda #$FF
+        sta $94B0,x
+        inx
+        rts
+BattleWriteEnd:
+.(
+        SET_16_BIT_A()
+        
+        phx
+Loop1:   cpx #$0010
+         bcs Skip1
+         lda #$FF
+         sta $94A0,x
+         sta $94B0,x
+         inx
+         bra Loop1
+Skip1:
+         lda W_VRAMADDR
+         .byt $8F,$16,$21,$00 ;sta $002116 - Tell PPU what we think
+
+         ldx #$0000 
+        pla
+        beq DontLoop
+        asl
+        tay
+Loop2:
+        lda TILEBUF+$0,x : .byt $8F,$18,$21,$00 ;sta $002118
+        lda TILEBUF+$2,x : .byt $8F,$18,$21,$00 ;sta $002118
+        lda TILEBUF+$4,x : .byt $8F,$18,$21,$00 ;sta $002118
+        lda TILEBUF+$6,x : .byt $8F,$18,$21,$00 ;sta $002118
+        lda TILEBUF+$8,x : .byt $8F,$18,$21,$00 ;sta $002118
+        lda TILEBUF+$A,x : .byt $8F,$18,$21,$00 ;sta $002118
+        lda TILEBUF+$C,x : .byt $8F,$18,$21,$00 ;sta $002118
+        lda TILEBUF+$E,x : .byt $8F,$18,$21,$00 ;sta $002118
+        txa
+        clc
+        adc #$0010
+        tax
+        dey
+        bne Loop2
+DontLoop:
+        rts
+.)
+
 DoTilenumber_8line:
+         .al
          and #$0007 ; modulo 08
          phx
           phb
@@ -757,8 +961,19 @@ DoTilenumber_8line:
           plb
          plx
          sta W_TILENUM
+         lda #Write
+         sta W_WRITEOFS
+         lda #DrawS_normalEnd
+         sta W_ENDDRAWS
          rts
 
 TileNumberList:
+        ; All scrolling lists have max of 10 lines.
+        ; All of them display maximally 11 tiles wide names.
+        ; Here are tilenum starting indices.
+        
         .word $0030, $003B, $0046, $0051, $005C
         .word $0067, $0072, $007D, $0088, $0093
+
+TileNumberListInBattle:
+        .word $0150, $018A, $0195

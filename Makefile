@@ -65,6 +65,7 @@ DEPDIRS = utils/
 # VERSION 1.6.0  signature support (custom compressed image on startup screen)
 # VERSION 1.6.1  some remodularizing of code
 # VERSION 1.6.2  fixed the vwf8 scrolling problems and some other bugs
+# VERSION 1.6.3  battle item lister fixed - no vwf8 problems there now
 
 OPTIM=-O3
 #OPTIM=-O0
@@ -73,7 +74,7 @@ OPTIM=-O3
 
 CXXFLAGS += -I.
 
-VERSION=1.6.2
+VERSION=1.6.3
 ARCHFILES=utils/xray.cc utils/xray.h \
           utils/viewer.c \
           utils/vwftest.cc \

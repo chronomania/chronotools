@@ -72,12 +72,31 @@ void insertor::GenerateVWF8code()
                               address & 0xFFFF,
                               nopcount);
                 
-                // Mark zero instead of NOP...
-                while(nopcount > 0) { PlaceByte(0, address++); --nopcount; }
+                // Don't initialize, or it will overwrite whatever
+                // uses that space!
+                //while(skipbytes-- > 0) { PlaceByte(0, address++); --nopcount; }
+                nopcount = 0;
             }
         }
         else
         {
+            while(nopcount > 2)
+            {
+                nopcount -= 2;
+                unsigned skipbytes = nopcount;
+                if(skipbytes > 127) skipbytes = 127;
+                PlaceByte(0x80,      address++);
+                PlaceByte(skipbytes, address++);
+                
+                freespace.Add((address >> 16) & 0x3F,
+                              address & 0xFFFF,
+                              skipbytes);
+                
+                // Don't initialize, or it will overwrite whatever
+                // uses that space!
+                //while(skipbytes-- > 0) { PlaceByte(0, address++); --nopcount; }
+                nopcount -= skipbytes;
+            }
             while(nopcount > 0) { PlaceByte(0xEA, address++); --nopcount; }
         }
     }
