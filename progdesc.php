@@ -213,6 +213,7 @@ Copypaste from the Makefile:
 # VERSION 1.15.0.3 improved location event decompiler.
 # VERSION 1.15.1 location event support - preliminary release.
 # VERSION 1.15.2 now dumps the button names and allows changing them.
+# VERSION 1.15.2.1 conjugator supports now [member].
 </pre>
 
 To use the character name changing feature, do a redump with ctdump
@@ -414,13 +415,16 @@ elämän!</pre>
 
 ", 'vwf8:1.1. Variable width 8pix font' => "
 
-<img src=\"/src/chronotools-vwf8.png\" alt=\"\" title=\"It works!\" align=right>
+<img src=\"/ctfin/dev/ctfin-items2.png\" alt=\"\" title=\"It works!\" align=right>
 Item, monster and technique names in Chrono Trigger are limited to 10 characters
 (restriction is enforced by both the screen layout and the ROM space).<br>
 This is way too little for many languages with long words.
-<p>
+ <p>
 For this reason Chronotools creates a vwf8 engine that allows
 the game to draw the names in thinner font that fits on the screen.
+ <p>
+This feature is optional and can be applied to items, techniques
+and monsters - each to them separately.
 
 <br clear=all>
 
@@ -432,7 +436,7 @@ file. Chronotools will then automatically use the extra space when
 needed for all relocatable objects.<br>
 Even the script can now be freely relocated if it's declared
 with <code>*Z</code> (capital Z).
-<p>
+ <p>
 However Chronotools is designed to be able to use all the built features
 within a 32 Mbit ROM. You only need to increase the ROM size if you're
 doing a jumbo translation (increasing the text amount by a big factor)

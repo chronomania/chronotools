@@ -40,8 +40,8 @@ int main(int argc, const char *const *argv)
     if(argc != 1+3)
     {
         fprintf(stderr, "fixchecksum: Fixes SNES patch checksum.\n"
-               "Copyright (C) 1992,2004 Bisqwit (http://iki.fi/bisqwit/)\n"
-               "Usage: unmakeips ipsfile.ips oldfile newfile\n");
+               "Copyright (C) 1992,2005 Bisqwit (http://iki.fi/bisqwit/)\n"
+               "Usage: fixchecksum ipsfile.ips oldfile newfile\n");
         return -1;
     }
     const char *patchfn = argv[1];

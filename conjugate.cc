@@ -46,6 +46,7 @@ void Conjugatemap::Load(const insertor &ins)
             ctchar person = 0x13;
             switch(WcharToAsc(data[b]))
             {
+                case '0': person=0x11; break;
                 case 'c': person=0x13; break;
                 case 'm': person=0x14; break;
                 case 'l': person=0x15; break;

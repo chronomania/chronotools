@@ -137,6 +137,7 @@ DEPDIRS = utils/
 # VERSION 1.15.0.3 improved location event decompiler.
 # VERSION 1.15.1 location event support - preliminary release.
 # VERSION 1.15.2 now dumps the button names and allows changing them.
+# VERSION 1.15.2.1 conjugator supports now [member].
 
 #OPTIM=-Os
 # -fshort-enums
@@ -152,7 +153,7 @@ CFLAGS += -I/usr/include/slang
 LDFLAGS += -L/usr/lib/slang
 
 
-VERSION=1.15.2
+VERSION=1.15.2.1
 ARCHFILES=utils/xray.cc utils/xray.h \
           utils/viewer.c \
           utils/vwftest.cc \

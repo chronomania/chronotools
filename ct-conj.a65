@@ -80,7 +80,17 @@ Conjugator:
         jsr Outc
         bra ConjEnd
 
-DidConj:inc $31 ; skip next byte = prevent the game displaying the name.
+DidConj:
+        .al
+        pha
+         lda $31 ; verify once again what was the player name
+         and #$00FF
+	 cmp #$11
+	 bne +
+	  inc $3D ; eat the param
+      + pla
+        inc $31 ; skip next byte = prevent the game displaying the name.
+	
 ConjEnd:SET_8_BIT_A()
         rtl
 
@@ -144,6 +154,7 @@ LoopHelper:
 
          ; Not a member, just a character name.
          ; Character names are:
+         ;  11=[member]
          ;  13=Crono
          ;  14=Marle
          ;  15=Lucca
@@ -154,7 +165,14 @@ LoopHelper:
          
          ;  1A=[crononick] is not handled here.
          
+         cmp #$11
+         beq GetMemberNumber
+         
          sec: sbc #$13
+         bra GetCharName
+
+GetMemberNumber:
+	 lda [$3D]
 
 GetCharName:
          ;8bit here

@@ -1162,6 +1162,39 @@ namespace
     };
 }
 
+static
+const std::vector<std::wstring> Split
+  (const std::wstring& text,
+   wchar_t separator=L' ',
+   wchar_t quote=L'\'',
+   bool squish=true)
+{
+    std::vector<std::wstring> words;
+    
+    unsigned a=0, b=text.size();
+    while(a<b)
+    {
+        if(text[a] == separator && squish) { ++a; continue; }
+        if(text[a] == quote)
+        {
+            ++a;
+            unsigned start = a;
+            ++a; // ignore 1 char
+            while(a < b && text[a] != quote) ++a;
+            words.push_back(text.substr(start-1, a-start+2));
+            if(a < b) { ++a; /* skip quote */ }
+            continue;
+        }
+        unsigned start = a;
+        while(a<b && text[a] != separator) ++a;
+        words.push_back(text.substr(start, a-start));
+        if(!squish && a<b && text[a]==separator) ++a;
+        continue;
+    }
+    return words;
+}
+
+
 void Compile(FILE *fp)
 {
     Assembler Asm;
@@ -1199,18 +1232,9 @@ void Compile(FILE *fp)
         if(1) // Initialize indent, words
         {
             const wchar_t *s = Buf.data();
-            while(*s == ' ') { ++s; ++indent; }
+            while(*s == L' ') { ++s; ++indent; }
 
-            std::wstring rest = s;
-            for(;;)
-            {
-                unsigned spacepos = rest.find(' ');
-                if(spacepos == rest.npos)break;
-                words.push_back(rest.substr(0, spacepos));
-                if(spacepos+1 >= rest.size()) { rest.clear(); break; }
-                rest = rest.substr(spacepos+1);
-            }
-            if(!rest.empty()) { words.push_back(rest); rest.clear(); }
+            words = Split(s, L' ', L'\'', true);
         }
         
         if(words.empty())

@@ -36,7 +36,7 @@
 #     Loop over the character name, store current character in variable "c".
 #  }
 #     End character name loop
-#     Note: Loops may not be nested. (Recursion is allowed though).
+#     Note: Loops may not be nested, but recursion is allowed.
 #  ? name characters
 #     If name is in set, process subblock
 #  = name value
@@ -59,11 +59,14 @@
 #     If value given, will be passed as param.
 #
 #  All numeric constants in form 'c' are compiled in
-#  the Chrono Trigger character set instead of ASCII.
+#  the game's character set instead of ASCII.
 #  Same goes for characters in the "?" command.
 #
-#  The character set of this file is the one
-#  specified in settings.hh (currently iso-8859-15).
+#  The character set of this file is the one specified
+#  in the configuration (currently iso-8859-15).
+#
+# The file may contain as many functions as you wish.
+# The assembly will be conditional on what is actually used.
 #
 # -- Begins here --
 
@@ -74,6 +77,8 @@ REG c
   TRUE
 FALSE
 
+# Returns true if the parameter sounds
+# like a vowel when at end of a word.
 FUNCTION IsVowelTypeChar
 VAR c
 IF IsVowel c
@@ -82,31 +87,35 @@ IF IsVowel c
   TRUE
 FALSE
 
+# Is it a vowel which clearly belongs to the 'back' vowel harmony class?
 FUNCTION IsBackVowelTypeChar
 REG c
 ? c aouAOU02368
   TRUE
 FALSE
 
+# Is it a vowel which clearly belongs to the 'front' vowel harmony class?
 FUNCTION IsFrontVowelTypeChar
 REG c
 ? c äöyÄÖY14579
   TRUE
 FALSE
 
+# Is it a vowel which clearly belongs to the 'ambiguous' vowel harmony class?
 FUNCTION IsOtherVowelTypeChar
 REG c
 ? c eiéEIÉ
   TRUE
 FALSE
 
+# Is it a number?
 FUNCTION IsNumber
 REG c
 ? c 0123456789
   TRUE
 FALSE
 
-# Returns true if the paramater is a hard consonant.
+# Is it a non-vowelish consonant (hard consonant)?
 FUNCTION IsKPT
 REG c
 ? c kKpPtT
@@ -143,7 +152,7 @@ LET Finalguess 0
   TRUE
 FALSE
 
-# Calculate the length of the character name
+# Calculates the length of the character name
 FUNCTION Length
 VAR Len
 REG c
@@ -154,6 +163,8 @@ LET Len 0
 RETURN Len
 
 # Returns the third last character of the character name
+# The implementation may look scary, but this language
+# does not contain indexing.
 FUNCTION LastChar3
 VAR c1 c2 c3 c
 LET c1 0
@@ -187,7 +198,8 @@ LET c1 0
 }
 RETURN c1
 
-# Returns true if the character name doesn't look like pronouncable.
+# Returns true if the character name doesn't look pronouncable.
+# This applies to names which contain only consonants or end with numbers.
 FUNCTION IsAbbrev
 VAR Len Vowels WasVowel ElseFlag c
 LET Len 0
@@ -234,9 +246,10 @@ CALL_GET LastChar2 c2
     TRUE
 FALSE
 
-# Returns true if the written for of the
-# character name ends with a consonant
-# but the pronounced form ends with a vowel.
+# Returns true if the character name
+# looks like it ends with a consonant
+# but actually ends with a vowel when pronounced.
+# This happens for names that end with "ow" (foreign only).
 FUNCTION IsAlien
 REG c2 c1
 CALL_GET LastChar1 c1
@@ -266,7 +279,7 @@ IF EndWithVowel
       TRUE
 FALSE
 
-# Returns true if the character name ends with a/ä + k + i.
+# Returns true if the character name ends with "aki" or "äki".
 FUNCTION AkiEnd
 REG c3 c2 c1
 CALL_GET LastChar3 c3
@@ -278,7 +291,8 @@ CALL_GET LastChar3 c3
       TRUE
 FALSE
 
-# Outputs the character name, but only given number of characters.
+# Outputs the given number of letters
+# from the beginning of the character name.
 FUNCTION OutWord
 VAR left c
 LET left c
@@ -629,7 +643,7 @@ RETURN
 
 # -- End --
 
-# Joitain muotoja:
+# Some forms:
 #   Matti   (mati matti matti          mattii)
 #   Magus   (magukse magust magukse    maguksee)
 #   John    (johni johni johni         johnii)
@@ -637,7 +651,7 @@ RETURN
 #   Säde    (sätee sädett sätee        säteesee)
 #   Mäki    (mäe mäke mäke             mäkee)
 #   Show    (show' show't show'        show'hu)
-# Ongelmallisia nimiä (1.10.2003):
+# Names not conjugated properly (1.10.2003):
 #   Susi
 #   Satu    (sadu satu satu)
 #   Anitta

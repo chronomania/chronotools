@@ -68,9 +68,9 @@ bool Match(const std::basic_string<CharT>& input,
     typedef std::basic_string<CharT> strt;
     typedef typename strt::size_type size;
     
-    size inputroot = 0;
-    size maskroot  = 0;
-    size beginpos = 0;
+    size inputroot = 0; // how many items of input are already handled
+    size maskroot  = 0; // how many items of mask are already handled
+    size beginpos  = 0;
 find_more:
     size pros_pos = mask.find('%', beginpos);
     if(pros_pos == mask.npos
@@ -83,9 +83,11 @@ find_more:
     
     if(mask[pros_pos+1] == '0')
     {
+        beginpos = pros_pos+2;
     }
     else if(mask[pros_pos+1] == '1')
     {
+        beginpos = pros_pos+2;
     }
     else
     {
