@@ -50,6 +50,7 @@ public:
     void LoadIPSfile(FILE* fp, const string& what);
     
     void AddObject(const O65& object, const string& what, LinkageWish linkage = LinkageWish());
+    void AddObject(const O65& object, const string& what, unsigned address);
     void AddLump(const std::vector<unsigned char>&,
                  unsigned address,
                  const string& what, const string& name="");

@@ -529,7 +529,7 @@ void freespacemap::OrganizeO65linker(O65linker& objects)
             case LinkageWish::LinkHere:
             {
                 /* no linking, just convert the address */
-            	addrs[a] = ROM2SNESaddr(addrs[a]);
+                addrs[a] = ROM2SNESaddr(addrs[a]);
                 break;
             }
         }

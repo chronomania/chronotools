@@ -108,6 +108,13 @@ void O65linker::AddObject(const O65& object, const string& what, LinkageWish lin
     symcache->Update(*newobj, objects.size()-1);
 }
 
+void O65linker::AddObject(const O65& object, const string& what, unsigned address)
+{
+    LinkageWish wish;
+    wish.SetAddress(address);
+    AddObject(object, what, wish);
+}
+
 const vector<unsigned> O65linker::GetSizeList() const
 {
     vector<unsigned> result;

@@ -137,8 +137,8 @@ int main(int argc, const char *const *argv)
 
     if(CalculatedSize >= 0x410000)
     {
-    	/* ExHiROM must have $008000 mirrored at $408000 */
-    	
+        /* ExHiROM must have $008000 mirrored at $408000 */
+        
         for(unsigned a=0x8000; a<=0xFFFF; ++a)
             WriteByte(offset+0x400000+a, ROM[offset+a]);
     }

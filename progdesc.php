@@ -192,6 +192,7 @@ Copypaste from the Makefile:
 # VERSION 1.12.2 fixes a bug in ctdump (battle message list not dumped properly)
 # VERSION 1.12.3 fixes a bug that caused utils/codegen.cc not compile
 # VERSION 1.13.0 added support for expansion to 48 Mbit or 64 Mbit
+# VERSION 1.13.1 added support for free relocation of all script text
 </pre>
 
 Users of previous versions are advised to do the following:
@@ -401,7 +402,15 @@ the game to draw the names in thinner font that fits on the screen.
 
 If by whatever reason 32 Mbits is not enough for you, you can expand
 the ROM size with the <tt>romsize</tt> setting in the configuration
-file.
+file. Chronotools will then automatically use the extra space when
+needed for all relocatable objects.<br>
+Even the script can now be freely relocated if it's declared
+with <code>*Z</code> (capital Z).
+<p>
+However Chronotools is designed to be able to use all the built features
+within a 32 Mbit ROM. You only need to increase the ROM size if you're
+doing a jumbo translation (increasing the text amount by a big factor)
+or adding lots of custom images.
 
 ", '1.1. Very configurable' => "
 

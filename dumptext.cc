@@ -484,6 +484,33 @@ void DumpZStrings(const unsigned offs,
     MessageDone();
 }
 
+void DumpMZStrings(const unsigned offs,
+                   const string& what,
+                   unsigned len,
+                   bool dolf)
+{
+    MessageBeginDumpingStrings(offs);
+    
+    const string what_tab = what+"(Z)";
+    
+    vector<ctstring> strings = LoadZStrings(offs, len, what_tab, Extras_12);
+
+    StartBlock("z", what + " (change this to *Z to allow free relocation)"); 
+
+    wstringOut conv(getcharset());    
+    for(unsigned a=0; a<strings.size(); ++a)
+    {
+        ucs4string line = Get12string(strings[a], dolf);
+
+        PutBase62Label(offs + a*2);
+        
+        PutContent(conv.puts(line), dolf);
+    }
+    
+    EndBlock();
+    MessageDone();
+}
+
 void DumpRZStrings(const string& what,
                    unsigned len,
                    bool dolf,

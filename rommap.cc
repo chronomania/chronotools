@@ -421,15 +421,16 @@ unsigned char ROM2SNESpage(unsigned char page)
 {
     if(page < 0x40) return page | 0xC0;
     
-    if(ROMinfo.romsize == 48) return (page - 0x40) + 0x20;
-    if(page >= 0x3E) return page;
-    return page + 0x40;
+    /* Pages 00..3F have only their high part mirrored */
+    /* Pages 7E..7F can not be used (they're RAM) */
+    
+    if(page >= 0x7E) return page & 0x3F;
+    return (page - 0x40) + 0x40;
 }
 
 unsigned char SNES2ROMpage(unsigned char page)
 {
     if(page >= 0x80) return page & 0x3F;
-    if(ROMinfo.romsize == 48) return (page & 0x1F) + 0x40;
     return (page & 0x3F) + 0x40;
 }
 

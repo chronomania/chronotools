@@ -6,9 +6,6 @@ class PagePtrList
 {
 public:
     void AddItem(const std::vector<unsigned char>&, unsigned short ptraddr);
-#if 0
-    void AddItem(const std::string&, unsigned short ptraddr);
-#endif
     void Create(class insertor& ins,
                 int page,
                 const std::string& what,

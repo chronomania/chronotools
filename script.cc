@@ -422,10 +422,12 @@ void insertor::LoadFile(FILE *fp)
             while(c != (ucs4)EOF && c != '\n') { cget(c); }
             
             model.ref_id  = 0;
+            model.tab_id = 0;
             model.width   = 0;
             model.address = 0;
 
-            if(header.size() >= 1 && header[0] == 'z')
+            if(header.size() >= 1
+            && (header[0] == 'z' || header[0] == 'Z'))
             {
                 list<ReferMethod> refs;
                 for(unsigned a=1; a < header.size() && header[a] == ':'; )
@@ -455,6 +457,17 @@ void insertor::LoadFile(FILE *fp)
                 {
                     refers.push_back(refs);
                     model.ref_id = refers.size();
+                    
+                    if(header[0] == 'Z')
+                    {
+                        fprintf(stderr, "\nWarning: *Z ineffective (*z assumed) when pointers used\n");
+                    }
+                }
+                
+                if(header[0] == 'Z')
+                {
+                    tables.push_back(make_pair(0, 0));
+                    model.tab_id = tables.size();
                 }
                 
                 model.type = stringdata::zptr12;
@@ -666,6 +679,7 @@ void insertor::LoadFile(FILE *fp)
             
             // It was one of these:
             //   'z' (dialog)
+            //   'Z' (dialog but moved)
             //   'r' (8pix)
             //   'l' (fixed)
             //   'i' (relocatable item)
@@ -815,8 +829,13 @@ void insertor::WriteFixedStrings()
 
 void insertor::WriteOtherStrings()
 {
+    /* Identify relocated string tables */
+    /* This value can't exist in tables naturally. */
+    objects.DefineSymbol("RELOCATED_STRING_SIGNATURE", 0xFFFF);
+
     map<unsigned, PagePtrList> pagemap;
     map<unsigned, PagePtrList> refmap;
+    map<unsigned, PagePtrList> tabmap;
     
     for(stringlist::const_iterator i=strings.begin(); i!=strings.end(); ++i)
     {
@@ -839,8 +858,15 @@ void insertor::WriteOtherStrings()
             if(i->ref_id)
             {
                 refmap[i->ref_id].AddItem(data, i->address & 0xFFFF);
-                /* & 0x3FFFFF removed from here */
                 freespace.Add(i->address, 2);
+            }
+            else if(i->tab_id)
+            {
+                tabmap[i->tab_id].AddItem(data, i->address & 0xFFFF);
+                
+                pair<unsigned,unsigned>& tab = tables[i->tab_id-1];
+                if(tab.second == 0 || i->address < tab.first) tab.first = i->address;
+                tab.second += 2;
             }
             else
                 pagemap[i->address >> 16].AddItem(data, i->address & 0xFFFF);
@@ -863,18 +889,50 @@ void insertor::WriteOtherStrings()
     {
         unsigned ref_id = i->first - 1;
         
-        char Buf[64]; sprintf(Buf, "reloc_%u_zstring", ref_id);
-        MessageLoadingItem(Buf);
+        char Symbol[64]; sprintf(Symbol, "reloc_ref_%u_zstring", ref_id);
+        MessageLoadingItem(Symbol);
         
         MessageWorking();
-        i->second.Create(*this, Buf, Buf);
+        i->second.Create(*this, Symbol/*description*/, Symbol/*tablename*/);
         
         const list<ReferMethod>& refs = refers[ref_id];
         for(list<ReferMethod>::const_iterator
             j = refs.begin(); j != refs.end(); ++j)
         {
-            objects.AddReference(Buf, *j);
+            /* *j = the referer, Symbol = symbol */
+            objects.AddReference(Symbol, *j);
         }
+    }
+
+    for(map<unsigned, PagePtrList>::iterator
+        i = tabmap.begin(); i != tabmap.end(); ++i)
+    {
+        unsigned tab_id = i->first - 1;
+        
+        char Symbol[64]; sprintf(Symbol, "reloc_tab_%u_zstring", tab_id);
+        MessageLoadingItem(Symbol);
+        
+        MessageWorking();
+        i->second.Create(*this, Symbol/*description*/, Symbol/*tablename*/);
+        
+        unsigned table_bytes = tables[tab_id].second;
+        unsigned table_start = tables[tab_id].first;
+        
+        if(table_bytes < 5)
+        {
+            fprintf(stderr, "Error: Table %u (at $%06X) is too small (%u), should be >=5!\n",
+                tab_id, table_start, table_bytes);
+        }
+        
+        freespace.Add(table_start + 5, table_bytes - 5);
+        
+        O65 newtab;
+        newtab.Resize(CODE, 5);
+        newtab.DeclareWordRelocation(CODE, "RELOCATED_STRING_SIGNATURE", 0);
+        newtab.DeclareLongRelocation(CODE, Symbol, 2);
+        
+        string tmp = Symbol;
+        objects.AddObject(newtab, tmp+" referer", table_start);
     }
 }
 

@@ -112,6 +112,7 @@ DEPDIRS = utils/
 # VERSION 1.12.3 fixes a bug that caused utils/codegen.cc not compile
 # VERSION 1.12.4 is a middle-development version that has windows binaries
 # VERSION 1.13.0 added support for expansion to 48 Mbit or 64 Mbit
+# VERSION 1.13.1 added support for free relocation of all script text
 
 #OPTIM=-Os
 # -fshort-enums
@@ -124,7 +125,7 @@ OPTIM=-O3
 
 CXXFLAGS += -I.
 
-VERSION=1.13.0
+VERSION=1.13.1
 ARCHFILES=utils/xray.cc utils/xray.h \
           utils/viewer.c \
           utils/vwftest.cc \
@@ -191,8 +192,9 @@ ARCHFILES=utils/xray.cc utils/xray.h \
           conjugate.cc conjugate.hh \
           \
           ct-conj.a65 \
-          ct-vwf8.a65 \
-          timebox.a65 \
+          ct-vwf8.a65 ct-vwf8.o65 \
+          timebox.a65 timebox.ips \
+          relocstr.a65 relocstr.o65 \
           \
           ct-crononick.a65 \
           \

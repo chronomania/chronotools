@@ -57,13 +57,19 @@ private:
         unsigned address;
         
         unsigned ref_id; // used if zptr8 or zptr12
+        unsigned tab_id; // used if zptr8 or zptr12
     };
     
     typedef list<stringdata> stringlist;
     stringlist strings;
     
+    /* For relocated (by pointer edition) strings */
     typedef vector<list<ReferMethod> > referlist;
     referlist refers;
+    
+    /* For relocated (by table relocation) strings */
+    typedef vector<pair<unsigned,unsigned> > tablelist;
+    tablelist tables;
     
     vector<ctstring> dict;
     

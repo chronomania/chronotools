@@ -21,7 +21,7 @@ SMALL    {font-size:70%}
   <h1>Chrono Trigger translation development system</h1>
   <h2 class=level2> 0. Contents </h2>
   
-  This is the documentation of chronotools-1.13.0.
+  This is the documentation of chronotools-1.13.1.
 <div class=toc><table cellspacing=0 cellpadding=0 class=toc><tr><td width="33%" valign=middle align=left nowrap class=toc>&nbsp;&nbsp;&nbsp;1. <a href="#what">Purpose</a><br>&nbsp;&nbsp;&nbsp;2. <a href="#how">How to begin?</a><br>&nbsp;&nbsp;&nbsp;3. <a href="#status">Current status</a><br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;3.1. <a href="#changes">Version history</a><br>&nbsp;&nbsp;&nbsp;4. <a href="#h0">Program list</a><br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;4.1. <a href="#ctdump">ctdump</a><br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;4.2. <a href="#ctinsert">ctinsert</a><br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;4.3. <a href="#h1">other</a><br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;4.3.1. <a href="#h2">makeips</a><br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;4.3.2. <a href="#h3">unmakeips</a><br></td>
 <td width="33%" valign=middle align=left nowrap class=toc>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;4.3.3. <a href="#h4">xray</a><br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;4.3.4. <a href="#h5">viewer</a><br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;4.3.5. <a href="#h6">spacefind</a><br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;4.3.6. <a href="#h7">sramdump</a><br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;4.3.7. <a href="#h8">base62</a><br>&nbsp;&nbsp;&nbsp;5. <a href="#h9">Useful features</a><br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;5.1. <a href="#conj">Name conjugation</a><br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;5.2. <a href="#skew">Font/dictionary skew</a><br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;5.3. <a href="#wrap">Automatic paragraph wrapping</a><br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;5.4. <a href="#vwf8">Variable width 8pix font</a><br></td>
 <td width="34%" valign=middle align=left nowrap class=toc>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;5.5. <a href="#expand">Expansion to 48 Mbit or 64 Mbit</a><br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;5.6. <a href="#h10">Very configurable</a><br>&nbsp;&nbsp;&nbsp;6. <a href="#h11">Summary of extra features</a><br>&nbsp;&nbsp;&nbsp;7. <a href="#req">Requirements</a><br>&nbsp;&nbsp;&nbsp;8. <a href="#copying">Copying</a><br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;8.1. <a href="#parts">If you only are interested in some features/parts</a><br>&nbsp;&nbsp;&nbsp;9. <a href="#docs">Documentation</a><br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;9.1. <a href="#undocs">Undocumented things</a><br>&nbsp;&nbsp;&nbsp;10. <a href="#h12">See also</a><br>&nbsp;&nbsp;&nbsp;11. <a href="#download">Downloading</a><br></td>
@@ -83,7 +83,7 @@ you might have about translating/hacking Chrono Trigger.<br>
 Chronotools is under active development.
 Here's the current situation.<br>
 Last updated:
-2004-02-19
+2004-05-09
 
 <p>
 <table>
@@ -210,6 +210,7 @@ Copypaste from the Makefile:
 # VERSION 1.12.2 fixes a bug in ctdump (battle message list not dumped properly)
 # VERSION 1.12.3 fixes a bug that caused utils/codegen.cc not compile
 # VERSION 1.13.0 added support for expansion to 48 Mbit or 64 Mbit
+# VERSION 1.13.1 added support for free relocation of all script text
 </pre>
 
 Users of previous versions are advised to do the following:
@@ -419,7 +420,15 @@ the game to draw the names in thinner font that fits on the screen.
 
 If by whatever reason 32 Mbits is not enough for you, you can expand
 the ROM size with the <tt>romsize</tt> setting in the configuration
-file.
+file. Chronotools will then automatically use the extra space when
+needed for all relocatable objects.<br>
+Even the script can now be freely relocated if it's declared
+with <code>*Z</code> (capital Z).
+<p>
+However Chronotools is designed to be able to use all the built features
+within a 32 Mbit ROM. You only need to increase the ROM size if you're
+doing a jumbo translation (increasing the text amount by a big factor)
+or adding lots of custom images.
 
 </div><H3 id="h10" class="level3"><a name="h10"></a>5.6. Very configurable</H3><div class="level3" id="divh10">
 
@@ -552,9 +561,9 @@ Things that should be documented some day but currently are not:
    is at <a href="http://iki.fi/bisqwit/source/chronotools.html">http://iki.fi/bisqwit/source/chronotools.html</a>.<br>
    Check there for new versions.
 </div> <p align=right><small>Generated from
-       <code>../progdesc.php</code> (last updated: Sun,  9 May 2004 04:51:00 +0300)<br>
-  with <code>docmaker.php</code> (last updated: Fri,  2 Jan 2004 17:31:18 +0200)<br>
-  at Sun,  9 May 2004 04:51:17 +0300</small>
+       <tt>../progdesc.php</tt> (last updated: Sun,  9 May 2004 07:19:34 +0300)<br>
+  with <tt>docmaker.php</tt> (last updated: Sun,  9 May 2004 04:55:44 +0300)<br>
+  at Sun,  9 May 2004 07:19:37 +0300</small>
  </p>
 </body>
 </html>

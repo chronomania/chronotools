@@ -287,12 +287,28 @@ void insertor::ExpandROM()
             /* These pages are no use. */
             continue;
         }
+
+        if(snespage < 0x40)
+        {
+#if 0
+            /* For pages that show at $00..$3F, only the high part is accessible. */
+            begin = 0x8000;
+#else    /* BROKEN */
+            continue;
+#endif
+        }
+
+
         if(page == NumPages-1 && end == 0x10000)
         {
             /* Leave one byte for EOF marker */
             --end;
         }
         
-        freespace.Add(page, begin, end);
+        if(end > begin)
+        {
+            //fprintf(stderr, "%02X:%04X-%04X\n", page,begin,end-1);
+            freespace.Add(page, begin, end);
+        }
     }
 }

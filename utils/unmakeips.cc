@@ -10,15 +10,15 @@ using namespace std;
 
 static int Improvize(char* buf, unsigned n)
 {
-	static bool warned = false;
-	if(!warned)
-	{
-		fprintf(stderr, "Warning: Output file will be larger than original.\n");
-		warned = true;
-	}
-	for(unsigned a=0; a<n; ++a)
-		buf[a] = 0;
-	return n;
+    static bool warned = false;
+    if(!warned)
+    {
+        fprintf(stderr, "Warning: Output file will be larger than original.\n");
+        warned = true;
+    }
+    for(unsigned a=0; a<n; ++a)
+        buf[a] = 0;
+    return n;
 }
 
 int main(int argc, const char *const *argv)

@@ -1,0 +1,46 @@
+#define SET_16_BIT_A()  rep #$20 : .al
+#define SET_8_BIT_A()   sep #$20 : .as
+
+
+; called from $C03557
+RoomScriptFunctionB8:
+.(
+	.xl
+	.as
+	
+	tyx
+	inx
+	lda $7F2001,x : sta $2B : inx
+	lda $7F2001,x : sta $2C : inx
+	lda $7F2001,x : sta $2D : inx
+	
+	; Convert address
+	
+	SET_16_BIT_A()
+	lda [$2B]
+	cmp #RELOCATED_STRING_SIGNATURE
+	bne End
+	
+	phx
+	 ; Increment address by 2
+	 lda $2B : inc : inc : sta $2B
+	 ; Load word
+	 lda [$2B] : tax
+	 ; Increment address by 2
+	 lda $2B : inc : inc : sta $2B
+	 SET_8_BIT_A()
+	 ; Load byte
+	 lda [$2B]
+	 ; Store new address
+	 stx $2B
+	 sta $2D
+	plx
+
+End:	SET_8_BIT_A()
+	
+	; Normal ending
+	
+	sec
+	rtl
+
+.)

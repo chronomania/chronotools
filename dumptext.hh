@@ -15,6 +15,11 @@ void DumpZStrings(const unsigned offs,
                   unsigned len,
                   bool dolf=true);
 
+void DumpMZStrings(const unsigned offs,
+                   const string& what,
+                   unsigned len,
+                   bool dolf=true);
+
 void DumpRZStrings(
                   const string& what,
                   unsigned len,

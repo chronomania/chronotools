@@ -346,34 +346,34 @@ namespace
         
         BlockComment(";600ad (castle, masa+mune, naga-ette)\n"
                      ";12kbc daltonstuff\n");
-        DumpZStrings(0x18D000, "dialog", 78);
+        DumpMZStrings(0x18D000, "dialog", 78);
         
         BlockComment(";65Mbc\n");
-        DumpZStrings(0x18DD80, "dialog", 254);
+        DumpMZStrings(0x18DD80, "dialog", 254);
         
         BlockComment(";2300ad (factory, sewer, belthasar)\n"
                      ";65Mbc azalastuff\n"
                      ";slideshow-ending\n");
-        DumpZStrings(0x1EC000, "dialog", 187);
+        DumpMZStrings(0x1EC000, "dialog", 187);
         
         BlockComment(";1000ad (towns, castle)\n"
                      ";600ad (towns)\n"
                      ";2300ad (factory)\n");
-        DumpZStrings(0x1EE300, "dialog", 145);
+        DumpMZStrings(0x1EE300, "dialog", 145);
 
         BlockComment(";1000ad (Lucca's home)\n" 
                      ";2300ad (factory)\n"
                      ";1000ad (rainbow shell trial)\n");
-        DumpZStrings(0x36A000, "dialog", 106);
+        DumpMZStrings(0x36A000, "dialog", 106);
 
         BlockComment(";no Crono -ending\n"
                      ";happy ending (castle)\n");
-        DumpZStrings(0x36B230, "dialog", 144);
+        DumpMZStrings(0x36B230, "dialog", 144);
 
         BlockComment(";1000ad (various indoors)\n"
                      ";600ad (various indoors)\n"
                      ";2300ad (various indoors)\n");
-        DumpZStrings(0x370000, "dialog", 456);
+        DumpMZStrings(0x370000, "dialog", 456);
 
         BlockComment(";2300ad (various indoors)\n"
                      ";end of time (gaspar's stories, Spekkio etc)\n"
@@ -381,7 +381,7 @@ namespace
                      ";1999ad Lavos scenes\n"
                      ";12kbc various scenes\n"
                      ";1000ad castle scenes\n");
-        DumpZStrings(0x374900, "dialog", 1203);
+        DumpMZStrings(0x374900, "dialog", 1203);
 
         BlockComment(";1000ad jail scenes\n"
                      ";600ad bridge battle stuff\n"
@@ -391,31 +391,31 @@ namespace
                      ";600ad (Toma stuff, Marco&Fiona stuff)\n"
                      ";1000ad (Cyrus stuff)\n"
                      ";Black Omen\n");
-        DumpZStrings(0x384650, "dialog", 678);
+        DumpMZStrings(0x384650, "dialog", 678);
 
         BlockComment(";600ad (Cathedral, other indoors)\n"
                      ";12kbc (out- and indoors)\n");
-        DumpZStrings(0x39B000, "dialog", 444);
+        DumpMZStrings(0x39B000, "dialog", 444);
 
         BlockComment(";1000ad (fair, the trial, castle)\n"
                      ";600ad (Frog scenes)\n"
                      ";12kbc\n"
                      ";2300ad (death's peak)\n");
-        DumpZStrings(0x3CBA00, "dialog", 399);
+        DumpMZStrings(0x3CBA00, "dialog", 399);
 
         BlockComment(";Dreamteam etc\n"
                      ";Forest scene\n");
-        DumpZStrings(0x3F4460, "dialog", 81);
+        DumpMZStrings(0x3F4460, "dialog", 81);
         
         BlockComment(";12kbc cities\n");
-        DumpZStrings(0x3F5860, "dialog", 85);
+        DumpMZStrings(0x3F5860, "dialog", 85);
 
         BlockComment(";Ayla's home (after the defeat of Magus)\n"
                      ";earthbound islands\n");
-        DumpZStrings(0x3F6B00, "dialog", 186);
+        DumpMZStrings(0x3F6B00, "dialog", 186);
 
         BlockComment(";battle tutorials, Zeal stuff, fair stuff\n");
-        DumpZStrings(0x3F8400, "dialog", 39);
+        DumpMZStrings(0x3F8400, "dialog", 39);
         
         BlockComment(";all kind of screens - be careful when editing.\n" 
                      ";These are the special symbols used here:\n"
