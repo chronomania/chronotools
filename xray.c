@@ -9,6 +9,27 @@
  #include <allegro.h>
 #endif
 
+/*
+ Copyright (C) 1992,2002 Bisqwit (http://bisqwit.iki.fi/)
+ 
+ ROM viewer:
+ 
+ You need: libggi (it's a library like SDL)
+ To compile: 
+   gcc -Wall -W -pedantic -O2 -o xray xray.c -lggi
+ To use:
+   xray filename.smc
+
+ * No warranty. You are free to modify this source and to
+ * distribute the modified sources, as long as you keep the
+ * existing copyright messages intact and as long as you
+ * remember to add your own copyright markings.
+ * You are not allowed to distribute the program or modified versions
+ * of the program without including the source code (or a reference to
+ * the publicly available source) and this notice with it.
+ 
+*/
+
 #undef putc
 
 typedef unsigned char byte;

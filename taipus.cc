@@ -1,22 +1,29 @@
 #include <cstdio>
 #include <cstring>
+#include <string>
 
 // These functions do not handle plural (never needed
 // with names) or alphanumeric codenames.
 
 static char NameBuf[6];
 
-#define NAME "\1"
-//   akkusatiivi = the object of action that affects the target as whole
-#define ACC "\2"
-//   partitiivi  = the object of action that affects the target
-#define PART "\3"
-//   genetiivi   = owner of something, in English usually "'s"
-#define GEN "\4"
-//   adessiivi   = owner/container of something, in English "has" or "in" or "on"
-#define ADE "\5"
-//   allatiivi   = target of something, in English sometimes as "to" or "for" preposition
-#define ALLA "\6"
+enum specialchars
+{
+    NAME=1,
+    ACC,         //   akkusatiivi = the object of action that affects the target as whole
+    PART,        //   partitiivi  = the object of action that affects the target
+    GEN,         //   genetiivi   = owner of something, in English usually "'s"
+    ADE,         //   adessiivi   = owner/container of something, in English "has" or "in" or "on"
+    ALLA         //   allatiivi   = target of something, in English sometimes as "to" or "for" preposition
+};
+
+template<typename T>
+static const std::string operator+ (const T s, specialchars k)
+{
+    std::string result(s);
+    result += (char)k;
+    return result;
+}
 
 bool isvowel(const char c)
 {
@@ -48,13 +55,13 @@ static void DispChar(char c)
     char ConjuWord[6];
     
     // NAME: Test for conjugate
-    if(c == NAME[0]) { std::strcpy(ConjuWord, NameBuf); goto ConjugateTest; }
+    if(c == NAME) { std::strcpy(ConjuWord, NameBuf); goto ConjugateTest; }
 
-    if(c == ACC[0]
-    || c == GEN[0]
-    || c == PART[0]
-    || c == ADE[0]
-    || c == ALLA[0]
+    if(c == ACC
+    || c == GEN
+    || c == PART
+    || c == ADE
+    || c == ALLA
       )
         ConjuCode = c;
     else
@@ -103,7 +110,7 @@ ConjugateTest:
     }
     
 
-    if(ConjuCode == PART[0])
+    if(ConjuCode == PART)
     {
         // Case "hard body"
         if(size == 1 || !hasvowel)
@@ -206,25 +213,25 @@ ConjugateTest:
         }
     }
 
-    if(ConjuCode == ACC[0])
+    if(ConjuCode == ACC)
     {
         RealDispChar('n');
     }
-    else if(ConjuCode == PART[0])
+    else if(ConjuCode == PART)
     {
         RealDispChar(yla ? '‰' : 'a');
     }
-    else if(ConjuCode == GEN[0])
+    else if(ConjuCode == GEN)
     {
         RealDispChar('n');
     }
-    else if(ConjuCode == ADE[0])
+    else if(ConjuCode == ADE)
     {
         RealDispChar('l');
         RealDispChar('l');
         RealDispChar(yla ? '‰' : 'a');
     }
-    else if(ConjuCode == ALLA[0])
+    else if(ConjuCode == ALLA)
     {
         RealDispChar('l');
         RealDispChar('l');
@@ -245,23 +252,10 @@ int main(int argc, const char *const *argv)
     std::strncpy(NameBuf, argv[1], 5);
     NameBuf[5] = 0;
     
-    Hoitele
-    (
-        "*** Testing name '"NAME"' ***\n"
-        "\n"
-        "Pasi saw "NAME":\n"
-        "Pasi n‰ki "ACC NAME "\n"
-        "\n"
-        "Pasi thanks "NAME":\n"
-        "Pasi kiitt‰‰ "PART NAME "\n"
-        "\n"
-        NAME"'s clock is broken:\n"
-        GEN NAME " kello on rikki\n"
-        "\n"
-        NAME" has a cat:\n"
-        ADE NAME " on kissa\n"
-        "\n"
-        NAME" was called many times:\n"
-        ALLA NAME" soitettiin monta kertaa\n"
-    );
+    Hoitele((
+        "Pasi n‰ki " + ACC + NAME + "\n"
+        "Pasi kiitt‰‰ " + PART + NAME + "\n"
+        + GEN + NAME + " kello on rikki\n"
+        + ADE  + NAME + " on kissa\n"
+        + ALLA + NAME + " soitettiin monta kertaa\n").c_str());
 }

@@ -8,11 +8,18 @@ static const char Font16[] =
     "ABCDEFGHIJKLMNOP"   // A0
     "QRSTUVWXYZabcdef"   // B0
     "ghijklmnopqrstuv"   // C0
+#if 1
     "wxyz0123456789!?"   // D0
     "/«»:&()'.,=-+%¶ "   // E0  EE=musicsymbol
     "¶¶å#äöéÉÅ¶¶¶¶ÖÄ_";  // F0  F0=heartsymbol, F1=..., F2=infinity
+#else
+    "wxyz0123456789ÅÄ"   // D0
+    "Ö«»:-()'.,åäöé¶ "   // E0  EE=musicsymbol
+    "¶¶%É=&+#!?¶¶¶/¶_";  // F0  F0=heartsymbol, F1=..., F2=infinity
+#endif
 
-    // Note: There is no more space for extra symbols in 8x8 font!
+// Note: There is no more space for extra symbols in 8x8 font!
+// This is enough for Danish, German and Swedish at least.
 
 const char *getcharset() { return CharSet; }
 

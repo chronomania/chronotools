@@ -4,12 +4,18 @@
 #include <iostream>
 #include <set>
 
+#ifdef linux
+/* We use memory mapping in Linux. It's fast. */
+#include <sys/mman.h>
+#define USE_MMAP 1
+#endif
+
 using namespace std;
 
 #include "ctcset.hh"
 #include "miscfun.hh"
 
-static vector<unsigned char> ROM;
+static unsigned char *ROM;
 static vector<bool> space;
 static vector<wstring> substrings;
 
@@ -20,7 +26,7 @@ static void LoadROM()
 {
     fprintf(stderr, "Loading ROM...");
     unsigned hdrskip = 0;
-    const char *fn = "chrono-uncompressed.smc";
+    const char *fn = "chrono-dumpee.smc";
     FILE *fp = fopen(fn, "rb");
     if(!fp)
     {
@@ -34,13 +40,24 @@ static void LoadROM()
         hdrskip = 512;
     }
     fseek(fp, 0, SEEK_END);
-    ROM.resize(ftell(fp)-hdrskip);
-    fseek(fp, hdrskip, SEEK_SET);
-    fread(&ROM[0], 1, ROM.size(), fp);
+    unsigned romsize = ftell(fp)-hdrskip;
+    ROM = NULL;
+#ifdef USE_MMAP
+    /* This takes about 0.0001s on my computer over nfs */
+    ROM = (unsigned char *)mmap(NULL, romsize, PROT_READ, MAP_PRIVATE, fileno(fp), hdrskip);
+#endif
+    /* mmap could have failed, so revert to reading */
+    if(!ROM)
+    {
+        /* This takes about 5s on my computer over nfs */
+        ROM = new unsigned char [romsize];
+        fseek(fp, hdrskip, SEEK_SET);
+        fread(ROM, 1, romsize, fp);
+    }
     fclose(fp);
     fprintf(stderr, " done");
     space.clear();
-    space.resize(ROM.size());
+    space.resize(romsize);
     fprintf(stderr, "\n");
 }
 
@@ -270,9 +287,23 @@ static wstring DispFChar(unsigned char k)
         // 0x2B: "M"
         // 0x2C: "P"
         // 0x2D: ":"
+        case 0x2D: return AscToWstr(":");
         case 0x2E: return AscToWstr("[shieldsymbol]");
         case 0x2F: return AscToWstr("[starsymbol]");
         // 0x30..: empty
+        
+        case 0x62: return AscToWstr("[handpart1]");
+        case 0x63: return AscToWstr("[handpart1]");
+        case 0x67: return AscToWstr("[hpmeter0]");
+        case 0x68: return AscToWstr("[hpmeter1]");
+        case 0x69: return AscToWstr("[hpmeter2]");
+        case 0x6A: return AscToWstr("[hpmeter3]");
+        case 0x6B: return AscToWstr("[hpmeter4]");
+        case 0x6C: return AscToWstr("[hpmeter5]");
+        case 0x6D: return AscToWstr("[hpmeter6]");
+        case 0x6E: return AscToWstr("[hpmeter7]");
+        case 0x6F: return AscToWstr("[hpmeter8]");
+        
         default: return Disp8Char(k);
     }
 }
@@ -362,7 +393,32 @@ static void DumpStrings(const unsigned offs, unsigned len=0)
         const string &s = strings[a];
 
         for(unsigned b=0; b<s.size(); ++b)
-            line += conv.puts(Disp8Char(s[b]));
+        {
+        	switch(s[b])
+        	{
+        		case 1:
+        			line += conv.puts(AscToWstr("[nl]"));
+        			break;
+        		case 5:
+        		{
+        			char Buf[64];
+	                unsigned c = (unsigned char)s[++b];
+    	            c += 256 * (unsigned char)s[++b];
+        	        sprintf(Buf, "[ptr %04X]", c);
+            	    line += conv.puts(AscToWstr(Buf));
+            	    break;
+        		}
+        		case 8:
+        		{
+	                char Buf[64];
+    	            sprintf(Buf, "[skip %u]", (unsigned char)s[++b]);
+        	        line += conv.puts(AscToWstr(Buf));
+        	        break;
+            	}
+            	default:
+	                line += conv.puts(Disp8Char(s[b]));
+	        }
+        }
         puts(line.c_str());
     }
 
@@ -786,17 +842,30 @@ int main(void)
 
     puts(";Status screen string");
     //FIXME: These are not correctly dumped yet!
-    //DumpStrings(0x3FC457, 64);
     //DumpStrings(0x3F158D, 1);
     //DumpStrings(0x3F0D67, 1);
+    //DumpStrings(0x3FC457, 128);
+    DumpStrings(0x3FC457+2* 2, 2);
+    DumpStrings(0x3FC457+2* 7, 1);
+    DumpStrings(0x3FC457+2*11, 2);
+    DumpStrings(0x3FC457+2*16, 6);
+    DumpStrings(0x3FC457+2*25, 2);
+    //DumpStrings(0x3FC457+2*32, 3);
+    DumpStrings(0x3FC457+2*33, 2);
+    DumpStrings(0x3FC457+2*37, 18);
+    DumpStrings(0x3FC457+2*57, 2);
     
+    puts(";Misc prompts");
     DumpZStrings(0x3FCF3B, 7);
     
+    puts(";Configuration");
+    DumpStrings(0x3FD3FE, 98);
+    
     puts(";Era list");
-    DumpStrings(0x3FD396);
+    DumpStrings(0x3FD396, 8);
     
     puts(";Episode list");
-    DumpStrings(0x3FD03E);
+    DumpStrings(0x3FD03E, 27);
     
     if(TryFindExtraSpace)
         FindEndSpaces();

@@ -4,21 +4,15 @@
 # The same program is used in many different projects to create
 # a diff file version history (patches).
 #
-# makediff.php version 2.0.1
+# makediff.php version 2.1.0
 
-# Copyright (C) 2000,2002 Bisqwit (http://iki.fi/bisqwit/)
+# Copyright (C) 2000,2002 Bisqwit (http://bisqwit.iki.fi/)
 
 # Syntax 1:
 
 # argv[1]: Newest archive if any
 # argv[2]: Archive directory if any
 # argv[3]: Disable /WWW/src linking if set
-
-# Syntax 2:
-
-# argv[1]: -d
-# argv[2]: dir1
-# argv[3]: dir2
 
 if($REMOTE_ADDR)
 {
@@ -103,310 +97,6 @@ function Eexec($s)
 function MakeDiffCmd($dir1, $dir2)
 {
   return 'diff -NaHudr ' . shellfix($dir1) . ' ' . shellfix($dir2);
-}
-
-function MakeDiffCmd2($dir1, $dir2)
-{
-  return 'php -q ../../makediff.php -d '.shellfix($dir1).' '.shellfix($dir2);
-}
-
-function gentoucher($dir, $fn)
-{
-  $k = lstat($dir.'/'.$fn);
-  printf("  tats %s %d.%d 0%o %s %s\n",
-    shellfix($fn),
-    $k[4], $k[5], $k[2]&07777,
-    shellfix(date('Y-m-d H:i:s O', $k[8])),
-    shellfix(date('Y-m-d H:i:s O', $k[9])));
-}
-function regexfix($s)
-{
-  return str_replace(array('^','[',']','$','\\'),
-                     array('\\^','\\[','\\]','\\$','\\\\'),
-                     $s);
-}
-
-function MakeDiff($dir1, $dir2)
-{
-  @chdir('archives/archives.tmp');
-
-  print '
-#!/bin/sh
-reverse=0
-if "$1" = "-R"; then reverse=1;shift;fi
-if [ "$1" = "-h" ] || [ "$1" = "--help" ]; then
-cat<<EOF
- 
- This is a difference (patch) file in
- a shell script format.
-
- The reason I don\'t support files made
- by GNU diff anymore is that GNU diff by itself
- is completely blind to symlinks, hardlinks,
- file permissions and other changes in the
- filesystem structure. It is not a recommendable
- tool for making updates in projects where that
- kind of things change often.
-
- This script will apply (and optionally reverse)
- all changes between two versions of directories.
- (Hardlinks, renames and accessmode/time changes
-  are not supported yet though.)
-
-EOF
-  echo Usage: "$0" [--help] [-R]
-  echo -R = reverse patch
-fi
-tats()
-{
-  chown $2 "$1"
-  chmod $3 "$1"
-  touch -d"$5" "$1"
-  touch -a -d"$4" "$1"
-}
-';
-  $tmp1='difftmp1.tmp';
-  $tmp2='difftmp2.tmp';
-
-  $diffs = array();
-  exec('(cd '.shellfix($dir1).'&&find|sed s/^..//|sort) >'.shellfix($tmp1)
-     .'&(cd '.shellfix($dir2).'&&find|sed s/^..//|sort) >'.shellfix($tmp2)
-     .'&wait'
-     .';diff -u`wc -l <'.shellfix($tmp1).'|tr -d \\ ` '.shellfix($tmp1).' '.shellfix($tmp2).'|tail +3|grep -v ^@'     .';rm -f '.shellfix($tmp1), $diffs);
-  if(!count($diffs))
-  {
-    $diffs = file($tmp2);
-    foreach($diffs as $a=>$b)$diffs[$a]=' '.substr($b,0,strlen($b)-1);
-  }
-  
-  for($step = 1; ; $step++)
-  {
-    if($step == 1)
-      echo 'if [ $reverse = 0 ]; then', "\n",
-           "  revflag=''\n";
-    elseif($step == 2)
-    {
-      echo "else\n",
-           "  revflag=' -R'\n";
-      $tmp=$dir1;$dir1=$dir2;$dir2=$tmp;
-      foreach($diffs as $a=>$s)
-      {
-        if($s[0]=='+')$diffs[$a] = '-'.substr($s,1); else
-        if($s[0]=='-')$diffs[$a] = '+'.substr($s,1);
-      }
-    }
-    elseif($step == 3)
-    {
-      $tmp=$dir1;$dir1=$dir2;$dir2=$tmp;
-      foreach($diffs as $a=>$s)
-      {
-        if($s[0]=='+')$diffs[$a] = '-'.substr($s,1); else
-        if($s[0]=='-')$diffs[$a] = '+'.substr($s,1);
-      }
-      echo "fi\n";
-      break;
-    }
-    
-    $filediffs = array();
-    $loppurmdirs = array();
-    $makefiles = array();
-    foreach($diffs as $s)
-    {
-      $fn = substr($s, 1);
-      
-      $doadd = 0;
-      if($s[0] == '-')
-      {
-        if(!is_link($dir1.'/'.$fn) && is_dir($dir1.'/'.$fn))
-          $loppurmdirs[] = $fn;
-        else
-        {
-          /* This command deletes anything (be it sock, fifo, link...) */
-          echo '  rm -vf ', shellfix($fn), "\n";
-        }
-      }
-      elseif($s[0] == '+')
-      {
-        $doadd = 1;
-      }
-      else
-      {
-        $l1 = is_link($dir1.'/'.$fn);
-        $l2 = is_link($dir2.'/'.$fn);
-        if($l1)
-        {
-          if($l2)
-          {
-            $s1 = readlink($dir1.'/'.$fn);
-            $s2 = readlink($dir2.'/'.$fn);
-            if($s1 != $s2)
-            {
-              echo '  rm -v ', shellfix($fn), "\n",
-                   '  ln -s ', shellfix($s2), ' ', shellfix($fn), "\n";
-            }
-          }
-          else
-          {
-            echo '  rm -v ', shellfix($fn), "\n";
-            $doadd = 1;
-          }
-        }
-        else
-        {
-          if($l2)
-          {
-            echo '  rm -v ', shellfix($fn), "\n";
-            $doadd = 1;
-          }
-          else
-          {
-            $m1 = lstat($dir1.'/'.$fn);
-            $m2 = lstat($dir2.'/'.$fn);
-            
-            if(($m1[2] & ~07777) != ($m2[2] & ~07777))
-            {
-              echo '  rm -v ', shellfix($fn), "\n";
-              $doadd = 1;
-            }
-            else
-            {
-              /* Now we can be sure that is_xxx() returns the same
-               * thing for both files
-               */
-              $ftype = ($m2[2] >> 12) & 017;
-              if($ftype == 014) // socket
-              {
-                /* nothing to check */
-              }
-              elseif($ftype == 012) // symlink
-              {
-                /* already verified */
-                echo '# ', shellfix($fn), " is a symlink, this should not happen HERE!\n";
-              }
-              elseif($ftype == 010) // regular file
-              {
-                $filediffs[] = $fn;
-              }
-              elseif($ftype == 006  // block device
-                  || $ftype == 002) // character device
-              {
-                $minor1 = $m1[0]&255; $major1=$m1[0]>>8;
-                $minor2 = $m2[0]&255; $major2=$m2[0]>>8;
-                if($minor1 != $minor2)
-                {
-                  echo '  rm -v ', shellfix($fn), "\n";
-                  $doadd = 1;
-                }
-              }
-              elseif($ftype == 004) // directory
-              {
-              }
-              elseif($ftype == 001) // fifo
-              {
-                /* nothing to check */
-              }
-              else
-              {
-                echo '# ', shellfix($fn), ' is unknown type ', $ftype, ' file!', "\n";
-              }
-            }
-          }
-        }
-      }
-      if($doadd)
-      {
-        $m2 = lstat($dir2.'/'.$fn);
-        $ftype = ($m2[2] >> 12) & 017;
-        if($ftype == 014) // socket
-        {
-          echo '# ', shellfix($fn), " is a socket, can not make it\n";
-        }
-        elseif($ftype == 012) // symlink
-        {
-          echo '  ln -s ', readlink($dir2.'/'.$fn), ' ', shellfix($fn), "\n";
-        }
-        elseif($ftype == 010) // regular file
-        {
-          $makefiles[] = $fn;
-        }
-        elseif($ftype == 006)  // block device
-        {
-          $minor = $m2[0]&255; $major=$m2[0]>>8;
-          printf("  mknod %s b %d %d\n", shellfix($fn), $major, $minor);
-        }
-        elseif($ftype == 002)  // character device
-        {
-          $minor = $m2[0]&255; $major=$m2[0]>>8;
-          printf("  mknod %s c %d %d\n", shellfix($fn), $major, $minor);
-        }
-        elseif($ftype == 004) // directory
-        {
-          echo '  mkdir -v ', shellfix($fn), "\n";
-        }
-        elseif($ftype == 001) // fifo
-        {
-          echo '  mkfifo ', shellfix($fn), "\n";
-        }
-        else
-        {
-          echo '# ', shellfix($fn), ' is unknown type ', $ftype, ' file!', "\n";
-        }
-      }
-    }
-
-    $md5s = array();
-    $md5f = array();
-    /* Disable this code if you don't want to waste
-     * resources on making md5sums
-     */
-    foreach($makefiles as $fn)
-    {
-      $md5sum = exec('md5sum < '.shellfix($fn).'|sed "s/ .*//"');
-      $md5s[$fn] = $md5sum;
-    }
-    
-    if(count($makefiles))
-      echo "  patch -p0 << 'EOF'\n";
-    $firstmd5 = array();
-    foreach($makefiles as $fn)
-    {
-      $md5sum = $md5s[$fn];
-      if($firstmd5[$md5sum])
-      {
-        $md5f[] = array($firstmd5[$md5sum], $fn);
-        continue;
-      }
-      else
-        $firstmd5[$md5sum] = $fn;
-      
-      passthru('cd '.shellfix($dir2).
-               '&&echo -n "" >' . shellfix($tmp2).
-               '&&diff -NaHud '.shellfix($tmp2).' '.shellfix($fn).
-               '&&rm -f '.shellfix($tmp2));
-    }
-    if(count($makefiles))
-      echo "EOF\n";
-    rsort($loppurmdirs);
-    foreach($loppurmdirs as $s)
-      echo '  rmdir -v ', shellfix($s), "\n";
-    foreach($firstmd5 as $tab)
-        echo '  cp ', shellfix($tab[0]), ' ', shellfix($tab[1]), "\n";
-  }
-  if(count($filediffs))
-  {
-    echo 'patch -p0 $revflag'," << 'EOF'\n";
-  }
-  foreach($filediffs as $fn)
-  {
-    passthru('diff -NaHud '.shellfix($dir1.'/'.$fn).' '.shellfix($dir2.'/'.$fn).
-             '|sed '.shellfix('s@^--- '.regexfix($dir1.'/').'@--- @'.
-                             ';s@^--- '.regexfix($dir2.'/').'@--- @'.
-                             ';s@^\\+\\+\\+ '.regexfix($dir2.'/').'@+++ @'.
-                             ';s@^\\+\\+\\+ '.regexfix($dir2.'/').'@+++ @')
-             );
-  }
-  if(count($filediffs))
-    echo "EOF\n";
 }
 
 function FindInodes($directory)
@@ -522,9 +212,6 @@ foreach($f as $this)
     }
 
     $diffname = '../patch-'.$prog.'-'.$v1.'-'.$v2;
-    
-    //Eexec(MakeDiffCmd2($prevdirs, $thisdirs).
-    //      '|gzip -9 >'.shellfix($diffname).'.sh.gz');
 
     $inomap = FindInodes($thisdirs) + FindInodes($prevdirs);
     $links = EraLinks($thisdirs, $inomap) + EraLinks($prevdirs, $inomap);
@@ -543,15 +230,12 @@ foreach($f as $this)
     Eexec('rm -rf '.$prev);
 
     Eexec('gzip -d <'.shellfix($diffname).'.gz|bzip2 -9 >'.shellfix($diffname).'.bz2');
-    //Eexec('gzip -d <'.shellfix($diffname).'.sh.gz|bzip2 -9 >'.shellfix($diffname).'.sh.bz2');
-
-    //Eexec('touch -r'.$thisfn.' '.shellfix($diffname).'.{sh.,}{gz,bz2}');
-    //Eexec('chown --reference '.$thisfn.' '.shellfix($diffname).'.{sh.,}{gz,bz2}');
-    //if(!$argv[3])Eexec('ln -f '.shellfix($diffname).'.{sh.,}{gz,bz2} /WWW/src/');
 
     Eexec('touch -r'.$thisfn.' '.shellfix($diffname).'.{gz,bz2}');
     Eexec('chown --reference '.$thisfn.' '.shellfix($diffname).'.{gz,bz2}');
-    if(!$argv[3])Eexec('ln -f '.shellfix($diffname).'.{gz,bz2} /WWW/src/');
+
+    if(!$argv[3])
+      Eexec('ln -f '.shellfix($diffname).'.{gz,bz2} /WWW/src/');
   }
   else
     $madeprev = 0;

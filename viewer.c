@@ -11,6 +11,26 @@
 #include <signal.h>
 #include <slang.h>
 
+/*
+ Copyright (C) 1992,2002 Bisqwit (http://bisqwit.iki.fi/)
+ 
+ ROM viewer:
+ 
+ You need: SLang (it's a library like ncurses)
+ To compile: 
+   gcc -Wall -W -pedantic -O2 -o viewer viewer.c -lslang
+ To use:
+   viewer filename.smc
+
+ * No warranty. You are free to modify this source and to
+ * distribute the modified sources, as long as you keep the
+ * existing copyright messages intact and as long as you
+ * remember to add your own copyright markings.
+ * You are not allowed to distribute the program or modified versions
+ * of the program without including the source code (or a reference to
+ * the publicly available source) and this notice with it.
+*/
+
 static size_t size;
 static unsigned char *data;
 
@@ -52,8 +72,11 @@ static void initmerktab(void)
     int a,b,c,d;
     static struct {int a,b,c,d; } mrk[256];
     
-    fread(&Fontti, 8, 256, fp);
-    fclose(fp);
+    if(fp)
+    {
+        fread(&Fontti, 8, 256, fp);
+        fclose(fp);
+    }
     
     memset(&merktab, sizeof(merktab), 0);
     
@@ -500,7 +523,7 @@ Restart:
         (
             "\n\n"
             "A file viewer, designed specially for investigating Game Boy Pokémon-games.\n"
-            "Copyright (C) 1992,2000 Bisqwit (http://iki.fi/bisqwit/)\n"
+            "Copyright (C) 1992,2002 Bisqwit (http://iki.fi/bisqwit/)\n"
             "Usage: viewer <filename>\n\n"
         );
         goto RealEnd;

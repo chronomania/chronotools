@@ -11,6 +11,11 @@
 #include <set>
 #include <map>
 
+#ifdef linux
+#include <sys/mman.h>
+#define USE_MMAP 1
+#endif
+
 using namespace std;
 
 #include "ctcset.hh"
@@ -156,6 +161,8 @@ public:
                 unsigned pos = reci->first;
                 // Found exact match!
                 spaceset.erase(reci);
+                if(spaceset.size() == 0)
+                	freespace.erase(mapi);
                 return pos;
             }
             if(reci->second < length)
@@ -346,8 +353,19 @@ void insertor::WriteROM()
     vector<unsigned char> ROM(4194304,        0);
     vector<bool>      Touched(ROM.size(), false);
     
+    /*
     {FILE *fp = fopen("chrono-uncompressed.smc", "rb");
     if(fp){fseek(fp,512,SEEK_SET);fread(&ROM[0], 1, ROM.size(), fp);fclose(fp);}}
+	*/
+    
+    fprintf(stderr, "Initializing all free space to zero...\n");
+    for(freespacemap::const_iterator i=freespace.begin(); i!=freespace.end(); ++i)
+        for(freespaceset::const_iterator j=i->second.begin(); j!=i->second.end(); ++j)
+        {
+        	unsigned offs = (i->first << 16) | j->first;
+        	for(unsigned a=0; a<j->second; ++a)
+        	    WriteByte(ROM, Touched, offs+a, 0);
+        }
     
     fprintf(stderr, "Writing dictionary...\n");
     for(unsigned a=0; a<dictsize; ++a)
@@ -852,6 +870,8 @@ void insertor::LoadSymbols()
     
     targets=2+8+16;
     defbsym(end,         0x00)
+    targets=2;
+    defbsym(nl,          0x01)
     targets=16;
     // 0x01 seems to be garbage
     // 0x02 seems to be garbage too
@@ -1039,9 +1059,9 @@ void insertor::LoadFile(FILE *fp)
                     // other labels are 62-base (10+26+26) numbers
                     if(isdigit(c))
                         label = label * 62 + c - '0';
-                    else if(c >= 'A' && c <= 'F')
+                    else if(c >= 'A' && c <= 'Z')
                         label = label * 62 + (c - 'A' + 10);
-                    else if(c >= 'a' && c <= 'f')
+                    else if(c >= 'a' && c <= 'z')
                         label = label * 62 + (c - 'a' + 36);
                     else
                     {
@@ -1151,6 +1171,18 @@ void insertor::LoadFile(FILE *fp)
                     {
                         newcontent += (char)3;
                         newcontent += (char)atoi(code.c_str() + 7);
+                    }
+                    else if(code.substr(0, 7) == "[skip ")
+                    {
+                        newcontent += (char)8;
+                        newcontent += (char)atoi(code.c_str() + 6);
+                    }
+                    else if(code.substr(0, 6) == "[ptr ")
+                    {
+                        newcontent += (char)5;
+                        unsigned k = strtol(code.c_str() + 5, NULL, 16);
+                        newcontent += (char)(k & 255);
+                        newcontent += (char)(k >> 8);
                     }
                     else if(isdigit(code[1]))
                     {

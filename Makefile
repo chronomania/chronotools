@@ -16,7 +16,8 @@ LDFLAGS=-L/usr/lib/graphics
 # VERSION 1.0.12 had better knowledge of special codes
 # VERSION 1.0.13 used 62-base numbers
 # VERSION 1.0.14 added taipus.cc
-VERSION=1.0.14
+# VERSION 1.0.15 updated FIN/README and ct_fin.txt, but neither are archived
+VERSION=1.0.15
 ARCHFILES=xray.c xray.h \
           viewer.c \
           ctcset.cc \
@@ -56,13 +57,13 @@ makeips: makeips.cc
 unmakeips: unmakeips.cc
 	$(CXX) -g -O -Wall -W -pedantic -o $@ $^
 
-ct_eng.txt: ctdump chrono-uncompressed.smc
+ct_eng.txt: ctdump chrono-dumpee.smc
 	./ctdump >ct_eng.txt
 ctpatch-hdr.ips ctpatch-nohdr.ips: ctinsert ct_eng.txt \
 	ct16fnFI.tga ct8fnFI.tga
 	./ctinsert
-chrono-patched.smc: unmakeips ctpatch-hdr.ips chrono-uncompressed.smc
-	./unmakeips ctpatch-hdr.ips <chrono-uncompressed.smc >chrono-patched.smc
+chrono-patched.smc: unmakeips ctpatch-hdr.ips chrono-dumpee.smc
+	./unmakeips ctpatch-hdr.ips <chrono-dumpee.smc >chrono-patched.smc
 
 snes9xtest: chrono-patched.smc FORCE
 	~/src/snes9x/bisq-1.39/Gsnes9x -stereo -alt -m 256x256[C32/32] -r 7 chrono-patched.smc
