@@ -1,11 +1,16 @@
 include Makefile.sets
 
-#CXX=i586-mingw32msvc-g++
-#CC=i586-mingw32msvc-gcc
-#CPP=i586-mingw32msvc-gcc
+#HOST=/usr/local/mingw32/bin/i586-mingw32msvc-
+HOST=
+
+CXX=$(HOST)g++
+CC=$(HOST)gcc
+CPP=$(HOST)gcc
+
 #CFLAGS += -Ilibiconv
 #CPPFLAGS += -Ilibiconv
 #CXXFLAGS += -Ilibiconv
+#LDOPTS = -L/usr/local/mingw32/lib
 #LDFLAGS += -Llibiconv -liconv
 
 DEPDIRS = utils/ utils/asm/ utils/asm/argh/
@@ -72,6 +77,7 @@ DEPDIRS = utils/ utils/asm/ utils/asm/argh/
 # VERSION 1.6.7  has a complete assembler, doesn't require xa65 anymore
 # VERSION 1.6.8  patch version
 # VERSION 1.6.9  conjugater now partially asm; its compiler is a separate program
+# VERSION 1.7.0  some error checking; windows build of the assembler
 
 OPTIM=-O3
 #OPTIM=-O0
@@ -80,7 +86,7 @@ OPTIM=-O3
 
 CXXFLAGS += -I. -Iutils/asm/argh
 
-VERSION=1.6.9
+VERSION=1.7.0
 ARCHFILES=utils/xray.cc utils/xray.h \
           utils/viewer.c \
           utils/vwftest.cc \
@@ -147,9 +153,6 @@ ARCHFILES=utils/xray.cc utils/xray.h \
           utils/asm/doc/o65.cc utils/asm/doc/o65.hh \
           utils/asm/doc/o65linker.cc utils/asm/doc/o65linker.hh \
           utils/asm/doc/dumpo65.cc utils/asm/doc/testi.cc \
-          utils/asm/doc/ct-vwf8.a65 \
-          utils/asm/doc/ct-moglogo.a65 \
-          utils/asm/doc/bitness.a65 \
           \
           utils/asm/argh/argh.cc utils/asm/argh/argh.hh \
           utils/asm/argh/argh.h utils/asm/argh/argh-c.inc \
@@ -157,6 +160,9 @@ ARCHFILES=utils/xray.cc utils/xray.h \
           utils/asm/argh/Makefile utils/asm/argh/depfun.mak \
           utils/asm/argh/Makefile.sets \
           utils/asm/argh/COPYING utils/asm/argh/README.html \
+          utils/asm/doc/ct-moglogo.a65 \
+          utils/asm/doc/ct-vwf8.a65 \
+          utils/asm/doc/bitness.a65 \
           \
           README transnotes.txt Makefile.sets \
           \
@@ -191,15 +197,14 @@ PROGS=\
 	utils/facegenerator \
 	utils/base62 \
 	utils/sramdump \
-	utils/viewer \
-	utils/xray \
 	utils/spacefind \
-	utils/comp2test \
         utils/comprtest \
 	utils/vwftest \
 	utils/dumpo65 \
 	utils/o65test \
-	utils/assemble
+	utils/assemble \
+	utils/viewer \
+	utils/xray
 
 all: $(PROGS)
 
@@ -208,7 +213,7 @@ ctdump: \
 		compress.o settings.o \
 		tgaimage.o symbols.o miscfun.o config.o \
 		confparser.o ctcset.o wstring.o
-	$(CXX) -o $@ $^ $(LDFLAGS)
+	$(CXX) $(LDOPTS) -o $@ $^ $(LDFLAGS)
 
 ctinsert: \
 		ctinsert.o miscfun.o readin.o wrap.o \
@@ -219,7 +224,7 @@ ctinsert: \
 		conjugate.o vwf8.o o65.o o65linker.o \
 		symbols.o logfiles.o settings.o \
 		config.o confparser.o ctcset.o wstring.o
-	$(CXX) -o $@ $^ $(LDFLAGS) -lm
+	$(CXX) $(LDOPTS) -o $@ $^ $(LDFLAGS) -lm
 
 %.o65: %.a65 utils/assemble
 	utils/assemble -Wall -o $@ $< 
@@ -235,63 +240,73 @@ ct-conj.o65: ct-conj1.a65 ct-conj.a65 utils/assemble
 	rm -f .tmptmp
 
 utils/makeips: utils/makeips.cc
-	$(CXX) -o $@ $^
+	$(CXX) $(LDOPTS) -o $@ $^
 utils/unmakeips: utils/unmakeips.cc
-	$(CXX) -g -O -Wall -W -pedantic -o $@ $^
+	$(CXX) $(LDOPTS) -g -O -Wall -W -pedantic -o $@ $^
 
 utils/spacefind: utils/spacefind.o
-	$(CXX) -o $@ $^ $(LDFLAGS) -lm
+	$(CXX) $(LDOPTS) -o $@ $^ $(LDFLAGS) -lm
 
 
 utils/viewer: utils/viewer.o
-	$(CC) -o $@ $^ $(LDFLAGS) -lslang
+	$(CC) $(LDOPTS) -o $@ $^ $(LDFLAGS) -lslang
 
 utils/sramdump: utils/sramdump.o config.o confparser.o ctcset.o wstring.o
-	$(CXX) $(CXXFLAGS) -g -O -Wall -W -pedantic -o $@ $^ $(LDFLAGS)
+	$(CXX) $(LDOPTS) $(CXXFLAGS) -g -O -Wall -W -pedantic -o $@ $^ $(LDFLAGS)
 utils/base62: utils/base62.cc
-	$(CXX) $(CXXFLAGS) -g -O -Wall -W -pedantic -o $@ $^ $(LDFLAGS)
+	$(CXX) $(LDOPTS) $(CXXFLAGS) -g -O -Wall -W -pedantic -o $@ $^ $(LDFLAGS)
 utils/compile: \
 		utils/compiler.o \
 		symbols.o \
 		config.o confparser.o ctcset.o wstring.o
-	$(CXX) $(CXXFLAGS) -g -O -Wall -W -pedantic -o $@ $^ $(LDFLAGS)
+	$(CXX) $(LDOPTS) $(CXXFLAGS) -g -O -Wall -W -pedantic -o $@ $^ $(LDFLAGS)
 utils/vwftest: \
 		utils/vwftest.o tgaimage.o \
-		fonts.o typefaces.o extras.o conjugate.o \
+		fonts.o typefaces.o extras.o conjugate.o o65.o settings.o \
 		snescode.o symbols.o space.o logfiles.o \
 		config.o confparser.o ctcset.o wstring.o
-	$(CXX) $(CXXFLAGS) -g -O -Wall -W -pedantic -o $@ $^ $(LDFLAGS)
+	$(CXX) $(LDOPTS) $(CXXFLAGS) -g -O -Wall -W -pedantic -o $@ $^ $(LDFLAGS)
 utils/facegenerator: \
 		utils/facegenerator.o tgaimage.o
-	$(CXX) $(CXXFLAGS) -g -O -Wall -W -pedantic -o $@ $^ $(LDFLAGS)
+	$(CXX) $(LDOPTS) $(CXXFLAGS) -g -O -Wall -W -pedantic -o $@ $^ $(LDFLAGS)
 
 utils/compiler2.o: utils/compiler2.cc
-	$(CXX) -g -o $@ -c $< $(CXXFLAGS) -O0 -fno-default-inline
+	$(CXX) $(LDOPTS) -g -o $@ -c $< $(CXXFLAGS) -O0 -fno-default-inline
 	
 utils/comp2test: utils/compiler2.cc config.o confparser.o ctcset.o wstring.o
-	$(CXX) $(CXXFLAGS) -g -O -Wall -W -pedantic -o $@ $^ $(LDFLAGS)
+	$(CXX) $(LDOPTS) $(CXXFLAGS) -g -O -Wall -W -pedantic -o $@ $^ $(LDFLAGS)
 
 utils/comprtest: utils/comprtest.o rommap.o compress.o
-	$(CXX) $(CXXFLAGS) -g -O -Wall -W -pedantic -o $@ $^ $(LDFLAGS)
+	$(CXX) $(LDOPTS) $(CXXFLAGS) -g -O -Wall -W -pedantic -o $@ $^ $(LDFLAGS)
 
 utils/comprtest2: utils/comprtest2.o compress.o
-	$(CXX) $(CXXFLAGS) -g -O -Wall -W -pedantic -o $@ $^ $(LDFLAGS)
+	$(CXX) $(LDOPTS) $(CXXFLAGS) -g -O -Wall -W -pedantic -o $@ $^ $(LDFLAGS)
 
 utils/xray: utils/xray.o compress.o
-	$(CXX) $(CXXFLAGS) -g -O -Wall -W -pedantic -o $@ $^ $(LDFLAGS) -lggi
+	$(CXX) $(LDOPTS) $(CXXFLAGS) -g -O -Wall -W -pedantic -o $@ $^ $(LDFLAGS) -lggi
 
 utils/o65test: utils/o65test.o o65.o wstring.o
-	$(CXX) $(CXXFLAGS) -g -O -Wall -W -pedantic -o $@ $^ $(LDFLAGS)
+	$(CXX) $(LDOPTS) $(CXXFLAGS) -g -O -Wall -W -pedantic -o $@ $^ $(LDFLAGS)
 
 utils/dumpo65: utils/dumpo65.o
-	$(CXX) $(CXXFLAGS) -g -O -Wall -W -pedantic -o $@ $^ $(LDFLAGS)
+	$(CXX) $(LDOPTS) $(CXXFLAGS) -g -O -Wall -W -pedantic -o $@ $^ $(LDFLAGS)
 
 utils/ctxtview: utils/ctxtview.o settings.o rommap.o
-	$(CXX) $(CXXFLAGS) -g -O -Wall -W -pedantic -o $@ $^ $(LDFLAGS)
+	$(CXX) $(LDOPTS) $(CXXFLAGS) -g -O -Wall -W -pedantic -o $@ $^ $(LDFLAGS)
 
-utils/assemble: FORCE
-	$(MAKE) -C utils/asm snescom
-	ln -sf asm/snescom $@
+utils/assemble: \
+		utils/asm/assemble.o \
+		utils/asm/insdata.o \
+		utils/asm/object.o \
+		utils/asm/expr.o \
+		utils/asm/parse.o \
+		utils/asm/precompile.o \
+		utils/asm/main.o \
+		utils/asm/warning.o \
+		utils/asm/argh/argh.o
+	# $(MAKE) -C utils/asm snescom
+	# ln -sf asm/snescom $@
+	$(CXX) $(LDOPTS) $(CXXFLAGS) -g -O -Wall -W -pedantic -o $@ $^ $(LDFLAGS)
 
 utils/asm/argh/libargh.a: FORCE
 	$(MAKE) -C utils/asm/argh libargh.a
@@ -337,6 +352,23 @@ winzip: ctdump ctinsert
 	zip -9 $(ARCHNAME)-ctdump-win32.zip ctdump.exe
 	rm -f ctdump.exe
 	mv -f $(ARCHNAME)-ctdump-win32.zip /WWW/src/arch/
+
+fullzip: \
+		ctdump ctinsert \
+		utils/unmakeips utils/makeips \
+		utils/o65test utils/dumpo65 utils/assemble \
+		etc/ct.cfg etc/ct.code \
+		README.html README.TXT
+	@rm -rf $(ARCHNAME)
+	- mkdir $(ARCHNAME)
+	for s in $^;do ln "$$s" $(ARCHNAME); done
+	cd $(ARCHNAME); \
+	/bin/ls|while read s;do echo "$$s"|grep -qF . || mv -v "$$s" "$$s".exe;done
+	$(HOST)strip $(ARCHNAME)/*.exe
+	- upx --overlay=strip -9 $(ARCHNAME)/*.exe
+	zip -r9 $(ARCHNAME)-win32.zip $(ARCHNAME)
+	rm -rf $(ARCHNAME)
+	mv -f $(ARCHNAME)-win32.zip archives/
 
 clean: FORCE
 	rm -f *.o $(PROGS)

@@ -27,7 +27,7 @@ Conjugator:
 .(
         .al
 
-        #define Choice(name) cmp #CODE_##name: bne +: jsr name: bra ConjEnd
+        #define Choice(name) cmp #CODE_##name: bne +: jsr name: bra DidConj
 
  #ifndef OMIT_Do_N
       + Choice(Do_N)
@@ -76,6 +76,10 @@ Conjugator:
         
 ConjEnd:SET_8_BIT_A()
         rtl
+DidConj:inc $31
+        bra ConjEnd
+
+;;;; OUTPUT A CHARACTER
 
 Outc:   phk
         per (+)-1  ; push return-address
@@ -84,10 +88,31 @@ Outc:   phk
         jmp @CHAR_OUTPUT_FUNC  ; This function outputs chars.
 +       rts
 
+;;;;;;;;;;;;;;;;;;;;;;;;;
+
 <CONJUGATER> ;Compiled ct.code will be inserted here by Makefile
+
+OutcHelper:
+         ; Outputs the character in A.
+         ; Does not modify X.
+         ; May modify Y.
+         ; May modify A.
+         SET_16_BIT_AX()
+         phx
+          sta $35    ; Param to the fuction
+          jsr Outc
+          SET_16_BIT_AX()
+         plx
+         rts
+
 
 LoopHelper:
     .(
+        ; Fetches the X'th letter of the character's name in question.
+        ; Does not modify X.
+        ; Does modify Y.
+        ; Returns the letter in A.
+        
         SET_16_BIT_AX()
         phx
          ldy #0
@@ -96,7 +121,7 @@ LoopHelper:
          ; Id of the name
          lda [$31]
          
-         cmp #$20
+         cm
          beq Epoch  ; Is it Epoch?
          
          ; Not Epoch.
@@ -122,12 +147,12 @@ GotCharPointer:
          sta $0239 ; Save segment
          
          SET_16_BIT_AX()
-         plx
-         txy
-         ; Get char from the name
-         lda [$37],y
-         and #$00FF
-         rts
+        plx
+        txy
+        ; Get char from the name
+        lda [$37],y
+        and #$00FF
+        rts
 
 Member:  ; Yes, member1(1B), member2(1C) or member3(1D)
          .as
@@ -146,12 +171,4 @@ Epoch:   ; Yes, Epoch.
          bra GotCharPointer
    .)
 
-OutcHelper:
-         SET_16_BIT_AX()
-         phx
-          sta $35    ; Param to the fuction
-          jsr Outc
-          SET_16_BIT_AX()
-         plx
-         rts
 .)

@@ -2,11 +2,11 @@
 #include <set>
 #include <map>
 #include <list>
+#include <vector>
 
 #include "wstring.hh"
 #include "config.hh"
 #include "ctcset.hh"
-#include "tristate"
 
 using namespace std;
 

@@ -55,12 +55,14 @@ namespace
         ucs4 getc()
         {
             ucs4 c = getc_priv();
+            if(c == '\r') return getc();
             if(c == ';')
             {
                 CLEARSTR(Comment);
                 for(;;)
                 {
                     c = getc_priv();
+                    if(c == '\r') continue;
                     if(c == '\n' || c == (ucs4)EOF) break;
                     Comment += c;
                 }

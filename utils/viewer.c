@@ -1,3 +1,4 @@
+#ifndef WIN32
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -746,3 +747,5 @@ RealEnd:
     ioctl(0, TCSETA, &back);
     return 0;    
 }
+
+#endif

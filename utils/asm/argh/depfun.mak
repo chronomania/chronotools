@@ -59,7 +59,7 @@ archpak: ${ARCHFILES}
 	@if [ "${ARCHNAME}" = "" ]; then echo ARCHNAME not set\!;false;fi
 	- mkdir ${ARCHNAME} ${ARCHDIR} 2>/dev/null
 	cp --parents -lfr ${ARCHFILES} ${EXTRA_ARCHFILES} depfun.mak Makefile ${ARCHNAME}/ 2>&1 >/dev/null | while read line;do cp --parents -fr "`echo "$$line"|sed 's/.*${ARCHNAME}\///;s/'\''.*//'`" ${ARCHNAME}/; done
-	- if [ -f docmaker.php ]; then php -q docmaker.php ${ARCHNAME} >README.html && ln -f docmaker.php README.html ${ARCHNAME}/;fi
+	- if [ -f docmaker.php ]; then php -q docmaker.php ${ARCHNAME} >README.html; ln -f docmaker.php README.html ${ARCHNAME}/;fi
 	if [ -f makediff.php ]; then ln -f makediff.php ${ARCHNAME}/; fi
 	#- rm -f ${ARCHDIR}${ARCHNAME}.zip
 	#- zip -9rq ${ARCHDIR}${ARCHNAME}.zip ${ARCHNAME}/

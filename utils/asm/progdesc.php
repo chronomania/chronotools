@@ -132,18 +132,18 @@ Example:<br>
 <pre class=smallerpre
 >        ; Space-fill the buffer to end
         phx
-         cpx #$0010
+         cpx #\$0010
          bcs +     ;jumps to the next \"+\"
          SET_8_BIT_A()
-         lda #$FF
--        sta $94A0,x
-         sta $94B0,x
+         lda #\$FF
+-        sta \$94A0,x
+         sta \$94B0,x
          inx
-         cpx #$0010
+         cpx #\$0010
          bcc -     ;jumps to the previous \"-\"
          SET_16_BIT_A()
 +        lda W_VRAMADDR
-         sta @$002116
+         sta @\$002116
         pla</pre>
 
 
@@ -175,6 +175,12 @@ Sep 23 2003; 0.0.0 started working with the project.<br>
 Sep 28 2003; 1.0.0 initial release. All features working.<br>
 Sep 29 2003; 1.1.0 added feature: branch labels.<br>
 Sep 29 2003; 1.2.0 bugfix: didn't resolve correctly when different scopes had a label with the same name; added warning options<br>
+
+", 'bugs:1. Known bugs' => "
+
+<ul>
+ <li><code>#include</code>d files aren't being properly preprocessed.</li>
+</ul>
 
 ", 'copying:1. Copying' => "
 

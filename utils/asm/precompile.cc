@@ -1,10 +1,24 @@
 #define SUPPORT_THREADS 0
+#define SUPPORT_FORK 1
+
+#ifdef WIN32
+#undef SUPPORT_THREADS
+#define SUPPORT_THREADS 0
+#undef SUPPORT_FORK
+#define SUPPORT_FORK 0
+#endif
 
 #include <cstdlib>
 #include <string>
 
-#include <unistd.h>
+#if SUPPORT_FORK
 #include <sys/wait.h>
+#include <unistd.h>
+#else
+#include <process.h>
+#include <io.h>
+#endif
+
 #if SUPPORT_THREADS
 #include <pthread.h>
 #endif
@@ -37,7 +51,9 @@ namespace
 #if SUPPORT_THREADS
         Thread,
 #endif
+#if SUPPORT_FORK
         Fork,
+#endif
         TempFile
     };
     
@@ -213,6 +229,8 @@ void Precompile(std::FILE *fp, std::FILE *fo)
             break;
         }
 #endif
+
+#if SUPPORT_FORK
         case Fork:
         {
             int to_cpp[2];   pipe(to_cpp);
@@ -254,6 +272,7 @@ void Precompile(std::FILE *fp, std::FILE *fo)
             
             break;
         }
+#endif
         case TempFile:
         {
             // 1: Preprocess for gcc
@@ -263,6 +282,7 @@ void Precompile(std::FILE *fp, std::FILE *fo)
             
             // 2: Precompile with gcc
             std::FILE *temp2 = std::tmpfile();
+#if SUPPORT_FORK
             int cpp_pid = fork();
             if(cpp_pid == 0)
             {
@@ -275,6 +295,20 @@ void Precompile(std::FILE *fp, std::FILE *fo)
             }
             std::fclose(temp);
             wait(NULL);
+#else
+            int org_stdin = dup(0);  dup2(fileno(temp), 0);
+            int org_stdout = dup(1); dup2(fileno(temp2), 1);
+            fclose(temp);
+            int pid = _spawnlp(_P_WAIT, "gcc", "gcc", "-E", "-", NULL);
+            dup2(org_stdin, 0); close(org_stdin);
+            dup2(org_stdout, 1); close(org_stdout);
+            
+            if(pid == -1)
+            {
+                perror("_spawnlp");
+                return;
+            }
+#endif
             
             // 3: Postprocess
             std::rewind(temp2);
@@ -312,6 +346,8 @@ void PrecompileAndAssemble(std::FILE *fp, Object& obj)
             break;
         }
 #endif
+
+#if SUPPORT_FORK
         case Fork:
         {
             /* PIPE&FORK VERSION */
@@ -340,6 +376,7 @@ void PrecompileAndAssemble(std::FILE *fp, Object& obj)
             wait(NULL);
             break;
         }
+#endif
         case TempFile:
         {
             std::FILE *temp = std::tmpfile();
@@ -381,6 +418,11 @@ void UseThreads()
 
 void UseFork()
 {
+#if SUPPORT_FORK
     AsmMethod = Fork;
     GccMethod = Fork;
+#else
+    std::fprintf(stderr, "Warning: Fork support not built in, using tempfiles instead\n");
+    UseTemps();
+#endif
 }

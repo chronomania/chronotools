@@ -150,6 +150,12 @@ void Font12data::Reload(const Rearrangemap_t& arrange)
 {
     fprintf(stderr, "Loading '%s'...\n", fn.c_str());
     TGAimage image(fn);
+    if(!image.GetXdim())
+    {
+        fprintf(stderr, "- failed\n");
+        return;
+    }
+    
     image.setboxsize(12, 12);
     image.setboxperline(32);
     
@@ -246,6 +252,12 @@ void Font8data::Reload(const Rearrangemap_t& arrange)
     fprintf(stderr, "Loading '%s'...\n", fn.c_str());
 
     TGAimage image(fn);
+    if(!image.GetXdim())
+    {
+        fprintf(stderr, "- failed\n");
+        return;
+    }
+    
     image.setboxsize(8, 8);
     image.setboxperline(32);
     

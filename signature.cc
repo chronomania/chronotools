@@ -15,6 +15,12 @@ void insertor::GenerateSignatureCode()
     vector<unsigned char> uncompressed;
     
     const TGAimage image(WstrToAsc(imagefn));
+    if(!image.GetXdim())
+    {
+        fprintf(stderr, "- failed to load '%s'...\n", WstrToAsc(imagefn).c_str());
+        return;
+    }
+    
     LoadImageData(image, uncompressed);
     
     const vector<unsigned char> imgdata =

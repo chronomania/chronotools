@@ -833,7 +833,10 @@ int main(int argc, const char* const* argv)
     if(argc != 2)
     {
         fprintf(stderr,
-            "Usage: ctdump romfilename > scriptfilename\n");
+            "Usage: ctdump romfilename\n"
+            "Will place output (the script) in %s\n",
+                scriptoutfile
+        );
         return -1;
     }
     
@@ -994,6 +997,7 @@ int main(int argc, const char* const* argv)
     
     fprintf(stderr, "Done\n");
     
+#if 0
     scriptout = fopen(scriptoutfile, "rt");
     for(;;)
     {
@@ -1003,6 +1007,7 @@ int main(int argc, const char* const* argv)
     }
     fclose(scriptout);
     remove(scriptoutfile);
+#endif
     
     return 0;
 }

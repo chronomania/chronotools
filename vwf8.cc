@@ -5,6 +5,11 @@
 
 void insertor::GenerateVWF8code()
 {
+    if(!GetConf("font", "use_vwf8"))
+    {
+        return;
+    }
+    
     const vector<unsigned char> &widths  = Font8v.GetWidths();
     const vector<unsigned char> &tiletab = Font8v.GetTiles();
     

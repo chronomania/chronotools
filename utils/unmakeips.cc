@@ -18,19 +18,20 @@ int main(int argc, const char *const *argv)
     const char *resfn = argv[3];
     
     FILE *fp = fopen(patchfn, "rb");
+    if(!fp) { perror(patchfn); }
     
     FILE *original = fopen(origfn, "rb");
+    if(!original) { perror(origfn); }
+    
     FILE *resultfile = fopen(resfn, "wb");
+    if(!resultfile) { perror(resfn); }
+    
+    if(!fp || !original || !resultfile)
+        return -1;
     
     setbuf(fp, NULL);
     setbuf(original, NULL);
     setbuf(resultfile, NULL);
-    
-    if(!fp) { perror(patchfn); }
-    if(!original) { perror(origfn); }
-    if(!resultfile) { perror(resfn); }
-    if(!fp || !original || !resultfile)
-        return -1;
     
     unsigned char Buf[5];
     fread(Buf, 1, 5, fp);

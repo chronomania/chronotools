@@ -5,10 +5,10 @@
 #include <string>
 #include <vector>
 
+#include "snescode.hh"
 #include "wstring.hh"
 #include "space.hh"
 #include "fonts.hh"
-#include "snescode.hh"
 #include "ctcset.hh"
 
 #include "o65linker.hh"
@@ -33,9 +33,7 @@ public:
        (const string& fn, unsigned address, unsigned char seg);
 
     void LoadImages();
-    
     void GenerateCode();
-
     void DictionaryCompress();
 
     unsigned GetFont12width(ctchar chronoch) const;
@@ -43,7 +41,6 @@ public:
     void PatchROM(class ROM &ROM);
 
     void ReportFreeSpace();
-    
     void ReorganizeFonts();
     
     insertor();
@@ -97,15 +94,17 @@ private:
     
     const ctstring ParseScriptEntry(const ucs4string &input, const stringdata &model);
     const ctstring WrapDialogLines(const ctstring &dialog) const;
-    
+
     // Get list of pages having zstrings
     const set<unsigned> GetZStringPageList() const;
     // Get zstrings of page
     const class stringoffsmap GetZStringList(unsigned pagenum) const;
 
     unsigned CalculateScriptSize() const;
-    
+
+#if 0    
     void LinkAndLocate(class FunctionList& functions);
+#endif
 };
 
 #endif
