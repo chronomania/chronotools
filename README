@@ -723,7 +723,7 @@ ITEMS:
 
 ; T‰h‰n p‰‰dyt‰‰n tilanteissa:
 ;  - equip-lista (oikea puoli)
-;  - kauppa
+;  - kauppa - HUOM: Tulostaa KOODEJA (hinnat, oikea sarake)
 ;  - equip-lista kaupassa (oikea puoli)
 ; T‰t‰ ei k‰yt‰:
 ;  - equip-lista (vasen puoli)
@@ -734,6 +734,72 @@ ITEMS:
 $C2:F2DC 20 E2 F2    JSR DB:$F2E2         ;$7E:F2E2     A:0005 X:2F5C Y:000A D:0000 DB:7E PB:C2
 ;Ks yll‰
 $C2:F2DF 4C 65 EF    JMP DB:$EF65         ;$7E:EF65     A:CC0B X:2F5C Y:0B95 D:0000 DB:7E PB:C2
+
+ITEMS-SELAIN INVENTAARIOSSA:
+
+$C2:AE75 7B          TDC                                A:0038 X:344A Y:0038 D:0000 DB:7E PB:C2
+$C2:AE76 B9 00 25    LDA DB:($2500+y)     ;$7E:2538     A:0000 X:344A Y:0038 D:0000 DB:7E PB:C2
+$C2:AE79 8D 4E 0D    STA DB:$0D4E         ;$7E:0D4E     A:0001 X:344A Y:0038 D:0000 DB:7E PB:C2
+$C2:AE7C B9 00 24    LDA DB:($2400+y)     ;$7E:2438     A:0001 X:344A Y:0038 D:0000 DB:7E PB:C2
+$C2:AE7F 8D 4D 0D    STA DB:$0D4D         ;$7E:0D4D     A:008B X:344A Y:0038 D:0000 DB:7E PB:C2
+$C2:AE82 A8          TAY                                A:008B X:344A Y:0038 D:0000 DB:7E PB:C2
+$C2:AE83 B9 00 77    LDA DB:($7700+y)     ;$7E:778B     A:008B X:344A Y:008B D:0000 DB:7E PB:C2
+$C2:AE86 29 02       AND A, $02                         A:0014 X:344A Y:008B D:0000 DB:7E PB:C2
+$C2:AE88 F0 04       BEQ $AE8E                          A:0000 X:344A Y:008B D:0000 DB:7E PB:C2
+$C2:AE8E 4C 4B B0    JMP DB:$B04B         ;$7E:B04B     A:0000 X:344A Y:008B D:0000 DB:7E PB:C2
+$C2:B04B 08          PHP                                A:0000 X:344A Y:008B D:0000 DB:7E PB:C2
+$C2:B04C E2 20       SEP $20                            A:0000 X:344A Y:008B D:0000 DB:7E PB:C2
+$C2:B04E AD 4D 0D    LDA DB:$0D4D         ;$7E:0D4D     A:0000 X:344A Y:008B D:0000 DB:7E PB:C2
+$C2:B051 F0 4C       BEQ $B09F                          A:008B X:344A Y:008B D:0000 DB:7E PB:C2
+$C2:B053 C2 20       REP $20                            A:008B X:344A Y:008B D:0000 DB:7E PB:C2
+;A on nyt itemin numero.
+$C2:B055 29 FF 00    AND A, $00FF                       A:008B X:344A Y:008B D:0000 DB:7E PB:C2
+$C2:B058 0A          ASL A                              A:008B X:344A Y:008B D:0000 DB:7E PB:C2
+$C2:B059 A8          TAY                                A:0116 X:344A Y:008B D:0000 DB:7E PB:C2
+;Hakee pointterin itemin nimeen.
+$C2:B05A B9 00 7D    LDA DB:($7D00+y)     ;$7E:7E16     A:0116 X:344A Y:0116 D:0000 DB:7E PB:C2
+$C2:B05D A8          TAY                                A:1157 X:344A Y:0116 D:0000 DB:7E PB:C2
+$C2:B05E A9 0B CC    LDA A, $CC0B                       A:1157 X:344A Y:1157 D:0000 DB:7E PB:C2
+$C2:B061 20 65 EF    JSR PB:$EF65         ;$C2:EF65     A:CC0B X:344A Y:1157 D:0000 DB:7E PB:C2
+;Kutsuu piirtorutiinia itemille.
+$C2:B064 A5 7D       LDA [$00:D+$7D]      ;$00:007D     A:0BDC X:3460 Y:1162 D:0000 DB:7E PB:C2
+;Hakee attribuutin^
+$C2:B066 29 00 FF    AND A, $FF00                       A:0000 X:3460 Y:1162 D:0000 DB:7E PB:C2
+$C2:B069 09 2D 00    ORA A, $002D                       A:0000 X:3460 Y:1162 D:0000 DB:7E PB:C2
+;Lis‰‰ siihen kaksoispisteen^
+$C2:B06C 9D 00 00    STA DB:($0000+x)     ;$7E:3460     A:002D X:3460 Y:1162 D:0000 DB:7E PB:C2
+;Ja piirt‰‰ sen.^
+$C2:B06F E8          INX                                A:002D X:3460 Y:1162 D:0000 DB:7E PB:C2
+$C2:B070 E8          INX                                A:002D X:3461 Y:1162 D:0000 DB:7E PB:C2
+$C2:B071 A0 4E 0D    LDY $0D4E                          A:002D X:3462 Y:1162 D:0000 DB:7E PB:C2
+$C2:B074 A9 11 7E    LDA A, $7E11                       A:002D X:3462 Y:0D4E D:0000 DB:7E PB:C2
+$C2:B077 20 14 F1    JSR PB:$F114         ;$C2:F114     A:7E11 X:3462 Y:0D4E D:0000 DB:7E PB:C2
+;Kutsuu ???
+$C2:B07A E8          INX                                A:0000 X:3466 Y:0D4F D:0000 DB:7E PB:C2
+$C2:B07B E8          INX                                A:0000 X:3467 Y:0D4F D:0000 DB:7E PB:C2
+$C2:B07C DA          PHX                                A:0000 X:3468 Y:0D4F D:0000 DB:7E PB:C2
+$C2:B07D 9E 00 00    STZ DB:($0000+x)     ;$7E:3468     A:0000 X:3468 Y:0D4F D:0000 DB:7E PB:C2
+$C2:B080 9B          TXY                                A:0000 X:3468 Y:0D4F D:0000 DB:7E PB:C2
+$C2:B081 C8          INY                                A:0000 X:3468 Y:3468 D:0000 DB:7E PB:C2
+$C2:B082 C8          INY                                A:0000 X:3468 Y:3469 D:0000 DB:7E PB:C2
+$C2:B083 A9 0F 00    LDA A, $000F                       A:0000 X:3468 Y:346A D:0000 DB:7E PB:C2
+$C2:B086 54          MVN 7E 7E                          A:000F X:3468 Y:346A D:0000 DB:7E PB:C2
+$C2:B089 AD 4D 0D    LDA DB:$0D4D         ;$7E:0D4D     A:FFFF X:3478 Y:347A D:0000 DB:7E PB:C2
+$C2:B08C 29 FF 00    AND A, $00FF                       A:018B X:3478 Y:347A D:0000 DB:7E PB:C2
+$C2:B08F 0A          ASL A                              A:008B X:3478 Y:347A D:0000 DB:7E PB:C2
+$C2:B090 AA          TAX                                A:0116 X:3478 Y:347A D:0000 DB:7E PB:C2
+$C2:B091 BF 10 B3 FF LDA $FF:($B310+x)    ;$FF:B426     A:0116 X:0116 Y:347A D:0000 DB:7E PB:C2
+$C2:B095 A8          TAY                                A:C5ED X:0116 Y:347A D:0000 DB:7E PB:C2
+$C2:B096 FA          PLX                                A:C5ED X:0116 Y:C5ED D:0000 DB:7E PB:C2
+$C2:B097 A9 09 FF    LDA A, $FF09                       A:C5ED X:3468 Y:C5ED D:0000 DB:7E PB:C2
+$C2:B09A 20 65 EF    JSR PB:$EF65         ;$C2:EF65     A:FF09 X:3468 Y:C5ED D:0000 DB:7E PB:C2
+;Kutsuu piirtorutiinia UUDESTAAN
+$C2:B09D 28          PLP                                A:09DC X:3474 Y:C5F3 D:0000 DB:7E PB:C2
+$C2:B09E 60          RTS                                A:09DC X:3474 Y:C5F3 D:0000 DB:7E PB:C2
+$C2:AE73 28          PLP                                A:09DC X:3474 Y:C5F3 D:0000 DB:7E PB:C2
+$C2:AE74 60          RTS                                A:09DC X:3474 Y:C5F3 D:0000 DB:7E PB:C2
+
+
 
 
 ; T‰m‰ lienee geneerinen tekstintulostusrutiini 8x8-fontille.

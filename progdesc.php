@@ -118,7 +118,7 @@ Solution B: Move the names to a different location in ROM so that
 there is no space limit. But: They still don't fit on screen.<br>
 Solution C: Add code using <a href=\"ct8f.png\">variable width 8x8 font</a>
 and rewrite the method the item names are looked up.
-This means <em>lots of work</em>.
+This means <em>lots of work</em>. But I attempt to do it anyway :)
 
 ", '1.1.1. Name conjugation' => "
 

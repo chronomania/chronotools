@@ -182,13 +182,13 @@ void insertor::PatchROM(ROM &ROM)
             for(unsigned a=0; a < j->len; ++a) ROM.Write(offs+a, 0);
         }
     }
-
+    
     WriteStrings(ROM);
     Write8pixfont(ROM);
     Write8vpixfont(ROM);
     Write12pixfont(ROM);
     WriteDictionary(ROM);
-    
+
     GenerateCode(); 
     WriteCode(ROM);
 }
@@ -250,9 +250,12 @@ void insertor::Write8vpixfont(ROM &ROM)
     ROM.Write(0x02A5AA+4, 0xEA); // NOP
     ROM.Write(0x02A5AA+5, 0xEA); // NOP
 
-	// Patch item2func
+    // Patch item2func
     ROM.Write(0x02F2DC+4, 0xEA); // NOP
     ROM.Write(0x02F2DC+5, 0x60); // RTS
+
+    // Patch for item3func
+    ROM.Write(0x02B061+4, 0xEA); // NOP
 }
 
 void insertor::Write12pixfont(ROM &ROM)

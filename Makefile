@@ -37,11 +37,12 @@ include Makefile.sets
 # VERSION 1.1.10 new configuration system. Time to squash bugs.
 # VERSION 1.1.11 configuration works, font-enhancement works.
 # VERSION 1.2.0  variable-width 8pix font has stepped in, but has many many bugs.
+# VERSION 1.2.1  more vwf stuff, backup before doing big changes
 
-#OPTIM=-O3
-OPTIM=-O0
+OPTIM=-O3
+#OPTIM=-O0
 
-VERSION=1.2.0
+VERSION=1.2.1
 ARCHFILES=xray.c xray.h \
           viewer.c \
           ctcset.cc ctcset.hh \

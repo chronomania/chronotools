@@ -4,13 +4,11 @@
 
 namespace
 {
-    wstring VWF8_DrawS; // Draw string
-    wstring VWF8_Draw1; // Draw char
-    wstring VWF8_Check; // Check for ready tile
-    wstring VWF8_Next;  // Prepare for next tile
-    wstring VWF8_Write; // Write out
-    
-    #define BITNESS  4
+    wstring VWF8_DrawS[5]; // Draw string
+    wstring VWF8_Draw1[5]; // Draw char
+    wstring VWF8_Check[5]; // Check for ready tile
+    wstring VWF8_Next[5];  // Prepare for next tile
+    wstring VWF8_Write[5]; // Write out
     
     #define OSOITE   0x10 //long
     #define TILEDEST 0x13 //long
@@ -21,38 +19,17 @@ namespace
     #define JMPTMP   0x1F //word
     
     #define LASKURI  0x21 //byte
-    #define TILEDST2 0x22 //long
 
-    #define PIXOFFS  0x25 //word  // ei tarvitse palauttaa t‰t‰ wordia
-    #define PITUUS   0x27 //byte  // ei tarvitse palauttaa t‰t‰ tavua
+    #define PIXOFFS  0x22 //word
+    #define PITUUS   0x24 //byte
 
     //globaali
-    #define TILENUM  0x28 //word
+    #define TILENUM  0x25 //word
+    #define VRAMADDR 0x27 //word
     
-    #define TILEDATASIZE    (2*8*BITNESS)
+    // TILEBUF must be LAST!
+    #define TILEBUF  0x29 //size above
 
-    #define TILEBUF  0x2A //2 * 8byte * BITNESS
-    
-    #define VAPAA    (0x2A + TILEDATASIZE)
-
-
-    /* ATTRS: What attributes should be set on */
-    /* $2000 works good for the equip-list on left */
-    
-#if 0    
-    /* For equip-list on left: */
-    #define VRAM_BASE 0x7000
-    #define TILENUM_BASE 0x0000
-    #define ATTRS 0x2000
-#endif
-    
-    #define VRAM_BASE 0x0000
-    #define TILENUM_BASE 0x0100
-    #define ATTRS 0x0000
-    // $4000=x-flip
-    // $8000=y-flip
-    
-    
     // NMI k‰ytt‰‰ muuttujia osoitteista:
     //    00:0Dxx
     //    00:00Fx
@@ -62,8 +39,384 @@ namespace
     unsigned TILEBASE_OFFS, TILEBASE_SEG;
     unsigned WIDTH_OFFS, WIDTH_SEG;
     
-    const SubRoutine GetPIIRRA_MJONO()
+    void TalletaMuuttujat(unsigned Bitness, SNEScode &code)
     {
+        const unsigned TileDataSize = 2 * 8 * Bitness;
+        const unsigned Vapaa = TILEBUF + TileDataSize;
+        
+        const int MinPEI = 0x10;
+        const int MaxPEI = (Vapaa - 1) & ~1;
+        
+        // PEI some space
+        for(int a=MinPEI; a<=MaxPEI; a+=2) code.EmitCode(0xD4, a); // pei.
+    }
+    void PalautaMuuttujat(unsigned Bitness, SNEScode &code)
+    {
+        const unsigned TileDataSize = 2 * 8 * Bitness;
+        const unsigned Vapaa = TILEBUF + TileDataSize;
+        
+        const int MinPEI = 0x10;
+        const int MaxPEI = (Vapaa - 1) & ~1;
+        
+        // Release the borrowed space
+        code.Set16bit_X(); //shorten code...
+        code.Set16bit_M();
+        for(int a=MaxPEI; a>=MinPEI; a-=2) code.EmitCode(0x68, 0x85, a); // pla, sta.
+    }
+
+#define CALC_DEBUG 0
+    /* Return value: number of bits set */
+    int BuildShiftTask(int c, vector<int> &bitsigns, unsigned highest_bit=999)
+    {
+        if(!c) return 0;
+        
+        int abs_c = c<0 ? -c : c;
+        if(highest_bit==999)
+        {
+            for(highest_bit=0; highest_bit<bitsigns.size(); ++highest_bit)
+            {
+                int bitvalue = 1 << highest_bit;
+                if(bitvalue >= abs_c) break;
+            }
+        }
+        
+        if(abs_c >= (2 << highest_bit)) return 999;
+        
+        for(unsigned bit=highest_bit; bit-->0; )
+            bitsigns[bit] = 0;
+        
+#if CALC_DEBUG && 0
+        fprintf(stderr, "Highest bit=%u, thinking %d...\n", highest_bit, c);
+#endif
+        
+        int bestscore = 999, best_c=0;
+        vector<int> bestbits = bitsigns;
+        for(int value=-1; value<=1; ++value)
+        {
+            int bitvalue = (1 << highest_bit) * value;
+            int tmp_c = c - bitvalue;
+            
+            bitsigns[highest_bit] = value;
+            
+            if(!highest_bit)
+            {
+                if(tmp_c != 0) continue;
+            }
+
+            int score = 0;
+            if(value != 0) ++score;
+            
+            if(highest_bit)
+            {
+                score += BuildShiftTask(tmp_c, bitsigns, highest_bit-1);
+            }
+            if(score < bestscore)
+            {
+                bestbits  = bitsigns;
+                bestscore = score;
+                best_c    = tmp_c;
+            }
+        }
+        bitsigns = bestbits;
+        c        = best_c;
+        
+#if CALC_DEBUG && 0
+        if(bestscore < 999)
+        {
+            fprintf(stderr, "Highest bit=%u, I think ", highest_bit);
+            for(unsigned bit=bitsigns.size(); bit-->0; )
+                fprintf(stderr, "%c", "N-P"[bitsigns[bit]+1]);
+            fprintf(stderr, " (%d) - best score %d\n", c, bestscore);
+        }
+#endif
+        return bestscore;
+    }
+
+    void GenerateCalculation(SNEScode &code, unsigned a, unsigned b, unsigned c, unsigned d)
+    {
+        // Generates code corresponding to this:
+        //         A -= a
+        //         A >>= b
+        //         A *= c
+        //         A += d
+        // Must keep all other registers intact.
+        // Wastes JMPTMP and flags though.
+        
+        code.Set16bit_M();
+        
+        if(c == 0)
+        {
+            // if multiplying by 0, skip something
+            
+#if CALC_DEBUG
+            fprintf(stderr, "LDA #$0000\n");
+#endif
+            code.EmitCode(0xA9, 0,0);
+            
+            if(d == 1)
+            {
+#if CALC_DEBUG
+                fprintf(stderr, "INC A\n");
+#endif
+                code.EmitCode(0x1A);  // INC A
+            }
+            else if(d > 0)
+            {
+#if CALC_DEBUG
+                fprintf(stderr, "CLC; ADC A, #$%04X\n", d);
+#endif
+                code.EmitCode(0x18,0x69, d&255, d/256); // ADD A, d
+            }
+            return;
+        }
+        
+        /* Disable this if you don't like its side effects:
+         * (x >> 7)*2 is not really the same as (x >> 6)
+         */
+        while(b > 0 && !(c%2)) { --b; c >>= 1; }
+        
+        unsigned const_sub_pos = 0;
+        
+        while(const_sub_pos < b && !(a&1))
+        {
+            a >>= 1;
+            ++const_sub_pos;
+        }
+        
+        for(unsigned bit=0; ; ++bit)
+        {
+            if(bit == const_sub_pos)
+            {
+                if(a == 1)
+                {
+                    code.EmitCode(0x3A); // DEC A
+#if CALC_DEBUG
+                    fprintf(stderr, "DEC A\n");
+#endif
+                }
+                else if(a > 0)
+                {
+                    code.EmitCode(0x38,0xE9, a&255, a/256); // SUB A, a
+#if CALC_DEBUG
+                    fprintf(stderr, "STC; SBC A, #$%04X\n", a);
+#endif
+                }
+            }
+            if(bit == b)break;
+        
+#if CALC_DEBUG
+            fprintf(stderr, "LSR A\n");
+#endif
+            code.EmitCode(0x4A);
+        }
+        
+        unsigned last_shift_count = 0;
+        while(!(c&1))
+        {
+            ++last_shift_count;
+            c >>= 1;
+        }
+
+        vector<int> bitsigns(16);
+        for(unsigned a=0; a<bitsigns.size(); ++a)
+            bitsigns[a] = (c & (1 << a)) ? 1 : 0;
+
+        BuildShiftTask(c, bitsigns);
+        
+        unsigned pushnum = 0;
+        unsigned lastpush = 0;
+        unsigned highest_bit = 0;
+        for(unsigned bit=0; bit<bitsigns.size(); ++bit)
+        {
+            if(!bitsigns[bit])continue;
+            ++lastpush;
+            highest_bit = bit;
+        }
+        unsigned const_add_pos = last_shift_count;
+        if(d > 0)
+            while(const_add_pos > 0 && !(d & 1))
+            {
+                --const_add_pos;
+                d >>= 1;
+            }
+        
+        vector<bool> is_add(lastpush);
+        bool x_pushed1 = false;
+        
+        for(unsigned bit=0; bit <= highest_bit; ++bit)
+        {
+            if(bit > 0)
+            {
+#if CALC_DEBUG
+                fprintf(stderr, "ASL A\n");
+#endif
+                code.EmitCode(0x0A);
+            }
+            if(bitsigns[bit] != 0)
+            {
+                is_add[pushnum] = bitsigns[bit] == 1;
+
+                ++pushnum;
+                // Add A ASL'd by this value
+                
+                if(pushnum == lastpush)
+                {
+                    // FIXME: check is_add!
+                    // nothing to be done
+                    continue;
+                }
+                if(pushnum == lastpush-1)
+                {
+#if CALC_DEBUG
+                    fprintf(stderr, "STA JMPTMP\n");
+#endif
+                    code.EmitCode(0x85, JMPTMP);       // STA JMPTMP
+                    continue;
+                }
+                if(pushnum == lastpush-2)
+                {
+                    code.Set16bit_X();
+                    
+                    if(!x_pushed1)
+                    {
+#if CALC_DEBUG
+                        fprintf(stderr, "PHX\n");
+#endif
+                        code.EmitCode(0xDA); //PHX
+                    }
+#if CALC_DEBUG
+                    fprintf(stderr, "TAX\n");
+#endif
+                    code.EmitCode(0xAA); //TAX
+                    continue;
+                }
+                if(pushnum == lastpush-3)
+                {
+                    code.Set16bit_X();
+#if CALC_DEBUG
+                    fprintf(stderr, "PHY; TAY\n");
+#endif
+                    code.EmitCode(0x5A); //PHY
+                    code.EmitCode(0xA8); //TAY
+
+                    continue;
+                }
+
+#if CALC_DEBUG
+                fprintf(stderr, "PHX\n");
+#endif
+                code.EmitCode(0xDA); //PHX
+                x_pushed1 = true;
+#if CALC_DEBUG
+                fprintf(stderr, "PHA  # bit %u\n", bit);
+#endif
+                code.EmitCode(0x48); // PHA
+            }
+        }
+        if(pushnum)
+        {
+            while(pushnum > 0)
+            {
+                if(pushnum == lastpush)
+                {
+                    /* nothing to do, the value is already in A */
+                    --pushnum;
+                    if(!is_add[pushnum])
+                    {
+                        fprintf(stderr, "ERROR: Negation requested, not implemented\n");
+                        /* FIXME: negate A */
+                    }
+                    continue;
+                }
+                else if(pushnum == lastpush-1)
+                {
+                    /* nothing to do, JMPTMP already prepared */
+                }
+                else if(pushnum == lastpush-2)
+                {
+#if CALC_DEBUG
+                    fprintf(stderr, "STX JMPTMP\n");
+#endif
+                    code.EmitCode(0x86, JMPTMP);       // STX JMPTMP
+                    if(!x_pushed1)
+                    {
+#if CALC_DEBUG
+                        fprintf(stderr, "PLX\n");
+#endif
+                        code.EmitCode(0xFA); //PLX
+                    }
+                }
+                else if(pushnum == lastpush-3)
+                {
+#if CALC_DEBUG
+                    fprintf(stderr, "STY JMPTMP; PLY\n");
+#endif
+                    code.EmitCode(0x84, JMPTMP);       // STY JMPTMP
+                    code.EmitCode(0x7A); //PLY
+                }
+                else
+                {
+#if CALC_DEBUG
+                    fprintf(stderr, "PLX; STX JMPTMP\n");
+#endif
+                    code.EmitCode(0xFA); //PLX
+                    code.EmitCode(0x86, JMPTMP);       // STX JMPTMP
+                }
+                --pushnum;
+                
+                if(is_add[pushnum])
+                {
+#if CALC_DEBUG
+                    fprintf(stderr, "CLC; ADC JMPTMP\n");
+#endif
+                    code.EmitCode(0x18, 0x65, JMPTMP); // ADD JMPTMP
+                }
+                else
+                {
+#if CALC_DEBUG
+                    fprintf(stderr, "STC; SBC JMPTMP\n");
+#endif
+                    code.EmitCode(0x38, 0xE5, JMPTMP); // SUB JMPTMP
+                }
+            }
+            if(x_pushed1)
+            {
+#if CALC_DEBUG
+                fprintf(stderr, "PLX\n");
+#endif
+                code.EmitCode(0xFA); //PLX
+            }
+        }
+        for(unsigned l=0; ; ++l)
+        {
+            if(l == const_add_pos)
+            {
+                if(d == 1)
+                {
+#if CALC_DEBUG
+                    fprintf(stderr, "INC A\n");
+#endif
+                    code.EmitCode(0x1A);  // INC A
+                }
+                else if(d > 0)
+                {
+#if CALC_DEBUG
+                    fprintf(stderr, "CLC; ADC A, #$%04X\n", d);
+#endif
+                    code.EmitCode(0x18,0x69, d&255, d/256); // ADD A, d
+                }
+            }
+            if(l == last_shift_count) break;
+#if CALC_DEBUG
+            fprintf(stderr, "ASL A\n");
+#endif
+            code.EmitCode(0x0A);
+        }
+    }
+    
+    const SubRoutine GetPIIRRA_MJONO(unsigned Bitness)
+    {
+        const unsigned TileDataSize = 2 * 8 * Bitness;
     /*
         Input:
             Ah:Y = address of the string
@@ -72,18 +425,12 @@ namespace
         Magic:
            $7000 = address of tile table in VRAM
     */
-
-        const int MinPEI = 0x10;
-        const int MaxPEI = (VAPAA - 1) & ~1;
-        
+    
         SubRoutine result;
         SNEScode &code = result.code;
         
         SNEScode::RelativeBranch Loop = code.PrepareRelativeBranch();
         SNEScode::RelativeBranch End = code.PrepareRelativeBranch();
-        
-        // PEI some space
-        for(int a=MinPEI; a<=MaxPEI; a+=2) code.EmitCode(0xD4, a); // pei.
         
         code.Set8bit_M();
         code.EmitCode(0x85, PITUUS);     // STA PITUUS
@@ -92,17 +439,8 @@ namespace
         code.EmitCode(0x8B, 0x68);       // PHB, PLA
         code.EmitCode(0x85, TILEDEST+2); // TILEDEST.seg = DB
         
-        code.EmitCode(0xA9, 0x7D);
-        code.EmitCode(0x85, TILEDST2+2); // TILEDST2.seg = 0x7D
-        
-        // Tilen alussa taas (0pix).
+        // Merkkijonon alussa pixoffs on aina 0
         code.EmitCode(0x64, PIXOFFS);    // STZ PIXOFFS
-        
-        /////
-        code.Set16bit_M();
-        code.EmitCode(0xA9, TILENUM_BASE&255, TILENUM_BASE/256);
-        code.EmitCode(0x85, TILENUM);    //STA TILENUM
-        /////
         
         code.Set16bit_X();
         code.Set16bit_M();
@@ -111,22 +449,17 @@ namespace
         
         code.EmitCode(0x86, TILEDEST);      // STX TILEDEST.ofs
 
-        code.EmitCode(0x8A);                // TXA
-        code.EmitCode(0x38,0xE9,0xC0,0xFF); // SUB A, 0xFFC0
-        code.EmitCode(0x85, TILEDST2);      // STA TILEDST2.ofs
-
         // Aluksi nollataan se kuva kokonaan.
-        for(unsigned ind=0x0; ind<TILEDATASIZE; ind+=2)
+        for(unsigned ind=0x0; ind<TileDataSize; ind+=2)
             code.EmitCode(0x64, TILEBUF+ind); // STZ TILEBUF[ind]
 
         // Muodostetaan pointteri tilebufferiin.
-        code.Set8bit_M();
+        code.Set16bit_M();
         // Tilebufin segmentti on $00
-        code.EmitCode(0x64, MEMADDR+2);        // STZ MEMADDR+2
+        code.EmitCode(0x64, MEMADDR+1);        // STZ MEMADDR+1 (seg<-high)
         // Tilebufin offset on D+TILEBUF
         code.EmitCode(0x7B);                   // TDC
-        code.EmitCode(0x18, 0x69, TILEBUF);    // ADD A, &TILEBUF
-        code.Set16bit_M();
+        code.EmitCode(0x18, 0x69, TILEBUF,0);  // ADD A, &TILEBUF
         code.EmitCode(0x85, MEMADDR);          // STA MEMADDR
         
         Loop.ToHere();
@@ -140,7 +473,7 @@ namespace
         
 #if 1
         // Go and draw the character
-        result.CallSub(VWF8_Draw1);
+        result.CallSub(VWF8_Draw1[Bitness]);
 #endif
         
         code.Set16bit_M();
@@ -152,12 +485,8 @@ namespace
         
         End.ToHere();
         
-        result.CallSub(VWF8_Write);
+        result.CallSub(VWF8_Write[Bitness]);
         
-        // Release the borrowed space
-        code.Set16bit_X(); //shorten code...
-        code.Set16bit_M();
-        for(int a=MaxPEI; a>=MinPEI; a-=2) code.EmitCode(0x68, 0x85, a); // pla, sta.
         code.EmitCode(0x6B); // rtl
         
         Loop.Proceed();
@@ -165,7 +494,7 @@ namespace
         
         return result;
     }
-    const SubRoutine GetPIIRRA_YKSI()
+    const SubRoutine GetPIIRRA_YKSI(unsigned Bitness)
     {
         SubRoutine result;
         SNEScode &code = result.code;
@@ -193,7 +522,7 @@ namespace
         code.EmitCode(0x85, TILEBASE+2);       // TILEBASE.seg = TILEBASE_SEG
         
         code.Set16bit_X();
-        code.EmitCode(0xA0, 8*BITNESS, 0x00);  // LDY <miss‰ on seuraava tile>
+        code.EmitCode(0xA0, 8*Bitness, 0x00);  // LDY <miss‰ on seuraava tile>
         
         code.Set8bit_M();
         code.EmitCode(0xA9, 0x08);             // LDA 0x08
@@ -252,7 +581,7 @@ namespace
         }
 #if 0
         /* Wonder what's wrong, but this breaks things */
-        for(unsigned bitnum=2; bitnum<BITNESS; ++bitnum)
+        for(unsigned bitnum=2; bitnum<Bitness; ++bitnum)
         {
             code.Set16bit_M();
             
@@ -277,7 +606,7 @@ namespace
         code.EmitCode(0x18, 0x65, PIXOFFS);    // ADD A, PIXOFFS
         code.EmitCode(0x85, PIXOFFS);          // STA PIXOFFS
         
-        result.CallSub(VWF8_Check);
+        result.CallSub(VWF8_Check[Bitness]);
         
         code.EmitCode(0x6B);                   // RTL
         
@@ -285,7 +614,7 @@ namespace
        
         return result;
     }
-    const SubRoutine GetPPU_WRITE_IF()
+    const SubRoutine GetPPU_WRITE_IF(unsigned Bitness)
     {
         SubRoutine result;
         SNEScode &code = result.code;
@@ -302,10 +631,10 @@ namespace
         code.EmitCode(0x85, PIXOFFS);          // STA PIXOFFS (pixoffs -= 8)
         
         // Kirjoita merkki ulos
-        result.CallSub(VWF8_Write);
+        result.CallSub(VWF8_Write[Bitness]);
         
         // Alusta muistiosoite taas        
-        result.CallSub(VWF8_Next);
+        result.CallSub(VWF8_Next[Bitness]);
         
         End.ToHere();
         
@@ -315,7 +644,7 @@ namespace
        
         return result;
     }
-    const SubRoutine GetPPU_WRITE()
+    const SubRoutine GetPPU_WRITE(unsigned Bitness)
     {
         SubRoutine result;
         SNEScode &code = result.code;
@@ -327,16 +656,16 @@ namespace
 #if 1 /* if redefine tiles */
         code.EmitCode(0xA5, TILENUM);          // LDA TILENUM
         
-        // bitness=2: 2 4 8       = 3 shifts
-        // bitness=4: 2 4 8 16 32 = 5 shifts
-        for(unsigned shiftn=2; shiftn < 8*BITNESS; shiftn+=shiftn)
+        // Bitness=2: 2 4 8       = 3 shifts
+        // Bitness=4: 2 4 8 16 32 = 5 shifts
+        for(unsigned shiftn=2; shiftn < 8*Bitness; shiftn+=shiftn)
             code.EmitCode(0x0A);               // SHL A
         
-        // One character size is 8*BITNESS
+        // One character size is 8*Bitness
         // The "2" here is because write "this" and "next".
-        unsigned n = 8*BITNESS;
+        unsigned n = 8*Bitness;
 #if 1 /* ppu method */
-        code.EmitCode(0x18, 0x69,VRAM_BASE&255, VRAM_BASE/256);
+        code.EmitCode(0x18, 0x65, VRAMADDR);   // ADD A, VRAMADDR
 
         code.EmitCode(0x8F, 0x16, 0x21, 0x00); // STA $00:$2116 (PPU:lle kirjoitusosoite)
         
@@ -344,7 +673,7 @@ namespace
             code.EmitCode(0xA5,TILEBUF+ind,0x8F,0x18,0x21,0x00); // LDA, STA $00:$2118
 #else /* dma method */
         code.EmitCode(0x0A);  // SHL A
-        code.EmitCode(0x18, 0x69,0x00,0x70);   // ADD A, 0x7000
+        code.EmitCode(0x18, 0x65, VRAMADDR);   // ADD A, VRAMADDR
 
         // K‰ytet‰‰n DMA:ta ja kopsataan ramiin vaan
         code.Set16bit_X();
@@ -362,17 +691,16 @@ namespace
         code.Set16bit_M();
         code.EmitCode(0xA5, TILENUM);          // LDA TILENUM
         code.EmitCode(0x29, 0xFF, 0x03);       // AND A, $03FF
-        //palettis‰‰tˆj‰: ORA $imm16
-        code.EmitCode(0x09, ATTRS&255, ATTRS/256);
+        
+        code.Set8bit_M();
+        code.EmitCode(0xEB); //XBA
+        code.EmitCode(0x05, 0x7E);             // ORA ATTR - t‰m‰ tulee pelilt‰
+        code.EmitCode(0xEB); //XBA
+        
+        code.Set16bit_M();
         code.EmitCode(0x87, TILEDEST);         // STA [long[TILEDEST]]
         code.EmitCode(0xE6, TILEDEST);         // INC TILEDEST
         code.EmitCode(0xE6, TILEDEST);         // INC TILEDEST
-#endif
-
-#if 0 /* use tiledst2 */
-        code.EmitCode(0x87, TILEDST2);         // STA [long[TILEDST2]]
-        code.EmitCode(0xE6, TILEDST2);         // INC TILEDST2
-        code.EmitCode(0xE6, TILEDST2);         // INC TILEDST2
 #endif
 
         code.EmitCode(0xE6, TILENUM);          // INC TILENUM
@@ -381,13 +709,13 @@ namespace
 
         return result;
     }
-    const SubRoutine GetNEW_TILE()
+    const SubRoutine GetNEW_TILE(unsigned Bitness)
     {
         SubRoutine result;
         SNEScode &code = result.code;
         
         code.Set16bit_M();
-        unsigned n = 8*BITNESS; // Yhden tilen koko
+        unsigned n = 8*Bitness; // Yhden tilen koko
         for(unsigned ind=0; ind<n; ind+=2)
         {
             // Seuraava nykyiseksi, ja seuraava tyhj‰ksi.
@@ -402,6 +730,7 @@ namespace
     }
     const SubRoutine GetEquipLeftItemFunc()
     {
+        unsigned Bitness = 2;
         // In: A = item number
         
         SubRoutine result;
@@ -422,7 +751,39 @@ namespace
         code.EmitCode(0x8B,0x08); // PHB,PHP
         code.EmitCode(0x86,0x65); // STX [$00:D+$65]
         
-        result.CallSub(VWF8_DrawS);
+        TalletaMuuttujat(Bitness, code);
+        
+        // Tilenumeron pit‰isi olla vissiin 12 * pystyrivi.
+        //    Esimerkkioffsetteja:
+        //         X=4FC6
+        //         X=5046
+        //         X=50C6
+        //         X=5146
+        //         X=51C6
+        //         X=5246
+        //         X=52C6
+        
+        /////
+        code.Set16bit_M();
+        code.EmitCode(0x48); //PHA
+       // unsigned n = 0x0000;
+       // code.EmitCode(0xA9, n&255, n>>8);
+       
+        code.EmitCode(0xA9, 0x00, 0x70); // LDA $7000
+        code.EmitCode(0x85, VRAMADDR);   // STA VRAMADDR
+        
+        code.EmitCode(0x8A);                //TXA
+
+        // Laske (A - 0x4FC6) / 128 * 10 + 0x0000
+        GenerateCalculation(code, 0x4FC6, 7, 10, 0x0000);
+        
+        code.EmitCode(0x85, TILENUM);      //STA TILENUM
+        code.EmitCode(0x68); //PLA
+        /////
+        
+        result.CallSub(VWF8_DrawS[Bitness]);
+        
+        PalautaMuuttujat(Bitness, code);
         
         code.Set8bit_M();
 
@@ -440,6 +801,7 @@ namespace
     }
     const SubRoutine GetSomeItemFunc()
     {
+        unsigned Bitness = 4;
         // In: A = item number
         
         SubRoutine result;
@@ -475,17 +837,53 @@ namespace
         //code.EmitCode(0x18,0x69,0x00,0x10); // ADD A,$1000
         //code.EmitCode(0xAA,0x68); //TAX,PLA
         
-        //  Item-ruudun position layer 1:ss‰
+        //  Item-ruudun positio layer 1:ss‰
         //  (tai ainakin minne halutaan kirjoitettavan):
         // $30A2
         // $3122
         // $31A2
         // $3222
         
+        TalletaMuuttujat(Bitness, code);
         
-#if 1
-        result.CallSub(VWF8_DrawS);
-#endif
+        code.Set16bit_M();
+        code.Set16bit_X();
+        code.EmitCode(0xDA); //PHX
+        code.EmitCode(0x48); //PHA
+        
+        
+        /////
+        code.Set16bit_M();
+        code.EmitCode(0x48); //PHA
+       // unsigned n = 0x0000;
+       // code.EmitCode(0xA9, n&255, n>>8);
+       
+        code.EmitCode(0xA9, 0x00, 0x00); // LDA $0000
+        code.EmitCode(0x85, VRAMADDR);   // STA VRAMADDR
+        
+        code.EmitCode(0x8A);                //TXA
+
+        // Laske (A - 0x30A2) / 128 * 11 + 0x120
+        GenerateCalculation(code, 0x30A2, 7, 11, 0x120);
+        
+        code.EmitCode(0x85, TILENUM);      //STA TILENUM
+        code.EmitCode(0x68); //PLA
+        /////
+        
+        result.CallSub(VWF8_DrawS[Bitness]);
+
+        // Funktion pit‰‰ palauttaa alkuper‰inen X + pituus*2.
+        code.Set16bit_M();
+        code.Set16bit_X();
+        code.EmitCode(0x68); //PLA
+        code.EmitCode(0xFA); //PLX
+        code.EmitCode(0x86, JMPTMP);       // STX JMPTMP
+        code.EmitCode(0x29, 0xFF, 0x00);   // AND A, $00FF
+        code.EmitCode(0x0A);               // ASL A, 1
+        code.EmitCode(0x18, 0x65, JMPTMP); // ADD JMPTMP
+        code.EmitCode(0xAA); //TAX
+        
+        PalautaMuuttujat(Bitness, code);
         
         code.Set8bit_M();
 
@@ -503,6 +901,71 @@ namespace
         
         return result;
     }
+    const SubRoutine GetItemListFunc()
+    {
+        unsigned Bitness = 4;
+        
+        SubRoutine result;
+        SNEScode &code = result.code;
+        
+        // This is what $C2:EF65 does, and we're substituting it
+        code.EmitCode(0x8B,0x08); // PHB,PHP
+        code.EmitCode(0x86,0x65); // STX [$00:D+$65]
+        
+        TalletaMuuttujat(Bitness, code);
+        
+        code.Set16bit_M();
+        code.Set16bit_X();
+        code.EmitCode(0xDA); //PHX
+        code.EmitCode(0x48); //PHA
+        
+        
+        code.Set16bit_M();
+        code.EmitCode(0x48); //PHA
+       
+        code.EmitCode(0xA9, 0x00, 0x00); // LDA $0000
+        code.EmitCode(0x85, VRAMADDR);   // STA VRAMADDR
+        
+        code.EmitCode(0x8A);                //TXA
+
+        GenerateCalculation(code, 0x30A2, 7, 11, 0x000);
+        
+        code.EmitCode(0x85, TILENUM);      //STA TILENUM
+        code.EmitCode(0x68); //PLA
+        
+        result.CallSub(VWF8_DrawS[Bitness]);
+
+        // Funktion pit‰‰ palauttaa alkuper‰inen X + pituus*2.
+        code.Set16bit_M();
+        code.Set16bit_X();
+        code.EmitCode(0x68); //PLA
+        code.EmitCode(0xFA); //PLX
+        code.EmitCode(0x86, JMPTMP);       // STX JMPTMP
+        code.EmitCode(0x29, 0xFF, 0x00);   // AND A, $00FF
+        code.EmitCode(0x0A);               // ASL A, 1
+        code.EmitCode(0x18, 0x65, JMPTMP); // ADD JMPTMP
+        code.EmitCode(0xAA); //TAX
+        
+        PalautaMuuttujat(Bitness, code);
+        
+        code.Set8bit_M();
+
+        // This is what $C2:EF65 does
+        // Normalizes the colour, I guess? leaves bits $20,$04
+        code.EmitCode(0xA9,0xDC,0x14,0x7E); // LDA A,NOT $DC; TRB [$00:D+$7E]
+        code.EmitCode(0x28,0xAB); // PLP,PLB
+        
+        code.Set16bit_M(); // must do this at end
+        
+        code.EmitCode(0xA5, 0x7D); // LDA [$00:D+$7D] - must do this too.
+        
+        // Then return.
+        code.EmitCode(0x6B);                   // RTL
+        
+        code.AddCallFrom(0xC2B061);
+        
+        return result;
+    }
 }
 
 void insertor::GenerateVWF8code(unsigned widthtab_addr, unsigned tiletab_addr)
@@ -512,27 +975,38 @@ void insertor::GenerateVWF8code(unsigned widthtab_addr, unsigned tiletab_addr)
     WIDTH_OFFS    = (widthtab_addr & 0xFFFF);
     TILEBASE_OFFS = (tiletab_addr & 0xFFFF);
     
-    VWF8_DrawS = GetConf("vwf8", "p").SField();
-    VWF8_Draw1 = GetConf("vwf8", "d").SField();
-    VWF8_Check = GetConf("vwf8", "c").SField();
-    VWF8_Next  = GetConf("vwf8", "a").SField();
-    VWF8_Write = GetConf("vwf8", "w").SField();
+    VWF8_DrawS[2] = GetConf("vwf8", "b2_draws").SField();
+    VWF8_Draw1[2] = GetConf("vwf8", "b2_draw1").SField();
+    VWF8_Check[2] = GetConf("vwf8", "b2_check").SField();
+    VWF8_Next [2] = GetConf("vwf8", "b2_next").SField();
+    VWF8_Write[2] = GetConf("vwf8", "b2_write").SField();
+    VWF8_DrawS[4] = GetConf("vwf8", "b4_draws").SField();
+    VWF8_Draw1[4] = GetConf("vwf8", "b4_draw1").SField();
+    VWF8_Check[4] = GetConf("vwf8", "b4_check").SField();
+    VWF8_Next [4] = GetConf("vwf8", "b4_next").SField();
+    VWF8_Write[4] = GetConf("vwf8", "b4_write").SField();
     
     wstring VWF8_I1 = GetConf("vwf8", "i1").SField();
     wstring VWF8_I2 = GetConf("vwf8", "i2").SField();
+    wstring VWF8_I3 = GetConf("vwf8", "i3").SField();
     
     FunctionList Functions;
 
-    Functions.Define(VWF8_DrawS, GetPIIRRA_MJONO());
-    Functions.Define(VWF8_Draw1, GetPIIRRA_YKSI());
-    Functions.Define(VWF8_Next, GetNEW_TILE());
-    Functions.Define(VWF8_Check, GetPPU_WRITE_IF());
-    Functions.Define(VWF8_Write, GetPPU_WRITE());
-    Functions.Define(VWF8_I1, GetEquipLeftItemFunc());
-    Functions.Define(VWF8_I2, GetSomeItemFunc());
+    for(unsigned Bitness=2; Bitness<=4; Bitness+=2)
+    {
+        Functions.Define(VWF8_DrawS[Bitness], GetPIIRRA_MJONO(Bitness));
+        Functions.Define(VWF8_Draw1[Bitness], GetPIIRRA_YKSI(Bitness));
+        Functions.Define(VWF8_Next[Bitness],  GetNEW_TILE(Bitness));
+        Functions.Define(VWF8_Check[Bitness], GetPPU_WRITE_IF(Bitness));
+        Functions.Define(VWF8_Write[Bitness], GetPPU_WRITE(Bitness));
+    }
+    Functions.Define(VWF8_I1,    GetEquipLeftItemFunc());
+    Functions.Define(VWF8_I2,    GetSomeItemFunc());
+    Functions.Define(VWF8_I3,    GetItemListFunc());
     
     Functions.RequireFunction(VWF8_I1);
     Functions.RequireFunction(VWF8_I2);
+    Functions.RequireFunction(VWF8_I3);
     
     vector<SNEScode> codeblobs;
     vector<wstring>  funcnames;
