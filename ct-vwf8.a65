@@ -44,13 +44,16 @@
 #define W_TILENUM  $6200
 #define W_VRAMADDR $6202
 
-; Tilebuf is at $7E620C - size maximally 11*64 bytes
+; Tilebuf is maximally 11*64 bytes
 #define W_ONESIZE  $6204
 #define W_ENDX     $6206
 #define B_PIXOFFS  $6208
 #define B_LENGTH   $6209
 #define B_WIDTH    $620A
-#define TILEBUF    $620C
+#define W_CLOCKW1  $620C
+#define W_CLOCKW2  $620E
+#define W_CLOCKW3  $6210
+#define TILEBUF    $6212
 
 ; External symbols - defined by the linker:
 ;   Font address:
@@ -580,7 +583,7 @@ Trans:
         sbc #$0080
         rts
       + ;Special
-c        sec
+        sec
         ; itemchars were placed at the beginning
         sbc #$0020
         rts
@@ -763,7 +766,7 @@ EquipRightItemFunc:        ;also used in shop
         ; FIXME: ADD SOME KIND OF PREVENTION AGAINST THE GAME'S BUSYREFRESHLOOP
         ;        (NECESSARY IN SHOP, EQUIP FRONT)
         
-        ; In - A=item number
+        ; In - A = item number, X = buffer target
         pha
          ; Find out if we were called from the routine
          ; that displays equipment (4 lines)...
@@ -773,13 +776,22 @@ EquipRightItemFunc:        ;also used in shop
          ; We weren't - must be from shop then
          bra +
        were:
-         sty $22  ; We were. Do a hack, save Y.
+         ; We were called from equipviewer.
+         sty $22   ;Do a hack, save Y.
        + lda $22   ;counter in create-list
          clc:adc $1041 ;buy-listbegin
          clc:adc $1043 ;sell-listbegin
          ; This works
          sta W_TILENUM
-        pla
+
+         jsr CalculateClockDifference
+         cmp #3
+         bcc + ; Too small difference to ignore
+         cmp #15
+         bcc IgnoreItemListVWF8 ; Okay to ignore
+         ; Not ignored
+         jsr SaveClock
+      + pla
         SET_16_BIT_AX()
         
         jsr GetItemName
@@ -795,6 +807,12 @@ EquipRightItemFunc:        ;also used in shop
         pla
         bra DisplayFuncCommon_4bit
 
+IgnoreItemListVWF8:
+        .al
+        pla
+        lda #$00DC: trb $7E
+        rtl
+        
 ItemListFunc:
         ; In - A=item number
         
@@ -887,13 +905,10 @@ DisplayFuncCommon_4bit:
 DisplayFuncCommonEnd:
         SET_16_BIT_A()
         UNALLOCATE()
-        SET_8_BIT_A()
         
         ; $C2EF65 does this. Resets the attributes (bits $24).
-        lda #$DC
+        lda #$00DC
         trb $7E
-        
-        SET_16_BIT_A()
         
         rtl
 
@@ -1232,3 +1247,39 @@ TileNumberList:
 TileNumberListInBattle:
         ; 3 lines here
         .word $0150, $018A, $0195
+
+
+CalculateClockDifference:
+.(
+	; May use A, Y, W_VRAMADDR
+	; Returns A
+        .al
+        
+        lda $0404 : cmp W_CLOCKW3 : bne BigDiff
+        lda $0402 : cmp W_CLOCKW2 : bne BigDiff
+
+        lda $0401 : sec : sbc W_CLOCKW1+1
+        and #$00FF
+        sta W_VRAMADDR
+        asl : asl : asl : asl
+        sec : sbc W_VRAMADDR
+        asl : asl
+        cmp #256-60 : bcs Enough
+        sta W_VRAMADDR
+        lda $0400 : sec : sbc W_CLOCKW1
+        clc : adc W_VRAMADDR
+        and #$00FF
+        rts
+BigDiff:
+	lda #100
+Enough:
+	rts
+.)
+        
+ 
+SaveClock:
+	; May use A, Y
+	lda $0400 : sta W_CLOCKW1
+	lda $0402 : sta W_CLOCKW2
+	lda $0404 : sta W_CLOCKW3
+	rts

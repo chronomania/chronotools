@@ -6,7 +6,7 @@ THE REST OF THIS FILE IS MY NOTES
 
 ----------------
 
-darkforcelta apua:
+Branch tutorial by darkforce...:
    cmp #$80
    bcc _label_   { branch A < $80}
    bcs _label_   { branch A >= $80}
@@ -16,6 +16,20 @@ darkforcelta apua:
    lda $7e2000
    bmi _label_   { branch if (A & $80) = $80 } (similar in 16-bit mode)
    bpl _label_   { branch if (A & $80) = $00 }
+
+Did you know that Chrono Trigger can be rebooted
+by pressing start+select+L+R ? Amazing what you
+can discover by disassembling the game :)
+
+// KEYBOARD
+
+$0000F2 = AXLRBYPH   P=start H=select
+$0000F3 = 0000udlr
+$0000F0 = AXLR00p0  BUT NEGATED
+$0000F4 = same as F0
+
+
+
 
 // DIALOGIN PIIRTO - ASSEMBLER
 
@@ -157,10 +171,12 @@ $C2:8253 28          PLP                     A:0101 X:0010 Y:53C0 D:0000 DB:7E S
 $C2:8254 60          RTS                     A:0101 X:0010 Y:53C0 D:0000 DB:7E S:0A72 P:enVmxdi
 
 
+$C2:0003 4C DF 57    JMP $57DF  [$7E:57DF]   A:0101 X:0010 Y:53C0 D:0000 DB:7E S:0A71 P:envmxdi
+
 // TÄMÄ RUTIINI (FAR) ALOITTAA 12pix TEKSTIN TULOSTUKSEN
 //   $020C = byte-indeksi tekstitauluun, jota käytetään
 //   $020D = long-pointteri tekstitauluun
-$C2:0003 4C DF 57    JMP $57DF  [$7E:57DF]   A:0101 X:0010 Y:53C0 D:0000 DB:7E S:0A71 P:envmxdi
+//   $0210 = long-pointteri tauluun, jonne tileindeksit sijoitetaan
 $C2:57DF 08          PHP                     A:0101 X:0010 Y:53C0 D:0000 DB:7E S:0A71 P:envmxdi
 $C2:57E0 C2 20       REP #$20                A:0101 X:0010 Y:53C0 D:0000 DB:7E S:0A70 P:envmxdi
 $C2:57E2 0B          PHD                     A:0101 X:0010 Y:53C0 D:0000 DB:7E S:0A70 P:envmxdi

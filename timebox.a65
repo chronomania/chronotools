@@ -44,3 +44,12 @@
 ;adc #$0080
 ;sta $82
 ;sep #$20
+
+
+;*=$C256CA
+;.al
+;lda #$8621: sta $0060,x               ; source address (long)
+;lda #$8821: sta $0068,x               ; ?
+;lda #$1E00: sta $0063,x               ; vram target address
+;lda #$1F00: sta $006B,x               ; ?
+;lda #$0180: sta $0065,x: sta $006D,x  ; data size

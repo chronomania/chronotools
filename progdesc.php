@@ -198,6 +198,7 @@ Copypaste from the Makefile:
 # VERSION 1.13.4 is a fix to the dumper. 600ad castle texts are now again ok.
 # VERSION 1.13.5 is another dumper fix, but also finishes the battle VWF8 support
 # VERSION 1.13.6 is yet another fix, but also finishes the monster name code
+# VERSION 1.13.7 brings an improvement to the sluggish VWF8 screens problem
 </pre>
 
 Users of previous versions are advised to do the following:
