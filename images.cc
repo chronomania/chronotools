@@ -62,7 +62,8 @@ void insertor::LoadImage(const string& fn, unsigned address)
     
     PlaceData(data, address);
     
-    fprintf(stderr, "Loading '%s'... at address $%06X\n", fn.c_str(), address);
+    fprintf(stderr, "Loading '%s'... @ $%06X\n",
+        fn.c_str(), 0xC00000 | address);
 }
 
 
@@ -80,7 +81,8 @@ void insertor::LoadAlreadyCompressedImage(const string& fn, unsigned address)
     
     PlaceData(data, address);
     
-    fprintf(stderr, "Loading '%s'... at address $%06X\n", fn.c_str(), address);
+    fprintf(stderr, "Loading '%s'...@ $%06X\n",
+        fn.c_str(), 0xC00000 | address);
 }
 
 void insertor::LoadAndCompressImage(const string& fn, unsigned address, unsigned char seg)
@@ -92,11 +94,12 @@ void insertor::LoadAndCompressImage(const string& fn, unsigned address, unsigned
     
     address &= 0x3FFFFF;
     
-    fprintf(stderr, "Loading '%s'... at address $%06X, compressing", fn.c_str(), address);
+    fprintf(stderr, "Loading '%s'...@ $%06X, compressing",
+        fn.c_str(), 0xC00000 | address);
     
     vector<unsigned char> data = Compress(&uncompressed[0], uncompressed.size(), seg);
     
-    fprintf(stderr, " done (%u bytes)\n", data.size());
+    fprintf(stderr, " (%u bytes)\n", data.size());
     
     PlaceData(data, address);
 }
@@ -111,7 +114,8 @@ void insertor::LoadAndCompressImageWithPointer
     
     address &= 0x3FFFFF;
     
-    fprintf(stderr, "Loading '%s'... at address $%06X, compressing", fn.c_str(), address);
+    fprintf(stderr, "Loading '%s'...@ $%06X, compressing",
+        fn.c_str(), 0xC00000 | address);
     
     vector<unsigned char> compressed = 
         Compress(&uncompressed[0], uncompressed.size(), seg);
@@ -120,7 +124,7 @@ void insertor::LoadAndCompressImageWithPointer
     
     code.AddLongPtrFrom(address);
     
-    fprintf(stderr, " done (%u bytes)\n", compressed.size());
+    fprintf(stderr, " (%u bytes)\n", compressed.size());
     
     codes.push_back(code);
 }
@@ -164,12 +168,12 @@ void insertor::LoadImages()
             vector<unsigned char> data;
             LoadImageData(image, data);
             
-            fprintf(stderr, "Loading '%s'... at address $%06X, compressing",
-                fn.c_str(), space_address);
+            fprintf(stderr, "Loading '%s'...@ $%06X, compressing",
+                fn.c_str(), 0xC00000 | space_address);
 
             data = Compress(&data[0], data.size(), segment);
             
-            fprintf(stderr, " done (%u bytes)\n", data.size());
+            fprintf(stderr, " (%u bytes)\n", data.size());
     
             SNEScode code(data);
             /* Address given later */

@@ -224,9 +224,6 @@ void insertor::PatchROM(ROM &ROM)
     
     // Write code.
     WriteCode(ROM);
-
-    // Last write the dictionary: It fits almost anywhere.
-    WriteDictionary(ROM);
 }
 
 void insertor::GenerateCode()
@@ -244,6 +241,9 @@ void insertor::GenerateCode()
     GenerateConjugatorCode();
     GenerateCrononickCode();
     GenerateSignatureCode();
+
+    // The dictionary fits almost anywhere.
+    WriteDictionary();
 
     /* Ensure all code has addresses */
     list<SNEScode>::iterator i;
@@ -300,7 +300,7 @@ void insertor::WriteCode(ROM &ROM) const
     }
 }
 
-void insertor::WriteDictionary(ROM &ROM)
+void insertor::WriteDictionary()
 {
     unsigned size = 0;
     unsigned dictsize = dict.size();
@@ -310,24 +310,68 @@ void insertor::WriteDictionary(ROM &ROM)
     for(unsigned a=0; a<dictsize; ++a)
         Organization[a].len = CalcSize(dict[a]) + 1;
     
+    // Allocate a record for the table itself
     Organization[dictsize] = dictsize*2;
 
     unsigned dictpage = NOWHERE;
     freespace.OrganizeToAnySamePage(Organization, dictpage);
     unsigned dictaddr = Organization[dictsize].pos + (dictpage << 16);
 
-    fprintf(stderr, "Writing dictionary (%u pointers at $%06X, %u bytes)...\n",
-        dictsize, dictaddr | 0xC00000, size);
+    /* Display the dictionary data addresses */
+    if(true)
+    {
+        vector<unsigned> UsedAddresses;
+        for(unsigned a=0; a<dictsize; ++a)
+        {
+            unsigned spaceptr = Organization[a].pos;
+            for(unsigned b=0; b<=dict[a].size(); ++b)
+                UsedAddresses.push_back(spaceptr+b);
+        }
+            
+        vector<unsigned> rangebegins, rangeends;
+        
+        const unsigned* begin = &*UsedAddresses.begin();
+        const unsigned* end   = &*UsedAddresses.end();
+        unsigned first=0, last=0; bool eka=true;
+        while(begin < end)
+        {
+            if(eka) { eka=false; NewRange: first=last=*begin++; continue; }
+            if(*begin == last+1) { last=*begin++; continue; }              
+            
+            rangebegins.push_back(first); rangeends.push_back(last);
+            goto NewRange;
+        }
+        rangebegins.push_back(first); rangeends.push_back(last);
+
+        fprintf(stderr,
+            "\r> Dictionary: %u(table)@ $%06X",
+            dictsize*2, dictaddr | 0xC00000);
+        
+        for(unsigned a=0; a<rangebegins.size(); ++a)
+            fprintf(stderr, ", %u(data)@ $%06X",
+                rangeends[a]-rangebegins[a]+1,
+                rangebegins[a] | (dictpage << 16) | 0xC00000);
+
+        fprintf(stderr, "\n");
+    }
     
     for(unsigned a=0; a<dictsize; ++a)
     {
         unsigned spaceptr = Organization[a].pos;
-        WritePPtr(ROM, dictaddr + a*2, dict[a], spaceptr);
+        
+        PlaceByte((spaceptr     ) & 255, dictaddr + a*2);
+        PlaceByte((spaceptr >> 8) & 255, dictaddr + a*2+1);
+        
+        vector<unsigned char> str;
+        str.push_back(dict[a].size());
+        str.insert(str.end(), dict[a].begin(), dict[a].end());
+        PlaceData(str, spaceptr | (dictpage << 16) | 0xC00000);
     }
-    ROM.Write(GetConst(DICT_OFFSET)+0, dictaddr & 255);
-    ROM.Write(GetConst(DICT_OFFSET)+1, (dictaddr >> 8) & 255);
-    ROM.Write(GetConst(DICT_SEGMENT1), 0xC0 | dictpage);
-    ROM.Write(GetConst(DICT_SEGMENT2), 0xC0 | dictpage);
+    
+    PlaceByte((dictaddr     ) & 255, GetConst(DICT_OFFSET)+0);
+    PlaceByte((dictaddr >> 8) & 255, GetConst(DICT_OFFSET)+1);
+    PlaceByte(0xC0 | dictpage,       GetConst(DICT_SEGMENT1));
+    PlaceByte(0xC0 | dictpage,       GetConst(DICT_SEGMENT2));
 }
 
 void insertor::WriteStrings(ROM &ROM)
@@ -402,10 +446,11 @@ void insertor::GenerateVWF12code()
 
     const unsigned WidthTab_Address = freespace.FindFromAnyPage(tilecount);
     
-    fprintf(stderr, "Writing VWF12:"
-                    " %u(widths)@ $%06X,"
-                    " %u(tab1)@ $%06X,"
-                    " %u(tab2)@ $%06X\n",
+    fprintf(stderr,
+        "\r> VWF12:"
+            " %u(widths)@ $%06X,"
+            " %u(tab1)@ $%06X,"
+            " %u(tab2)@ $%06X\n",
         tilecount,        0xC00000 | WidthTab_Address,
         tiletab1.size(),  0xC00000 | addr1,
         tiletab2.size(),  0xC00000 | addr2

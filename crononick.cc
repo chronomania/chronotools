@@ -11,21 +11,21 @@ void insertor::GenerateCrononickCode()
 {
     const string codefile = WstrToAsc(GetConf("crononick", "file").SField());
 
-    FILE *fp = fopen(codefile.c_str(), "rb");
-    if(!fp) return;
-
     O65 crononick_code;
-    
+    {FILE *fp = fopen(codefile.c_str(), "rb");
+    if(!fp) { perror(codefile.c_str()); return; }
     crononick_code.Load(fp);
-    fclose(fp);
+    fclose(fp);}
     
     const unsigned Code_Size = crononick_code.GetCodeSize();
     
     const unsigned Code_Address = freespace.FindFromAnyPage(Code_Size);
     
-    fprintf(stderr, "Writing crononick-handler:"
-                    " %u(code)@ $%06X\n",
-        Code_Size,       0xC00000 | Code_Address
+    fprintf(stderr,
+        "\r> Crononick(%s):"
+            " %u(code)@ $%06X\n",
+        codefile.c_str(),
+        Code_Size, 0xC00000 | Code_Address
            );
     
     crononick_code.LocateCode(Code_Address | 0xC00000);

@@ -15,15 +15,11 @@ void insertor::GenerateVWF8code()
     
     const string codefile = WstrToAsc(GetConf("vwf8", "file").SField());
     
-    FILE *fp = fopen(codefile.c_str(), "rb");
-    if(!fp) return;
-    
-    fprintf(stderr, "Loading '%s'...\n", codefile.c_str());
-    
     O65 vwf8_code;
-    
+    {FILE *fp = fopen(codefile.c_str(), "rb");
+    if(!fp) { perror(codefile.c_str()); return; }
     vwf8_code.Load(fp);
-    fclose(fp);
+    fclose(fp);}
     
     const unsigned Code_Size = vwf8_code.GetCodeSize();
     
@@ -40,10 +36,12 @@ void insertor::GenerateVWF8code()
     
     vwf8_code.LocateCode(Code_Address | 0xC00000);
     
-    fprintf(stderr, "Writing VWF8:"
+    fprintf(stderr,
+        "\r> VWF8(%s):"
                     " %u(widths)@ $%06X,"
                     " %u(tiles)@ $%06X,"
                     " %u(code)@ $%06X\n",
+        codefile.c_str(),
         widths.size(),   0xC00000 | WidthTab_Address,
         tiletab.size(),  0xC00000 | TileTab_Address,
         Code_Size,       0xC00000 | Code_Address
@@ -57,7 +55,7 @@ void insertor::GenerateVWF8code()
     DrawS_4bit = vwf8_code.GetSymAddress(WstrToAsc(GetConf("vwf8", "b4_draws")));
 #endif
 
-	LinkCalls("vwf8", vwf8_code);
+    LinkCalls("vwf8", vwf8_code);
 
     vwf8_code.Verify();
     

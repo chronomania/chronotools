@@ -77,7 +77,6 @@ private:
     
     class Conjugatemap *Conjugater;
     
-    void WriteDictionary(class ROM &ROM);
     void WriteStrings(class ROM &ROM);
     void WriteCode(class ROM &ROM) const;
 
@@ -86,6 +85,7 @@ private:
     void GenerateVWF12code();
     void GenerateVWF8code();
     void GenerateSignatureCode();
+    void WriteDictionary();
     void PatchTimeBoxes();
     
     void PlaceData(const vector<unsigned char>&, unsigned address);

@@ -17,7 +17,7 @@ namespace
     {
         fprintf(stderr, "Creating %s\n", fn);
         
-        unsigned MaxHunkSize = GetConf("patch", "maxhunksize");
+        unsigned MaxHunkSize = GetConf("patch",   "maxhunksize");
 
         /*
         {FILE *fp = fopen("chrono-uncompressed.smc", "rb");
@@ -61,6 +61,14 @@ namespace
     }
     void GeneratePatches(ROM &ROM)
     {
+        const string Name = WstrToAsc(GetConf("general", "gamename"));
+        
+        /* Set game name */
+        for(unsigned a=0; a<21; ++a)
+            ROM.Write(0xFFC0 + a, a < Name.size() ? Name[a] : ' ');
+        
+        /* FIXME: should there be a language code at $FFB5? */
+        
         GeneratePatch(ROM, 0,   WstrToAsc(GetConf("patch", "patchfn_nohdr")).c_str());
         GeneratePatch(ROM, 512, WstrToAsc(GetConf("patch", "patchfn_hdr")).c_str());
     }
@@ -160,6 +168,7 @@ int main(void)
     
     ins->ReportFreeSpace();
 
+    fprintf(stderr, "--\n");
     fprintf(stderr, "Creating a virtual ROM...\n");
     ROM ROM(4194304);
     
@@ -167,8 +176,10 @@ int main(void)
 
     ins->PatchROM(ROM);
 
+    fprintf(stderr, "--\n");
     ins->ReportFreeSpace();
     
+    fprintf(stderr, "--\n");
     fprintf(stderr, "Unallocating insertor data...\n");
     delete ins; ins = NULL;
     

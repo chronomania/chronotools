@@ -39,7 +39,10 @@ int main(int argc, const char *const *argv)
     if(strncmp((const char *)Buf, "PATCH", 5))
     {
         fprintf(stderr, "This isn't a patch!\n"); arf:fclose(fp);
-        arf2: return -1;
+        arf2:
+        fclose(original);
+        fclose(resultfile);
+        return -1;
     }
     
     multimap<unsigned, vector<char> > lumps;

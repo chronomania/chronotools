@@ -722,11 +722,18 @@ namespace
                         {
                             /* causes too much bitness changes */
                             Emit_M(16);
-                            Emit("lda #0");
-                            ALstate.Const.Set(0);
-                            ALstate.Var.Invalidate();
+                            EmitStack("lda", stackpos);
+                            EmitImmed("and", 0xFF);
                             AHstate.Const.Set(0);
                             AHstate.Var.Invalidate();
+                            ALstate.Var.Set(name);
+                            ALstate.Const.Invalidate();
+                            return;
+                            /*
+                             Emit("lda #0");
+                             ALstate.Const.Set(0);
+                             ALstate.Var.Invalidate();
+                            */
                         }
                         else
                         {
@@ -1052,16 +1059,20 @@ namespace
             CheckCodeStart();
             
             ++LoopCount;
-            Emit(".(");
             Emit("; Init loop");
             Emit_M(16);
             Emit_X(16);
             Emit("ldx #0");
+            Emit(".(");
+            --asmindent;
+            --asmindent;
             EmitLabel("LoopBegin");
+            ++asmindent;
             EmitCall(LoopHelperName);
             AssumeM(8);
             Emit("; If zero, break the loop");
             EmitParam("beq", "LoopEnd");
+            ++asmindent;
 
             Invalidate_A();
 
@@ -1074,10 +1085,14 @@ namespace
         {
             CheckCodeStart();
             
+            --asmindent;
             Emit_X(16);
             Emit("inx");
             EmitParam("bra", "LoopBegin");
+            --asmindent;
             EmitLabel("LoopEnd");
+            ++asmindent;
+            ++asmindent;
 
             Invalidate_A();
             

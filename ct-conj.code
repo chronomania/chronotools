@@ -410,6 +410,74 @@ CALL OutWord Len
 OUT 'i'
 RETURN
 
+# Outputs the stem of the word for illative conjugation.
+# Sample results:
+#     +'hu
+#     +:aa
+#   -s+ksee
+#  -de+teesee
+# -xxi+xii
+#     +ii
+FUNCTION IllativeStem
+VAR Len
+REG chr
+CALL_GET Length Len
+IF IsAlien
+  CALL OutWord Len
+  OUT '''
+  OUT 'h'
+  OUT 'u'
+  RETURN
+IF IsAbbrev
+  CALL OutWord Len
+  OUT ':'
+  CALL Out_A
+  CALL Out_A
+  RETURN
+IF IsEs
+  DEC Len
+  CALL OutWord Len
+  OUT 'k'
+  OUT 's'
+  OUT 'e'
+  OUT 'e'
+  RETURN
+IF IsDe
+  DEC Len
+  DEC Len
+  CALL OutWord Len
+  OUT 't'
+  OUT 'e'
+  OUT 'e'
+  OUT 's'
+  OUT 'e'
+  OUT 'e'
+  RETURN
+IF EndWithVowel
+  IF DoubleHard
+    DEC Len
+    DEC Len
+    CALL OutWord Len
+    CALL_GET LastChar1 chr
+    OUT chr
+    OUT chr
+    RETURN
+  IF AkiEnd
+    DEC Len
+    DEC Len
+    CALL OutWord Len
+    OUT 'e'
+    OUT 'e'
+    RETURN
+  CALL OutWord Len
+  CALL_GET LastChar1 chr
+  OUT chr
+  RETURN
+CALL OutWord Len
+OUT 'i'
+OUT 'i'
+RETURN
+
 
 # Outputs a/‰, depending whether the character name is
 # front type (‰ˆy) or back type (aou).
@@ -512,12 +580,14 @@ OUT 'n'
 CALL Out_A
 RETURN
 
-# Do_?N (illative) (to) we will never need
-# Besides it would need another stem function
-# (duplicating last letter doesn't work for abbreviations)
+# Outputs the character name conjugated in illative (-n)
+# It needs its own stem function.
 # Example: "Board Epoch" -> "Asutkaa Epochiin"
-#          "It attached to Robo" -> "Se tarttui Roboon"
-# What to do with "aliens"? 'iin, 'uun, 'hun, 'hon?
+#          "Exchange the clone for Crono" -> "Vaihtaa klooni Cronoon"
+FUNCTION Do_HUN
+CALL IllativeStem
+OUT 'n'
+RETURN
 
 # Do_?NE(en) (comitative) (together (with) one's) we will
 #                 never need (makes no sense with names)
@@ -530,13 +600,13 @@ RETURN
 # -- End --
 
 # Joitain muotoja:
-#   Matti   (mati matti matti)
-#   Magus   (magukse magust magukse)
-#   John    (johni johni johni)
-#   XYZ     (xyz: xyz:‰ xyz:)
-#   S‰de    (s‰tee s‰dett s‰tee)
-#   M‰ki    (m‰e m‰ke m‰ke)
-#   Show    (show' show't show')
+#   Matti   (mati matti matti          mattii)
+#   Magus   (magukse magust magukse    maguksee)
+#   John    (johni johni johni         johnii)
+#   XYZ     (xyz: xyz:‰ xyz:           xyz:‰‰)
+#   S‰de    (s‰tee s‰dett s‰tee        s‰teesee)
+#   M‰ki    (m‰e m‰ke m‰ke             m‰kee)
+#   Show    (show' show't show'        show'hu)
 # Ongelmallisia nimi‰ (1.10.2003):
 #   Susi
 #   Satu    (sadu satu satu)

@@ -21,7 +21,8 @@ enum
     DICT_SEGMENT1,
     DICT_SEGMENT2,
     VWF12_WIDTH_USE,
-    DIALOG_DRAW_FUNC_ADDR
+    DIALOG_DRAW_FUNC_ADDR,
+    DECOMPRESSOR_FUNC_ADDR
 };
 
 unsigned GetConst(unsigned which);

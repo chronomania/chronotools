@@ -13,7 +13,6 @@ REG c
   TRUE
 FALSE
 
-
 # Outputs the character name, but only given number of characters.
 FUNCTION OutWord
 VAR left c
@@ -57,10 +56,11 @@ CALL_GET Length Len
   CALL_GET CharNumber c3 3
   CALL_GET CharNumber c4 4
   CALL_GET CharNumber c5 5
-  # If starts with two consonants
   IF IsConso c1
     IF IsConso c2
-      # Fixme: Make c2 upcase!
+      # If starts with two consonants
+      # Then the template is: Crono -> Rono
+      CALL_GET UpCase c2 c2
       OUT c2
       OUT c3
       OUT c4

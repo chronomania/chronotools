@@ -191,21 +191,21 @@ void insertor::GenerateConjugatorCode()
 {
     const string codefile = WstrToAsc(GetConf("conjugator", "file").SField());
 
-    FILE *fp = fopen(codefile.c_str(), "rb");
-    if(!fp) return;
-
     O65 conj_code;
-    
+    {FILE *fp = fopen(codefile.c_str(), "rb");
+    if(!fp) { perror(codefile.c_str()); return; }
     conj_code.Load(fp);
-    fclose(fp);
+    fclose(fp);}
     
     const unsigned Code_Size = conj_code.GetCodeSize();
     
     const unsigned Code_Address = freespace.FindFromAnyPage(Code_Size);
     
-    fprintf(stderr, "Writing conjugater:"
-                    " %u(code)@ $%06X\n",
-        Code_Size,       0xC00000 | Code_Address
+    fprintf(stderr,
+        "\r> Conjugater(%s):"
+            " %u(code)@ $%06X\n",
+        codefile.c_str(),
+        Code_Size, 0xC00000 | Code_Address
            );
     
     conj_code.LocateCode(Code_Address | 0xC00000);

@@ -2,74 +2,144 @@
 #include "ctinsert.hh"
 #include "compress.hh"
 #include "tgaimage.hh"
+#include "settings.hh"
 #include "config.hh"
 #include "o65.hh"
 
-void insertor::GenerateSignatureCode()
+struct Image
 {
-    const ucs4string& imagefn = GetConf("signature", "image");
-    const ucs4string& codefn  = GetConf("signature", "file");
-    unsigned segment          = GetConf("signature", "page");
+    TGAimage image;
+
+    ucs4string tab_sym;
+    ucs4string pal_sym;
+    ucs4string palsize_sym;
+
+    vector<unsigned char> ImgData;
+    vector<unsigned char> Palette;
+    unsigned OriginalSize;
     
-    vector<unsigned char> uncompressed;
-    
-    const TGAimage image(WstrToAsc(imagefn));
-    if(!image.GetXdim())
+    Image(const TGAimage& img,
+          const ucs4string& tabsym,
+          const ucs4string& palsym,
+          const ucs4string& palsizesym)
+      : image(img), tab_sym(tabsym), pal_sym(palsym), palsize_sym(palsizesym)
     {
-        fprintf(stderr, "- failed to load '%s'...\n", WstrToAsc(imagefn).c_str());
-        return;
     }
     
-    LoadImageData(image, uncompressed);
+    void MakePalette()
+    {
+        unsigned palsize = image.GetPalSize();
+        // palette index 0 is never used.
+        for(unsigned a=1; a<palsize; ++a)
+        {
+            unsigned value = image.GetPalEntry(a);
+            
+            Palette.push_back(value & 255);
+            Palette.push_back(value >> 8);
+        }
+    }
     
-    const vector<unsigned char> imgdata =
-        Compress(&uncompressed[0], uncompressed.size(), segment);
-    const unsigned imgdata_addr = freespace.FindFromAnyPage(imgdata.size());
+    void MakeData(unsigned segment)
+    {
+        vector<unsigned char> uncompressed;
+        LoadImageData(image, uncompressed);
+        OriginalSize = uncompressed.size();
+        ImgData = Compress(&uncompressed[0], uncompressed.size(), segment);
+    }
+};
+
+void insertor::GenerateSignatureCode()
+{
+    const ucs4string& codefn  = GetConf("signature", "file");
+
+    vector<Image> images;
     
-    PlaceData(imgdata, imgdata_addr);
+    const ConfParser::ElemVec& elems = GetConf("signature", "add_image").Fields();
+    for(unsigned a=0; a<elems.size(); a += 5)
+    {
+        const ucs4string& imagefn     = elems[a];
+        const unsigned segment        = elems[a+1];
+        const ucs4string& tab_sym     = elems[a+2];
+        const ucs4string& pal_sym     = elems[a+3];
+        const ucs4string& palsize_sym = elems[a+4];
+    
+        Image img(WstrToAsc(imagefn), tab_sym, pal_sym, palsize_sym);
+        if(!img.image.GetXdim())
+        {
+            fprintf(stderr, "- failed to load '%s'...\n", WstrToAsc(imagefn).c_str());
+            continue;
+        }
+        
+        img.MakeData(segment);
+        img.MakePalette();
+        
+        images.push_back(img);
+    }
     
     const string codefile = WstrToAsc(codefn);
     
-    fprintf(stderr, "\rLoading '%s'...\n", codefile.c_str());
-    
     O65 sig_code;
     {FILE *fp = fopen(codefile.c_str(), "rb");
+    if(!fp) { perror(codefile.c_str()); return; }
     sig_code.Load(fp);
     fclose(fp);}
 
     unsigned code_size = sig_code.GetCodeSize();
-    unsigned code_addr = freespace.FindFromAnyPage(code_size);
-    sig_code.LocateCode(code_addr);
+
+    vector<freespacerec> Organization(1);
+    Organization[0].len = code_size;
+    for(unsigned a=0; a<images.size(); ++a)
+    {
+        Organization.push_back(images[a].Palette.size());
+        Organization.push_back(images[a].ImgData.size());
+    }
     
-    sig_code.LinkSym("TILEDATA_ADDR", imgdata_addr | 0xC00000);
+    freespace.OrganizeToAnyPage(Organization);
+
+    const unsigned CodeAddress = Organization[0].pos;
+
+    for(unsigned a=0; a<images.size(); ++a)
+    {
+        const unsigned PaletteAddr = Organization[1+a*2].pos;
+        const unsigned ImgDataAddr = Organization[2+a*2].pos;
+
+        sig_code.LinkSym(WstrToAsc(images[a].tab_sym),     0xC00000 | ImgDataAddr);
+        sig_code.LinkSym(WstrToAsc(images[a].pal_sym),     0xC00000 | PaletteAddr);
+        sig_code.LinkSym(WstrToAsc(images[a].palsize_sym), images[a].Palette.size());
+
+        PlaceData(images[a].ImgData, ImgDataAddr);
+        PlaceData(images[a].Palette, PaletteAddr);
+    }
     
-    //sig_code.LinkSym("PAL_0", image.GetPalEntry(0)); - 0 never used
-    sig_code.LinkSym("PAL_1", image.GetPalEntry(1));
-    sig_code.LinkSym("PAL_2", image.GetPalEntry(2));
-    sig_code.LinkSym("PAL_3", image.GetPalEntry(3));
-    sig_code.LinkSym("PAL_4", image.GetPalEntry(4));
-    sig_code.LinkSym("PAL_5", image.GetPalEntry(5));
-    sig_code.LinkSym("PAL_6", image.GetPalEntry(6));
-    sig_code.LinkSym("PAL_7", image.GetPalEntry(7));
-    sig_code.LinkSym("PAL_8", image.GetPalEntry(8));
-    sig_code.LinkSym("PAL_9", image.GetPalEntry(9));
-    sig_code.LinkSym("PAL_A", image.GetPalEntry(10));
-    sig_code.LinkSym("PAL_B", image.GetPalEntry(11));
-    sig_code.LinkSym("PAL_C", image.GetPalEntry(12));
-    sig_code.LinkSym("PAL_D", image.GetPalEntry(13));
-    sig_code.LinkSym("PAL_E", image.GetPalEntry(14));
-    sig_code.LinkSym("PAL_F", image.GetPalEntry(15));
+    sig_code.LocateCode(CodeAddress);
+    
+    sig_code.LinkSym("DECOMPRESS_FUNC_ADDR", 0xC00000 | GetConst(DECOMPRESSOR_FUNC_ADDR));
     
     fprintf(stderr,
-        "\rWriting sig: %u(code)@ $%06X, %u(img,orig %u)@ $%06X\n",
-            code_size, code_addr,
-            imgdata.size(), uncompressed.size(), imgdata_addr
-           );
+        "\r> Signature(%s):"
+            " %u(code)@ $%06X,",
+        codefile.c_str(),
+        code_size, 0xC00000 | CodeAddress);
+
+    for(unsigned a=0; a<images.size(); ++a)
+    {
+        const unsigned PaletteAddr = Organization[1+a*2].pos;
+        const unsigned ImgDataAddr = Organization[2+a*2].pos;
+        
+        fprintf(stderr,
+            " %u(pal%u)@ $%06X,"
+            " %u(img%u,orig %u)@ $%06X",
+            images[a].Palette.size(), a+1, 0xC00000 | PaletteAddr,
+            images[a].ImgData.size(), a+1,
+                   images[a].OriginalSize, 0xC00000 | ImgDataAddr
+               );
+    }
+    fprintf(stderr, "\n");
     
     sig_code.Verify();
 
     SNEScode tmp(sig_code.GetCode());
-    tmp.YourAddressIs(code_addr);
+    tmp.YourAddressIs(CodeAddress);
     codes.push_back(tmp);
     
     LinkCalls("signature", sig_code);

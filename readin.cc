@@ -132,7 +132,7 @@ const ctstring insertor::ParseScriptEntry(const ucs4string &input, const stringd
     for(unsigned a=0; a<content.size(); ++a)
     {
         // First test for defined symbols.
-        if(true)
+        //if(current_typeface == -1)
         {
             bool foundsym = false;
             
@@ -149,17 +149,19 @@ const ctstring insertor::ParseScriptEntry(const ucs4string &input, const stringd
                 if(content.compare(a, i->first.size(), i->first) == 0)
                 {
                     unsigned testlen = i->first.size();
-                    a += testlen-1;
                     
                     if(current_typeface >= 0
-                    && i->second >= get_font_begin()
+                    //&& i->second >= get_font_begin()
                       )
                     {
                         fprintf(stderr,
-                            "Warning: Symbol '%s' probably won't work in different typefaces!\n",
+                            "Warning: Symbol '%s' wouldn't work in different typefaces!\n"
+                            "         Thus not generating.\n",
                                 WstrToAsc(i->first).c_str());
+                        continue;
                     }
                     
+                    a += testlen-1;
                     result += i->second;
                     foundsym = true;
                     break;

@@ -70,6 +70,10 @@ Conjugator:
       + Choice(Do_NA)
  #endif
 
+ #ifndef OMIT_Do_HUN
+      + Choice(Do_HUN)
+ #endif
+
       + ; If it was none of the choices, call the original function.
         jsr Outc
         bra ConjEnd

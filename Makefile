@@ -87,6 +87,7 @@ DEPDIRS = utils/
 # VERSION 1.8.0  is GPL
 # VERSION 1.8.1  requires separate snescom (not bundled anymore)
 # VERSION 1.9.0  unified some configuration parts; added crononick-code support
+# VERSION 1.9.1  improved the signature feature; added checksum and ROM name feature
 
 OPTIM=-O3
 #OPTIM=-O0
@@ -95,7 +96,7 @@ OPTIM=-O3
 
 CXXFLAGS += -I.
 
-VERSION=1.9.0
+VERSION=1.9.1
 ARCHFILES=utils/xray.cc utils/xray.h \
           utils/viewer.c \
           utils/vwftest.cc \
@@ -105,6 +106,7 @@ ARCHFILES=utils/xray.cc utils/xray.h \
           utils/facegenerator.cc \
           utils/makeips.cc \
           utils/unmakeips.cc \
+          utils/fixchecksum.cc \
           utils/comprtest.cc \
           utils/compiler.cc \
           \
@@ -167,6 +169,7 @@ PROGS=\
 	ctdump ctinsert \
 	utils/makeips \
 	utils/unmakeips \
+	utils/fixchecksum \
 	utils/facegenerator \
 	utils/base62 \
 	utils/sramdump \
@@ -223,6 +226,8 @@ ct-crononick.o65: ct-crononick1.a65 ct-crononick.a65
 
 utils/makeips: utils/makeips.cc
 	$(CXX) $(LDOPTS) -o $@ $^
+utils/fixchecksum: utils/fixchecksum.cc
+	$(CXX) $(LDOPTS) -g -O -Wall -W -pedantic -o $@ $^
 utils/unmakeips: utils/unmakeips.cc
 	$(CXX) $(LDOPTS) -g -O -Wall -W -pedantic -o $@ $^
 

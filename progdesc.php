@@ -153,6 +153,7 @@ Copypaste from the Makefile:
 # VERSION 1.8.0  is GPL
 # VERSION 1.8.1  requires separate snescom (not bundled anymore)
 # VERSION 1.9.0  unified some configuration parts; added crononick-code support
+# VERSION 1.9.1  improved the signature feature; added checksum and ROM name feature
 </pre>
 
 ", '1. Program list' => "
@@ -304,11 +305,12 @@ There are drawbacks though.
 Despite these hazards this system might be a lifesaver
 for someone doing an Estonian, Portuguese or even Thai translation.
 <p>
-If you are translating to a language that utilizes thousands of
-different symbols, like Chinese, you might want to try to base on the
-Japanese version instead. This utility pack bases on the
-English version.<br>
-(Sorry, I can't help you with issues regarding the Japanese ROM.)
+Note: The Japanese version of the game is almost exactly the same
+as the English version. Both have the same engine with only minor
+changes. If you are going to translate to Chinese or something else
+that uses thousands of different symbols, you are either going to
+have to manage with ~700 symbols or have to request some changes
+to the insertor.<br>
 
 ", 'wrap:1.1. Automatic paragraph wrapping' => "
 
