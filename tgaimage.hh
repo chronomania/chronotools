@@ -29,11 +29,13 @@ public:
     unsigned GetXdim() const { return xdim; }
     unsigned GetYdim() const { return ydim; }
     unsigned GetPalSize() const { return palsize; }
+    unsigned GetPalEntry(unsigned n) const { return palette_in.at(n); }
     
 private:
     unsigned xdim, ydim;
     unsigned palsize;
     vector<char> data;
+    vector<unsigned short> palette_in;
     
     unsigned xsize, ysize; // size of each box
     unsigned xbox; // boxes per line

@@ -15,6 +15,9 @@ class ROM
     // Adds JSL to the specific location.
     void AddCall(unsigned codeaddress, unsigned target);
     
+    // Adds a long pointer to the specific location.
+    void AddLongPtr(unsigned codeaddress, unsigned target);
+    
     // Writes a subroutine. Remember to terminate it with LONG-RETURN!
     void AddSubRoutine(unsigned target, const vector<unsigned char> &code);
 

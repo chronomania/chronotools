@@ -17,12 +17,22 @@ void ROM::AddCall(unsigned codeaddress, unsigned target)
     
     target |= 0xC00000; // Ensure we're jumping correctly
     
-    fprintf(stderr, "- Adding subroutine %02X:%04X call at %02X:%04X\n",
-        target>>16, target&0xFFFF,
-        0xC0 | (rompos>>16),
-        rompos & 0xFFFF);
-    
+    fprintf(stderr, "- Adding subroutine $%06X call at $%06X\n",
+        target, 0xC00000 | rompos);
+
     Write(rompos++, 0x22);
+    
+    AddLongPtr(rompos, target);
+}
+
+void ROM::AddLongPtr(unsigned codeaddress, unsigned target)
+{
+    unsigned rompos = codeaddress & 0x3FFFFF;
+    
+    target |= 0xC00000; // Ensure we're pointing correctly
+    
+    fprintf(stderr, "- Writing longptr $%06X at $%06X\n", target, rompos);
+    
     Write(rompos++, target & 255);
     Write(rompos++, (target >> 8) & 255);
     Write(rompos  , target >> 16);
@@ -31,8 +41,8 @@ void ROM::AddCall(unsigned codeaddress, unsigned target)
 void ROM::AddSubRoutine(unsigned target, const vector<unsigned char> &code)
 {
 #if DEBUG_ADDING_SUB
-    fprintf(stderr, "- Adding subroutine at %02X:%04X (%u bytes)\n",
-        0xC0 | (target >> 16), target & 0xFFFF,
+    fprintf(stderr, "- Adding subroutine at $%06X (%u bytes)\n",
+        0xC00000 | target,
         code.size());
 #endif
     unsigned rompos = target & 0x3FFFFF;
@@ -45,12 +55,27 @@ void ROM::AddPatch(const SNEScode &code)
 {
     AddSubRoutine(code.GetAddress(), code);
     
-    const set<unsigned> &addrlist = code.GetCalls();
-    for(set<unsigned>::const_iterator
-        i = addrlist.begin();
-        i != addrlist.end();
-        ++i)
+    if(true) /* Handle calls */
     {
-        AddCall(*i, code.GetAddress());
+        const set<unsigned>& addrlist = code.GetCalls();
+        for(set<unsigned>::const_iterator
+            i = addrlist.begin();
+            i != addrlist.end();
+            ++i)
+        {
+            AddCall(*i, code.GetAddress());
+        }
+    }
+
+    if(true) /* Handle longptrs */
+    {
+        const set<unsigned>& addrlist = code.GetLongPtrs();
+        for(set<unsigned>::const_iterator
+            i = addrlist.begin();
+            i != addrlist.end();
+            ++i)
+        {
+            AddLongPtr(*i, code.GetAddress());
+        }
     }
 }

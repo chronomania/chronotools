@@ -158,22 +158,7 @@ int main(void)
     fprintf(stderr, "Creating a virtual ROM...\n");
     ROM ROM(4194304);
     
-    ins->LoadImage("FIN/active1.tga", 0x3FF008);
-    ins->LoadImage("FIN/active2.tga", 0x3FF488);
-    ins->LoadImage("FIN/elem1.tga",   0x3FD5E4 + 0*2*6*32);
-    ins->LoadImage("FIN/elem2.tga",   0x3FD5E4 + 1*2*6*32);
-    ins->LoadImage("FIN/elem3.tga",   0x3FD5E4 + 2*2*6*32);
-    ins->LoadImage("FIN/elem4.tga",   0x3FD5E4 + 3*2*6*32);
-
-    ins->LoadImage("FIN/face1.tga",   0x3F0000 + 0*6*6*32);
-    ins->LoadImage("FIN/face2.tga",   0x3F0000 + 1*6*6*32);
-    ins->LoadImage("FIN/face3.tga",   0x3F0000 + 2*6*6*32);
-    ins->LoadImage("FIN/face4.tga",   0x3F0000 + 3*6*6*32);
-    ins->LoadImage("FIN/face5.tga",   0x3F0000 + 4*6*6*32);
-    ins->LoadImage("FIN/face6.tga",   0x3F0000 + 5*6*6*32);
-    ins->LoadImage("FIN/face7.tga",   0x3F0000 + 6*6*6*32);
-    // Palettes comes after this??
-    ins->LoadImage("FIN/face8.tga",   0x3FEB88); // Epoch
+    ins->LoadImages();
 
     ins->PatchROM(ROM);
 

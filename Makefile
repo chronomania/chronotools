@@ -62,6 +62,7 @@ DEPDIRS = utils/
 # VERSION 1.5.2  compressed graphics support: decompressor and compressor
 # VERSION 1.5.3  better graphics compressor
 # VERSION 1.5.4  another archive-only version
+# VERSION 1.6.0  signature support (custom compressed image on startup screen)
 
 OPTIM=-O3
 #OPTIM=-O0
@@ -70,7 +71,7 @@ OPTIM=-O3
 
 CXXFLAGS += -I.
 
-VERSION=1.5.4
+VERSION=1.6.0
 ARCHFILES=utils/xray.c utils/xray.h \
           utils/viewer.c \
           utils/vwftest.cc \
@@ -94,7 +95,7 @@ ARCHFILES=utils/xray.c utils/xray.h \
           rom.cc rom.hh \
           rommap.cc rommap.hh \
           strload.cc strload.hh \
-          images.cc \
+          images.cc images.hh \
           fonts.cc fonts.hh \
           o65.cc o65.hh \
           logfiles.cc logfiles.hh \
@@ -128,16 +129,19 @@ ARCHFILES=utils/xray.c utils/xray.h \
           
 
 EXTRA_ARCHFILES=\
-          ct.cfg ct_try.txt ct8fn.tga ct16fn.tga ct8fnV.tga \
-          FIN/ct.txt \
-          FIN/ct16fn.tga \
+          ct.cfg ct_try.txt \
+          ct-moglogo.a65 \
           FIN/ct8fn.tga \
+          FIN/ct16fn.tga \
           FIN/ct8fnV.tga \
-          FIN/README \
+          FIN/ct.txt \
           FIN/face1.tga FIN/face2.tga FIN/face3.tga FIN/face4.tga \
           FIN/face5.tga FIN/face6.tga FIN/face7.tga FIN/face8.tga \
           FIN/elem1.tga FIN/elem2.tga FIN/elem3.tga FIN/elem4.tga \
-          FIN/active1.tga FIN/active2.tga
+          FIN/active1.tga FIN/active2.tga \
+          FIN/titlegfx.tga FIN/epochtimes.tga FIN/eratimes.tga \
+          FIN/moglogo.tga \
+          FIN/README
 
 ARCHNAME=chronotools-$(VERSION)
 ARCHDIR=archives/
@@ -170,7 +174,7 @@ ctdump: \
 ctinsert: \
 		ctinsert.o miscfun.o readin.o wrap.o \
 		tgaimage.o space.o writeout.o stringoffs.o \
-		dictionary.o images.o \
+		dictionary.o images.o compress.o \
 		fonts.o typefaces.o extras.o \
 		rom.o snescode.o \
 		conjugate.o vwf8.o o65.o compiler.o symbols.o \
@@ -179,6 +183,9 @@ ctinsert: \
 	$(CXX) -o $@ $^ $(LDFLAGS) -lm
 
 ct-vwf8.o65: ct-vwf8.a65
+	xa -o $@ $< -R -c -w
+
+ct-moglogo.o65: ct-moglogo.a65
 	xa -o $@ $< -R -c -w
 
 utils/makeips: utils/makeips.cc
@@ -231,9 +238,20 @@ utils/dumpo65: utils/dumpo65.o
 
 ctpatch-hdr.ips ctpatch-nohdr.ips: \
 		ctinsert \
-		ct.txt ct.code ct.cfg \
-		ct16fn.tga ct8fn.tga ct8fnV.tga \
-		ct-vwf8.o65
+		ct.txt ct.code ct.cfg ct-vwf8.o65 \
+		FIN/ct8fn.tga \
+		FIN/ct16fn.tga \
+		FIN/ct8fnV.tga \
+		FIN/ct.txt \
+		FIN/ct16fn.tga \
+		FIN/ct8fn.tga \
+		FIN/ct8fnV.tga \
+		FIN/face1.tga FIN/face2.tga FIN/face3.tga FIN/face4.tga \
+		FIN/face5.tga FIN/face6.tga FIN/face7.tga FIN/face8.tga \
+		FIN/elem1.tga FIN/elem2.tga FIN/elem3.tga FIN/elem4.tga \
+		FIN/active1.tga FIN/active2.tga \
+		FIN/titlegfx.tga \
+		FIN/moglogo.tga ct-moglogo.o65
 	time ./ctinsert
 
 chrono-patched.smc: utils/unmakeips ctpatch-hdr.ips chrono-uncompressed.smc

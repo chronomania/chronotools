@@ -646,7 +646,8 @@ static void DumpGFX_Compressed_4bit
     unsigned origsize = Uncompress(ROM + (addr&0x3FFFFF), Target);
     unsigned size = Target.size();
     
-    fprintf(stderr, "Uncompressed %u bytes from %u bytes...\n", size, origsize);
+    fprintf(stderr, "Created %s: Uncompressed %u bytes from %u bytes...\n",
+        fn.c_str(), size, origsize);
     
     unsigned char *SavedROM = ROM;
     ROM = &Target[0];

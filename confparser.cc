@@ -214,12 +214,17 @@ bool ConfParser::ParseField(CharIStream& is, Field& field, bool mergeStrings)
                 field.elements.push_back(element);
             }
         }
-        else if(is.isDigit(c))
+        else if(is.isDigit(c) || is.equal(c, '$'))
         {
             bool isHex = false;
             if(is.equal(c, '0') && is.equal(is.peekChar(), 'x'))
             {
                 is.getChar(); c = is.getChar();
+                isHex = true;
+            }
+            else if(is.equal(c, '$'))
+            {
+                c = is.getChar();
                 isHex = true;
             }
 

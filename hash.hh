@@ -1,7 +1,11 @@
 #ifndef bqtHashHH
 #define bqtHashHH
 
+/* Set to 0 if you have compilation problems
+ * with hash_set or hash_map
+ */
 #define USE_HASH 1
+
 
 #if USE_HASH
 

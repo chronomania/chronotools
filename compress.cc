@@ -622,7 +622,8 @@ unsigned Uncompress                 /* Return value: compressed size */
 #ifdef DEBUG_DECOMPRESS
     fprintf(stderr, "Control @ $%03X = %02X\n", Endpos-Begin, Control);
 #else
-    fprintf(stderr, "GFX type: %02X\n", Control & 0xC1);
+    fprintf(stderr, "GFX type: %02X (seg=%02X)\n",
+        Control & 0xC1, 0x7E + (Control&1));
 #endif
     
     /* If Control&1, data is in 7F; otherwise 7E */

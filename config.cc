@@ -17,7 +17,7 @@ characterset=\"iso-8859-15\"\n\
 font8fn=\"ct8fn.tga\"\n\
 font12fn=\"ct16fn.tga\"\n\
 [font]\n\
-begin=0xA0\n\
+begin=$A0\n\
 font8fn=\"ct8fn.tga\"\n\
 font12fn=\"ct16fn.tga\"\n\
 use_vwf8=false\n\
@@ -86,32 +86,32 @@ font8_C0=\"ghijklmnopqrstuv\"\n\
 font8_D0=\"wxyz0123456789!?\"\n\
 font8_E0=\"/«»:&()'.,=-+%# \"\n\
 font8_F0=\"°¶##LRHMP·¶()¶¶_\"\n\
-def8sym 0x20 \"[bladesymbol]\"\n\
-def8sym 0x21 \"[bowsymbol]\"\n\
-def8sym 0x22 \"[gunsymbol]\"\n\
-def8sym 0x23 \"[armsymbol]\"\n\
-def8sym 0x24 \"[swordsymbol]\"\n\
-def8sym 0x25 \"[fistsymbol]\"\n\
-def8sym 0x26 \"[scythesymbol]\"\n\
-def8sym 0x28 \"[armorsymbol]\"\n\
-def8sym 0x27 \"[helmsymbol]\"\n\
-def8sym 0x29 \"[ringsymbol]\"\n\
-def8sym 0x2E \"[shieldsymbol]\"\n\
-def8sym 0x2F \"[starsymbol]\"\n\
-def8sym 0x62 \"[handpart1]\"\n\
-def8sym 0x63 \"[handpart1]\"\n\
-def8sym 0x67 \"[hpmeter0]\"\n\
-def8sym 0x68 \"[hpmeter1]\"\n\
-def8sym 0x69 \"[hpmeter2]\"\n\
-def8sym 0x6A \"[hpmeter3]\"\n\
-def8sym 0x6B \"[hpmeter4]\"\n\
-def8sym 0x6C \"[hpmeter5]\"\n\
-def8sym 0x6D \"[hpmeter6]\"\n\
-def8sym 0x6E \"[hpmeter7]\"\n\
-def8sym 0x6F \"[hpmeter8]\"\n\
-def12sym 0xEE \"[musicsymbol]\"\n\
-def12sym 0xF0 \"[heartsymbol]\"\n\
-def12sym 0xF1 \"...\"\n\
+def8sym $20 \"[bladesymbol]\"\n\
+def8sym $21 \"[bowsymbol]\"\n\
+def8sym $22 \"[gunsymbol]\"\n\
+def8sym $23 \"[armsymbol]\"\n\
+def8sym $24 \"[swordsymbol]\"\n\
+def8sym $25 \"[fistsymbol]\"\n\
+def8sym $26 \"[scythesymbol]\"\n\
+def8sym $28 \"[armorsymbol]\"\n\
+def8sym $27 \"[helmsymbol]\"\n\
+def8sym $29 \"[ringsymbol]\"\n\
+def8sym $2E \"[shieldsymbol]\"\n\
+def8sym $2F \"[starsymbol]\"\n\
+def8sym $62 \"[handpart1]\"\n\
+def8sym $63 \"[handpart1]\"\n\
+def8sym $67 \"[hpmeter0]\"\n\
+def8sym $68 \"[hpmeter1]\"\n\
+def8sym $69 \"[hpmeter2]\"\n\
+def8sym $6A \"[hpmeter3]\"\n\
+def8sym $6B \"[hpmeter4]\"\n\
+def8sym $6C \"[hpmeter5]\"\n\
+def8sym $6D \"[hpmeter6]\"\n\
+def8sym $6E \"[hpmeter7]\"\n\
+def8sym $6F \"[hpmeter8]\"\n\
+def12sym $EE \"[musicsymbol]\"\n\
+def12sym $F0 \"[heartsymbol]\"\n\
+def12sym $F1 \"...\"\n\
 charcachesize=256\n\
 dummy=0\n\
 ";

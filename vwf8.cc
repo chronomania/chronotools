@@ -659,16 +659,10 @@ void insertor::GenerateVWF8code(unsigned widthtab_addr, unsigned tiletab_addr)
      
      vwf8_code.Verify();
      
-     {
-      SNEScode tmp;
-      tmp.resize(code_size);
-      const vector<unsigned char>& code = vwf8_code.GetCode();
-      for(unsigned a=0; a<code_size; ++a)
-          tmp[a] = code[a];
-      
-      tmp.YourAddressIs(code_addr);
-      codes.push_back(tmp);
-     }
+     SNEScode tmp(vwf8_code.GetCode());
+     
+     tmp.YourAddressIs(code_addr);
+     codes.push_back(tmp);
     }
 
     ucs4string VWF8_I1 = GetConf("vwf8", "i1").SField();
@@ -689,4 +683,63 @@ void insertor::GenerateVWF8code(unsigned widthtab_addr, unsigned tiletab_addr)
     Functions.RequireFunction(VWF8_T1);
     
     LinkAndLocate(Functions);
+}
+
+#include "images.hh"
+#include "compress.hh"
+#include "tgaimage.hh"
+
+void insertor::GenerateMogCode()
+{
+    const TGAimage image("FIN/moglogo.tga");
+    
+    vector<unsigned char> uncompressed;
+    LoadImageData(image, uncompressed);
+    
+    imagedata result;
+    result.data = Compress(&uncompressed[0], uncompressed.size(), 0x7F);
+    result.address = freespace.FindFromAnyPage(result.data.size());
+    images.push_back(result);
+    
+    FILE *fp = fopen("ct-moglogo.o65", "rb");
+    O65 code;
+    code.Load(fp);
+    fclose(fp);
+
+    unsigned code_size = code.GetCodeSize();
+    unsigned code_addr = freespace.FindFromAnyPage(code_size);
+    code.LocateCode(code_addr);
+    
+    code.LinkSym("TILEDATA_SEG",  (result.address >> 16) | 0xC0);
+    code.LinkSym("TILEDATA_OFFS", (result.address & 0xFFFF));
+    
+    code.LinkSym("PAL_0", image.GetPalEntry(0));
+    code.LinkSym("PAL_1", image.GetPalEntry(1));
+    code.LinkSym("PAL_2", image.GetPalEntry(2));
+    code.LinkSym("PAL_3", image.GetPalEntry(3));
+    code.LinkSym("PAL_4", image.GetPalEntry(4));
+    code.LinkSym("PAL_5", image.GetPalEntry(5));
+    code.LinkSym("PAL_6", image.GetPalEntry(6));
+    code.LinkSym("PAL_7", image.GetPalEntry(7));
+    code.LinkSym("PAL_8", image.GetPalEntry(8));
+    code.LinkSym("PAL_9", image.GetPalEntry(9));
+    code.LinkSym("PAL_A", image.GetPalEntry(10));
+    code.LinkSym("PAL_B", image.GetPalEntry(11));
+    code.LinkSym("PAL_C", image.GetPalEntry(12));
+    code.LinkSym("PAL_D", image.GetPalEntry(13));
+    code.LinkSym("PAL_E", image.GetPalEntry(14));
+    code.LinkSym("PAL_F", image.GetPalEntry(15));
+    
+    fprintf(stderr,
+        "MogLogo: code(%u bytes) at $%06X, img(%u bytes (orig %u)) at $%06X\n",
+            code_size, code_addr,
+            result.data.size(), uncompressed.size(), result.address
+            );
+    
+    code.Verify();
+
+    SNEScode tmp(code.GetCode());
+    tmp.YourAddressIs(code_addr);
+    tmp.AddCallFrom(0xFDE62F);
+    codes.push_back(tmp);
 }

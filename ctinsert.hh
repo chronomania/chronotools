@@ -24,6 +24,13 @@ public:
     void LoadFont12(const string &fn) { Font12.Load(fn); }
     
     void LoadImage(const string &fn, unsigned address);
+    void LoadAlreadyCompressedImage(const string& fn, unsigned address);
+    void LoadAndCompressImage(const string& fn, unsigned address, unsigned char seg);
+    
+    void LoadAndCompressImageWithPointer
+       (const string& fn, unsigned address, unsigned char seg);
+
+    void LoadImages();
     
     void GenerateCode();
 
@@ -81,11 +88,12 @@ private:
     void Write8pixfont(class ROM &ROM) const;
     void Write8vpixfont(class ROM &ROM);
     void Write12pixfont(class ROM &ROM);
-    void WriteCode(class ROM &ROM) const;
+    void WriteCode(class ROM &ROM);
     void WriteImages(class ROM &ROM) const;
 
     void GenerateConjugatorCode();
     void GenerateVWF8code(unsigned widthtab_addr, unsigned tiletab_addr);
+    void GenerateMogCode();
     
     void ApplyDictionary();
     void RebuildDictionary();

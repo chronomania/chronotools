@@ -214,6 +214,7 @@ void insertor::PatchROM(ROM &ROM)
     
     // Write images: they already have their places set
     WriteImages(ROM);
+    images.clear();
     
     // Write the strings first because they require certain pages!
     WriteStrings(ROM);
@@ -235,20 +236,49 @@ void insertor::PatchROM(ROM &ROM)
 
     // Last write the dictionary: It fits almost anywhere.
     WriteDictionary(ROM);
+
+    // Write images again: code generation could have made new images.
+    WriteImages(ROM);
+    images.clear();
 }
 
 void insertor::GenerateCode()
 {
     GenerateConjugatorCode();
+
+    GenerateMogCode();
 }
 
-void insertor::WriteCode(ROM &ROM) const
+void insertor::WriteCode(ROM &ROM)
 {
     fprintf(stderr, "Writing code...\n");
     
-    list<SNEScode>::const_iterator i;
+    list<SNEScode>::iterator i;
+    
+    vector<freespacerec> blocks;
     for(i=codes.begin(); i!=codes.end(); ++i)
+        if(!i->HasAddress())
+        {
+            blocks.push_back(i->size());
+        }
+    if(!blocks.empty())
+    {
+        freespace.OrganizeToAnyPage(blocks);
+        
+        unsigned a=0;
+        for(i=codes.begin(); i!=codes.end(); ++i)
+            if(!i->HasAddress())
+                i->YourAddressIs(blocks[a++].pos);
+    }
+    
+    for(i=codes.begin(); i!=codes.end(); ++i)
+    {
+        if(!i->HasAddress())
+        {
+            fprintf(stderr, "Internal ERROR - codeblob still without address\n");
+        }
         ROM.AddPatch(*i);
+    }
 
     // SEP+JSR takes 5 bytes. We overwrote it
     // with 4 bytes (see conjugate.cc).
@@ -294,10 +324,10 @@ void insertor::Write8vpixfont(ROM &ROM)
     unsigned WidthTab_Address = freespace.FindFromAnyPage(widths.size());
     unsigned TileTab_Address  = freespace.FindFromAnyPage(tiletab.size());
     
-    fprintf(stderr, "(%u bytes at %02X:%04X,"
-                    " %u bytes at %02X:%04X)\n",
-        widths.size(),   0xC0 | (WidthTab_Address >> 16), WidthTab_Address & 0xFFFF,
-        tiletab.size(),  0xC0 | (TileTab_Address >> 16), TileTab_Address  & 0xFFFF
+    fprintf(stderr, "(%u bytes at $%06X,"
+                    " %u bytes at $%06X)\n",
+        widths.size(),   0xC00000 | WidthTab_Address,
+        tiletab.size(),  0xC00000 | TileTab_Address
            );
 
     for(unsigned a=0; a<widths.size(); ++a) ROM.Write(WidthTab_Address + a, widths[a]);
@@ -355,12 +385,12 @@ void insertor::Write12pixfont(ROM &ROM)
 
     unsigned WidthTab_Address = freespace.FindFromAnyPage(tilecount);
     
-    fprintf(stderr, "(%u bytes at %02X:%04X,"
-                    " %u bytes at %02X:%04X,"
-                    " %u bytes at %02X:%04X)\n",
-        tilecount,        0xC0 | (WidthTab_Address >> 16), WidthTab_Address & 0xFFFF,
-        tiletab1.size(),  0xC0 | (addr1 >> 16), addr1  & 0xFFFF,
-        tiletab2.size(),  0xC0 | (addr2 >> 16), addr2  & 0xFFFF
+    fprintf(stderr, "(%u bytes at $%06X,"
+                    " %u bytes at $%06X,"
+                    " %u bytes at $%06X)\n",
+        tilecount,        0xC00000 | WidthTab_Address,
+        tiletab1.size(),  0xC00000 | addr1,
+        tiletab2.size(),  0xC00000 | addr2
            );
     
     // patch font engine
@@ -438,8 +468,8 @@ void insertor::WriteDictionary(ROM &ROM)
     freespace.OrganizeToAnySamePage(Organization, dictpage);
     unsigned dictaddr = Organization[dictsize].pos + (dictpage << 16);
 
-    fprintf(stderr, "Writing dictionary (%u pointers at %02X:%04X, %u bytes)...\n",
-        dictsize, dictpage|0xC0, dictaddr&0xFFFF, size);
+    fprintf(stderr, "Writing dictionary (%u pointers at $%06X, %u bytes)...\n",
+        dictsize, dictaddr | 0xC00000, size);
     
     for(unsigned a=0; a<dictsize; ++a)
     {

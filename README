@@ -1678,6 +1678,9 @@ $C0:2E1D 60          RTS
 ; Variable usage:
 ;   $09[word]  end offset
 ;   $10[byte]  ?
+; Result:
+;   $06[word]  length of uncompressed data
+
 
 $C3:0557 8B          PHB                                A:FE60 X:0048 Y:0090 D:0000 DB:0
 $C3:0558 0B          PHD                                A:FE60 X:0048 Y:0090 D:0000 DB:0

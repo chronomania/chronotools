@@ -35,7 +35,28 @@ TGAimage::TGAimage(const string &filename)
     fgetc(fp); // pixel bitness, should be 8
     fgetc(fp); // misc, should be 0
     if(idlen)fseek(fp, idlen, SEEK_CUR);
-    if(palsize)fseek(fp, palsize * ((palbitness+7)/8), SEEK_CUR);
+    if(palsize)
+    {
+        if(palbitness == 24)
+        {
+            for(unsigned a=0; a<palsize;++a)
+            {
+                unsigned B = fgetc(fp);
+                unsigned G = fgetc(fp);
+                unsigned R = fgetc(fp);
+                
+                unsigned color   = (B*32/256);
+                color = color*32 + (G*32/256);
+                color = color*32 + (R*32/256);
+                
+                color &= 0x7FFF;
+                
+                palette_in.push_back(color);
+            }
+        }
+        else
+            fseek(fp, palsize * ((palbitness+7)/8), SEEK_CUR);
+    }
     
     data.resize(xdim*ydim);
     

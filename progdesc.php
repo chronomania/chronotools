@@ -136,6 +136,8 @@ Copypaste from the Makefile:
 # VERSION 1.5.1  vwf8 optimizations, assembly experiments
 # VERSION 1.5.2  compressed graphics support: decompressor and compressor
 # VERSION 1.5.3  better graphics compressor
+# VERSION 1.5.4  another archive-only version
+# VERSION 1.6.0  signature support (custom compressed image on startup screen)
 </pre>
 
 ", '1. Program list' => "
