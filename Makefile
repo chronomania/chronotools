@@ -113,6 +113,7 @@ DEPDIRS = utils/
 # VERSION 1.12.4 is a middle-development version that has windows binaries
 # VERSION 1.13.0 added support for expansion to 48 Mbit or 64 Mbit
 # VERSION 1.13.1 added support for free relocation of all script text
+# VERSION 1.13.2 is a minor bugfix to the expansion patch
 
 #OPTIM=-Os
 # -fshort-enums
@@ -125,7 +126,7 @@ OPTIM=-O3
 
 CXXFLAGS += -I.
 
-VERSION=1.13.1
+VERSION=1.13.2
 ARCHFILES=utils/xray.cc utils/xray.h \
           utils/viewer.c \
           utils/vwftest.cc \

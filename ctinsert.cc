@@ -126,11 +126,12 @@ namespace
         unsigned sizebyte = 0;
         for(sizebyte=0; (1 << sizebyte)*1024 < size; ++sizebyte);
         
-        ROM.Write(0xFFD5, 0x35,   "rom speed&type tag");
-        // ^doesn't work with Tales map?
+        if(size >= 0x600000)
+        {
+            ROM.Write(0xFFD5, 0x35, "rom speed&type tag");
+            ROM.Write(size-1, 0xFF, "EOF");
+        }
         ROM.Write(0xFFD7, sizebyte, "rom size tag");
-        
-        ROM.Write(GetROMsize()-1, 0xFF, "EOF");
     }
     
     void GeneratePatches(class ROM& ROM)

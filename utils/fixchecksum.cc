@@ -138,7 +138,6 @@ int main(int argc, const char *const *argv)
     if(CalculatedSize >= 0x410000)
     {
         /* ExHiROM must have $008000 mirrored at $408000 */
-        
         for(unsigned a=0x8000; a<=0xFFFF; ++a)
             WriteByte(offset+0x400000+a, ROM[offset+a]);
     }
@@ -148,6 +147,7 @@ int main(int argc, const char *const *argv)
     {
         unsigned sum2 = 0;
         for(unsigned a=0; a<remainder; ++a) sum2 += ROM[offset+size+a];
+        // Multiply because of mirroring
         sum1 += sum2 * (size / remainder);
     }
     
