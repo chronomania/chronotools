@@ -187,6 +187,7 @@ Copypaste from the Makefile:
 # VERSION 1.11.7 unwraps the script when dumping, if configured so
 # VERSION 1.11.8 has much more documentation than before
 # VERSION 1.11.9 is faster than the few recent versions
+# VERSION 1.12.0 allows some strings to be moved between pages
 </pre>
 
 Users of previous versions are advised to do the following:

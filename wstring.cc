@@ -213,11 +213,6 @@ char WcharToAsc(ucs4 c)
     return static_cast<char> (c);
 }
 
-ucs4 AscToWchar(char c)
-{
-    return static_cast<ucs4> (static_cast<unsigned char> (c));
-}
-
 long atoi(const ucs4 *p, int base)
 {
     long ret=0, sign=1;

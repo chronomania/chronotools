@@ -12,6 +12,7 @@
 #include "conjugate.hh"
 #include "typefaces.hh"
 #include "msginsert.hh"
+#include "pageptrlist.hh"
 
 using namespace std;
 
@@ -25,8 +26,6 @@ namespace
         unsigned cacheptr;
         ucs4string cache;
         
-        ucs4string Comment;
-
         ucs4 getc_priv()
         {
             for(;;)
@@ -38,10 +37,11 @@ namespace
                 cacheptr = 0;
                 while(cache.empty())
                 {
-                    int c = fgetc(fp);
-                    if(c == EOF)break;
-                    // conv.putc may generate any amount of wchars, including 0
-                    cache = conv.putc(c);
+                    char Buf[512];
+                    size_t n = fread(Buf, 1, sizeof Buf, fp);
+                    if(n == 0) break;
+                    
+                    cache += conv.puts(std::string(Buf, n));
                 }
                 // So now cache may be of arbitrary size.
                 if(cache.empty()) return (ucs4)EOF;
@@ -61,19 +61,61 @@ namespace
             if(c == '\r') return getc();
             if(c == ';')
             {
-                CLEARSTR(Comment);
                 for(;;)
                 {
                     c = getc_priv();
                     if(c == '\r') continue;
                     if(c == '\n' || c == (ucs4)EOF) break;
-                    Comment += c;
                 }
             }
             return c;
         }
-        const ucs4string &getcomment() const { return Comment; }
     };
+    
+    bool CumulateBase62(unsigned& label, const string& header, int c)
+    {
+        if(isdigit(c))
+            label = label * 62 + c - '0';
+        else if(c >= 'A' && c <= 'Z')
+            label = label * 62 + (c - 'A' + 10);
+        else if(c >= 'a' && c <= 'z')
+            label = label * 62 + (c - 'a' + 36);
+        else
+        {
+            string tmp;
+            for(unsigned tmpnum=label; tmpnum!=0; )
+            {
+                unsigned digit = tmpnum%62;
+                tmpnum/=62;
+                string tmp2;
+                tmp2 += (digit<10)?(digit+'0')
+                    :(digit<36)?(digit+'A'-10)
+                    :(digit+'a'-36);
+                tmp = tmp2 + tmp;
+            }
+            while(tmp.size() < 4)tmp = "0" + tmp;
+            
+            MessageInvalidLabelChar(c, tmp, header);
+            return false;
+        }
+        return true;
+    }
+    
+    bool CumulateBase16(unsigned& label, const string& header, int c)
+    {
+        if(isdigit(c))
+            label = label * 16 + c - '0';
+        else if(c >= 'A' && c <= 'z')
+            label = label * 16 + c + 10 - 'A';
+        else if(c >= 'A' && c <= 'z')
+            label = label * 16 + c + 10 - 'a';
+        else
+        {
+            MessageInvalidLabelChar(c, label, header);
+            return false;
+        }
+        return true;
+    }
 }
 
 namespace
@@ -99,35 +141,35 @@ const ctstring insertor::ParseScriptEntry(const ucs4string &input, const stringd
     
     if(is_dialog)
     {
-        content = str_replace
+        str_replace_inplace
         (
+          content,
           AscToWstr(" [pause]"),
-          AscToWstr("[pause]"),
-          content
+          AscToWstr("[pause]")
         );
-        content = str_replace
+        str_replace_inplace
         (
+          content,
           AscToWstr("[nl]   "),
-          AscToWstr("[nl3]"),
-          content
+          AscToWstr("[nl3]")
         );
-        content = str_replace
+        str_replace_inplace
         (
+          content,
           AscToWstr("[pause]   "),
-          AscToWstr("[pause3]"),
-          content
+          AscToWstr("[pause3]")
         );
-        content = str_replace
+        str_replace_inplace
         (
+          content,
           AscToWstr("[pausenl]   "),
-          AscToWstr("[pausenl3]"),
-          content
+          AscToWstr("[pausenl3]")
         );
-        content = str_replace
+        str_replace_inplace
         (
+          content,
           AscToWstr("[cls]   "),
-          AscToWstr("[cls3]"),
-          content
+          AscToWstr("[cls3]")
         );
     }
 
@@ -149,7 +191,7 @@ const ctstring insertor::ParseScriptEntry(const ucs4string &input, const stringd
             
             for(i=b; i!=e; ++i)
             {
-                if(content.compare(a, i->first.size(), i->first) == 0)
+                if(!content.compare(a, i->first.size(), i->first))
                 {
                     unsigned testlen = i->first.size();
                     
@@ -231,7 +273,7 @@ const ctstring insertor::ParseScriptEntry(const ucs4string &input, const stringd
         static const ucs4string code0 = AscToWstr("[gfx");
         
         if(false) {} // for indentation...
-        else if(is_dialog && code.compare(0, delay.size(), delay) == 0)
+        else if(is_dialog && !code.compare(0, delay.size(), delay))
         {
             result += (ctchar)3;
             result += (ctchar)atoi(code.c_str() + delay.size(), 10);
@@ -276,7 +318,7 @@ const ctstring insertor::ParseScriptEntry(const ucs4string &input, const stringd
             if(!found) goto Continue1;
         }
         else Continue1:
-            if(is_8pix && code.compare(0, code0.size(), code0) == 0)
+            if(is_8pix && !code.compare(0, code0.size(), code0))
         {
         Handle8Code:
             unsigned a=0, b=code.size();
@@ -295,28 +337,28 @@ const ctstring insertor::ParseScriptEntry(const ucs4string &input, const stringd
                 }
             }
         }
-        else if(is_8pix && code.compare(0, code1.size(), code1) == 0) { result += 1; goto Handle8Code; }
-        else if(is_8pix && code.compare(0, code2.size(), code2) == 0) { result += 2; goto Handle8Code; }
-        else if(is_8pix && code.compare(0, code3.size(), code3) == 0) { result += 3; goto Handle8Code; }
-        else if(is_8pix && code.compare(0, code4.size(), code4) == 0) { result += 4; goto Handle8Code; }
-        else if(is_8pix && code.compare(0, code5.size(), code5) == 0) { result += 5; goto Handle8Code; }
-        else if(is_8pix && code.compare(0, code6.size(), code6) == 0) { result += 6; goto Handle8Code; }
-        else if(is_8pix && code.compare(0, code7.size(), code7) == 0) { result += 7; goto Handle8Code; }
-        else if(is_8pix && code.compare(0, code8.size(), code8) == 0) { result += 8; goto Handle8Code; }
-        else if(is_8pix && code.compare(0, code9.size(), code9) == 0) { result += 9; goto Handle8Code; }
-        else if(is_8pix && code.compare(0, code10.size(), code10) == 0) { result += 10; goto Handle8Code; }
-        else if(is_8pix && code.compare(0, code11.size(), code11) == 0) { result += 11; goto Handle8Code; }
-        else if(is_8pix && code.compare(0, code12.size(), code12) == 0) { result += 12; goto Handle8Code; }
+        else if(is_8pix && !code.compare(0, code1.size(), code1)) { result += 1; goto Handle8Code; }
+        else if(is_8pix && !code.compare(0, code2.size(), code2)) { result += 2; goto Handle8Code; }
+        else if(is_8pix && !code.compare(0, code3.size(), code3)) { result += 3; goto Handle8Code; }
+        else if(is_8pix && !code.compare(0, code4.size(), code4)) { result += 4; goto Handle8Code; }
+        else if(is_8pix && !code.compare(0, code5.size(), code5)) { result += 5; goto Handle8Code; }
+        else if(is_8pix && !code.compare(0, code6.size(), code6)) { result += 6; goto Handle8Code; }
+        else if(is_8pix && !code.compare(0, code7.size(), code7)) { result += 7; goto Handle8Code; }
+        else if(is_8pix && !code.compare(0, code8.size(), code8)) { result += 8; goto Handle8Code; }
+        else if(is_8pix && !code.compare(0, code9.size(), code9)) { result += 9; goto Handle8Code; }
+        else if(is_8pix && !code.compare(0, code10.size(), code10)) { result += 10; goto Handle8Code; }
+        else if(is_8pix && !code.compare(0, code11.size(), code11)) { result += 11; goto Handle8Code; }
+        else if(is_8pix && !code.compare(0, code12.size(), code12)) { result += 12; goto Handle8Code; }
         else
         {
-            result += atoi(code.c_str()+1, 16);
+            result += (ctchar)atoi(code.c_str()+1, 16);
             rawcodes.insert(code);
         }
     }
     
     if(is_dialog)
     {
-        Conjugater->Work(*this, result);
+        Conjugater->Work(result);
         result = WrapDialogLines(result);
     }
 
@@ -378,12 +420,36 @@ void insertor::LoadFile(FILE *fp)
             }
             while(c != (ucs4)EOF && c != '\n') { cget(c); }
             
-            if(header == "z")
+            model.ref_id  = 0;
+            model.width   = 0;
+            model.address = 0;
+
+            if(header.size() >= 1 && header[0] == 'z')
             {
+                list<ReferMethod> refs;
+                for(unsigned a=1; a < header.size() && header[a] == ':'; )
+                {
+                    char type = header[++a];
+                    unsigned addr = 0;
+                    while(++a < header.size() && header[a] != ':')
+                        CumulateBase62(addr, header, header[a]); 
+                    switch(type)
+                    {
+                        case '^': refs.push_back(PagePtrFrom(addr)); break;
+                        case '!': refs.push_back(OffsPtrFrom(addr)); break;
+                        default: fprintf(stderr, "Unknown typeid '%c'\n", type);
+                    }
+                }
+                if(!refs.empty())
+                {
+                    refers.push_back(refs);
+                    model.ref_id = refers.size();
+                }
+                
                 model.type = stringdata::zptr12;
                 MessageZSection(header);
             }
-            else if(header == "r")
+            else if(header.size() >= 1 && header[0] == 'r')
             {
                 model.type = stringdata::zptr8;
                 MessageRSection(header);
@@ -453,44 +519,13 @@ void insertor::LoadFile(FILE *fp)
                 if(header.size() > 0 && (header[0] == 'd' || header[0] == 's'))
                 {
                     // freespace and dict labels are hex
-                    if(isdigit(c))
-                        label = label * 16 + c - '0';
-                    else if(c >= 'A' && c <= 'z')
-                        label = label * 16 + c + 10 - 'A';
-                    else if(c >= 'A' && c <= 'z')
-                        label = label * 16 + c + 10 - 'a';
-                    else
-                    {
-                        MessageInvalidLabelChar(c, label, header);
-                    }
+                    CumulateBase16(label, header, c);
                 }
                 else
                 {
                     // other labels are 62-base (10+26+26) numbers
-                    if(isdigit(c))
-                        label = label * 62 + c - '0';
-                    else if(c >= 'A' && c <= 'Z')
-                        label = label * 62 + (c - 'A' + 10);
-                    else if(c >= 'a' && c <= 'z')
-                        label = label * 62 + (c - 'a' + 36);
-                    else
-                    {
-                        string tmp;
-                        for(unsigned tmpnum=label; tmpnum!=0; )
-                        {
-                            unsigned digit = tmpnum%62;
-                            tmpnum/=62;
-                            string tmp2;
-                            tmp2 += (digit<10)?(digit+'0')
-                                :(digit<36)?(digit+'A'-10)
-                                :(digit+'a'-36);
-                            tmp = tmp2 + tmp;
-                        }
-                        while(tmp.size() < 4)tmp = "0" + tmp;
-                        
-                        MessageInvalidLabelChar(c, tmp, header);
+                    if(!CumulateBase62(label, header, c))
                         break;
-                    }
                 }
             }
             ucs4string content;
@@ -581,7 +616,7 @@ void insertor::LoadFile(FILE *fp)
                         
                         for(i=b; i!=e; ++i)
                         {
-                            if(content.compare(a, i->first.size(), i->first) == 0)
+                            if(!content.compare(a, i->first.size(), i->first))
                             {
                                 unsigned testlen = i->first.size();
                                 a += testlen-1;
@@ -655,4 +690,214 @@ void insertor::LoadFile(FILE *fp)
             fprintf(stderr, " %s", WstrToAsc(*i).c_str());
         fprintf(stderr, "\n");
     }
+}
+
+unsigned insertor::CalculateScriptSize() const
+{
+    MessageMeasuringScript();
+    
+    map<unsigned, PagePtrList> tmp;
+    for(stringlist::const_iterator i=strings.begin(); i!=strings.end(); ++i)
+    {
+        if(i->type == stringdata::zptr12)
+        {
+            MessageWorking();
+            
+            const string s = GetString(i->str);
+            vector<unsigned char> data(s.c_str(), s.c_str() + s.size() + 1);
+            
+            tmp[i->address >> 16].AddItem(data, i->address & 0xFFFF);
+        }
+    }
+
+    unsigned size = 0;
+    for(map<unsigned, PagePtrList>::iterator
+        i = tmp.begin(); i != tmp.end(); ++i)
+    {
+        MessageWorking();
+        i->second.Combine();
+        size += i->second.Size();
+    }
+    
+    MessageDone();
+    
+    return size;
+}
+
+const list<pair<unsigned, ctstring> > insertor::GetScriptByPage() const
+{
+    map<unsigned, PagePtrList> tmp;
+    for(stringlist::const_iterator i=strings.begin(); i!=strings.end(); ++i)
+    {
+        if(i->type == stringdata::zptr12)
+        {
+            const string s = GetString(i->str);
+            vector<unsigned char> data(s.c_str(), s.c_str() + s.size() + 1);
+            
+            tmp[i->address >> 16].AddItem(data, i->address & 0xFFFF);
+        }
+    }
+    
+    list<pair<unsigned, ctstring> > result;
+
+    unsigned size = 0;
+    for(map<unsigned, PagePtrList>::iterator
+        i = tmp.begin(); i != tmp.end(); ++i)
+    {
+        i->second.Combine();
+        
+        const vector<unsigned char> s = i->second.GetS();
+        
+        ctstring tmp;
+        
+        for(unsigned a=0; a<s.size(); ++a)
+        {
+            unsigned int byte = s[a];
+            if(byte == 1 || byte == 2)
+                byte = byte * 256 + s[++a];
+            tmp += (ctchar) byte;
+        }
+        result.push_back(make_pair(i->first, tmp));
+    }
+    
+    return result;
+}
+
+void insertor::WriteFixedStrings()
+{
+    for(stringlist::const_iterator i=strings.begin(); i!=strings.end(); ++i)
+    {
+        if(i->type == stringdata::fixed)
+        {
+            MessageWorking();
+            
+            unsigned pos = i->address;
+            const ctstring &s = i->str;
+            
+            // Fixed strings don't contain extrachars.
+            // Thus s.size() is safe.
+            unsigned size = s.size();
+            
+            if(size > i->width)
+            {
+#if 0
+                fprintf(stderr, "  Warning: Fixed string at %06X: len(%u) > space(%u)... '%s'\n",
+                    pos, size, i->width, DispString(s).c_str());
+#endif
+                size = i->width;
+            }
+            
+            // Filler must be 255, or otherwise following problems occur:
+            //     item listing goes zigzag
+            //     12pix item/tech/mons text in battle has garbage (char 0 in font).
+
+            vector<unsigned char> Buf(i->width, 255);
+            if(size > i->width) size = i->width;
+            
+            std::copy(s.begin(), s.begin()+size, Buf.begin());
+            
+            objects.AddLump(Buf, pos & 0x3FFFFF, "lstring");
+        }
+    }
+}
+
+void insertor::WriteOtherStrings()
+{
+    map<unsigned, PagePtrList> pagemap;
+    map<unsigned, PagePtrList> refmap;
+    
+    for(stringlist::const_iterator i=strings.begin(); i!=strings.end(); ++i)
+    {
+        if(i->type == stringdata::zptr8
+        || i->type == stringdata::zptr12)
+        {
+            MessageWorking();
+            
+            const string s = GetString(i->str);
+            vector<unsigned char> data(s.c_str(), s.c_str() + s.size() + 1);
+            
+#if 0
+            fprintf(stderr, "String: '%s'", DispString(i->str).c_str());
+            fprintf(stderr, "\n");
+            for(unsigned a=0; a<data.size(); ++a)
+                fprintf(stderr, " %02X", data[a]);
+            fprintf(stderr, "\n");
+#endif
+            
+            if(i->ref_id)
+            {
+                refmap[i->ref_id].AddItem(data, i->address & 0xFFFF);
+                freespace.Add(i->address & 0x3FFFFF, 2);
+            }
+            else
+                pagemap[i->address >> 16].AddItem(data, i->address & 0xFFFF);
+        }
+    }
+
+    for(map<unsigned, PagePtrList>::iterator
+        i = pagemap.begin(); i != pagemap.end(); ++i)
+    {
+        char Buf[64]; sprintf(Buf, "page $%02X", i->first);
+        MessageLoadingItem(Buf);
+        
+        MessageWorking();
+        
+        i->second.Create(*this, i->first, "zstring");
+    }
+
+    for(map<unsigned, PagePtrList>::iterator
+        i = refmap.begin(); i != refmap.end(); ++i)
+    {
+        unsigned ref_id = i->first - 1;
+        
+        char Buf[64]; sprintf(Buf, "reloc_%u_zstring", ref_id);
+        MessageLoadingItem(Buf);
+        
+        MessageWorking();
+        i->second.Create(*this, Buf, Buf);
+        
+        const list<ReferMethod>& refs = refers[ref_id];
+        for(list<ReferMethod>::const_iterator
+            j = refs.begin(); j != refs.end(); ++j)
+        {
+            objects.AddReference(Buf, *j);
+        }
+    }
+}
+
+void insertor::WriteStringTable(stringdata::strtype type,
+                                const string& tablename,
+                                const string& what)
+{
+    MessageLoadingItem(what);
+    PagePtrList tmp;
+    unsigned index = 0;
+    for(stringlist::const_iterator i=strings.begin(); i!=strings.end(); ++i)
+    {
+        MessageWorking();
+        if(i->type == type)
+        {
+            const string s = GetString(i->str);
+            vector<unsigned char> data(s.c_str(), s.c_str() + s.size() + 1);
+            tmp.AddItem(data, index);
+            index += 2;
+        }
+    }
+    if(index) tmp.Create(*this, what, tablename);
+}
+
+void insertor::WriteRelocatedStrings()
+{
+    WriteStringTable(stringdata::item,    "ITEMTABLE", "Items");
+    WriteStringTable(stringdata::tech,    "TECHTABLE", "Techs");
+    WriteStringTable(stringdata::monster, "MONSTERTABLE", "Monsters");
+}
+
+void insertor::WriteStrings()
+{
+    MessageWritingStrings();
+    WriteFixedStrings();
+    WriteOtherStrings();
+    WriteRelocatedStrings();
+    MessageDone();
 }

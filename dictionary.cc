@@ -8,11 +8,12 @@
 #include "ctcset.hh"
 #include "miscfun.hh"
 #include "config.hh"
-#include "stringoffs.hh"
 #include "hash.hh"
 #include "logfiles.hh"
 #include "conjugate.hh"
 #include "msginsert.hh"
+#include "pageptrlist.hh"
+#include "settings.hh"
 
 using namespace std;
 
@@ -292,7 +293,7 @@ namespace
             for(unsigned d=0; d<dict.size(); ++d)
             {
                 ctchar replacement = dictbegin + d;
-                rep_word = str_replace(dict[d], replacement, rep_word);
+                str_replace_inplace(rep_word, dict[d], replacement);
             }
             return rep_word;
         }
@@ -486,7 +487,7 @@ namespace
                         for(unsigned d=0; d<dict.size(); ++d)
                         {
                             ctchar replacement = dictbegin + d;
-                            comprword = str_replace(dict[d], replacement, comprword);
+                            str_replace_inplace(comprword, dict[d], replacement);
                         }
                         // Each instance of the string
                         unsigned oldbytes = CalcSize(comprword);
@@ -609,30 +610,25 @@ void insertor::RebuildDictionary()
     
     PageScriptList pages, saved_pages;
 
-    set<unsigned> zpages = GetZStringPageList();
-    for(set<unsigned>::const_iterator i=zpages.begin(); i!=zpages.end(); ++i)
+    if(true)
     {
-        stringoffsmap pagestrings = GetZStringList(*i);
-        
-        pagestrings.GenerateNeederList();
-        const stringoffsmap::neederlist_t &neederlist = pagestrings.neederlist;
-        
-        PageScript tmp;
-        
-        tmp.pagenum   = *i;
-        //tmp.urgency   = 1.0 + (65536 - freespace.Size(tmp.pagenum)) / 65536.0;
-        //tmp.urgency   = 1.0 / freespace.Size(tmp.pagenum);
-        tmp.urgency   = 1;
-        
-        //tmp.urgency *= freespace.Count(tmp.pagenum);
+        list<pair<unsigned, ctstring> > tmp = GetScriptByPage();
+        for(list<pair<unsigned, ctstring> >::const_iterator
+            i = tmp.begin(); i != tmp.end(); ++i)
+        {
+            PageScript tmp;
+            
+            tmp.pagenum   = i->first;
+            tmp.script    = i->second;
+            
+            //tmp.urgency   = 1.0 + (65536 - freespace.Size(tmp.pagenum)) / 65536.0;
+            //tmp.urgency   = 1.0 / freespace.Size(tmp.pagenum);
+            tmp.urgency   = 1;
+            
+            //tmp.urgency *= freespace.Count(tmp.pagenum);
 
-        for(unsigned a=0; a<pagestrings.size(); ++a)
-            if(neederlist.find(a) == neederlist.end())
-            {
-                tmp.script += pagestrings[a].str;
-                tmp.script += (ctchar)0;
-            }
-        pages.push_back(tmp);
+            pages.push_back(tmp);
+        }
     }
     
     saved_pages = pages;
@@ -710,7 +706,7 @@ NULL);
                 for(unsigned a=0; a<d; ++a)
                 {
                     ctchar replacement = dictbegin + a;
-                    rep_word = str_replace(dict[a], replacement, rep_word);
+                    str_replace_inplace(rep_word, dict[a], replacement);
                 }
                 ctchar replacement = dictbegin + d;
                 
@@ -719,7 +715,7 @@ NULL);
                 for(i=pages.begin(); i!=pages.end(); ++i)
                 {
                     unsigned size0 = CalcSize(i->script);
-                    i->script = str_replace(rep_word, replacement, i->script);
+                    str_replace_inplace(i->script, rep_word, replacement);
                     unsigned size1 = CalcSize(i->script);
                     saving += size0 - size1;
                 }
@@ -788,7 +784,7 @@ NULL);
                 for(i=pages.begin(); i!=pages.end(); ++i)
                 {
                     const unsigned size0 = CalcSize(i->script);
-                    i->script = str_replace(rep_word, replacement, i->script);
+                    str_replace_inplace(i->script, rep_word, replacement);
                     const unsigned size1 = CalcSize(i->script);
                     saving += size0 - size1;
                 }
@@ -909,7 +905,7 @@ NULL);
             for(i=pages.begin(); i!=pages.end(); ++i)
             {
                 const unsigned size0 = CalcSize(i->script);
-                i->script = str_replace(rep_word, replacement, i->script);
+                str_replace_inplace(i->script, rep_word, replacement);
                 const unsigned size1 = CalcSize(i->script);
                 saving += size0 - size1;
             }
@@ -959,7 +955,7 @@ void insertor::ApplyDictionary()
         for(unsigned a=0; a<d; ++a)
         {
             ctchar replacement = dictbegin + a;
-            rep_word = str_replace(dict[a], replacement, rep_word);
+            str_replace_inplace(rep_word, dict[a], replacement);
         }
         
 #if APPLYD_DUMP
@@ -973,38 +969,21 @@ void insertor::ApplyDictionary()
         
         for(stringlist::iterator i=strings.begin(); i!=strings.end(); ++i)
         {
-            if(i->type != stringdata::zptr12) continue;
-            i->str = str_replace(rep_word, replacement, i->str);
+            switch(i->type)
+            {
+                /* Only zptr12 strings are compressed */
+                case stringdata::zptr12:
+                    str_replace_inplace(i->str, rep_word, replacement);
+                    break;
+                default:
+                    continue;
+            }
         }
     }
 #if APPLYD_DUMP
     if(col)putc('\n', stderr);
 #endif
     MessageDone();
-}
-
-unsigned insertor::CalculateScriptSize() const
-{
-    MessageMeasuringScript();
-    
-    set<unsigned> zpages = GetZStringPageList();
-    unsigned size = 0;
-    for(set<unsigned>::const_iterator i=zpages.begin(); i!=zpages.end(); ++i)
-    {
-        MessageWorking();
-        
-        stringoffsmap pagestrings = GetZStringList(*i);
-        
-        pagestrings.GenerateNeederList();
-        
-        const stringoffsmap::neederlist_t &neederlist = pagestrings.neederlist;
-        
-        for(unsigned a=0; a<pagestrings.size(); ++a)
-            if(neederlist.find(a) == neederlist.end())
-                size += CalcSize(pagestrings[a].str) + 1;
-    }
-    MessageDone();
-    return size;
 }
 
 /* Build the dictionary. */
@@ -1086,4 +1065,29 @@ void insertor::DictionaryCompress()
                 "* This is because you had \"outputfn\" setting empty.\n");
         }
     }
+}
+
+void insertor::WriteDictionary()
+{
+    MessageWritingDict();
+
+    PagePtrList tmp;
+    
+    for(unsigned a=0; a<dict.size(); ++a)
+    {
+        const string s = GetString(dict[a]);
+        vector<unsigned char> Buf(s.size() + 1);
+        std::copy(s.begin(), s.begin()+s.size(), Buf.begin()+1);
+        Buf[0] = s.size();
+        
+        tmp.AddItem(Buf, a*2);
+    }
+    
+    tmp.Create(*this, "dict", "DICT_TABLE");
+    
+    objects.AddReference("DICT_TABLE", OffsPtrFrom(GetConst(DICT_OFFSET)));
+    objects.AddReference("DICT_TABLE", PagePtrFrom(GetConst(DICT_SEGMENT1)));
+    objects.AddReference("DICT_TABLE", PagePtrFrom(GetConst(DICT_SEGMENT2)));
+    
+    MessageDone();
 }

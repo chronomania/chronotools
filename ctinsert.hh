@@ -4,6 +4,7 @@
 #include <list>
 #include <string>
 #include <vector>
+#include <utility>
 
 #include "wstring.hh"
 #include "space.hh"
@@ -11,6 +12,7 @@
 #include "ctcset.hh"
 
 #include "o65linker.hh"
+#include "refer.hh"
 
 using namespace std;
 
@@ -51,15 +53,15 @@ private:
         strtype type;
         unsigned width; // used if type==fixed;
         unsigned address;
+        
+        unsigned ref_id; // used if zptr8 or zptr12
     };
     
     typedef list<stringdata> stringlist;
-    // strings: used in:
-    //     LoadFile()
-    //     GetZStringPageList()
-    //     GetZStringList()
-    //     WriteStrings()
     stringlist strings;
+    
+    typedef vector<list<ReferMethod> > referlist;
+    referlist refers;
     
     vector<ctstring> dict;
     
@@ -75,7 +77,9 @@ private:
     class Conjugatemap *Conjugater;
     
     void WriteImages();
+    void WriteFonts();
     void WriteVWF12();
+    void WriteVWF8();
     void WriteFont8();
     void WriteConjugator();
     void WriteUserCode();
@@ -97,13 +101,8 @@ private:
     const ctstring ParseScriptEntry(const ucs4string &input, const stringdata &model);
     const ctstring WrapDialogLines(const ctstring &dialog) const;
 
-    // Get list of pages having zstrings
-    const set<unsigned> GetZStringPageList() const;
-    
-    // Get zstrings of page
-    const class stringoffsmap GetZStringList(unsigned pagenum) const;
-
     unsigned CalculateScriptSize() const;
+    const list<pair<unsigned, ctstring> > GetScriptByPage() const;
 };
 
 #endif

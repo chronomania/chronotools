@@ -33,7 +33,10 @@ unsigned char *ROM;
 
 namespace
 {
-    void MarkingMessage(const char* msgtype, const set<unsigned>& errlist, const char* type)
+    void MarkingMessage(const char* msgtype,
+                        const set<unsigned>& errlist,
+                        const string& why,
+                        const char* type)
     {
         set<unsigned>::const_iterator i;
         
@@ -47,8 +50,8 @@ namespace
         {
             if(i == errlist.end() || (begun && prev < *i-1))
             {
-                fprintf(stderr, "%s: %06X-%06X already marked %s\n",
-                                msgtype, first,prev, type);
+                fprintf(stderr, "%s: %06X-%06X already marked %s by %s\n",
+                                msgtype, first,prev, type, why.c_str());
                 
                 set<string> users;
                 
@@ -81,13 +84,13 @@ namespace
             prev = *i;
         }
     }
-    void MarkingError(const set<unsigned>& errlist, const char *type)
+    void MarkingError(const set<unsigned>& errlist, const string& why, const char *type)
     {
-        MarkingMessage("Error", errlist, type);
+        MarkingMessage("Error", errlist, why, type);
     }
-    void MarkingWarning(const set<unsigned>& errlist, const char *type)
+    void MarkingWarning(const set<unsigned>& errlist, const string& why, const char *type)
     {
-        MarkingMessage("Warning", errlist, type);
+        MarkingMessage("Warning", errlist, why, type);
     }
     
     void SetReasons(unsigned begin, unsigned length, const string& what)
@@ -267,8 +270,8 @@ void MarkFree(unsigned begin, unsigned length, const string& reason)
     
     // refreeing is not dangerous. It's common when substrings are reused.
     
-    if(!error.empty()) MarkingError(error, "protected, attempted to free");
-    //if(!warning.empty()) MarkingWarning(warning, "free, attempted to refree");
+    if(!error.empty()) MarkingError(error, reason, "protected, attempted to free");
+    //if(!warning.empty()) MarkingWarning(warning, reason, "free, attempted to refree");
     
     if(length > 0) SetReasons(begin, length, reason);
     
@@ -289,8 +292,8 @@ void MarkProt(unsigned begin, unsigned length, const string& reason)
     }
     protect.set(begin, begin+length);
 
-    if(!error.empty()) MarkingError(error, "free, attempted to protect");
-    if(!warning.empty()) MarkingWarning(warning, "protected, attempted to reprotect");
+    if(!error.empty()) MarkingError(error, reason, "free, attempted to protect");
+    if(!warning.empty()) MarkingWarning(warning, reason, "protected, attempted to reprotect");
     
     if(length > 0) SetReasons(begin, length, reason);
     

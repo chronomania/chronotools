@@ -19,6 +19,7 @@
 void PutAscii(const string& ) {}
 void BlockComment(const string& ) {}
 void StartBlock(const char*, const string&, unsigned=0) {}
+void StartBlock(const string&, const string& ) {}
 void EndBlock() {}
 std::FILE *GetLogFile(const char*, const char*){return NULL;}
 

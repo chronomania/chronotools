@@ -48,7 +48,9 @@ void PagePtrList::Combine()
 {
     items.sort();
     
-    //unsigned n = 0, c = 0, t = 0;
+#if 0
+    unsigned n = 0, c = 0, t = 0;
+#endif
     
     for(list<Data>::iterator a = items.begin(); a != items.end(); ++a)
     {
@@ -56,7 +58,9 @@ void PagePtrList::Combine()
         
         MessageWorking();
         
-        //t += A.data.size();
+#if 0
+        t += A.data.size();
+#endif
         
         list<Data>::iterator next=a; ++next;
         while(next != items.end())
@@ -75,8 +79,10 @@ void PagePtrList::Combine()
             {
                 unsigned int_pos = pos - Haystack.begin();
             
-                //++n;
-                //c += Needle.size();
+#if 0
+                ++n;
+                c += Needle.size();
+#endif
                 
                 Combine(A, B, int_pos);
                 
@@ -85,10 +91,10 @@ void PagePtrList::Combine()
         }
     }
     
-    /*
-    fprintf(stderr, "%u/%u strings combined, saving %u/%u bytes\n",
+#if 0
+    fprintf(stderr, "\n%u/%u strings combined, saving %u/%u bytes\n",
         n, items.size(), c, t);
-    */
+#endif
 }
 
 namespace
@@ -100,6 +106,27 @@ namespace
         std::sprintf(Buf, "<ref%u>", ++refcounter);
         return Buf;
     }
+}
+
+unsigned PagePtrList::Size() const
+{
+    unsigned result = 0;
+    for(list<Data>::const_iterator a = items.begin(); a != items.end(); ++a)
+        result += a->data.size();
+    return result;
+}
+
+const vector<unsigned char> PagePtrList::GetS() const
+{
+    vector<unsigned char> result(Size());
+    unsigned pos = 0;
+    for(list<Data>::const_iterator a = items.begin(); a != items.end(); ++a)
+    {
+        std::copy(a->data.begin(), a->data.end(),
+                  &result[pos]);
+        pos += a->data.size();
+    }
+    return result;
 }
 
 void PagePtrList::Create(insertor& ins,

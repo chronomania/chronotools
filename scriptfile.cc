@@ -39,6 +39,12 @@ void StartBlock(const char* blocktype, const string& reason, unsigned intparam)
     char *Buf = new char[strlen(blocktype) + 64];
     sprintf(Buf, blocktype, intparam);
     
+    StartBlock(Buf, reason);
+    
+    delete[] Buf;
+}
+void StartBlock(const string& blocktype, const string& reason)
+{
     bool newlabel = true;//CurLabel != Buf;
     bool comment = !CurLabelComment.empty();
     
@@ -50,16 +56,16 @@ void StartBlock(const char* blocktype, const string& reason, unsigned intparam)
     if(newlabel)
     {
         // FIXME: iconv here
-        if(*Buf)
+        if(!blocktype.empty())
         {
             string blockheader = "*";
-            blockheader += Buf;
+            blockheader += blocktype;
             blockheader += ';';
             blockheader += reason;
             blockheader += '\n';
             PutAscii(blockheader);
         }
-        CurLabel = Buf;
+        CurLabel = blocktype;
     }
     if(comment)
     {
@@ -67,25 +73,29 @@ void StartBlock(const char* blocktype, const string& reason, unsigned intparam)
         PutAscii(CurLabelComment.c_str());
         PutAscii(";-----------------\n");
     }
-    
-    delete[] Buf;
 }
 void EndBlock()
 {
     //PutAscii("\n\n");
     CurLabelComment = "";
 }
-void PutBase62Label(const unsigned noffs)
+const string Base62Label(const unsigned noffs)
 {
-    string line = "$";
+    string result;
     for(unsigned k=62*62*62; ; k/=62)
     {
         unsigned dig = (noffs/k)%62;
-        if(dig < 10) line += ('0' + dig);
-        else if(dig < 36) line += ('A' + (dig-10));
-        else line += ('a' + (dig-36));
+        if(dig < 10) result += ('0' + dig);
+        else if(dig < 36) result += ('A' + (dig-10));
+        else result += ('a' + (dig-36));
         if(k==1)break;
     }
+    return result;
+}
+void PutBase62Label(const unsigned noffs)
+{
+    string line = "$";
+    line += Base62Label(noffs);
     line += ':';
     PutAscii(line);
 }

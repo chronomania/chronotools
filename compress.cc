@@ -23,9 +23,70 @@ class Compressor
     const unsigned max_offset;
     const unsigned min_length;
     const unsigned max_length;
-
-    vector<unsigned> saving_offset;
-    vector<unsigned> saving_len;
+    
+    class SavingMap
+    {
+        const Compressor& com;
+        unsigned* const offs;
+        unsigned* const len;
+        bool* const done;
+        
+        void Map(unsigned pos) const
+        {
+            const unsigned length = com.length;
+            const unsigned min_length = com.min_length;
+            const unsigned max_length = com.max_length;
+            const unsigned max_offset = com.max_offset;
+            dataptr const data = com.data;
+            
+            const unsigned maxoffs = std::min(max_offset, pos);
+            
+            unsigned max_saving = 0, max_saving_offset = 0;
+            
+            /* Find out the best backward reference */
+            for(unsigned offset = maxoffs; offset >= 1; --offset)
+            {
+                const unsigned matching_length =
+                   std::mismatch(&data[pos],
+                                 // upper limit.
+                                 std::min(&data[length],
+                                          &data[pos+max_length]),
+                                 &data[pos-offset]).first - &data[pos];
+                
+                if(matching_length >= min_length
+                && matching_length > max_saving)
+                {
+                    max_saving        = matching_length;
+                    max_saving_offset = offset;
+                }
+            }
+            len[pos] = max_saving;
+            offs[pos] = max_saving_offset;
+            done[pos] = true;
+        }
+    public:
+        SavingMap(const Compressor& c)
+          : com(c),
+            offs(new unsigned[c.length]),
+            len(new unsigned[c.length]),
+            done(new bool[c.length])
+        {
+            std::fill_n(done, c.length, false);
+            std::fill_n(offs, c.length, 0);
+            std::fill_n(len, c.length, 0);
+        }
+        ~SavingMap()
+        {
+            delete[] offs;
+            delete[] len;
+            delete[] done;
+        }
+        unsigned GetLen(unsigned pos) const { if(!done[pos]) Map(pos); return len[pos]; }
+        unsigned GetOffs(unsigned pos) const { if(!done[pos]) Map(pos); return offs[pos]; }
+    private:
+        SavingMap(const SavingMap&);
+        void operator=(const SavingMap&);
+    } SavingMap;
 
     unsigned char FirstControlByte;
     unsigned char OtherControlByte;
@@ -79,46 +140,6 @@ class Compressor
         unsigned GetSize() const { return result.size() + output.size(); }
         const vector<unsigned char>& GetResult() const { return result; }
     };
-    
-    void Map_Savings()
-    {
-        /* FIXME: Rewrite using std::mismatch and co. */
-        for(unsigned pos=0; pos < length; ++pos)
-        {
-            unsigned max_saving = 0, max_saving_offset = 0;
-            
-            /* Find out the best backward reference */
-            for(unsigned offset=max_offset; offset>=1; --offset)
-            {
-                unsigned matching_length = 0;
-                unsigned testpos = pos;
-                if(testpos < offset) continue;
-                
-                while(testpos < length && matching_length < max_length)
-                {
-                    if(testpos >= length) break;
-                    if(data[testpos] != data[testpos-offset]) break;
-                    ++matching_length;
-                    ++testpos;
-                }
-                if(matching_length < min_length) continue;
-                if(matching_length > max_saving)
-                {
-                    max_saving        = matching_length;
-                    max_saving_offset = offset;
-                }
-/*              - this optimization doesn't work -
-                if(matching_length > 1)
-                {
-                    if(offset > matching_length)
-                        offset -= matching_length;
-                }
-*/
-            }
-            saving_len[pos] = max_saving;
-            saving_offset[pos] = max_saving_offset;
-        }
-    }
     
     unsigned char GetControl(const result_t& result) const
     {
@@ -218,20 +239,22 @@ ReHandle:
                 unsigned char bit = 1 << (counter-1);
                 ++counter;
                 
-                bool accept = saving_len[testpos] >= 3;
+                bool accept = SavingMap.GetLen(testpos) >= 3;
                 
 #ifdef SUPER_POSITIONS
                 if(accept
-                && (saving_len[testpos] == 3 || AllSuperPositions))
+                && (SavingMap.GetLen(testpos) == 3 || AllSuperPositions))
                 {
                     // Do both - accept and don't accept!
                     BitStatus what_if_1 = statuslist[a];
                     BitStatus what_if_2 = statuslist[a];
                     
-                    //fprintf(stderr, "\nBit %u(pos %u): Accepting (%u)", counter-1, testpos, saving_len[testpos]);
+                    /*fprintf(stderr, "\nBit %u(pos %u): Accepting (%u)",
+                        counter-1, testpos, SavingMap.GetLen(testpos));
+                    */
                     
                     // Add "accept" as todo
-                    what_if_1.testpos += saving_len[testpos];
+                    what_if_1.testpos += SavingMap.GetLen(testpos);
 #ifdef USE_GENLEN
                     what_if_1.genlen  += 2;
 #endif
@@ -251,8 +274,10 @@ ReHandle:
                 
                 if(accept)
                 {
-                    //fprintf(stderr, "\nBit %u(pos %u): Accepting (%u)", counter-1, testpos, saving_len[testpos]);
-                    testpos += saving_len[testpos];
+                    /*fprintf(stderr, "\nBit %u(pos %u): Accepting (%u)",
+                        counter-1, testpos, SavingMap.GetLen(testpos));
+                    */
+                    testpos += SavingMap.GetLen(testpos);
 #if 0
                     genlen  += 2;
 #endif
@@ -308,17 +333,19 @@ ReHandle:
         {
             if(bits&1)
             {
-                unsigned word = ((saving_len[pos]-3) << Depth)
-                              + saving_offset[pos];
+                unsigned word = ((SavingMap.GetLen(pos)-3) << Depth)
+                              + SavingMap.GetOffs(pos);
                 
                 result.AddWord(word);
 #ifdef DEBUG_COMPRESS
-                if(!saving_len[pos]) errors = true;
+                if(!SavingMap.GetLen(pos)) errors = true;
                 
-                fprintf(stderr, " %04X(-%u,%u)", word, saving_offset[pos], saving_len[pos]);
+                fprintf(stderr, " %04X(-%u,%u)", word,
+                    SavingMap.GetOffs(pos),
+                    SavingMap.GetLen(pos));
 #endif
                 
-                pos += saving_len[pos];
+                pos += SavingMap.GetLen(pos);
             }
             else
             {
@@ -354,11 +381,11 @@ ReHandle:
                 //^ Ensures this won't be used
                 continue;
             }
-            if(counter <= 8 && saving_len[testpos])
+            if(counter <= 8 && SavingMap.GetLen(testpos))
             {
                 out_size += 2;
-                in_size += saving_len[testpos];
-                testpos += saving_len[testpos];
+                in_size += SavingMap.GetLen(testpos);
+                testpos += SavingMap.GetLen(testpos);
             }
             else
             {
@@ -423,7 +450,7 @@ ReHandle:
             bool forced_literal_8 = true;
             for(unsigned testpos=pos, n=0; n<8; ++n,++testpos)
             {
-                if(testpos < length && !saving_len[testpos]) continue;
+                if(testpos < length && !SavingMap.GetLen(testpos)) continue;
                 forced_literal_8 = false;
                 break;
             }
@@ -473,7 +500,7 @@ ReHandle:
                             bool literal8_next = true;
                             for(unsigned testpos=tmppos, n=0; n<8; ++n,++testpos)
                             {
-                                if(testpos < length && !saving_len[testpos]) continue;
+                                if(testpos < length && !SavingMap.GetLen(testpos)) continue;
                                 literal8_next = false;
                                 break;
                             }
@@ -549,8 +576,7 @@ public:
           max_offset((1 << Depth) - 1),
           min_length(3),
           max_length((1 << (16-Depth)) - 1 + min_length),
-          saving_offset(length),
-          saving_len(length)
+          SavingMap(*this)
     {
         unsigned char ControlByte = 0;
         if(Depth == 11) ControlByte |= 0x40;
@@ -559,8 +585,6 @@ public:
         OtherControlByte = ControlByte;
         
         if(seg == 0x7F) FirstControlByte |= 1;
-        
-        Map_Savings();
     }
     
     const vector<unsigned char> Compress() const

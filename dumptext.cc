@@ -2,6 +2,7 @@
 #include "strload.hh"
 #include "symbols.hh"
 #include "msgdump.hh"
+#include "rommap.hh"
 #include "config.hh"
 
 #include "dumptext.hh"
@@ -246,6 +247,212 @@ namespace
         }
         line = result;
     }
+    
+    const ucs4string Get12string(const ctstring& value, bool dolf)
+    {
+        ctstring s = value;
+        ucs4string result;
+        
+        if(dolf) AttemptUnwrap(s);
+
+        for(unsigned b=0; b<s.size(); ++b)
+        {
+            switch(s[b])
+            {
+                case 0x03:
+                {
+                    char Buf[64];
+                    sprintf(Buf, "[delay %02X]", (unsigned char)s[++b]);
+                    result += AscToWstr(Buf);
+                    break;
+                }
+                case 0x12:
+                {
+                    char Buf[64];
+                    ++b;
+                    if(s[b] == 0x00)
+                        strcpy(Buf, "[tech]");
+                    else if(s[b] == 0x01)
+                        strcpy(Buf, "[monster]");
+                    else
+                        sprintf(Buf, "[12][%02X]", (unsigned char)s[b]);
+                    result += AscToWstr(Buf);
+                    break;
+                }
+                default:
+                {
+                    result += Disp12Char(s[b]);
+                }
+            }
+        }
+        return result;
+    }
+    
+    const ucs4string Get8string(const ctstring& value)
+    {
+        ctstring s = value;
+        ucs4string result;
+        
+        unsigned attr=0;
+        for(unsigned b=0; b<s.size(); ++b)
+        {
+            char Buf[64];
+Retry:
+            switch(s[b])
+            {
+#if 1
+                case 1:
+                {
+                    result += (AscToWstr("[next]"));
+                    break;
+                }
+                case 2:
+                {
+                    unsigned c;
+                    c = (unsigned char)s[b+1] + 256*(unsigned char)s[b+2]; b+=2;
+                    sprintf(Buf, "[goto,%04X]", c);
+                    result += (AscToWstr(Buf));
+                    break;
+                }
+                case 3:
+                {
+                    unsigned c1, c2;
+                    c1 = (unsigned char)s[b+1] + 256*(unsigned char)s[b+2]; b+=2;
+                    c2 = (unsigned char)s[b+1] + 256*(unsigned char)s[b+2]; b+=2;
+                    sprintf(Buf, "[func1,%04X,%04X]", c1,c2);
+                    result += (AscToWstr(Buf));
+                    break;
+                }
+                case 4:
+                {
+                    unsigned c1, c2;
+                    c2 = (unsigned char)s[b+1] + 256*(unsigned char)s[b+2]; b+=2;
+                    c1 = (unsigned char)s[++b];
+
+#if 1
+                    if(c1 >= 0xC0)
+                    {
+                        unsigned addr = ((c1&0x3F) << 16) + c2;
+                        
+                        unsigned bytes;
+                        ctstring str = LoadZString(addr, bytes, "substring", Extras_8);
+                        
+                        //result += (AscToWchar('{')); //}
+                        
+                        b -= 3;
+                        s.erase(b, 4);
+                        s.insert(b, str);
+                        goto Retry;
+                    }
+#endif
+                    
+                    sprintf(Buf, "[substr,%02X%04X]", c1,c2);
+                    result += (AscToWstr(Buf));
+                    break;
+                }
+                case 5:
+                {
+                    char Buf[64];
+                    unsigned c;
+                    c = (unsigned char)s[b+1] + 256*(unsigned char)s[b+2]; b+=2;
+                    sprintf(Buf, "[member,%04X]", c);
+                    result += (AscToWstr(Buf));
+                    break;
+                }
+                case 6:
+                {
+                    char Buf[64];
+                    unsigned c;
+                    c = (unsigned char)s[b+1] + 256*(unsigned char)s[b+2]; b+=2;
+                    sprintf(Buf, "[attrs,%04X]", c);
+                    result += (AscToWstr(Buf));
+                    break;
+                }
+                case 7:
+                {
+                    char Buf[64];
+                    unsigned c;
+                    c = (unsigned char)s[b+1] + 256*(unsigned char)s[b+2]; b+=2;
+                    sprintf(Buf, "[out,%04X]", c);
+                    result += (AscToWstr(Buf));
+                    break;
+                }
+                case 8:
+                {
+                    char Buf[64];
+                    unsigned c;
+                    c = (unsigned char)s[++b];
+                    sprintf(Buf, "[spc,%02X]", c);
+                    result += (AscToWstr(Buf));
+                    break;
+                }
+                case 9:
+                {
+                    char Buf[64];
+                    unsigned c;
+                    c = (unsigned char)s[++b];
+                    sprintf(Buf, "[len,%02X]", c);
+                    result += (AscToWstr(Buf));
+                    break;
+                }
+                case 10:
+                {
+                    char Buf[64];
+                    unsigned c;
+                    c = (unsigned char)s[++b];
+                    sprintf(Buf, "[attr,%02X]", c);
+                    result += (AscToWstr(Buf));
+                    attr = c;
+                    break;
+                }
+                case 11:
+                {
+                    unsigned c1, c2;
+                    c1 = (unsigned char)s[b+1] + 256*(unsigned char)s[b+2]; b+=2;
+                    c2 = (unsigned char)s[b+1] + 256*(unsigned char)s[b+2]; b+=2;
+                    sprintf(Buf, "[func2,%04X,%04X]", c1,c2);
+                    result += (AscToWstr(Buf));
+                    break;
+                }
+                case 12:
+                {
+                    unsigned c1, c2;
+                    c1 = (unsigned char)s[++b];
+                    c2 = (unsigned char)s[b+1] + 256*(unsigned char)s[b+2]; b+=2;
+                    sprintf(Buf, "[stat,%02X,%04X]", c1,c2);
+                    result += (AscToWstr(Buf));
+                    break;
+                }
+#endif
+                default:
+#if 1
+                    if(attr & 0x03)
+                    {
+                        result += (AscToWstr("[gfx"));
+                        while(b < s.size())
+                        {
+                            unsigned char byte = s[b];
+                            if(byte <= 12) { --b; break; }
+
+                            char Buf[32];
+                            sprintf(Buf, ",%02X", byte);
+                            result += (AscToWstr(Buf));
+                            ++b;
+                        }
+                        result += (AscToWchar(']'));
+                    }
+                    else
+                    {
+                        result += (Disp8Char(s[b]));
+                    }
+#else
+                    sprintf(Buf, "[%02X]", s[b]);
+                    result += (AscToWstr(Buf));
+#endif
+            }
+        }
+        return result;
+    }
 }
 
 void DumpZStrings(const unsigned offs,
@@ -264,41 +471,43 @@ void DumpZStrings(const unsigned offs,
     wstringOut conv(getcharset());    
     for(unsigned a=0; a<strings.size(); ++a)
     {
-        ucs4string line;
-        ctstring s = strings[a];
-        
-        if(dolf) AttemptUnwrap(s);
+        ucs4string line = Get12string(strings[a], dolf);
 
-        for(unsigned b=0; b<s.size(); ++b)
-        {
-            switch(s[b])
-            {
-                case 0x03:
-                {
-                    char Buf[64];
-                    sprintf(Buf, "[delay %02X]", (unsigned char)s[++b]);
-                    line += AscToWstr(Buf);
-                    break;
-                }
-                case 0x12:
-                {
-                    char Buf[64];
-                    ++b;
-                    if(s[b] == 0x00)
-                        strcpy(Buf, "[tech]");
-                    else if(s[b] == 0x01)
-                        strcpy(Buf, "[monster]");
-                    else
-                        sprintf(Buf, "[12][%02X]", (unsigned char)s[b]);
-                    line += AscToWstr(Buf);
-                    break;
-                }
-                default:
-                {
-                    line += Disp12Char(s[b]);
-                }
-            }
-        }
+        PutBase62Label(offs + a*2);
+        
+        PutContent(conv.puts(line), dolf);
+    }
+    
+    EndBlock();
+    MessageDone();
+}
+
+void DumpRZStrings(const unsigned pageaddr,
+                   const unsigned offsaddr,
+                   const string& what,
+                   unsigned len,
+                   bool dolf)
+{
+    const unsigned offs = ((ROM[pageaddr   & 0x3FFFFF] << 16)
+                         | (ROM[offsaddr+1 & 0x3FFFFF] << 8)
+                         | (ROM[offsaddr   & 0x3FFFFF])) & 0x3FFFFF;
+    
+    MessageBeginDumpingStrings(offs);
+    
+    const string what_tab = what+"(zr)";
+    
+    vector<ctstring> strings = LoadZStrings(offs, len, what_tab, Extras_12);
+
+    string label = "z";
+    label += ":^"; label += Base62Label(pageaddr);
+    label += ":!"; label += Base62Label(offsaddr);
+
+    StartBlock(label, what); 
+
+    wstringOut conv(getcharset());    
+    for(unsigned a=0; a<strings.size(); ++a)
+    {
+        ucs4string line = Get12string(strings[a], dolf);
 
         PutBase62Label(offs + a*2);
         
@@ -324,170 +533,9 @@ void Dump8Strings(const unsigned offs,
     wstringOut conv(getcharset());    
     for(unsigned a=0; a<strings.size(); ++a)
     {
-        string line;
-        
-        ctstring s = strings[a];
-
-        unsigned attr=0;
-        for(unsigned b=0; b<s.size(); ++b)
-        {
-            char Buf[64];
-Retry:
-            switch(s[b])
-            {
-#if 1
-                case 1:
-                {
-                    line += conv.puts(AscToWstr("[next]"));
-                    break;
-                }
-                case 2:
-                {
-                    unsigned c;
-                    c = (unsigned char)s[b+1] + 256*(unsigned char)s[b+2]; b+=2;
-                    sprintf(Buf, "[goto,%04X]", c);
-                    line += conv.puts(AscToWstr(Buf));
-                    break;
-                }
-                case 3:
-                {
-                    unsigned c1, c2;
-                    c1 = (unsigned char)s[b+1] + 256*(unsigned char)s[b+2]; b+=2;
-                    c2 = (unsigned char)s[b+1] + 256*(unsigned char)s[b+2]; b+=2;
-                    sprintf(Buf, "[func1,%04X,%04X]", c1,c2);
-                    line += conv.puts(AscToWstr(Buf));
-                    break;
-                }
-                case 4:
-                {
-                    unsigned c1, c2;
-                    c2 = (unsigned char)s[b+1] + 256*(unsigned char)s[b+2]; b+=2;
-                    c1 = (unsigned char)s[++b];
-
-#if 1
-                    if(c1 >= 0xC0)
-                    {
-                        unsigned addr = ((c1&0x3F) << 16) + c2;
-                        
-                        unsigned bytes;
-                        ctstring str = LoadZString(addr, bytes, "substring", Extras_8);
-                        
-                        //line += conv.putc(AscToWchar('{')); //}
-                        
-                        b -= 3;
-                        s.erase(b, 4);
-                        s.insert(b, str);
-                        goto Retry;
-                    }
-#endif
-                    
-                    sprintf(Buf, "[substr,%02X%04X]", c1,c2);
-                    line += conv.puts(AscToWstr(Buf));
-                    break;
-                }
-                case 5:
-                {
-                    char Buf[64];
-                    unsigned c;
-                    c = (unsigned char)s[b+1] + 256*(unsigned char)s[b+2]; b+=2;
-                    sprintf(Buf, "[member,%04X]", c);
-                    line += conv.puts(AscToWstr(Buf));
-                    break;
-                }
-                case 6:
-                {
-                    char Buf[64];
-                    unsigned c;
-                    c = (unsigned char)s[b+1] + 256*(unsigned char)s[b+2]; b+=2;
-                    sprintf(Buf, "[attrs,%04X]", c);
-                    line += conv.puts(AscToWstr(Buf));
-                    break;
-                }
-                case 7:
-                {
-                    char Buf[64];
-                    unsigned c;
-                    c = (unsigned char)s[b+1] + 256*(unsigned char)s[b+2]; b+=2;
-                    sprintf(Buf, "[out,%04X]", c);
-                    line += conv.puts(AscToWstr(Buf));
-                    break;
-                }
-                case 8:
-                {
-                    char Buf[64];
-                    unsigned c;
-                    c = (unsigned char)s[++b];
-                    sprintf(Buf, "[spc,%02X]", c);
-                    line += conv.puts(AscToWstr(Buf));
-                    break;
-                }
-                case 9:
-                {
-                    char Buf[64];
-                    unsigned c;
-                    c = (unsigned char)s[++b];
-                    sprintf(Buf, "[len,%02X]", c);
-                    line += conv.puts(AscToWstr(Buf));
-                    break;
-                }
-                case 10:
-                {
-                    char Buf[64];
-                    unsigned c;
-                    c = (unsigned char)s[++b];
-                    sprintf(Buf, "[attr,%02X]", c);
-                    line += conv.puts(AscToWstr(Buf));
-                    attr = c;
-                    break;
-                }
-                case 11:
-                {
-                    unsigned c1, c2;
-                    c1 = (unsigned char)s[b+1] + 256*(unsigned char)s[b+2]; b+=2;
-                    c2 = (unsigned char)s[b+1] + 256*(unsigned char)s[b+2]; b+=2;
-                    sprintf(Buf, "[func2,%04X,%04X]", c1,c2);
-                    line += conv.puts(AscToWstr(Buf));
-                    break;
-                }
-                case 12:
-                {
-                    unsigned c1, c2;
-                    c1 = (unsigned char)s[++b];
-                    c2 = (unsigned char)s[b+1] + 256*(unsigned char)s[b+2]; b+=2;
-                    sprintf(Buf, "[stat,%02X,%04X]", c1,c2);
-                    line += conv.puts(AscToWstr(Buf));
-                    break;
-                }
-#endif
-                default:
-#if 1
-                    if(attr & 0x03)
-                    {
-                        line += conv.puts(AscToWstr("[gfx"));
-                        while(b < s.size())
-                        {
-                            unsigned char byte = s[b];
-                            if(byte <= 12) { --b; break; }
-
-                            char Buf[32];
-                            sprintf(Buf, ",%02X", byte);
-                            line += conv.puts(AscToWstr(Buf));
-                            ++b;
-                        }
-                        line += conv.putc(AscToWchar(']'));
-                    }
-                    else
-                    {
-                        line += conv.puts(Disp8Char(s[b]));
-                    }
-#else
-                    sprintf(Buf, "[%02X]", s[b]);
-                    line += conv.puts(AscToWstr(Buf));
-#endif
-            }
-        }
+        ucs4string line = Get8string(strings[a]);
         PutBase62Label(offs + a*2);
-        PutContent(line, false);
+        PutContent(conv.puts(line), false);
     }
     EndBlock();
 
@@ -511,15 +559,15 @@ void DumpFStrings(unsigned offs,
 
     for(unsigned a=0; a<strings.size(); ++a)
     {
-        string line;
+        ucs4string line;
         
         const ctstring &s = strings[a];
 
         for(unsigned b=0; b<s.size(); ++b)
-            line += conv.puts(Disp8Char(s[b]));
+            line += Disp8Char(s[b]);
 
         PutBase62Label(offs + a*len);
-        PutContent(line, false);
+        PutContent(conv.puts(line), false);
     }
     EndBlock();
     MessageDone();

@@ -93,7 +93,8 @@ public:
 extern const ucs4string AscToWstr(const string &s);
 extern const string WstrToAsc(const ucs4string &s);
 extern char WcharToAsc(ucs4 c);
-extern ucs4 AscToWchar(char c);
+inline ucs4 AscToWchar(char c)
+{ return static_cast<ucs4> (static_cast<unsigned char> (c)); }
 extern long atoi(const ucs4 *p, int base=10);
 extern int Whex(ucs4 p);
 

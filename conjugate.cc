@@ -3,7 +3,6 @@
 
 #include "settings.hh"
 #include "symbols.hh"
-#include "miscfun.hh"
 #include "ctcset.hh"
 #include "config.hh"
 #include "space.hh"
@@ -85,7 +84,7 @@ void Conjugatemap::Load(const insertor &ins)
     }
 }
 
-void Conjugatemap::Work(insertor& ins, ctstring &s, formit fit)
+void Conjugatemap::Work(ctstring &s, formit fit)
 {
     form &form = *fit;
 
@@ -188,10 +187,10 @@ Conjugatemap::Conjugatemap(const insertor &ins)
 */
 }
 
-void Conjugatemap::Work(insertor& ins, ctstring &s)
+void Conjugatemap::Work(ctstring &s)
 {
     for(formit i = forms.begin(); i != forms.end(); ++i)
-        Work(ins, s, i);
+        Work(s, i);
 }
 
 void insertor::WriteConjugator()

@@ -44,9 +44,9 @@ void ROM::AddPatch(const vector<unsigned char> &code, unsigned addr, const strin
     unsigned rompos = addr & 0x3FFFFF;
     
     for(unsigned a=0; a<code.size(); ++a)
-        Write(rompos++, code[a]);
+        Write(rompos+a, code[a]);
 
-    MarkProt(addr & 0x3FFFFF, code.size(), what);
+    MarkProt(rompos, code.size(), what);
 }
 
 void ROM::SetZero(unsigned addr, unsigned len, const std::string& why)
@@ -57,4 +57,5 @@ void ROM::SetZero(unsigned addr, unsigned len, const std::string& why)
 
 void PutAscii(const string&) {}
 void StartBlock(const char*, const string&, unsigned) {}
+void StartBlock(const string&, const string& ) {}
 void EndBlock() {}

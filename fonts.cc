@@ -6,6 +6,7 @@
 #include "conjugate.hh"
 #include "logfiles.hh"
 #include "msginsert.hh"
+#include "settings.hh"
 #include "config.hh"
 #include "hash.hh"
 
@@ -958,4 +959,101 @@ void insertor::ReorganizeFonts()
     RearrangeCharset(cset_8pix, Rearrange_8);
     
     MessageDone();
+}
+
+void insertor::WriteFonts()
+{
+    WriteFont8();
+    WriteVWF12();
+    WriteVWF8();
+}
+
+void insertor::WriteFont8()
+{
+    objects.AddLump(Font8.GetTiles(), GetConst(TILETAB_8_ADDRESS), "8x8 tiles");
+}
+
+void insertor::WriteVWF12()
+{
+    const unsigned font_begin = get_font_begin();
+    const unsigned tilecount  = Font12.GetCount();
+    
+    /*
+     C2:5E1E:
+        0  A9 00          - lda a, $00
+        2  EB             - xba
+        3  38             - sec
+        4  A5 35          - lda [$00:D+$35]
+        6  E9 A0          - sbc a, $A0
+        8  AA             - tax
+        9  18             - clc
+       10  BF E6 60 C2    - lda $C2:($60E6+x)
+       14
+       
+       Will be changed to:
+           
+        0  C2 20          - rep $20
+        2  EA             - nop
+        3  EA             - nop
+        4  A5 35          * lda [$00:D+$35]
+        6  E2 20          - sep $20
+        8  AA             * tax
+        9  18             * clc
+       10  BF E6 60 C2    * lda $C2:($60E6+x)
+       14
+       
+       Now widthtab may have more than 256 items.
+       We may ignore VWF12_WIDTH_INDEX as it's no longer used.
+    */
+
+    // patch dialog engine
+    PlaceByte(font_begin,  GetConst(CSET_BEGINBYTE), "vwf12 beginbyte");
+    
+    // patch font engine
+    PlaceByte(0xC2, GetConst(VWF12_WIDTH_INDEX)-7, "vwf12 patch"); // rep $20
+    PlaceByte(0x20, GetConst(VWF12_WIDTH_INDEX)-6, "vwf12 patch");
+    PlaceByte(0xEA, GetConst(VWF12_WIDTH_INDEX)-5, "vwf12 patch"); // nop
+    PlaceByte(0xEA, GetConst(VWF12_WIDTH_INDEX)-4, "vwf12 patch"); // nop
+    PlaceByte(0xE2, GetConst(VWF12_WIDTH_INDEX)-1, "vwf12 patch"); // sep $20
+    PlaceByte(0x20, GetConst(VWF12_WIDTH_INDEX)  , "vwf12 patch");
+    /* Done with code patches. */
+
+    /* Create a patch for the width table. */
+    vector<unsigned char> widths(tilecount);
+    for(unsigned a=0; a<tilecount; ++a) widths[a] = Font12.GetWidth(a);
+
+    O65 widthblock;
+    widthblock.LoadCodeFrom(widths);
+    widthblock.LocateCode(get_font_begin());
+    widthblock.DeclareCodeGlobal("VWF12_WIDTH_TABLE", 0);
+    objects.AddObject(widthblock, "VWF12_WIDTH_TABLE");
+    objects.AddReference("VWF12_WIDTH_TABLE", OffsPtrFrom(GetConst(VWF12_WIDTH_OFFSET)));
+    objects.AddReference("VWF12_WIDTH_TABLE", PagePtrFrom(GetConst(VWF12_WIDTH_SEGMENT)));
+    
+    unsigned pagegroup = objects.CreateLinkageGroup();
+    O65 block1, block2;
+    
+    /* Create a patch for both tile tables. */
+    block1.LoadCodeFrom(Font12.GetTab1());
+    block2.LoadCodeFrom(Font12.GetTab2());
+    block1.LocateCode(font_begin * 24);
+    block2.LocateCode(font_begin * 12);
+    block1.DeclareCodeGlobal("VWF12_TABLE1", 0);
+    block2.DeclareCodeGlobal("VWF12_TABLE2", 0);
+    
+    O65linker::LinkageWish wish;
+    wish.SetLinkageGroup(pagegroup);
+    
+    objects.AddObject(block1, "VWF12_TABLE1", wish);
+    objects.AddObject(block2, "VWF12_TABLE2", wish);
+    
+    objects.AddReference("VWF12_TABLE1", PagePtrFrom(GetConst(VWF12_SEGMENT)));
+    objects.AddReference("VWF12_TABLE1", OffsPtrFrom(GetConst(VWF12_TAB1_OFFSET)));
+    objects.AddReference("VWF12_TABLE2", OffsPtrFrom(GetConst(VWF12_TAB2_OFFSET)));
+}
+
+void insertor::WriteVWF8()
+{
+    objects.AddLump(Font8v.GetWidths(), "vwf8 widths",  "WIDTH_ADDR");
+    objects.AddLump(Font8v.GetTiles(),  "vwf8 tiles",   "TILEDATA_ADDR");
 }

@@ -58,10 +58,11 @@ ucs4 ConfParser::CharIStream::getC()
         cacheptr = 0;
         while(cache.empty())
         {
-            int c = fgetc(fp);
-            if(c == EOF)break;
-            // conv.putc may generate any amount of wchars, including 0
-            cache = conv.putc(c);
+            char Buf[512];
+            size_t n = fread(Buf, 1, sizeof Buf, fp);
+            if(n == 0) break;
+            
+            cache += conv.puts(std::string(Buf, n));
         }
         // So now cache may be of arbitrary size.
         if(cache.empty()) return (ucs4)EOF;      

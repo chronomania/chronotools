@@ -144,7 +144,7 @@ void freespacemap::Report() const
         total += thisfree;
         if(thisfree)
         {
-            fprintf(stderr, " %02X:%u/%u", i->first | 0xC0, thisfree, hunkcount);
+            fprintf(stderr, " %02X:%u/%u", i->first & 0x3F, thisfree, hunkcount);
         }
     }
     fprintf(stderr, " - total: %u bytes\n", total);

@@ -305,8 +305,8 @@ namespace
         // $C2:567A A2 00 F4    LDX #$F400
         // $C2:5680 A9 C6       LDA #$C6
         
-        DumpZStrings(0x06F400, "places", 112, false);
-        //DumpRZStrings(0xC25681, 0xC2567B, "places", 112, false);
+        //DumpZStrings(0x06F400, "places", 112, false);
+        DumpRZStrings(0xC25681, 0xC2567B, "places", 112, false);
         
         
         BlockComment(";era list\n");
@@ -314,14 +314,18 @@ namespace
         // $C2:D3D4 A2 96 D3    LDX #$D396
         // $C2:D3DA A9 FF       LDA #$FF
         
-        DumpZStrings(0x3FD396, "eraes", 8, false);
-        //DumpRZStrings(0xC2D3DB, 0xC2D3D5, "eraes", 8, false);
+        //DumpZStrings(0x3FD396, "eraes", 8, false);
+        DumpRZStrings(0xC2D3DB, 0xC2D3D5, "eraes", 8, false);
         
         BlockComment(";episode list\n");
         DumpZStrings(0x3FD03E, "eps", 27, false);
         
         BlockComment(";battle messages, part 1 (remember to check for wrapping)\n");
-        DumpZStrings(0x0EEF11, "bat", 14, false);
+        // REFERRED FROM:
+        // $CD:01B6 A2 11 EF    LDX #$EF11
+        // $CD:01BC A9 CE       LDA #$CE
+        
+        DumpRZStrings(0xCD01BD, 0xCD01B7, "bat", 14, false);
         
         BlockComment(";battle messages, part 2 (remember to check for wrapping)\n");
         DumpZStrings(0x0CCBC9, "bat", 227, false);
@@ -473,6 +477,31 @@ int main(int argc, const char* const* argv)
         "; Note: The order of strings (each starts with $) inside a block\n"
         ";       (each starts with *) can be changed, but they can't be moved\n"
         ";       from block to another.\n"
+        ";\n"
+        ";\n"
+        "; All supported label types:\n"
+        ";  *d    = dict\n"
+        ";          entries are: $hexnumber:value\n"
+        ";          hexnumber is ignored; only the order matters\n"
+        ";  *sNN  = free space record (at page NN)\n"
+        ";          entries are: $hexnum1:hexnum2\n"
+        ";          hexnum1 marks beginning, hexnum2 marks ending\n"
+        ";  *z    = dialog string (12pix zstring)\n"
+        ";          entries are: $base62num:value\n"
+        ";          base62num refers to the address of the pointer\n"
+        ";  *r    = status string (8pix zstring)\n"
+        ";          entries are: $base62num:value\n"
+        ";          base62num refers to the address of the pointer\n"
+        ";  *lNN  = fixed width = NN\n"
+        ";          entries are: $base62num:value\n"
+        ";          base62num refers to the address of the value\n"
+        ";  *iNN  = relocatable item table (original width = NN)\n"
+        ";          same meaning as *l                          \n"
+        ";  *tNN  = relocatable tech table (original width = NN)\n"
+        ";          same meaning as *l\n"
+        ";  *mNN  = relocatable monster table (original width = NN)\n"
+        ";          same meaning as *l\n"
+        "\n"
           );
     
     LoadDict();

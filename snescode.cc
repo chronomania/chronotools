@@ -191,7 +191,7 @@ void insertor::WriteUserCode()
             objects.DefineSymbol(WstrToAsc(img.palsize_sym), img.Palette.size());
 
             objects.AddLump(img.ImgData, filename+" data",    WstrToAsc(img.tab_sym));
-            objects.AddLump(img.ImgData, filename+" palette", WstrToAsc(img.pal_sym));
+            objects.AddLump(img.Palette, filename+" palette", WstrToAsc(img.pal_sym));
         }
     }
     
@@ -224,7 +224,4 @@ void insertor::WriteUserCode()
 
     objects.DefineSymbol("DECOMPRESS_FUNC_ADDR", 0xC00000 | GetConst(DECOMPRESSOR_FUNC_ADDR));
     objects.DefineSymbol("CHAR_OUTPUT_FUNC",     0xC00000 | GetConst(DIALOG_DRAW_FUNC_ADDR));
-
-    objects.AddLump(Font8v.GetWidths(), "vwf8 widths",  "WIDTH_ADDR");
-    objects.AddLump(Font8v.GetTiles(),  "vwf8 tiles",   "TILEDATA_ADDR");
 }

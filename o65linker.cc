@@ -317,7 +317,6 @@ void O65linker::Link()
             // Or if it was an external definition.
             for(unsigned c=0; c<defines.size(); ++c)
             {
-                MessageWorking();
                 if(defines[c].first == ext)
                 {
                     addr = defines[c].second.first;

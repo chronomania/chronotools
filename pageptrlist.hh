@@ -18,6 +18,11 @@ public:
                 const std::string& what,
                 const std::string& tablename = "");
 
+    void Combine();
+    
+    unsigned Size() const;
+    const std::vector<unsigned char> GetS() const;
+
 private:
     struct Reference
     {
@@ -38,6 +43,5 @@ private:
     };
     std::list<Data> items;
 private:
-    void Combine();
     void Combine(Data& a, const Data& b, unsigned offset) const;
 };

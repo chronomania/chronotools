@@ -106,6 +106,7 @@ DEPDIRS = utils/
 # VERSION 1.11.7 unwraps the script when dumping, if configured so
 # VERSION 1.11.8 has much more documentation than before
 # VERSION 1.11.9 is faster than the few recent versions
+# VERSION 1.12.0 allows some strings to be moved between pages
 
 #OPTIM=-Os
 # -fshort-enums
@@ -113,12 +114,12 @@ DEPDIRS = utils/
 #OPTIM=-O0
 #OPTIM=-O0 -pg
 #OPTIM=-O3 -pg
-LDFLAGS += -pg
+#LDFLAGS += -pg
 OPTIM=-O3
 
 CXXFLAGS += -I.
 
-VERSION=1.11.9
+VERSION=1.12.0
 ARCHFILES=utils/xray.cc utils/xray.h \
           utils/viewer.c \
           utils/vwftest.cc \
@@ -141,7 +142,7 @@ ARCHFILES=utils/xray.cc utils/xray.h \
           autoptr \
           \
           ctcset.cc ctcset.hh \
-          miscfun.cc miscfun.hh \
+          miscfun.hh miscfun.tcc \
           compress.cc compress.hh \
           scriptfile.cc scriptfile.hh \
           pageptrlist.cc pageptrlist.hh \
@@ -153,7 +154,7 @@ ARCHFILES=utils/xray.cc utils/xray.h \
           crc32.cc crc32.h \
           hash.hh \
           wstring.cc wstring.hh \
-          readin.cc wrap.cc writeout.cc \
+          script.cc wrap.cc writeout.cc \
           settings.cc settings.hh \
           snescode.cc \
           dictionary.cc \
@@ -166,7 +167,6 @@ ARCHFILES=utils/xray.cc utils/xray.h \
           o65linker.cc o65linker.hh \
           refer.hh \
           logfiles.cc logfiles.hh \
-          stringoffs.cc stringoffs.hh \
           symbols.cc symbols.hh \
           tgaimage.cc tgaimage.hh \
           ctdump.cc \
@@ -238,19 +238,19 @@ all: $(PROGS)
 ctdump: \
 		ctdump.o scriptfile.o rommap.o strload.o \
 		dumptext.o dumpfont.o dumpgfx.o msgdump.o \
-		 miscfun.o tgaimage.o extras.o compress.o \
+		 tgaimage.o extras.o compress.o \
 		 symbols.o logfiles.o settings.o \
 		 config.o confparser.o ctcset.o wstring.o
 	$(CXX) $(LDOPTS) -o $@ $^ $(LDFLAGS)
 
 # Chrono Trigger patch generator program
 ctinsert: \
-		ctinsert.o readin.o wrap.o msginsert.o \
-		space.o writeout.o stringoffs.o \
+		ctinsert.o script.o wrap.o msginsert.o \
+		space.o writeout.o \
 		dictionary.o images.o fonts.o typefaces.o \
 		rom.o dataarea.o snescode.o pageptrlist.o \
 		conjugate.o o65.o o65linker.o rommap.o \
-		 miscfun.o tgaimage.o extras.o compress.o \
+		 tgaimage.o extras.o compress.o \
 		 symbols.o logfiles.o settings.o \
 		 config.o confparser.o ctcset.o wstring.o
 	$(CXX) $(LDOPTS) -o $@ $^ $(LDFLAGS) -lm
