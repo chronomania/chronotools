@@ -114,9 +114,9 @@ public:
         ROM[pointeraddr  ] = spaceptr & 255;
         ROM[pointeraddr+1] = spaceptr >> 8;
         
-        //fprintf(stderr, "Wrote %u bytes at %06X->%04X\n", string.size()+1, pointeraddr, spaceptr);
+        fprintf(stderr, "Wrote %u bytes at %06X->%04X\n", string.size()+1, pointeraddr, spaceptr);
         
-        spaceptr += page;
+        spaceptr += page<<16;
         for(unsigned a=0; a<=string.size(); ++a)
         {
             if(!a)ROM[spaceptr] = string.size();
@@ -146,12 +146,11 @@ public:
         ROM[pointeraddr  ] = spaceptr & 255;
         ROM[pointeraddr+1] = spaceptr >> 8;
         
-        /*
         fprintf(stderr, "Wrote %u bytes at %06X->%04X: ", string.size()+1, pointeraddr, spaceptr);
-        fprintf(stderr, DispString(string).c_str());
-        fprintf(stderr, "\n");*/
+        //fprintf(stderr, DispString(string).c_str());
+        fprintf(stderr, "\n");
         
-        spaceptr += page;
+        spaceptr += page<<16;
         for(unsigned a=0; a<=string.size(); ++a)
         {
             if(a==string.size()) ROM[spaceptr+a]=0;

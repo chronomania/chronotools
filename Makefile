@@ -3,7 +3,8 @@ CXX=g++
 CPPFLAGS=-Wall -W -pedantic -g
 LDFLAGS=-L/usr/lib/graphics
 
-VERSION=1.0.2
+# VERSION 1.0.3 was the first working! :D
+VERSION=1.0.3
 ARCHFILES=xray.c xray.h \
           viewer.c \
           ctcset.cc \

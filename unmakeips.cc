@@ -56,7 +56,7 @@ int main(int argc, const char *const *argv)
         if(c != (int)len) { goto ipseof; }
         lumps.insert(pair<unsigned, vector<char> > (pos, Buf2));
         
-        //fprintf(stderr, "%u bytes hunk at %u\n", len, pos);
+        fprintf(stderr, "%u bytes hunk at %X\n", len, pos);
     }
     fclose(fp);
     
