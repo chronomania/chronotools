@@ -329,7 +329,7 @@ namespace
 
         BlockComment(";1000ad (Lucca's home)\n");
         BlockComment(";2300ad (factory)\n");
-        BlockComment(";1000ad (rainbow shell trial)    \n");
+        BlockComment(";1000ad (rainbow shell trial)\n");
         DumpZStrings(0x36A000, "dialog", 106);
 
         BlockComment(";no Crono -ending\n");

@@ -1,37 +1,36 @@
 #include <list>
-#include <utility>
 
-#include "rangemap.hh"
+#include "rangeset.hh"
 
-template<typename Key, typename Value>
-void rangemap<Key,Value>::erase(const Key& lo, const Key& up)
+template<typename Key>
+void rangeset<Key>::erase(const Key& lo, const Key& up)
 {
     range newrange;
     newrange.lower = lo;
     newrange.upper = up;
     
-    typedef std::pair<range, Value> tmpelem;
+    typedef range tmpelem;
     typedef std::list<tmpelem> tmplist;
     tmplist newitems;
     
     for(iterator b,a=data.begin(); a!=data.end(); a=b)
     {
         b = a; ++b;
-        if(a->first.coincides(newrange))
+        if(a->coincides(newrange))
         {
-            if(a->first.lower < lo)
+            if(a->lower < lo)
             {
                 range lowrange;
-                lowrange.lower = a->first.lower;
+                lowrange.lower = a->lower;
                 lowrange.upper = lo;
-                newitems.push_front(std::make_pair(lowrange, a->second));
+                newitems.push_front(lowrange);
             }
-            if(a->first.upper > up)
+            if(a->upper > up)
             {
                 range uprange;
                 uprange.lower = up;
-                uprange.upper = a->first.upper;
-                newitems.push_front(std::make_pair(uprange, a->second));
+                uprange.upper = a->upper;
+                newitems.push_front(uprange);
             }
             data.erase(a);
         }
@@ -45,29 +44,29 @@ void rangemap<Key,Value>::erase(const Key& lo, const Key& up)
     }
 }
 
-template<typename Key, typename Value>
-void rangemap<Key,Value>::set(const Key& lo, const Key& up, const Value& v)
+template<typename Key>
+void rangeset<Key>::set(const Key& lo, const Key& up)
 {
     erase(lo, up);
     
     range newrange;
     newrange.lower = lo;
     newrange.upper = up;
-    data.insert(std::make_pair(newrange, v));
+    data.insert(newrange);
 }
 
-template<typename Key, typename Value>
-typename rangemap<Key,Value>::const_iterator
-    rangemap<Key,Value>::find(const Key& v) const
+template<typename Key>
+typename rangeset<Key>::const_iterator
+    rangeset<Key>::find(const Key& v) const
 {
     for(const_iterator a=data.begin(); a!=data.end(); ++a)
-        if(a->first.contains(v)) return a;
+        if(a->contains(v)) return a;
     return data.end();
 }
 
-template<typename Key, typename Value>
+template<typename Key>
 template<typename Listtype>
-void rangemap<Key,Value>::find_all_coinciding
+void rangeset<Key>::find_all_coinciding
    (const Key& lo, const Key& up,
     Listtype& target)
 {
@@ -78,12 +77,12 @@ void rangemap<Key,Value>::find_all_coinciding
     target.clear();
     
     for(const_iterator a=data.begin(); a!=data.end(); ++a)
-        if(a->first.coincides(newrange))
+        if(a->coincides(newrange))
             target.push_back(a);
 }
 
-template<typename Key, typename Value>
-void rangemap<Key,Value>::compact()
+template<typename Key>
+void rangeset<Key>::compact()
 {
 Retry:
     for(iterator b,a=data.begin(); a!=data.end(); a=b)
@@ -91,14 +90,13 @@ Retry:
         b=a; ++b;
         
         // If the next one is followup to this one
-        if(b->first.lower == a->first.upper
-        && b->second      == a->second)
+        if(b->lower == a->upper)
         {
             range newrange;
-            newrange.lower = a->first.lower;
-            newrange.upper = b->first.upper;
+            newrange.lower = a->lower;
+            newrange.upper = b->upper;
             
-            data.insert(std::make_pair(newrange, a->second));
+            data.insert(newrange);
             data.erase(a);
             data.erase(b);
             goto Retry;

@@ -7,99 +7,91 @@
 #include "config.hh"
 #include "logfiles.hh"
 #include "stringoffs.hh"
-#include "rangemap.hh"
-
-#define INITIALIZE_FREESPACE_ZERO
+#include "rangeset.hh"
 
 namespace
 {
-    void WritePtr(ROM &ROM, unsigned addr, unsigned short value)
+    class StringReceipt
     {
-        ROM.Write(addr,   value&255);
-        ROM.Write(addr+1, value>>8);
-    }
-    
-    unsigned WritePPtr
-    (
-        ROM &ROM,
-        unsigned pointeraddr, // 24-bit
-        const ctstring &str,
-        unsigned spaceptr     // 16-bit
-    )
-    {
-        if(spaceptr == NOWHERE) return spaceptr;
+        vector<unsigned char> data;
+        rangeset<unsigned> ptrbytes, databytes;
+        list<unsigned> pointers;
+    public:
+        StringReceipt(): data(65536) { }
+        void WritePtr(unsigned short addr, unsigned short value)
+        {
+            data[addr]   = value&255;
+            data[addr+1] = value>>8;
+            ptrbytes.set(addr, addr+2);
+            pointers.push_back(addr);
+        }
+        void WriteDataPtr(unsigned short ptraddr, unsigned short spaceaddr,
+                          const vector<unsigned char>& buf)
+        {
+/*
+            fprintf(stderr, "Writing %u bytes to %04X (ptr at %04X)\n",
+                            buf.size(), spaceaddr, ptraddr);
+*/
+            WritePtr(ptraddr, spaceaddr);
+            for(unsigned a=0; a<buf.size(); ++a)
+                data[spaceaddr+a] = buf[a];
+            databytes.set(spaceaddr, spaceaddr+buf.size());
+        }
+        void WriteZPtr(unsigned short ptraddr, unsigned short spaceaddr, const ctstring& s)
+        {
+            const string StringBuf = GetString(s);
+            vector<unsigned char> DataBuf(StringBuf.size() + 1);
+            for(unsigned a=0; a<StringBuf.size(); ++a) DataBuf[a] = StringBuf[a];
+            DataBuf[StringBuf.size()] = 0;
+            WriteDataPtr(ptraddr, spaceaddr, DataBuf);
+        }
+        void WritePPtr(unsigned short ptraddr, unsigned short spaceaddr, const ctstring& s)
+        {
+            const string StringBuf = GetString(s);
+            vector<unsigned char> DataBuf(StringBuf.size() + 1);
+            for(unsigned a=0; a<StringBuf.size(); ++a) DataBuf[a+1] = StringBuf[a];
+            DataBuf[0] = StringBuf.size();
+            WriteDataPtr(ptraddr, spaceaddr, DataBuf);
+        }
+        void Apply(insertor& ins,
+                   const string& what, unsigned strpage)
+        {
+            Apply(ins, what + " table", ptrbytes, strpage);
+            Apply(ins, what + " data", databytes, strpage);
+        }
+    private:
+        void Apply(insertor& ins, const string& what,
+                   rangeset<unsigned>& ranges, unsigned page)
+        {
+            ranges.compact();
+            list<rangeset<unsigned>::const_iterator> rangelist;
+            ranges.find_all_coinciding(0,0x10000, rangelist);
+            for(list<rangeset<unsigned>::const_iterator>::const_iterator
+                j = rangelist.begin();
+                j != rangelist.end();
+                ++j)
+            {
+                unsigned ptr    = (*j)->lower;
+                unsigned size   = (*j)->upper - ptr;
+                unsigned absptr = ptr | (page << 16);
+                
+                vector<unsigned char> Buf(data.begin() + ptr,
+                                          data.begin() + ptr + size);
+                
+                ins.PlaceData(Buf, absptr, what);
+            }
+        }
+    };
 
-        unsigned page = pointeraddr >> 16;
-        
-        WritePtr(ROM, pointeraddr, spaceptr);
-        
-        spaceptr += page<<16;
-        
-        const string data = GetString(str);
-        
-        // Note: Written "length" must be number of _characters_, NOT number of bytes!
-        const unsigned length = str.size();
-        
-#if 0
-        fprintf(stderr, "Wrote %u bytes at %06X->%04X; (%02X)",
-            data.size()+1,
-            pointeraddr,
-            spaceptr,
-            length);
-        for(unsigned a=0; a<data.size(); ++a)
-            fprintf(stderr, " %02X", (unsigned char)data[a]);
-        fprintf(stderr, "\n");
-#endif
-        
-        ROM.Write(spaceptr, length);
-        for(unsigned a=0; a<data.size(); ++a)
-            ROM.Write(spaceptr+a+1, data[a]);
-        
-        return spaceptr & 0xFFFF;
-    }
-
-    unsigned WriteZPtr
-    (
-        ROM &ROM,
-        unsigned pointeraddr, //24-bit
-        const ctstring &str,
-        unsigned spaceptr     // 16-bit
-    )
-    {
-        if(spaceptr == NOWHERE) return spaceptr;
-
-        unsigned page = pointeraddr >> 16;
-        
-        WritePtr(ROM, pointeraddr, spaceptr);
-        
-        const string data = GetString(str);
-        
-#if 0
-        fprintf(stderr, "Wrote %u bytes at %06X->%04X: ",
-            data.size()+1, pointeraddr, spaceptr);
-        fprintf(stderr, DispString(string).c_str());
-        fprintf(stderr, "\n");
-#endif
-        
-        spaceptr += page<<16;
-        for(unsigned a=0; a<data.size(); ++a)
-            ROM.Write(spaceptr+a, data[a]);
-        ROM.Write(spaceptr+data.size(), 0);
-        return spaceptr & 0xFFFF;
-    }
-
-    void WritePageZ
-        (ROM &ROM,
-         unsigned page,
-         stringoffsmap &pagestrings,
-         freespacemap &freespace
-        )
+    void insertor::WritePageZ(unsigned page, stringoffsmap& pagestrings)
     {
         FILE *log = GetLogFile("mem", "log_addrs");
 
         pagestrings.GenerateNeederList();
         
         const stringoffsmap::neederlist_t &neederlist = pagestrings.neederlist;
+        
+        StringReceipt receipt;
         
         if(true) /* First do hosts */
         {
@@ -118,10 +110,6 @@ namespace
             for(unsigned a=0; a<todo.size(); ++a)
                 todobytes += CalcSize(pagestrings[todo[a]].str) + 1;
 
-            if(log)
-                fprintf(log, "  Page %02X: Writing %u strings (%u bytes) and reusing %u\n",
-                    page, todo.size(), todobytes, reusenum);
-
             vector<freespacerec> Organization(todo.size());
             for(unsigned a=0; a<todo.size(); ++a)
                 Organization[a].len = CalcSize(pagestrings[todo[a]].str) + 1;
@@ -136,8 +124,14 @@ namespace
                 const ctstring &str = pagestrings[stringnum].str;
 
                 unsigned spaceptr = Organization[a].pos;
-                if(spaceptr == NOWHERE) ++unwritten;
-                pagestrings[stringnum].offs = WriteZPtr(ROM, ptroffs, str, spaceptr);
+                pagestrings[stringnum].offs = spaceptr;
+                
+                if(spaceptr == NOWHERE)
+                    ++unwritten;
+                else
+                {
+                     receipt.WriteZPtr(ptroffs, spaceptr, str);
+                }
             }
             if(unwritten && log)
                 fprintf(log, "  %u string%s unwritten\n", unwritten, unwritten==1?"":"s");
@@ -193,45 +187,58 @@ namespace
                 
                 unsigned place = hostoffs + CalcSize(host) - CalcSize(str);
                 
-                WritePtr(ROM, ptroffs, place);
+                receipt.WritePtr(ptroffs, place);
             }
         }
+        receipt.Apply(*this, "Strings", page);
     }
 }
 
 void insertor::PatchROM(ROM &ROM)
 {
-#ifdef INITIALIZE_FREESPACE_ZERO
-    fprintf(stderr, "Initializing all free space to zero...\n");
-
-    set<unsigned> pages = freespace.GetPageList();
-    for(set<unsigned>::const_iterator i = pages.begin(); i != pages.end(); ++i)
+    const bool ClearSpace = GetConf("patch", "clear_free_space");
+    
+    if(ClearSpace)
     {
-        freespaceset list = freespace.GetList(*i);
-        
-        for(freespaceset::const_iterator j = list.begin(); j != list.end(); ++j)
+        fprintf(stderr, "Initializing all free space to zero...\n");
+
+        set<unsigned> pages = freespace.GetPageList();
+        for(set<unsigned>::const_iterator i = pages.begin(); i != pages.end(); ++i)
         {
-            unsigned offs = (*i << 16) | j->pos;
-            for(unsigned a=0; a < j->len; ++a) ROM.Write(offs+a, 0);
+            freespaceset list = freespace.GetList(*i);
+            
+            for(freespaceset::const_iterator j = list.begin(); j != list.end(); ++j)
+            {
+                const unsigned recpos = j->lower;
+                const unsigned reclen = j->upper - recpos;
+                unsigned offs = (*i << 16) | recpos;
+                for(unsigned a=0; a < reclen; ++a) ROM.Write(offs+a, 0);
+            }
         }
     }
-#endif
     
-    // Write the strings first because they require certain pages!
-    WriteStrings(ROM);
+    fprintf(stderr, "Inhabitating the ROM image...\n");
     
-    // Then write items, techs, monsters.
-    WriteRelocatedStrings(ROM);
-    
-    // Then generate various things to write
-    GenerateCode();
-    
-    // Write code.
-    WriteCode(ROM);
+    // Then write everything.
+    list<SNEScode>::const_iterator i;
+    for(i=codes.begin(); i!=codes.end(); ++i)
+    {
+        if(!i->HasAddress())
+        {
+            fprintf(stderr, "Internal ERROR - codeblob still without address\n");
+        }
+        ROM.AddPatch(*i);
+    }
 }
 
 void insertor::GenerateCode()
 {
+    // Write the strings first because they require certain pages!
+    WriteStrings();
+    
+    // Then write items, techs, monsters.
+    WriteRelocatedStrings();
+
     // Do this first, because it requires two blocks on same page.
     GenerateVWF12code();
     GenerateVWF8code();
@@ -275,6 +282,44 @@ void insertor::GenerateCode()
 
     // Doesn't use space.
     PatchTimeBoxes();
+
+    const bool UseThinNumbers = GetConf("font", "use_thin_numbers");
+    
+    // Patch the name entry function
+    //  FIXME: Make this read the pointers from "strings" instead
+    
+#if 0
+    // - disabled. Now requires the entry HXVk instead of HXBj and $HXBl.
+    // $HXVk
+    if(ROM.touched(0x3FC4D3))
+    {
+        // Write the address of name input strings.
+        ROM.Write(0x02E553, ROM[0x3FC4D3]);
+        ROM.Write(0x02E554, ROM[0x3FC4D4]);
+        ROM.Write(0x02E555, 0xFF);
+    }
+    if(ROM.touched(0x3FC4D5))
+    {
+        ROM.Write(0x02E331, ROM[0x3FC4D5]);
+        ROM.Write(0x02E332, ROM[0x3FC4D6]);
+        ROM.Write(0x02E333, 0xFF);
+    }
+#endif
+
+    // Testataan moottoria
+    // ROM.Write(0x0058DE, 0xA9); //lda A, $08
+    // ROM.Write(0x0058DF, 0x07);
+    // ROM.Write(0x0058E0, 0xEA); //nop
+    // ROM.Write(0x0058E1, 0xEA);
+
+    if(UseThinNumbers)
+    {
+        PlaceByte(0x73, 0x02F21B, "thin '0'");
+    }
+    else
+    {
+        //PlaceByte(0xD4, 0x02F21B, "thick '0'");
+    }
 }
 
 void insertor::LinkAndLocateCode()
@@ -312,45 +357,6 @@ void insertor::LinkAndLocateCode()
     }
 }
 
-void insertor::WriteCode(ROM &ROM) const
-{
-    fprintf(stderr, "Writing code and images...\n");
-    
-    // Patch the name entry function
-    //  FIXME: Make this read the pointers from "strings" instead
-    
-    // $HXVk
-    if(ROM.touched(0x3FC4D3))
-    {
-        // Write the address of name input strings.
-        ROM.Write(0x02E553, ROM[0x3FC4D3]);
-        ROM.Write(0x02E554, ROM[0x3FC4D4]);
-        ROM.Write(0x02E555, 0xFF);
-    }
-    if(ROM.touched(0x3FC4D5))
-    {
-        ROM.Write(0x02E331, ROM[0x3FC4D5]);
-        ROM.Write(0x02E332, ROM[0x3FC4D6]);
-        ROM.Write(0x02E333, 0xFF);
-    }
-
-    // Testataan moottoria
-    // ROM.Write(0x0058DE, 0xA9); //lda A, $08
-    // ROM.Write(0x0058DF, 0x07);
-    // ROM.Write(0x0058E0, 0xEA); //nop
-    // ROM.Write(0x0058E1, 0xEA);
-
-    list<SNEScode>::const_iterator i;
-    for(i=codes.begin(); i!=codes.end(); ++i)
-    {
-        if(!i->HasAddress())
-        {
-            fprintf(stderr, "Internal ERROR - codeblob still without address\n");
-        }
-        ROM.AddPatch(*i);
-    }
-}
-
 void insertor::WriteDictionary()
 {
     unsigned size = 0;
@@ -371,53 +377,48 @@ void insertor::WriteDictionary()
     /* Display the dictionary data addresses */
     if(true)
     {
-        rangemap<unsigned, bool> ranges;
+        rangeset<unsigned> ranges;
         for(unsigned a=0; a<dictsize; ++a)
         {
             unsigned spaceptr = Organization[a].pos;
-            ranges.set(spaceptr, spaceptr + CalcSize(dict[a]) + 1, true);
+            ranges.set(spaceptr, spaceptr + CalcSize(dict[a]) + 1);
         }
         
         ranges.compact();
         
-        list<rangemap<unsigned,bool>::const_iterator> rangelist;
+        list<rangeset<unsigned>::const_iterator> rangelist;
         ranges.find_all_coinciding(0,0x10000, rangelist);
         
         fprintf(stderr,
             "> Dictionary: %u(table)@ $%06X",
             dictsize*2, dictaddr | 0xC00000);
         
-        for(list<rangemap<unsigned,bool>::const_iterator>::const_iterator
+        for(list<rangeset<unsigned>::const_iterator>::const_iterator
             j = rangelist.begin();
             j != rangelist.end();
             ++j)
         {
-            unsigned size = (*j)->first.upper - (*j)->first.lower;
-            unsigned ptr  = (*j)->first.lower | (dictpage << 16) | 0xC00000;
+            unsigned size = (*j)->upper - (*j)->lower;
+            unsigned ptr  = (*j)->lower | (dictpage << 16) | 0xC00000;
 
             fprintf(stderr, ", %u(data)@ $%06X", size, ptr);
         }
         fprintf(stderr, "\n");
     }
     
+    StringReceipt receipt;
+    
     for(unsigned a=0; a<dictsize; ++a)
-    {
-        vector<unsigned char> str;
-        str.push_back(dict[a].size());
-        str.insert(str.end(), dict[a].begin(), dict[a].end());
-        
-        unsigned spaceptr = Organization[a].pos | (dictpage << 16);
-        
-        PlaceData(str, spaceptr, "dict");
-        AddReference(OffsPtrFrom(dictaddr + a*2), spaceptr, "dict");
-    }
+        receipt.WritePPtr(dictaddr + a*2, Organization[a].pos, dict[a]);
+    
+    receipt.Apply(*this, "dict", dictpage);
     
     AddReference(OffsPtrFrom(GetConst(DICT_OFFSET)),   dictaddr, "dict ptr");
     AddReference(PagePtrFrom(GetConst(DICT_SEGMENT1)), dictaddr, "dict ptr");
     AddReference(PagePtrFrom(GetConst(DICT_SEGMENT2)), dictaddr, "dict ptr");
 }
 
-void insertor::WriteStrings(ROM &ROM)
+void insertor::WriteStrings()
 {
     fprintf(stderr, "Writing fixed-length strings...\n");
     for(stringlist::const_iterator i=strings.begin(); i!=strings.end(); ++i)
@@ -446,8 +447,12 @@ void insertor::WriteStrings(ROM &ROM)
 
                 unsigned a;
                 // These shouldn't contain extrachars.
-                for(a=0; a<size; ++a)   ROM.Write(pos++, s[a]);
-                for(; a < i->width; ++a)ROM.Write(pos++, 255);
+                
+                vector<unsigned char> Buf(i->width, 255);
+                /* FIXME: broken currently */
+                for(a=0; a<size; ++a) Buf[a] = s[a];
+                
+                PlaceData(Buf, pos, "lstring");
                 break;
             }
             case stringdata::item:
@@ -467,12 +472,13 @@ void insertor::WriteStrings(ROM &ROM)
     set<unsigned> zpages = GetZStringPageList();
     for(set<unsigned>::const_iterator i=zpages.begin(); i!=zpages.end(); ++i)
     {
-       stringoffsmap pagestrings = GetZStringList(*i);
-       WritePageZ(ROM, *i, pagestrings, freespace);
+       unsigned pagenum = *i;
+       stringoffsmap pagestrings = GetZStringList(pagenum);
+       WritePageZ(pagenum, pagestrings);
     }
 }
 
-unsigned insertor::WriteStringTable(stringoffsmap& data, const string& what, ROM& ROM)
+unsigned insertor::WriteStringTable(stringoffsmap& data, const string& what)
 {
     if(data.empty()) return NOWHERE;
     
@@ -483,8 +489,9 @@ unsigned insertor::WriteStringTable(stringoffsmap& data, const string& what, ROM
     const stringoffsmap::neederlist_t &neederlist = data.neederlist;
     
     unsigned tableptr = NOWHERE;
+    unsigned datapage = NOWHERE;
         
-    rangemap<unsigned, bool> ranges;
+    StringReceipt receipt;
 
     if(true) /* First do hosts */
     {
@@ -509,7 +516,6 @@ unsigned insertor::WriteStringTable(stringoffsmap& data, const string& what, ROM
         for(unsigned a=0; a<todo.size(); ++a)
             Organization[a+1].len = CalcSize(data[todo[a]].str) + 1;
         
-        unsigned datapage = NOWHERE;
         freespace.OrganizeToAnySamePage(Organization, datapage);
         
         tableptr = Organization[0].pos | (datapage << 16);
@@ -537,10 +543,12 @@ unsigned insertor::WriteStringTable(stringoffsmap& data, const string& what, ROM
 
             unsigned spaceptr = Organization[a+1].pos;
             
-            ranges.set(spaceptr, spaceptr + Organization[a+1].len, true);
+            data[stringnum].offs = spaceptr;
             
-            if(spaceptr == NOWHERE) ++unwritten;
-            data[stringnum].offs = WriteZPtr(ROM, ptroffs, str, spaceptr);
+            if(spaceptr == NOWHERE)
+                ++unwritten;
+            else
+                receipt.WriteZPtr(ptroffs, spaceptr, str);
         }
         if(unwritten && log)
             fprintf(log, "  %u string%s unwritten\n", unwritten, unwritten==1?"":"s");
@@ -596,55 +604,34 @@ unsigned insertor::WriteStringTable(stringoffsmap& data, const string& what, ROM
             
             unsigned place = hostoffs + CalcSize(host) - CalcSize(str);
             
-            WritePtr(ROM, ptroffs, place);
+            receipt.WritePtr(ptroffs, place);
         }
     }
     
-    ranges.compact();
-
-    list<rangemap<unsigned,bool>::const_iterator> rangelist;
-    ranges.find_all_coinciding(0,0x10000, rangelist);
-    
-    fprintf(stderr,
-        "> %s: %u(table)@ $%06X",
-        what.c_str(),
-        data.size() * 2,
-        tableptr | 0xC00000);
-
-    for(list<rangemap<unsigned,bool>::const_iterator>::const_iterator
-        j = rangelist.begin();
-        j != rangelist.end();
-        ++j)
-    {
-        unsigned size = (*j)->first.upper - (*j)->first.lower;
-        unsigned ptr  = (*j)->first.lower | (tableptr & 0x3F0000) | 0xC00000;
-
-        fprintf(stderr, ", %u(data)@ $%06X", size, ptr);
-    }
-    fprintf(stderr, "\n");
+    receipt.Apply(*this, what, datapage);
 
     return tableptr;
 }
 
-void insertor::WriteRelocatedStrings(ROM& ROM)
+void insertor::WriteRelocatedStrings()
 {
     stringoffsmap data;
     data = GetStringList(stringdata::item);
     if(!data.empty())
     {
-        unsigned itemtable = WriteStringTable(data, "Items", ROM);
+        unsigned itemtable = WriteStringTable(data, "Items");
         objects.DefineSymbol("ITEMTABLE", itemtable | 0xC00000);
     }
     data = GetStringList(stringdata::tech);
     if(!data.empty())
     {
-        unsigned techtable = WriteStringTable(data, "Techs", ROM);
+        unsigned techtable = WriteStringTable(data, "Techs");
         objects.DefineSymbol("TECHTABLE", techtable | 0xC00000);
     }
     data = GetStringList(stringdata::monster);
     if(!data.empty())
     {
-        unsigned monstertable = WriteStringTable(data, "Monsters", ROM);
+        unsigned monstertable = WriteStringTable(data, "Monsters");
         objects.DefineSymbol("MONSTERTABLE", monstertable | 0xC00000);
     }
 }

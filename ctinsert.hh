@@ -40,6 +40,10 @@ public:
     
     insertor();
     ~insertor();
+
+    // Shouldn't be public, but StringReceipt is an outside class that needs them
+    void PlaceData(const vector<unsigned char>&, unsigned address, const string& reason="");
+    void PlaceByte(unsigned char byte, unsigned address, const string& reason="");
     
 private:
     struct stringdata
@@ -73,21 +77,20 @@ private:
     
     class Conjugatemap *Conjugater;
     
-    void WriteStrings(class ROM &ROM);
-    void WriteCode(class ROM &ROM) const;
-
     void GenerateConjugatorCode();
     void GenerateCrononickCode();
     void GenerateVWF12code();
     void GenerateVWF8code();
     void GenerateSignatureCode();
+    void WriteStrings();
     void WriteDictionary();
-    void WriteRelocatedStrings(class ROM& ROM);
-    unsigned WriteStringTable(class stringoffsmap&, const string& what, class ROM& ROM);
+    void WriteRelocatedStrings();
+    void WritePageZ(unsigned page, class stringoffsmap&);
+    unsigned WriteStringTable(class stringoffsmap&, const string& what);
     void PatchTimeBoxes();
     
-    void PlaceData(const vector<unsigned char>&, unsigned address, const string& reason="");
-    void PlaceByte(unsigned char byte, unsigned address, const string& reason="");
+    /* Used to mark free space in the ROM because of code that is no longer used. */
+    void ObsoleteCode(unsigned addr, unsigned bytes, bool barrier=false);
     
     void ApplyDictionary();
     void RebuildDictionary();

@@ -135,9 +135,25 @@ $C2:FA8A A9 00 5E    LDA #$5E00              A:7800 X:53BE Y:53C0 D:0000 DB:7E S
 $C2:FA8D 8D D6 0D    STA $0DD6  [$7E:0DD6]   A:5E00 X:53BE Y:53C0 D:0000 DB:7E S:0A74 P:envmxdi
 $C2:FA90 A9 9F FA    LDA #$FA9F              A:5E00 X:53BE Y:53C0 D:0000 DB:7E S:0A74 P:envmxdi
 $C2:FA93 A2 10 00    LDX #$0010              A:FA9F X:53BE Y:53C0 D:0000 DB:7E S:0A74 P:eNvmxdi
+; Tähän päädytään kun tulostetaan
+; status-ruudulla yksirivisiä tekstejä.
 $C2:FA96 20 49 82    JSR $8249  [$7E:8249]   A:FA9F X:0010 Y:53C0 D:0000 DB:7E S:0A74 P:envmxdi
 //// "Yksintekniikat", "kaksintekniikat"... 
 $C2:FA99 22 03 00 C2 JSL $C20003[$C2:0003]   A:0101 X:0010 Y:53C0 D:0000 DB:7E S:0A74 P:envmxdi
+;..
+$C2:FA9D 28          PLP                     A:0000 X:0200 Y:00EC D:0000 DB:7E S:0A74 P:enVmxdi
+$C2:FA9E 60          RTS                     A:0000 X:0200 Y:00EC D:0000 DB:7E S:0A75 P:enVMxdi
+
+
+$C2:8249 08          PHP                     A:FA9F X:0010 Y:53C0 D:0000 DB:7E S:0A72 P:enVmxdi
+$C2:824A C2 20       REP #$20                A:FA9F X:0010 Y:53C0 D:0000 DB:7E S:0A71 P:enVmxdi
+$C2:824C 95 B2       STA $B2,x  [$00:00C2]   A:FA9F X:0010 Y:53C0 D:0000 DB:7E S:0A71 P:enVmxdi
+$C2:824E A9 01 01    LDA #$0101              A:FA9F X:0010 Y:53C0 D:0000 DB:7E S:0A71 P:enVmxdi
+$C2:8251 95 B0       STA $B0,x  [$00:00C0]   A:0101 X:0010 Y:53C0 D:0000 DB:7E S:0A71 P:enVmxdi
+$C2:8253 28          PLP                     A:0101 X:0010 Y:53C0 D:0000 DB:7E S:0A71 P:enVmxdi
+$C2:8254 60          RTS                     A:0101 X:0010 Y:53C0 D:0000 DB:7E S:0A72 P:enVmxdi
+
+
 $C2:0003 4C DF 57    JMP $57DF  [$7E:57DF]   A:0101 X:0010 Y:53C0 D:0000 DB:7E S:0A71 P:envmxdi
 $C2:57DF 08          PHP                     A:0101 X:0010 Y:53C0 D:0000 DB:7E S:0A71 P:envmxdi
 $C2:57E0 C2 20       REP #$20                A:0101 X:0010 Y:53C0 D:0000 DB:7E S:0A70 P:envmxdi
@@ -629,7 +645,7 @@ $C2:5C64 5C 70 5C 75 JMP $75:$5C70
 //  - C2:5C12 (substring)
 //  - C2:58C4 (literal)
 //  PARAMETREJÄ:
-//    $0210: (long) osoitin pikselibufferin alkuun (EIHÄN?)
+//    $0210: (long) vissiinkin osoitin pikselibufferin alkuun
 //    $0214: (byte) ??? poikkeuksetta 0
 //    $0217: (byte) tulostettujen merkkien määrä (tälle vain tehdään INC)
 //    $0234: (byte) pikselipositio rivillä
@@ -970,31 +986,31 @@ $C2:A3A9 20 65 EF    JSR DB:$EF65         ;$7E:EF65     A:C20A X:3086 Y:A3BA D:0
 
 ITEMS - EQUIP-RUUDUN VASEN LISTA:
 
+;Jap. versiossa tämä on kohdassa A54D
 $C2:A583 F0 01       BEQ $A586                          A:0038 X:4FC6 Y:0000 D:0000 DB:7E PB:C2
 $C2:A585 C8          INY                                A:0038 X:4FC6 Y:0000 D:0000 DB:7E PB:C2
 $C2:A586 C2 30       REP $30                            A:0038 X:4FC6 Y:0001 D:0000 DB:7E PB:C2
 $C2:A588 DA          PHX                                A:0038 X:4FC6 Y:0001 D:0000 DB:7E PB:C2
 $C2:A589 5A          PHY                                A:0038 X:4FC6 Y:0001 D:0000 DB:7E PB:C2
 $C2:A58A 20 9A A5    JSR PB:$A59A         ;$C2:A59A     A:0038 X:4FC6 Y:0001 D:0000 DB:7E PB:C2
-$C2:A59A 08          PHP                                A:0038 X:4FC6 Y:0001 D:0000 DB:7E PB:C2
-$C2:A59B C2 30       REP $30                            A:0038 X:4FC6 Y:0001 D:0000 DB:7E PB:C2
-$C2:A59D A9 00 20    LDA A, $2000                       A:0038 X:4FC6 Y:0001 D:0000 DB:7E PB:C2
-$C2:A5A0 85 7D       STA [$00:D+$7D]      ;$00:007D     A:2000 X:4FC6 Y:0001 D:0000 DB:7E PB:C2
-$C2:A5A2 AD C9 04    LDA DB:$04C9         ;$7E:04C9     A:2000 X:4FC6 Y:0001 D:0000 DB:7E PB:C2
-$C2:A5A5 29 FF 00    AND A, $00FF                       A:0038 X:4FC6 Y:0001 D:0000 DB:7E PB:C2
-$C2:A5A8 F0 0C       BEQ $A5B6                          A:0038 X:4FC6 Y:0001 D:0000 DB:7E PB:C2
-$C2:A5AA 20 E2 F2    JSR DB:$F2E2
-; Skipataan eka merkki!
-$C2:A5AD 3A          DEC A                              A:CC0B X:4FC6 Y:1183 D:0000 DB:7E PB:C2
-$C2:A5AE C8          INY                                A:CC0A X:4FC6 Y:1183 D:0000 DB:7E PB:C2
-$C2:A5AF 20 65 EF    JSR DB:$EF65         ;$7E:EF65     A:CC0A X:4FC6 Y:1184 D:0000 DB:7E PB:C2
-$C2:A5B2 64 7D       STZ [$00:D+$7D]      ;$00:007D     
-$C2:A5B4 28          PLP                                
-$C2:A5B5 60          RTS                                
+$C2:A58D 7A          PLY                   
+$C2:A58E 68          PLA                   
+$C2:A58F 18          CLC                   
+$C2:A590 69 80 00    ADC #$0080            
+$C2:A593 AA          TAX                   
+$C2:A594 C6 22       DEC $22
+$C2:A596 D0 E3       BNE $E3    [$A57B]    
+$C2:A598 28          PLP                   
+$C2:A599 60          RTS                   
+
+; JAP-VERSION F25E-rutiini:
+
+
 
 
 ITEM-HAKUFUNKTIO:
 
+; Jap-versiossa F42C
 $C2:F2E2 08          PHP                                A:008F X:4FC6 Y:0001 D:0000 DB:7E PB:C2
 $C2:F2E3 C2 30       REP $30                            A:008F X:4FC6 Y:0001 D:0000 DB:7E PB:C2
 ;Jos tämän muuttaa LDA:ksi, se vaikuttaa seuraaviin:
@@ -1181,6 +1197,7 @@ $C2:BDEA 60          RTS                                A:0BDC X:303A Y:16E2 D:0
 //    $0087: (byte) merkkijonon pituus & 127
 //    $0065: (word) kohde (?)
 
+; Jap-versiossa F097
 $C2:EF65 8B          PHB                                A:CC0B X:3024 Y:1A31 D:0000 DB:7E PB:C2
 $C2:EF66 08          PHP                                A:CC0B X:3024 Y:1A31 D:0000 DB:7E PB:C2
 $C2:EF67 E2 20       SEP $20                            A:CC0B X:3024 Y:1A31 D:0000 DB:7E PB:C2
@@ -1194,7 +1211,7 @@ $C2:EF71 EB          XBA                                A:CC0B X:3024 Y:1A31 D:0
 $C2:EF72 48          PHA                                A:0BCC X:3024 Y:1A31 D:0000 DB:7E PB:C2
 $C2:EF73 AB          PLB                                A:0BCC X:3024 Y:1A31 D:0000 DB:7E PB:C2
 ;Segmentti DB-rekisteriksi.
-;Käydään tulostamassa merkkijono.
+;Käydään tulostamassa merkkijono. Jap-versiossa F0B0
 $C2:EF74 20 7E EF    JSR DB:$EF7E         ;$CC:EF7E     A:0BCC X:3024 Y:1A31 D:0000 DB:CC PB:C2
 ;Ks alla
 $C2:EF77 A9 DC       LDA A, $DC                         A:0B00 X:303A Y:1A3C D:0000 DB:CC PB:C2
@@ -1211,20 +1228,21 @@ $C2:EF7D 60          RTS                                A:0BDC X:303A Y:1A3C D:0
 ;      -piirto ($C2:EF97)
 ;      -laskurin $0287 pienennys; jos > 0, uusiksi tämä
 ;      -loppu
-
+; JAP-VERSIOSSA F0B0
 $C2:EF7E E2 20       SEP $20                            A:0BCC X:3024 Y:1A31 D:0000 DB:CC PB:C2
 $C2:EF80 B9 00 00    LDA DB:($0000+y)     ;$CC:1A31     A:0BCC X:3024 Y:1A31 D:0000 DB:CC PB:C2
 $C2:EF83 F0 11       BEQ $EF96                          A:0BAB X:3024 Y:1A31 D:0000 DB:CC PB:C2
 $C2:EF85 C8          INY                                A:0BAB X:3024 Y:1A31 D:0000 DB:CC PB:C2
 $C2:EF86 C9 10       CMP A, $10                         A:0BAB X:3024 Y:1A32 D:0000 DB:CC PB:C2
 $C2:EF88 B0 05       BCS $EF8F                          A:0BAB X:3024 Y:1A32 D:0000 DB:CC PB:C2
-$C2:EF8A 20 BE EF    JSR DB:$EFBE         ;$FF:EFBE     A:0005 X:2ECA Y:C82C D:0000 DB:FF PB:C2
-$C2:EF8F 20 97 EF    JSR DB:$EF97         ;$CC:EF97     A:0BAB X:3024 Y:1A32 D:0000 DB:CC PB:C2
+$C2:EF8A 20 BE EF    JSR DB:$EFBE ;jap-versiossa F0EC
+$C2:EF8F 20 97 EF    JSR DB:$EF97 ;jap-versiossa F0C9
 $C2:EF92 C6 87       DEC [$00:D+$87]      ;$00:0087     A:0B00 X:3026 Y:1A32 D:0000 DB:CC PB:C2
 $C2:EF94 D0 E8       BNE $EF7E                          A:0B00 X:3026 Y:1A32 D:0000 DB:CC PB:C2
 $C2:EF96 60          RTS                                A:0B00 X:303A Y:1A3C D:0000 DB:CC PB:C2
 
 ;YHDEN 8x8-MERKIN *PIIRTO*
+; JAP-versiossa F0C9
 $C2:EF97 08          PHP                                A:0BAB X:3024 Y:1A32 D:0000 DB:CC PB:C2
 $C2:EF98 E2 20       SEP $20                            A:0BAB X:3024 Y:1A32 D:0000 DB:CC PB:C2
 $C2:EF9A 24 88       BIT [$00:D+$88]      ;$00:0088     A:0BAB X:3024 Y:1A32 D:0000 DB:CC PB:C2
@@ -1259,6 +1277,7 @@ $C2:EFBD 60          RTS                                A:0B00 X:3026 Y:1A32 D:0
 
 ;8x8-OHJAUSKOODIEN KÄSITTELIJÄ
 ;Käsittelee merkit <$10.
+;JAP-VERSIOSSA F0EC
 $C2:EFBE DA          PHX                                A:0005 X:2ECA Y:C82C D:0000 DB:FF PB:C2
 $C2:EFBF C2 20       REP $20                            A:0005 X:2ECA Y:C82C D:0000 DB:FF PB:C2
 $C2:EFC1 29 FF 00    AND A, $00FF                       A:0005 X:2ECA Y:C82C D:0000 DB:FF PB:C2
@@ -1775,19 +1794,21 @@ $C1:01C5 BD C0 94    LDA DB:($94C0+x)     ;$7E:94C0     A:0000 X:0000 Y:94D0 D:0
 $C1:01C8 F0 2E       BEQ $01F8                          A:00A4 X:0000 Y:94D0 D:0000 DB:7E PB:C1
 $C1:01CA C9 73       CMP A, $73                         
 $C1:01CC B0 1C       BCS $01EA          -- jos arvo on >= $73, tulostetaan sellaisenaan
+                                        -- digit, alphanumeric, kana
 $C1:01CE C9 69       CMP A, $69                         
 $C1:01D0 B0 0E       BCS $01E0          -- jos arvo on $69..$72, goto 1E0
-$C1:01D2 C9 40       CMP A, $40                         
-$C1:01D4 90 14       BCC $01EA          -- jos arvo on $40..$68, goto 1EA
+$C1:01D2 C9 40       CMP A, $40
+$C1:01D4 90 14       BCC $01EA          -- jos arvo on $00..$3F, goto 1EA
+                                        -- 
 ;
-$C1:01D6 18          CLC                -- arvo on < $40 (ga/ba/tms)
-$C1:01D7 69 40       ADC A, $40                         
+$C1:01D6 18          CLC                -- arvo on $40..$68 (ga/ba/tms)
+$C1:01D7 69 40       ADC A, $40         -- lisätään $40
 $C1:01D9 9D A0 94    STA DB:($94A0+x)     ;$7E:94A0     
 $C1:01DC A9 71       LDA A, $71         -- piirretään päälle katakanan "
 $C1:01DE 80 0F       BRA $01EF                          
 ;
 $C1:01E0 18          CLC                -- arvo on $69..$72 (pa/pe/pi/po/pu)
-$C1:01E1 69 17       ADC A, $17                         
+$C1:01E1 69 17       ADC A, $17         -- lisätään $17
 $C1:01E3 9D A0 94    STA DB:($94A0+x)     ;$7E:94A0     
 $C1:01E6 A9 72       LDA A, $72         -- piirretään päälle katakanan °
 $C1:01E8 80 05       BRA $01EF
@@ -2578,114 +2599,125 @@ $C3:08B2 6B          RTL                                A:B57E X:005D Y:2100 D:0
 
 
 C2:BD99:
-	; This is just disassembly of $C2BD99
-	php
-	 SET_8_BIT_A()
-	 lda $0F4C
-	 bmi Skip
-	 jsr TechListFunc
-	plp
-	rts
-Skip:	 ldy $9B76
-	 lda $7E
-	 xba
-	 lda $0B
-	plp
-	jmp $C2EF65
-	; This is called from $C2BD86
-	;                 and $C2B777
+        ; This is just disassembly of $C2BD99
+        php
+         SET_8_BIT_A()
+         lda $0F4C
+         bmi Skip
+         jsr TechListFunc ;display tech name
+        plp
+        rts
+Skip:    ldy $9B76
+         lda $7E
+         xba
+         lda $0B  ;display 11 spaces
+        plp
+        jmp $C2EF65
+        ; This is called from $C2BD86
+        ;                 and $C2B777
 
 
-        
+
         ;This is called from C2:BCA9
         ; Function: Show tech list.
-BD6B:     php
-           set_16bit_ax()
-           lda #$3024    ; screen address
-           sta $61
-           lda #$0008
-           sta $02
-BD78:      set_8bit_ax()
-           ldy $00       ; load the counter (0-7)
-           lda $0F00,y
-           sta $0F4C
-           set_16_bit_ax()
-BD86:      call C2:BD99 - ks yllä.
-BD89:	   inc $00
-	   lda $61
-	   add #$0080
-	   sta $61
-	   dec $02
-	   bne BD78
-	  plp
-	  rts
-	  
-	; Function: Update tech list when scrolling.   
-	   lda $54
-	   add $0F4A
-	   tay
-           lda $0F00,y  ; y is our offset
-           sta $0F4C
-           ldx #$3424	; screen address (bottommost)
-           stx $61
-B777:	   call C2:BD99 - ks yllä
-           ldx #$FBE3
-           call C2:8385	   
-           php
-           call C2:83A2
-           ....
-	
+BD6B:   php
+         set_16bit_ax()
+         lda #$3024    ; screen address
+         sta $61
+         lda #$0008
+         sta $02
+BD78:    set_8bit_ax()
+         ldy $00       ; load the counter (0-7)
+         lda $0F00,y
+         sta $0F4C
+         set_16_bit_ax()
+BD86:    call C2:BD99 - ks yllä.
+BD89:    inc $00
+         lda $61
+         add #$0080
+         sta $61
+         dec $02
+         bne BD78
+        plp
+        rts
+ 
+        ; Function: Update tech list when scrolling.   
+         lda $54
+         add $0F4A
+         tay
+         lda $0F00,y  ; y is our offset
+         sta $0F4C
+         ldx #$3424        ; screen address (bottommost)
+         stx $61
+B777:    call C2:BD99 - ks yllä
+         ldx #$FBE3
+         call C2:8385
+         php
+         call C2:83A2
+         ....
+        
 C2:A59A:
-	; This is just disassembly of $C2:A59A
-          php
-           rep #$30
-           lda #$2000
-           sta $7D
-           lda $04C9
-           and #$00FF
-           beq Ohi
-           jsl EquipLeftItemFunc
-           nop
-           nop
-           adc $EF
-           stz $7D
-          plp
-          rts
-        Ohi:
-          ldy $9B76
-          lda #$7E0A
-          call $C2EF65  - write space * 10, I think
-          stz $7D
-         plp
-         rts
+        ; This is just disassembly of $C2:A59A
+        ; Jap. location: A564
+        php
+         rep #$30
+         lda #$2000
+         sta $7D
+         lda $04C9
+         and #$00FF
+         beq +
+         jsl EquipLeftItemFunc
+         nop:nop:nop:nop
+         ; Jap. version also has this:
+         ;   ldy #$04CA
+         ;   lda #$7E11
+         ;   jsr $F25E  ;eng: F114
+         stz $7D
+        plp
+        rts
+       + ldy $9B76
+         lda #$7E0A
+         call $C2EF65  - write space * 10, I think
+         stz $7D
+        plp
+        rts
         ; This is called from $C29F84
         ;                     $C2A58A
 
 
         ; Function: Draw equip-left
+        ; Jap. location: A52D
 A569:  php
         set_16_bit_ax()
         ldy #$0008
         sty $22
-        ldx #$4FC6  - screen address
-        lda $0FC8
+        ldx #$4FC6  - screen address for the item list
+        lda $0FC8   - item list top-position, I guess
         and #$00FF
         tay
 A57B:   set_8bit_a()
+        ; EquipLeftHelper -patch goes here
+        ; Jap. version has also this:
+        ;     lda $0F62,y
+        ;     sta $04CA
         lda $0F00,y
         sta $04C9
-        beq A586   - if end of list, stay there
+          ; Jap. location for A583 is A54D
+A583:   beq +     - if end of list, stay there
         iny
-A586:   set_16bit_ax()
+      + set_16bit_ax()
         phx
          phy
-A58A:	  call C2:A59A - ks yllä
+A58A:    call C2:A59A - ks yllä
          ply
         pla
-        add #$0080
+        ; EquipLeftHelper -patch ends here
+        clc: adc #$0080
         tax
         dec $22
         bne A57B
+       plp
+       rts
         
         ; Function: Update equip-left (bottom) when scrolling
           lda $5A
@@ -2701,12 +2733,15 @@ A58A:	  call C2:A59A - ks yllä
           lda $0F00,y
           sta $04C9
           ldx #$53C6  - screen address (bottommost)
-9F84:	  call C2:A59A - ks yllä
+9F84:     call C2:A59A - ks yllä
           ldx #$FC1B
           call C28385
           php
           call C283A2
           ...
+
+
+A57B: 
 	  
 ; Draw item list in shop.
 $C2:DD02 08          PHP                                A:0000 X:C2CA Y:79A6 D:0000 DB:7E PB:C2 S:0A7A P:envMxdiZC HC:242 VC:244 00

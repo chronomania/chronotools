@@ -93,7 +93,7 @@ Last updated:
 <tr><td>Error recovery</td>
     <td>20%</td> <td>not many error checks</td></tr>
 <tr><td>Documentation</td>
-    <td>2%</td> <td>if it isn't on this page, it's <a href=\"#undocs\">nowhere</a></td></tr>
+    <td>3%</td> <td>if it isn't on this page, it's <a href=\"#undocs\">nowhere</a></td></tr>
 </table>
 
 ", 'changes:1.1. Version history' => "
@@ -396,6 +396,20 @@ I have tried to put almost everything in text-only config files
 instead of hardcoding it in the programs. You won't be depending
 on me to do little updates for your purposes.
 
+", '1. Summary of extra features' => "
+
+These are the visible extra features that games patched by Chronotools
+may have when compared to the standard English version:
+  <ul>
+   <li>Item names longer than 11 characters (new feature)</li>
+   <li>Item names displayed in thinner font (new feature)</li>
+   <li>Technique names displayed in thinner font (new feature)</li>
+   <li>Ayla using a special version of Crono's name (orig. in jap. only)</li>
+   <li>Equip screen showing the item count (orig. in jap. only)</li>
+   <li>Character names conjugated according to language rules (new feature)</li>
+   <li>Translation team logo on startup screen (new feature)</li>
+  </ul>
+
 ", 'req:1. Requirements' => "
 
 For source code (if you're a developer):
@@ -457,16 +471,10 @@ If you're uncertain, <a href=\"#copying\">send me email and explain your situati
 
 Things that should be documented some day but currently are not:
 <ul>
- <li>Image file format requirements</li>
  <li>How does the character map actually work</li>
  <li>How to do conjugation</li>
- <li>How to do <acronym title=\"Variable Width Font (8pix)\">VWF8</acronym></li>
- <li>How to configure the dictionary generator</li>
- <li>How to avoid rerunning the dictionary generator every time</li>
  <li>Known bugs and their resolutions</li>
  <li>Script format guidelines (how do the indents work)</li>
- <li>What is <code>[crononick]</code></li>
- <li>How to add the \"signature\" (the logo on the startup screen)</li>
  <li>Tips and hints one should know</li>
  <li>The source code</li>
 </ul>

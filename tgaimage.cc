@@ -117,6 +117,14 @@ void TGAimage::Save(const string &fn, palettetype paltype, const unsigned *palet
                 FilePalette.push_back(c + 256*c + 65536*c);
             }
             break;
+        case pal_256color:
+            for(unsigned a=0; a<256; ++a)
+            {
+                if(palette) { FilePalette.push_back(palette[a]); continue; }
+                unsigned c = a;
+                FilePalette.push_back(c + 256*c + 65536*c);
+            }
+            break;
     }
     
     TgaPutB(fp, 0); // id field len

@@ -10,7 +10,8 @@ public:
     {
         pal_6color,
         pal_4color,
-        pal_16color
+        pal_16color,
+        pal_256color
     };
 
     TGAimage(const string &filename);

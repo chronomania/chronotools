@@ -1,14 +1,14 @@
-#ifndef bqtRangeMapHH
-#define bqtRangeMapHH
+#ifndef bqtRangeSetHH
+#define bqtRangeSetHH
 
-#include <map>
+#include <set>
 #include "range.hh"
 
-template<typename Key, typename Value>
-class rangemap
+template<typename Key>
+class rangeset
 {
     typedef rangetype<Key> range;
-    typedef std::map<rangetype<Key>, Value> Cont;
+    typedef std::set<rangetype<Key> > Cont;
     Cont data;
 public:
     typedef typename Cont::const_iterator const_iterator;
@@ -17,7 +17,7 @@ public:
     void clear() { data.clear(); }
     
     void erase(const Key& lo, const Key& up);
-    void set(const Key& lo, const Key& up, const Value& v);
+    void set(const Key& lo, const Key& up);
     const_iterator find(const Key& lo) const;
     
     const_iterator begin() const { return data.begin(); }
@@ -30,11 +30,11 @@ public:
     
     void compact();
     
-    rangemap() {}
+    rangeset() {}
     
     // default copy cons. and assign-op. are fine
 };
 
-#include "rangemap.tcc"
+#include "rangeset.tcc"
 
 #endif

@@ -22,7 +22,7 @@ void ROM::AddReference(const ReferMethod& reference, unsigned target, const stri
                 "- Add ref at $%06X: ",
                 0xC00000 | rompos);
         
-        fprintf(log, "(");
+        if(reference.shr_by || reference.or_mask) fprintf(log, "(");
         if(reference.shr_by) fprintf(log, "(");
         fprintf(log, "%X", target);
         if(reference.shr_by > 0) fprintf(log, " >> %d", reference.shr_by);
@@ -31,7 +31,8 @@ void ROM::AddReference(const ReferMethod& reference, unsigned target, const stri
         
         if(reference.or_mask) fprintf(log, " | %X", reference.or_mask);
         
-        fprintf(log, ") & 0x");
+        if(reference.shr_by || reference.or_mask) fprintf(log, ")");
+        fprintf(log, " & 0x");
         for(unsigned n=0; n<reference.num_bytes; ++n) fprintf(log, "FF");
         
         fprintf(log, " (%s)\n", what.c_str());

@@ -2,10 +2,11 @@
 #define bqtctSpaceHH
 
 #include <map>
-#include <set>
 #include <vector>
 
 using namespace std;
+
+#include "rangeset.hh"
 
 #define NOWHERE 0x10000
 
@@ -25,7 +26,7 @@ struct freespacerec
     }
 };
 
-typedef set<freespacerec> freespaceset;
+typedef rangeset<unsigned> freespaceset;
 
 /* page->list */
 class freespacemap : public map<unsigned, freespaceset>
@@ -44,14 +45,18 @@ public:
     
     unsigned Size() const;
     unsigned Size(unsigned page) const;
-    unsigned Count(unsigned page) const;
+    unsigned GetFragmentation(unsigned page) const;
     
     const set<unsigned> GetPageList() const;
-    const freespaceset GetList(unsigned pagenum) const;
+    const freespaceset& GetList(unsigned pagenum) const;
     
     // Uses segment-relative addresses (16-bit)
     void Add(unsigned page, unsigned begin, unsigned length);
     void Del(unsigned page, unsigned begin, unsigned length);
+    
+    // Uses absolute addresses (24-bit) (no segment wrapping!!)
+    void Add(unsigned longaddr, unsigned length);
+    void Del(unsigned longaddr, unsigned length);
     
     // Uses segment-relative addresses (16-bit)
     bool Organize(vector<freespacerec> &blocks, unsigned pagenum);
@@ -64,6 +69,8 @@ public:
     // Uses segment-relative addresses (16-bit), sets page
     bool OrganizeToAnySamePage(vector<freespacerec> &blocks, unsigned &page);
     // Return value: errors-flag
+    
+    void Compact();
 };
 
 #endif

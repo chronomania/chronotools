@@ -6,9 +6,6 @@
 
 using namespace std;
 
-/* 0 = begin, 1 = end */
-#define EAT_MODE 1
-
 freespacemap::freespacemap() : quiet(false)
 {
 }
@@ -36,32 +33,32 @@ unsigned freespacemap::Find(unsigned page, unsigned length)
     freespaceset::const_iterator reci;
 
     unsigned bestscore = 0;
-    freespaceset::const_iterator best = spaceset.end();
+    unsigned bestpos   = NOWHERE;
     
     for(reci = spaceset.begin(); reci != spaceset.end(); ++reci)
     {
-        if(reci->len == length)
+        const unsigned recpos = reci->lower;
+        const unsigned reclen = reci->upper - recpos;
+        
+        if(reclen == length)
         {
-            unsigned pos = reci->pos;
+            bestpos = recpos;
             // Found exact match!
-            spaceset.erase(reci);
-            if(spaceset.empty())
-                erase(mapi);
-            return pos;
+            break;
         }
-        if(reci->len < length)
+        if(reclen < length)
         {
             // Too small, not good.
             continue;
         }
         
         // The smaller, the better.
-        unsigned score = 0x7FFFFFF - reci->len;
+        unsigned score = 0x7FFFFFF - reclen;
         
         if(score > bestscore)
         {
             bestscore = score;
-            best = reci;
+            bestpos   = recpos;
             //break;
         }
     }
@@ -81,15 +78,7 @@ unsigned freespacemap::Find(unsigned page, unsigned length)
         return NOWHERE;
     }
     
-#if EAT_MODE==1 /* Eat from end */
-    const unsigned bestpos = best->pos + best->len - length;
-    freespacerec tmp(best->pos, best->len - length);
-#else /* Eat from begin */
-    const unsigned bestpos = best->pos;
-    freespacerec tmp(best->pos + length, best->len - length);
-#endif
-    spaceset.erase(best);
-    if(tmp.len) spaceset.insert(tmp);
+    spaceset.erase(bestpos, bestpos+length);
     
     return bestpos;
 }
@@ -108,7 +97,11 @@ void freespacemap::DumpPageMap(unsigned pagenum) const
     
     fprintf(stderr, "Map of page %02X:\n", pagenum);
     for(reci = spaceset.begin(); reci != spaceset.end(); ++reci)
-        fprintf(stderr, "  %X: %u\n", reci->pos, reci->len);
+    {
+        unsigned recpos = reci->lower;
+        unsigned reclen = reci->upper - recpos;
+        fprintf(stderr, "  %X: %u\n", recpos, reclen);
+    }
 }
 
 void freespacemap::Report() const
@@ -122,7 +115,7 @@ void freespacemap::Report() const
         unsigned thisfree = 0, hunkcount = 0;
         for(j=i->second.begin(); j!=i->second.end(); ++j)
         {
-            thisfree += j->len;
+            thisfree += j->length();
             ++hunkcount;
         }
         total += thisfree;
@@ -143,7 +136,9 @@ unsigned freespacemap::Size() const
         freespaceset::const_iterator j;
         unsigned thisfree = 0;
         for(j=i->second.begin(); j!=i->second.end(); ++j)
-            thisfree += j->len;
+        {
+            thisfree += j->length();
+        }
         total += thisfree;
     }
     return total;
@@ -156,12 +151,15 @@ unsigned freespacemap::Size(unsigned page) const
     if(i != end())
     {
         freespaceset::const_iterator j;
-        for(j=i->second.begin(); j!=i->second.end(); ++j) total += j->len;
+        for(j=i->second.begin(); j!=i->second.end(); ++j)
+        {
+            total += j->length();
+        }
     }
     return total;
 }
 
-unsigned freespacemap::Count(unsigned page) const
+unsigned freespacemap::GetFragmentation(unsigned page) const
 {
     const_iterator i = find(page);
     if(i != end()) return i->second.size();
@@ -175,7 +173,7 @@ const set<unsigned> freespacemap::GetPageList() const
         result.insert(i->first);
     return result;
 }
-const freespaceset freespacemap::GetList(unsigned pagenum) const
+const freespaceset &freespacemap::GetList(unsigned pagenum) const
 {
     return find(pagenum)->second;
 }
@@ -183,7 +181,12 @@ const freespaceset freespacemap::GetList(unsigned pagenum) const
 void freespacemap::Add(unsigned page, unsigned begin, unsigned length)
 {
     //fprintf(stderr, "Adding %u bytes of free space at %02X:%04X\n", length, page, begin);
-    (*this)[page].insert(freespacerec(begin, length));
+    operator[] (page).set(begin, begin+length);
+    operator[] (page).compact();
+}
+void freespacemap::Add(unsigned longaddr, unsigned length)
+{
+    Add(longaddr >> 16, longaddr & 0xFFFF, length);
 }
 
 void freespacemap::Del(unsigned page, unsigned begin, unsigned length)
@@ -191,30 +194,18 @@ void freespacemap::Del(unsigned page, unsigned begin, unsigned length)
     iterator i = find(page);
     if(i == end()) return;
     
-    freespaceset &list = i->second;
+    freespaceset &spaceset = i->second;
     
-    unsigned end = begin + length;
-    
-    freespaceset news;
-    for(freespaceset::iterator j = list.begin(), k; j != list.end(); j=k)
-    {
-        k=j; ++k;
-        
-        unsigned jpos = j->pos;
-        unsigned jend = j->len + jpos;
-        
-        // If this block is fully above
-        if(jpos >= end) continue;
-        // If this block is fully below
-        if(jend <= begin) continue;
-        
-        list.erase(j);
-        
-        if(begin > jpos) news.insert(freespacerec(jpos, begin-jpos));
-        if(jend  > end)  news.insert(freespacerec(end, jend-end));
-    }
-    list.insert(news.begin(), news.end());
-    if(list.empty()) erase(i);
+    spaceset.erase(begin, begin+length);
+    spaceset.compact();
+}
+void freespacemap::Del(unsigned longaddr, unsigned length)
+{
+    Del(longaddr >> 16, longaddr & 0xFFFF, length);
+}
+
+void freespacemap::Compact()
+{
 }
 
 bool freespacemap::Organize(vector<freespacerec> &blocks, unsigned pagenum)
@@ -253,9 +244,11 @@ bool freespacemap::Organize(vector<freespacerec> &blocks, unsigned pagenum)
     holeaddrs.reserve(pagemap.size());
     for(freespaceset::const_iterator i = pagemap.begin(); i != pagemap.end(); ++i)
     {
-        totalspace += i->len;
-        holes.push_back(i->len);
-        holeaddrs.push_back(i->pos);
+        const unsigned recpos = i->lower;
+        const unsigned reclen = i->upper - recpos;
+        totalspace += reclen;
+        holes.push_back(reclen);
+        holeaddrs.push_back(recpos);
     }
     
     if(totalspace < totalsize)
@@ -279,7 +272,8 @@ bool freespacemap::Organize(vector<freespacerec> &blocks, unsigned pagenum)
         unsigned holeid   = organization[a];
         
         unsigned spaceptr = NOWHERE;
-        if(holes[holeid] >= itemsize)
+        if(holeid < holes.size()
+        && holes[holeid] >= itemsize)
         {
             spaceptr = holeaddrs[holeid];
             holeaddrs[holeid] += itemsize;
@@ -295,9 +289,9 @@ bool freespacemap::Organize(vector<freespacerec> &blocks, unsigned pagenum)
     if(Errors)
         if(!quiet)
         {
-            fprintf(stderr, "ERROR: Organization failed\n");
+            fprintf(stderr, "ERROR: Organization to page %02X failed\n", pagenum);
             if(log)
-            fprintf(log, "ERROR: Organization failed\n");
+            fprintf(log, "ERROR: Organization to page %02X failed\n", pagenum);
         }
     return Errors;
 }
@@ -328,10 +322,12 @@ bool freespacemap::OrganizeToAnyPage(vector<freespacerec> &blocks)
         freespaceset::const_iterator j;
         for(j=pagemap.begin(); j!=pagemap.end(); ++j)
         {
-            totalspace += j->len;
-            holes.push_back(j->len);
+            const unsigned recpos = j->lower;
+            const unsigned reclen = j->upper - recpos;
+            totalspace += reclen;
+            holes.push_back(reclen);
+            holeaddrs.push_back(recpos);
             holepages.push_back(pagenum);
-            holeaddrs.push_back(j->pos);
         }
     }
     
@@ -362,7 +358,7 @@ bool freespacemap::OrganizeToAnyPage(vector<freespacerec> &blocks)
             spaceptr = holeaddrs[holeid] | (pagenum << 16);
             holeaddrs[holeid] += itemsize;
             holes[holeid]     -= itemsize;
-            Del(pagenum, spaceptr & 0xFFFF, itemsize);
+            Del(spaceptr, itemsize);
         }
         else
         {
@@ -396,7 +392,6 @@ bool freespacemap::OrganizeToAnySamePage(vector<freespacerec> &blocks, unsigned 
     for(const_iterator i=begin(); i!=end(); ++i)
     {
         unsigned pagenum = i->first;
-        const freespaceset &pagemap = i->second;
         
         vector<freespacerec> tmpblocks = blocks;
         
@@ -404,10 +399,17 @@ bool freespacemap::OrganizeToAnySamePage(vector<freespacerec> &blocks, unsigned 
         {
             // candidate!
             
+            // Can't use previous reference because things have changed
+            // FIXME: Is this really the case?
             const freespaceset &pagemap = find(pagenum)->second;
+            
             unsigned freesize = 0;
             freespaceset::const_iterator j;
-            for(j=pagemap.begin(); j!=pagemap.end(); ++j) freesize += j->len;
+            for(j=pagemap.begin(); j!=pagemap.end(); ++j)
+            {
+                unsigned reclen = j->length();
+                freesize += reclen;
+            }
 
             if(first || freesize < bestpagesize)
             {
@@ -444,11 +446,12 @@ unsigned freespacemap::FindFromAnyPage(unsigned length)
         freespaceset::const_iterator j;
         for(j=pagemap.begin(); j!=pagemap.end(); ++j)
         {
-            if(j->len < length) continue;
-            if(first || j->len < leastfree)
+            unsigned reclen = j->length();
+            if(reclen < length) continue;
+            if(first || reclen < leastfree)
             {
                 bestpage  = i->first;
-                leastfree = j->len;
+                leastfree = reclen;
                 first = false;
             }
         }

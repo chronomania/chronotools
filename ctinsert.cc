@@ -164,8 +164,6 @@ int main(void)
     
     ins->DictionaryCompress();
     
-    /////////ins->GenerateCode();
-    
     ins->ReportFreeSpace();
 
     fprintf(stderr, "--\n");
@@ -173,7 +171,8 @@ int main(void)
     ROM ROM(4194304);
     
     ins->LoadImages();
-
+    ins->GenerateCode();
+    
     ins->PatchROM(ROM);
 
     fprintf(stderr, "--\n");

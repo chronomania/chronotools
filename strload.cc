@@ -4,7 +4,7 @@
 #include "rommap.hh"
 #include "strload.hh"
 #include "logfiles.hh"
-#include "rangemap.hh"
+#include "rangeset.hh"
 
 using namespace std;
 
@@ -21,7 +21,7 @@ namespace
         unsigned col;
         FILE *log;
         
-        rangemap<unsigned, bool> ranges;
+        rangeset<unsigned> ranges;
         
     public:
         TableDumper(const string& type, unsigned offset)
@@ -51,7 +51,7 @@ namespace
                 if(col == maxco/2)fputc(' ', log);
                 fprintf(log, " $%04X-%04X", target, target+bytes-1);
                 
-                ranges.set(target, target+bytes, true);
+                ranges.set(target, target+bytes);
                 
                 if(++col == maxco) { fprintf(log, "\n"); col=0; }
             }
@@ -65,17 +65,17 @@ namespace
                 if(col)fprintf(log, "\n");
                 fprintf(log, "-- Table ends at %06X\n", where | 0xC00000);
 
-                list<rangemap<unsigned,bool>::const_iterator> rangelist;
+                list<rangeset<unsigned>::const_iterator> rangelist;
                 ranges.find_all_coinciding(0,0x10000, rangelist);
 
-                for(list<rangemap<unsigned,bool>::const_iterator>::const_iterator
+                for(list<rangeset<unsigned>::const_iterator>::const_iterator
                     j = rangelist.begin();
                     j != rangelist.end();
                     ++j)
                 {
                     fprintf(log, "--  Uses memory range $%04X-%04X\n",
-                        (*j)->first.lower,
-                        (*j)->first.upper-1);
+                        (*j)->lower,
+                        (*j)->upper-1);
                 }
                 
                 fprintf(log, "\n");

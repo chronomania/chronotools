@@ -3,6 +3,7 @@
 #include <cstdarg>
 
 #include "snescode.hh"
+#include "config.hh"
 #include "refer.hh"
 
 using std::list;
@@ -67,6 +68,51 @@ void insertor::AddReference(const ReferMethod& reference,
     codes.push_back(tmp);
 }
 
+void insertor::ObsoleteCode(unsigned address, unsigned bytes, bool barrier)
+{
+    const bool ClearSpace = GetConf("patch", "clear_free_space");
+    
+    address &= 0x3FFFFF;
+    
+    // 0x80 = BRA
+    // 0xEA = NOP
+    if(barrier)
+    {
+        if(bytes > 0)
+        {
+            freespace.Add(address, bytes);
+            if(ClearSpace)
+            {
+                vector<unsigned char> empty(bytes, 0);
+                PlaceData(empty, address, "free space");
+            }
+            bytes = 0;
+        }
+    }
+    else
+    {
+        while(bytes > 2)
+        {
+            bytes -= 2;
+            unsigned skipbytes = bytes;
+            if(skipbytes > 127) skipbytes = 127;
+            
+            PlaceByte(0x80,      address++, "bra"); // BRA over the space.
+            PlaceByte(skipbytes, address++, "bra");
+            
+            freespace.Add(address, skipbytes);
+            if(ClearSpace)
+            {
+                vector<unsigned char> empty(skipbytes, 0);
+                PlaceData(empty, address, "free space");
+            }
+            
+            bytes -= skipbytes;
+        }
+        while(bytes > 0) { PlaceByte(0xEA, address++, "nop"); --bytes; }
+    }
+}
+
 #include "o65.hh"
 #include "config.hh"
 bool insertor::LinkCalls(const string& section)
@@ -82,47 +128,16 @@ bool insertor::LinkCalls(const string& section)
         
         objects.AddReference(WstrToAsc(funcname), CallFrom(address));
         
-        // 0x60 = RTS
-        // 0x80 = BRA
-        // 0xEA = NOP
-        
         address += 4;
+        bool barrier = false;
         if(add_rts)
         {
+            // 0x60 = RTS
             PlaceByte(0x60, address++, "rts"); // rts
-            if(nopcount > 0)
-            {
-                freespace.Add((address >> 16) & 0x3F,
-                              address & 0xFFFF,
-                              nopcount);
-                
-                // Don't initialize, or it will overwrite whatever
-                // uses that space!
-                //while(skipbytes-- > 0) { PlaceByte(0, address++); --nopcount; }
-                nopcount = 0;
-            }
+            barrier = true;
         }
-        else
-        {
-            while(nopcount > 2)
-            {
-                nopcount -= 2;
-                unsigned skipbytes = nopcount;
-                if(skipbytes > 127) skipbytes = 127;
-                PlaceByte(0x80,      address++, "bra"); // BRA over the space.
-                PlaceByte(skipbytes, address++, "bra");
-                
-                freespace.Add((address >> 16) & 0x3F,
-                              address & 0xFFFF,
-                              skipbytes);
-                
-                // Don't initialize, or it will overwrite whatever
-                // uses that space!
-                //while(skipbytes-- > 0) { PlaceByte(0, address++); --nopcount; }
-                nopcount -= skipbytes;
-            }
-            while(nopcount > 0) { PlaceByte(0xEA, address++, "nop"); --nopcount; }
-        }
+        
+        ObsoleteCode(address, nopcount, barrier);
     }
     return true;
 }

@@ -631,7 +631,8 @@ void insertor::LoadFile(FILE *fp)
             || model.type == stringdata::monster
               )
             {
-                freespace.Add(label >> 16, label & 0xFFFF, model.width);
+                // Mark the space unused already at this moment
+                freespace.Add(label, model.width);
             }
             
             model.str = ParseScriptEntry(content, model);

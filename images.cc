@@ -104,9 +104,8 @@ void insertor::LoadImages()
             const string fn = WstrToAsc(filename);
             
             // Add the freespace from the original location
-            freespace.Add(space_address >> 16,
-                          space_address & 0xFFFF,
-                          orig_size);
+            // because the image will be moved anyway
+            freespace.Add(space_address & 0x3FFFFF, orig_size);
             
             const TGAimage image(fn);
             vector<unsigned char> data;

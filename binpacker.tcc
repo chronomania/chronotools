@@ -4,13 +4,13 @@
 //
 // Read binpacker.hh .
 
-//#define BINPACKER_DUMP 1
-//#define BINPACKER_DUMP_ITEMS 1
+#define BINPACKER_DUMP       0
+#define BINPACKER_DUMP_ITEMS 0
 
 #include <set>
 #include <algorithm>
 
-#ifdef BINPACKER_DUMP
+#if BINPACKER_DUMP
 #include <iostream>
 #include <iomanip>
 #endif
@@ -32,7 +32,7 @@ namespace
         
         const std::vector<unsigned> GetResult() const;
 
-#ifdef BINPACKER_DUMP
+#if BINPACKER_DUMP
         void Dump() const;
 #endif
         bool IsGood() const;
@@ -108,17 +108,24 @@ namespace
     template<typename sizetype>
     void BinPacker<sizetype>::MoveItem(unsigned itemno, unsigned holeno)
     {
-        if(holeno == items[itemno].location) return;
+        // If the item is already in the requested hole, do nothing
+        if(items[itemno].location == holeno) return;
+        
         unsigned oldhole = items[itemno].location;
         if(oldhole != BinPackerNowhere)
         {
+            // The old hole now has more space
             holes[oldhole].used -= items[itemno].size;
+            // And doesn't own this item
             holes[oldhole].contents.erase(itemno);
         }
+        
         items[itemno].location = holeno;
         if(holeno != BinPackerNowhere)
         {
+            // The new hole now has less space
             holes[holeno].used += items[itemno].size;
+            // And has this item
             holes[holeno].contents.insert(itemno);
         }
     }
@@ -126,6 +133,8 @@ namespace
     template<typename sizetype>
     void BinPacker<sizetype>::Shuffle()
     {
+        if(holes.empty()) return;
+        
         sort(items.begin(), items.end());
         
         for(unsigned a=0; a<items.size(); ++a)
@@ -150,7 +159,7 @@ namespace
         
     }
 
-#ifdef BINPACKER_DUMP
+#if BINPACKER_DUMP
     template<typename sizetype>
     void BinPacker<sizetype>::Dump() const
     {
@@ -159,7 +168,7 @@ namespace
             std::cerr << "  Hole(size(" << GetHoleSize(a)
                       << ")used(" << GetCapacity(a)
                       << "%)";
-#ifdef BINPACKER_DUMP_ITEMS
+#if BINPACKER_DUMP_ITEMS
             std::cerr << "items(";
             bool first=true,firstout=true;
             sizetype lastitemsize=0;
@@ -203,7 +212,7 @@ const std::vector<unsigned> PackBins
     const std::vector<sizetype> &Items)
 {
     BinPacker<sizetype> packer(Bins, Items);
-#ifdef BINPACKER_DUMP
+#if BINPACKER_DUMP
     if(!packer.IsGood()) packer.Dump();
 #endif
     return packer.GetResult();

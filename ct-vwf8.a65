@@ -22,15 +22,15 @@
 #define W_DATASIZE $10
 ; W_DATASIZE must be in zeropage because used during dma init
 ; Pointers are good to stay there too to be simple.
-; And jump addresses can only be used from zeropage.
+; And jump addresses can only be used from D-page (16-bit though).
 #define P_STR      $12
 #define P_FONT     $15
-#define P_TILEBUF1 $18
-#define P_TILEBUF2 $1B
+#define P_TILEBUF1 $18 ;ptr to this tile
+#define P_TILEBUF2 $1B ;ptr to next tile (always P_TILEBUF1+W_ONESIZE)
 #define W_ENDDRAWS $1E
 #define W_WRITEOFS $20
 ; Remember to update ALLOCATE() and UNALLOCATE()
-; if you add new variables to the zero-segment.
+; if you add new variables to the D-page (zero-segment).
 
 ; NMI uses vars at:
 ;       $000Dxx
@@ -61,6 +61,8 @@
 ;  Item table address:
 ;    ITEMTABLE     - CONST
 
+#define RTL_IN_PAGE_C2 $5841 ; address of RTL in page C2
+
 .text
 .xl
 
@@ -72,6 +74,35 @@
 
 #define SET_8_BIT_AX()  sep #$30 : .xs : .as
 #define SET_16_BIT_AX() rep #$30 : .xl : .al
+
+
+#define ALLOCATE() .( : pha: lda #!cont-1: sta TILEBUF: pla: bra Do_Allocate: cont: pla: .)
+Do_Allocate:
+        pei ($10)
+        pei ($12)
+        pei ($14)
+        pei ($16)
+        pei ($18)
+        pei ($1A)
+        pei ($1C)
+        pei ($1E)
+        pei ($20)
+        pha:lda TILEBUF:pha:rts
+
+#define UNALLOCATE() .( : pha: lda #!cont-1: sta TILEBUF: pla: bra Do_UnAllocate: cont: .)
+Do_UnAllocate:
+        pla : sta $20
+        pla : sta $1E
+        pla : sta $1C
+        pla : sta $1A
+        pla : sta $18
+        pla : sta $16
+        pla : sta $14
+        pla : sta $12
+        pla : sta $10
+        lda TILEBUF:pha:rts
+
+
 
 ; Input for DrawS_*bit functions:
 ;    Ah:Y = Address of the string
@@ -91,6 +122,7 @@ DrawS_4bit:
         jsr DrawS_4bit_setup  ;sets W_ONESIZE and W_DATASIZE
         jsr DrawS_initdma
         asl
+        ;passthru
 DrawS_common:
 .(
         ; Should be 16-bit mode here
@@ -101,23 +133,23 @@ DrawS_common:
         sta W_VRAMADDR
 
         SET_8_BIT_A()
-CharLoop:
-        ; Get a character from string
+     
+     -  ;loop
         lda #$00
         xba
-        lda [P_STR]
+        lda [P_STR] ; Get a character from string
         beq Zero
-        cmp #$01       ; 1 = chars $100..$1FF
-        beq ExtraChar
-        cmp #$02       ; 2 = chars $200..$2FF
-        bne ContinueWithChar
-ExtraChar:
+        cmp #$03    ; 1,2 = chars $100..$2FF
+        bcs +
+        
+        ; Handle extra-char
         SET_16_BIT_A()
         inc P_STR
         SET_8_BIT_A()
         xba
         lda [P_STR]
-ContinueWithChar:
+        
+     +  ; Handle the 16-bit char
         SET_16_BIT_A()
         inc P_STR
         
@@ -129,25 +161,24 @@ ContinueWithChar:
         ; Print more characters, if desired.
         SET_8_BIT_A()
         dec B_LENGTH
-        bne CharLoop
+        beq Zero
+        cpx W_ENDX
+        bcc -       ;loop
 
-Zero:   .byt $62,2,0  ;there's no indirect-jsr...
-        jmp (W_WRITEOFS)   ;write last tile
+Zero:   pei (W_ENDDRAWS) ;return to the End routine (note: The value should have -1)
+        ;We would use jsr (x) instead if it were possible.
         
-        ; A-flag undefined now
-
-        ; ^FIXME - don't do if PIXOFFS=0
-
-        SET_16_BIT_A()
+        ; If B_PIXOFFS = 0, should not write last tile (I think)
         
-        jmp (W_ENDDRAWS)   ;end of draw-string
+        jmp (W_WRITEOFS) ;write last tile. Return: A=16-bit
+        .al
 .)
 
 
 DrawS_normalEnd:
-.(
+        ; Sound be 16-bit here.
         cpx W_ENDX
-        bcs DrawS_normalDone     ; if >=
+        bcs +     ; if >=, done
         
         ; Note - If $FF isn't space in the normal 8pix font, change this.
         lda #$FF00 ;byteswapped #$00FF
@@ -156,9 +187,10 @@ DrawS_normalEnd:
         xba
         SET_16_BIT_A()
         
-        tay
-DrawS_filler_loop:
-        tya
+        tay ; save the data
+
+-       ; Loop
+        tya ; load the data
         ;;; FIXME - this doesn't work if WRITEOFS doesn't refer to Write
         jsr WriteOne
         
@@ -169,9 +201,9 @@ DrawS_filler_loop:
                         ; (generate a smaller dma transfer)
         
         cpx W_ENDX
-        bcc DrawS_filler_loop      ; if <
+        bcc -           ; if <, loop
 
-DrawS_normalDone:
++       ; Done
         ; Should be 16-bit here
 
         lda W_VRAMADDR
@@ -191,8 +223,6 @@ DrawS_normalDone:
         SET_16_BIT_A()
         
         rts
-.)
-
 
 
 ; How ROR works:
@@ -264,164 +294,62 @@ DrawChar:
               .word Handle16bytes_4, Handle16bytes_5
               .word Handle16bytes_6, Handle16bytes_7
           ; Each of these cases handles 16 bytes.
+    #define REST() \
+        SET_8_BIT_A() : ora [P_TILEBUF2],y : sta [P_TILEBUF2],y : \
+        xba :           ora [P_TILEBUF1],y : sta [P_TILEBUF1],y : iny
 Handle16bytes_0:
         SET_16_BIT_A()
         ; P_TILEBUF1 = xxxxxxxx P_TILEBUF2 = 00000000  - do direct copy
-        lda [P_FONT],y : sta [P_TILEBUF1],y : iny : iny
-        lda [P_FONT],y : sta [P_TILEBUF1],y : iny : iny
-        lda [P_FONT],y : sta [P_TILEBUF1],y : iny : iny
-        lda [P_FONT],y : sta [P_TILEBUF1],y : iny : iny
-        lda [P_FONT],y : sta [P_TILEBUF1],y : iny : iny
-        lda [P_FONT],y : sta [P_TILEBUF1],y : iny : iny
-        lda [P_FONT],y : sta [P_TILEBUF1],y : iny : iny
-        lda [P_FONT],y : sta [P_TILEBUF1],y : iny : iny
+        #define IT lda [P_FONT],y : sta [P_TILEBUF1],y : iny : iny
+        ; Two bytes at time - thus only 8 iterations.
+        IT:IT:IT:IT : IT:IT:IT:IT
+        #undef IT
         bra EndHandle16bytes
-#define REST() \
-        SET_8_BIT_A() : ora [P_TILEBUF2],y : sta[P_TILEBUF2],y : \
-        xba :           ora [P_TILEBUF1],y : sta[P_TILEBUF1],y : iny
 Handle16bytes_1:
         ; P_TILEBUF1 = 0xxxxxxx P_TILEBUF2 = x0000000  - do swap;1 lsr
         ; The loop is partially unrolled.
-        .as : lda [P_FONT],y : xba : lda #$00 : SET_16_BIT_A() : lsr : REST()
-        .as : lda [P_FONT],y : xba : lda #$00 : SET_16_BIT_A() : lsr : REST()
-        .as : lda [P_FONT],y : xba : lda #$00 : SET_16_BIT_A() : lsr : REST()
-        .as : lda [P_FONT],y : xba : lda #$00 : SET_16_BIT_A() : lsr : REST()
-        .as : lda [P_FONT],y : xba : lda #$00 : SET_16_BIT_A() : lsr : REST()
-        .as : lda [P_FONT],y : xba : lda #$00 : SET_16_BIT_A() : lsr : REST()
-        .as : lda [P_FONT],y : xba : lda #$00 : SET_16_BIT_A() : lsr : REST()
-        .as : lda [P_FONT],y : xba : lda #$00 : SET_16_BIT_A() : lsr : REST()
-        .as : lda [P_FONT],y : xba : lda #$00 : SET_16_BIT_A() : lsr : REST()
-        .as : lda [P_FONT],y : xba : lda #$00 : SET_16_BIT_A() : lsr : REST()
-        .as : lda [P_FONT],y : xba : lda #$00 : SET_16_BIT_A() : lsr : REST()
-        .as : lda [P_FONT],y : xba : lda #$00 : SET_16_BIT_A() : lsr : REST()
-        .as : lda [P_FONT],y : xba : lda #$00 : SET_16_BIT_A() : lsr : REST()
-        .as : lda [P_FONT],y : xba : lda #$00 : SET_16_BIT_A() : lsr : REST()
-        .as : lda [P_FONT],y : xba : lda #$00 : SET_16_BIT_A() : lsr : REST()
-        .as : lda [P_FONT],y : xba : lda #$00 : SET_16_BIT_A() : lsr : REST()
-        ;cpy #$0010:; bcc Handle16bytes_1
+        #define IT .as : lda [P_FONT],y : xba : lda #$00 : SET_16_BIT_A() : lsr : REST()
+        IT:IT:IT:IT  :  IT:IT:IT:IT  :  IT:IT:IT:IT  :  IT:IT:IT:IT
+        #undef IT
         bra EndHandle16bytes
 Handle16bytes_2:
         ; P_TILEBUF1 = 00xxxxxx P_TILEBUF2 = xx000000  - do swap;2 lsr
-        .as : lda [P_FONT],y : xba : lda #$00 : SET_16_BIT_A() : lsr : lsr : REST()
-        .as : lda [P_FONT],y : xba : lda #$00 : SET_16_BIT_A() : lsr : lsr : REST()
-        .as : lda [P_FONT],y : xba : lda #$00 : SET_16_BIT_A() : lsr : lsr : REST()
-        .as : lda [P_FONT],y : xba : lda #$00 : SET_16_BIT_A() : lsr : lsr : REST()
-        .as : lda [P_FONT],y : xba : lda #$00 : SET_16_BIT_A() : lsr : lsr : REST()
-        .as : lda [P_FONT],y : xba : lda #$00 : SET_16_BIT_A() : lsr : lsr : REST()
-        .as : lda [P_FONT],y : xba : lda #$00 : SET_16_BIT_A() : lsr : lsr : REST()
-        .as : lda [P_FONT],y : xba : lda #$00 : SET_16_BIT_A() : lsr : lsr : REST()
-        .as : lda [P_FONT],y : xba : lda #$00 : SET_16_BIT_A() : lsr : lsr : REST()
-        .as : lda [P_FONT],y : xba : lda #$00 : SET_16_BIT_A() : lsr : lsr : REST()
-        .as : lda [P_FONT],y : xba : lda #$00 : SET_16_BIT_A() : lsr : lsr : REST()
-        .as : lda [P_FONT],y : xba : lda #$00 : SET_16_BIT_A() : lsr : lsr : REST()
-        .as : lda [P_FONT],y : xba : lda #$00 : SET_16_BIT_A() : lsr : lsr : REST()
-        .as : lda [P_FONT],y : xba : lda #$00 : SET_16_BIT_A() : lsr : lsr : REST()
-        .as : lda [P_FONT],y : xba : lda #$00 : SET_16_BIT_A() : lsr : lsr : REST()
-        .as : lda [P_FONT],y : xba : lda #$00 : SET_16_BIT_A() : lsr : lsr : REST()
-        ;cpy #$0010:; bcc Handle16bytes_2
+        #define IT .as : lda [P_FONT],y : xba : lda #$00 : SET_16_BIT_A() : lsr : lsr : REST()
+        IT:IT:IT:IT  :  IT:IT:IT:IT  :  IT:IT:IT:IT  :  IT:IT:IT:IT
+        #undef IT
         bra EndHandle16bytes
 Handle16bytes_3:
         ; P_TILEBUF1 = 000xxxxx P_TILEBUF2 = xxx00000  - do swap;3 lsr
-        .as : lda [P_FONT],y : xba : lda #$00 : SET_16_BIT_A() : lsr : lsr : lsr : REST()
-        .as : lda [P_FONT],y : xba : lda #$00 : SET_16_BIT_A() : lsr : lsr : lsr : REST()
-        .as : lda [P_FONT],y : xba : lda #$00 : SET_16_BIT_A() : lsr : lsr : lsr : REST()
-        .as : lda [P_FONT],y : xba : lda #$00 : SET_16_BIT_A() : lsr : lsr : lsr : REST()
-        .as : lda [P_FONT],y : xba : lda #$00 : SET_16_BIT_A() : lsr : lsr : lsr : REST()
-        .as : lda [P_FONT],y : xba : lda #$00 : SET_16_BIT_A() : lsr : lsr : lsr : REST()
-        .as : lda [P_FONT],y : xba : lda #$00 : SET_16_BIT_A() : lsr : lsr : lsr : REST()
-        .as : lda [P_FONT],y : xba : lda #$00 : SET_16_BIT_A() : lsr : lsr : lsr : REST()
-        .as : lda [P_FONT],y : xba : lda #$00 : SET_16_BIT_A() : lsr : lsr : lsr : REST()
-        .as : lda [P_FONT],y : xba : lda #$00 : SET_16_BIT_A() : lsr : lsr : lsr : REST()
-        .as : lda [P_FONT],y : xba : lda #$00 : SET_16_BIT_A() : lsr : lsr : lsr : REST()
-        .as : lda [P_FONT],y : xba : lda #$00 : SET_16_BIT_A() : lsr : lsr : lsr : REST()
-        .as : lda [P_FONT],y : xba : lda #$00 : SET_16_BIT_A() : lsr : lsr : lsr : REST()
-        .as : lda [P_FONT],y : xba : lda #$00 : SET_16_BIT_A() : lsr : lsr : lsr : REST()
-        .as : lda [P_FONT],y : xba : lda #$00 : SET_16_BIT_A() : lsr : lsr : lsr : REST()
-        .as : lda [P_FONT],y : xba : lda #$00 : SET_16_BIT_A() : lsr : lsr : lsr : REST()
-        ;cpy #$0010:; bcc Handle16bytes_3
+        #define IT .as : lda [P_FONT],y : xba : lda #$00 : SET_16_BIT_A() : lsr : lsr : lsr : REST()
+        IT:IT:IT:IT  :  IT:IT:IT:IT  :  IT:IT:IT:IT  :  IT:IT:IT:IT
+        #undef IT
         bra EndHandle16bytes
 Handle16bytes_4:
         ; P_TILEBUF1 = 0000xxxx P_TILEBUF2 = xxxx0000  - do 4 asl
-        SET_16_BIT_A() : lda [P_FONT],y : and #$00FF : asl : asl : asl : asl : REST()
-        SET_16_BIT_A() : lda [P_FONT],y : and #$00FF : asl : asl : asl : asl : REST()
-        SET_16_BIT_A() : lda [P_FONT],y : and #$00FF : asl : asl : asl : asl : REST()
-        SET_16_BIT_A() : lda [P_FONT],y : and #$00FF : asl : asl : asl : asl : REST()
-        SET_16_BIT_A() : lda [P_FONT],y : and #$00FF : asl : asl : asl : asl : REST()
-        SET_16_BIT_A() : lda [P_FONT],y : and #$00FF : asl : asl : asl : asl : REST()
-        SET_16_BIT_A() : lda [P_FONT],y : and #$00FF : asl : asl : asl : asl : REST()
-        SET_16_BIT_A() : lda [P_FONT],y : and #$00FF : asl : asl : asl : asl : REST()
-        SET_16_BIT_A() : lda [P_FONT],y : and #$00FF : asl : asl : asl : asl : REST()
-        SET_16_BIT_A() : lda [P_FONT],y : and #$00FF : asl : asl : asl : asl : REST()
-        SET_16_BIT_A() : lda [P_FONT],y : and #$00FF : asl : asl : asl : asl : REST()
-        SET_16_BIT_A() : lda [P_FONT],y : and #$00FF : asl : asl : asl : asl : REST()
-        SET_16_BIT_A() : lda [P_FONT],y : and #$00FF : asl : asl : asl : asl : REST()
-        SET_16_BIT_A() : lda [P_FONT],y : and #$00FF : asl : asl : asl : asl : REST()
-        SET_16_BIT_A() : lda [P_FONT],y : and #$00FF : asl : asl : asl : asl : REST()
-        SET_16_BIT_A() : lda [P_FONT],y : and #$00FF : asl : asl : asl : asl : REST()
-        ;cpy #$0010:; bcc Handle16bytes_4
+        #define IT SET_16_BIT_A() : lda [P_FONT],y : and #$00FF : asl : asl : asl : asl : REST()
+        IT:IT:IT:IT  :  IT:IT:IT:IT  :  IT:IT:IT:IT  :  IT:IT:IT:IT
+        #undef IT
         bra EndHandle16bytes
 Handle16bytes_5:
         ; P_TILEBUF1 = 00000xxx P_TILEBUF2 = xxxxx000  - do 3 asl
-        SET_16_BIT_A() : lda [P_FONT],y : and #$00FF : asl : asl : asl : REST()
-        SET_16_BIT_A() : lda [P_FONT],y : and #$00FF : asl : asl : asl : REST()
-        SET_16_BIT_A() : lda [P_FONT],y : and #$00FF : asl : asl : asl : REST()
-        SET_16_BIT_A() : lda [P_FONT],y : and #$00FF : asl : asl : asl : REST()
-        SET_16_BIT_A() : lda [P_FONT],y : and #$00FF : asl : asl : asl : REST()
-        SET_16_BIT_A() : lda [P_FONT],y : and #$00FF : asl : asl : asl : REST()
-        SET_16_BIT_A() : lda [P_FONT],y : and #$00FF : asl : asl : asl : REST()
-        SET_16_BIT_A() : lda [P_FONT],y : and #$00FF : asl : asl : asl : REST()
-        SET_16_BIT_A() : lda [P_FONT],y : and #$00FF : asl : asl : asl : REST()
-        SET_16_BIT_A() : lda [P_FONT],y : and #$00FF : asl : asl : asl : REST()
-        SET_16_BIT_A() : lda [P_FONT],y : and #$00FF : asl : asl : asl : REST()
-        SET_16_BIT_A() : lda [P_FONT],y : and #$00FF : asl : asl : asl : REST()
-        SET_16_BIT_A() : lda [P_FONT],y : and #$00FF : asl : asl : asl : REST()
-        SET_16_BIT_A() : lda [P_FONT],y : and #$00FF : asl : asl : asl : REST()
-        SET_16_BIT_A() : lda [P_FONT],y : and #$00FF : asl : asl : asl : REST()
-        SET_16_BIT_A() : lda [P_FONT],y : and #$00FF : asl : asl : asl : REST()
-        ;cpy #$0010:; bcc Handle16bytes_5
+        #define IT SET_16_BIT_A() : lda [P_FONT],y : and #$00FF : asl : asl : asl : REST()
+        IT:IT:IT:IT  :  IT:IT:IT:IT  :  IT:IT:IT:IT  :  IT:IT:IT:IT
+        #undef IT
         bra EndHandle16bytes
 Handle16bytes_6:
         ; P_TILEBUF1 = 000000xx P_TILEBUF2 = xxxxxx00  - do 2 asl
-        SET_16_BIT_A() : lda [P_FONT],y : and #$00FF : asl : asl : REST()
-        SET_16_BIT_A() : lda [P_FONT],y : and #$00FF : asl : asl : REST()
-        SET_16_BIT_A() : lda [P_FONT],y : and #$00FF : asl : asl : REST()
-        SET_16_BIT_A() : lda [P_FONT],y : and #$00FF : asl : asl : REST()
-        SET_16_BIT_A() : lda [P_FONT],y : and #$00FF : asl : asl : REST()
-        SET_16_BIT_A() : lda [P_FONT],y : and #$00FF : asl : asl : REST()
-        SET_16_BIT_A() : lda [P_FONT],y : and #$00FF : asl : asl : REST()
-        SET_16_BIT_A() : lda [P_FONT],y : and #$00FF : asl : asl : REST()
-        SET_16_BIT_A() : lda [P_FONT],y : and #$00FF : asl : asl : REST()
-        SET_16_BIT_A() : lda [P_FONT],y : and #$00FF : asl : asl : REST()
-        SET_16_BIT_A() : lda [P_FONT],y : and #$00FF : asl : asl : REST()
-        SET_16_BIT_A() : lda [P_FONT],y : and #$00FF : asl : asl : REST()
-        SET_16_BIT_A() : lda [P_FONT],y : and #$00FF : asl : asl : REST()
-        SET_16_BIT_A() : lda [P_FONT],y : and #$00FF : asl : asl : REST()
-        SET_16_BIT_A() : lda [P_FONT],y : and #$00FF : asl : asl : REST()
-        SET_16_BIT_A() : lda [P_FONT],y : and #$00FF : asl : asl : REST()
-        ;cpy #$0010:; bcc Handle16bytes_6 
+        #define IT SET_16_BIT_A() : lda [P_FONT],y : and #$00FF : asl : asl : REST()
+        IT:IT:IT:IT  :  IT:IT:IT:IT  :  IT:IT:IT:IT  :  IT:IT:IT:IT
+        #undef IT
         bra EndHandle16bytes
 Handle16bytes_7:
         ; P_TILEBUF1 = 0000000x P_TILEBUF2 = xxxxxxx0  - do 1 asl
-        SET_16_BIT_A() : lda [P_FONT],y : and #$00FF : asl : REST()
-        SET_16_BIT_A() : lda [P_FONT],y : and #$00FF : asl : REST()
-        SET_16_BIT_A() : lda [P_FONT],y : and #$00FF : asl : REST()
-        SET_16_BIT_A() : lda [P_FONT],y : and #$00FF : asl : REST()
-        SET_16_BIT_A() : lda [P_FONT],y : and #$00FF : asl : REST()
-        SET_16_BIT_A() : lda [P_FONT],y : and #$00FF : asl : REST()
-        SET_16_BIT_A() : lda [P_FONT],y : and #$00FF : asl : REST()
-        SET_16_BIT_A() : lda [P_FONT],y : and #$00FF : asl : REST()
-        SET_16_BIT_A() : lda [P_FONT],y : and #$00FF : asl : REST()
-        SET_16_BIT_A() : lda [P_FONT],y : and #$00FF : asl : REST()
-        SET_16_BIT_A() : lda [P_FONT],y : and #$00FF : asl : REST()
-        SET_16_BIT_A() : lda [P_FONT],y : and #$00FF : asl : REST()
-        SET_16_BIT_A() : lda [P_FONT],y : and #$00FF : asl : REST()
-        SET_16_BIT_A() : lda [P_FONT],y : and #$00FF : asl : REST()
-        SET_16_BIT_A() : lda [P_FONT],y : and #$00FF : asl : REST()
-        SET_16_BIT_A() : lda [P_FONT],y : and #$00FF : asl : REST()
-        ;cpy #$0010:; bcc Handle16bytes_7
+        #define IT SET_16_BIT_A() : lda [P_FONT],y : and #$00FF : asl : REST()
+        IT:IT:IT:IT  :  IT:IT:IT:IT  :  IT:IT:IT:IT  :  IT:IT:IT:IT
+        #undef IT
         ;bra EndHandle16bytes
-#undef REST
-       EndHandle16bytes:
+    #undef REST
+EndHandle16bytes:
 
           SET_16_BIT_A()
          pla
@@ -481,7 +409,7 @@ Write:
         
 ; Writes one tile index and does X += 2
 WriteOne:
-	sta !$0000,x
+        sta !$0000,x
         inx
         inx
 End:    rts
@@ -495,26 +423,24 @@ End:    rts
 ;    DB:X = Where to put the tile indices
 DrawS_boot:
         SET_8_BIT_A()
-        sta B_LENGTH     ; Store Al
+        sta B_LENGTH     ; B_LENGTH <- textual width (number of chars)
         
-        cmp #$FE
-        bcc NotSpecialLength
-        sbc #$FE - 10
-  NotSpecialLength:
-        sta B_WIDTH
+        cmp #$F0
+        bcc +
+        sbc #$F0
+     +  sta B_WIDTH      ; B_WIDTH <- visual width (number of tiles)
         xba
-        sta P_STR+2      ; Store Ah
+        sta P_STR+2      ; store segment of source string
 
         lda #$00
-        xba
+        xba              ; A = B_WIDTH, now 16-bit.
 
         SET_16_BIT_AX()
-        sty P_STR    ; Store Y
+        sty P_STR        ; store offset of source string
         
         ; Calculate W_ENDX = X + B_WIDTH*2
+        stx W_ENDX
         asl
-        sta W_ENDX
-        txa
         clc:adc W_ENDX
         sta W_ENDX   ; And store in W_ENDX
         
@@ -546,12 +472,11 @@ DrawS_setup_common:
         rts
 
 DrawS_initdma:
-.(
         SET_8_BIT_A()
         
         phb
          pla               ;target page
-         sta P_TILEBUF1+2
+         sta P_TILEBUF1+2  ;set it for both pointers
          sta P_TILEBUF2+2
          pha
 
@@ -592,7 +517,7 @@ DrawS_initdma:
          sty $4372  ; dma config new source
                     ;  page already set
         plb
-.)        ; passthru
+        ;passthru
 DrawS_init_common:
         lda #^TILEDATA_ADDR
         sta P_FONT+2     ; Early handling
@@ -613,7 +538,6 @@ DrawS_init_common:
         rts
 
 DrawS_initnondma:
-.(
         SET_16_BIT_A()
         phb
         phb
@@ -624,25 +548,21 @@ DrawS_initnondma:
         lda #TILEBUF     ;target offs = tilebuf
         sta P_TILEBUF1   ;   initialize P_TILEBUF1
 
-        sta P_TILEBUF2
-        
         lda #$0000
         tay
-Loop:
+      - ;loop
         ; If you want to unroll, choices are 1/2/4/8 lines
-        sta (P_TILEBUF2),y : iny : iny
-        sta (P_TILEBUF2),y : iny : iny
-        sta (P_TILEBUF2),y : iny : iny
-        sta (P_TILEBUF2),y : iny : iny
+        sta (P_TILEBUF1),y : iny : iny
+        sta (P_TILEBUF1),y : iny : iny
+        sta (P_TILEBUF1),y : iny : iny
+        sta (P_TILEBUF1),y : iny : iny
         cpy W_DATASIZE
-        bcc Loop
+        bcc -
 
         SET_8_BIT_A()
         bra DrawS_init_common
-.)
 
 Trans:
-.(
         ; Font8v has been shrunk a bit.
         ; This function translates characters to font indices...
         
@@ -650,38 +570,16 @@ Trans:
         ; We are 16-bit here
 
         cmp #$0030
-        bcc Special
+        bcc +
         ;no sec - it's set here anyway
         ; $80 chars were eaten from the font
         sbc #$0080
         rts
-Special:
+      + ;Special
         sec
         ; itemchars were placed at the beginning
         sbc #$0020
         rts
-.)
-
-#define ALLOCATE()        \
-        pei ($10) :        \
-        pei ($12) :        \
-        pei ($14) :        \
-        pei ($16) :        \
-        pei ($18) :        \
-        pei ($1A) :        \
-        pei ($1C) :        \
-        pei ($1E) :        \
-        pei ($20)
-#define UNALLOCATE()        \
-        pla : sta $20 :        \
-        pla : sta $1E :        \
-        pla : sta $1C :        \
-        pla : sta $1A :        \
-        pla : sta $18 :        \
-        pla : sta $16 :        \
-        pla : sta $14 :        \
-        pla : sta $12 :        \
-        pla : sta $10
 
 GetItemName:
         ; In - Al=item number
@@ -695,22 +593,22 @@ GetItemName:
         and #$00FF
         asl
         
-#if 0 /* OLD CODE */
+#if 0 ; OLD CODE
         tay
         lda $7D00,y     ; $7E7D00 HAS ITEM OFFSET LIST.
         tay
         lda #$CC0B      ; ITEMLIST SEGMENT, LENGTH
-#else /* NEW CODE */
+#else ; NEW CODE
         phx 
          tax
          lda @ITEMTABLE,x
          tay
         plx
-        .byt $A9, $FF, ^ITEMTABLE   ;Al=length, Ah=itemtable seg
+        .byt $A9, $F0+11, ^ITEMTABLE   ;Al=length, Ah=itemtable seg
 #endif
         rts
 GetItemName2:
-#if 0 /* OLD CODE */
+#if 0 ; OLD CODE
         ; In - Al=item number
         ; Out- Al=maxlen
         ;      Ah,Y=address of string
@@ -730,7 +628,7 @@ GetItemName2:
         tay
         lda #$CC0B  ;ITEM LIST SEGMENT, LENGTH
         rts
-#else /* NEW CODE */
+#else ; NEW CODE
         bra GetItemName
 #endif
 
@@ -744,10 +642,11 @@ DialogItemCall:
         ldy #0
         jsr +
         ; return value: length
-	tya
-	rtl
+        tya
+        rtl
       - iny
-      + lda [$37],y
+      + ; Sort of strlen function
+        lda [$37],y
         bne -
         rts
 
@@ -773,24 +672,27 @@ GetTechName2:
         rts
 
 EquipLeftHelper:
-.(
+        lda $0F62,y : sta $04CA  ; copy item count (copied from jap. version)
+        lda $0F00,y : sta $04C9  ; copy item number (in both versions)
+        
         SET_16_BIT_AX()
         phx
          phy
-          phk ; to get a far-return 
-          jsr GetItemNum
-         ply
+          phk : per + -1
+          pea RTL_IN_PAGE_C2 - 1
+          jmp @$C2A59A ; go get item number.
+       + ply
          lda $04C9
          and #$00FF
-         beq Skip
+         beq +
          iny
-Skip:   pla
+      + pla
         rtl
-GetItemNum:
-        lda #$5840 ; address of RTL in page C2, -1
-        pha
-        jmp @$C2A59A
-.)
+
+EquipLeftHelper2:
+        ldy #$9B76 ;hardcoded - copy from rom
+        lda #$7E0B ;clear 11(0B) bytes instead of 10(0A)
+        rtl
 
 EquipLeftItemFunc:
         ; In - A=item number
@@ -798,13 +700,36 @@ EquipLeftItemFunc:
         
         SET_16_BIT_AX()
         sty W_TILENUM ;save Y somewhere safe
-
+#if 1
+        pha ;Save A,X too
+         phx
+          phk : per + -1
+          pea RTL_IN_PAGE_C2 - 1
+          ; Copied from jap. version: Print item count
+          ldy #$04CA   ; source address
+          lda #$7E11   ; 7E=seg, &3=?, &70 = attr
+          jmp @$C2F114 ; Create number
+       + plx
+       
+         SET_8_BIT_A()
+         lda !$0000,x ;If the number starts with space,
+         cmp #$FF
+         bne +
+         lda !$0002,x ;move the second number to first
+         sta !$0000,x 
+         lda #$FF    ;and replace second number with space.
+         sta !$0002,x
+       + inx:inx ;Skip num1
+         inx:inx ;Skip num2
+         SET_16_BIT_A()
+        pla
+#endif
         jsr GetItemName
         
-        SET_8_BIT_A()
-        dec ;skip first char
-        iny
         SET_16_BIT_A()
+        iny:dec ;skip first char and decrease max length
+        dec:dec ;decrease max length by 2 more because of the numbers
+
         ALLOCATE()
         pha
          lda W_TILENUM
@@ -813,29 +738,24 @@ EquipLeftItemFunc:
          lda #$7000
          sta W_VRAMADDR
         pla
-        ;passthru
-DisplayFuncCommon_2bit:
         jsr DrawS_2bit
         bra DisplayFuncCommonEnd
 
 EquipRightItemFunc:        ;also used in shop
         ; In - A=item number
-.(
         pha
          ; Find out if we were called from the routine
          ; that displays equipment (4 lines)...
          lda 6,s
          cmp #$A70F
-         bne Skip1
+         bne +
          sty $22  ; We were. Do a hack, save Y.
-         
-Skip1:   lda $22   ;counter in create-list
+       + lda $22   ;counter in create-list
          clc:adc $1041 ;buy-listbegin
          clc:adc $1043 ;sell-listbegin
          ; This works
          sta W_TILENUM
         pla
-.)
         SET_16_BIT_AX()
         
         jsr GetItemName
@@ -876,7 +796,7 @@ ItemListFunc:
          sta W_VRAMADDR
          lda #Write
          sta W_WRITEOFS
-         lda #DrawS_normalEnd
+         lda #DrawS_normalEnd - 1
          sta W_ENDDRAWS
          phx
           lda @$004216   ;remainder
@@ -942,7 +862,7 @@ GotAttr:
          sta W_VRAMADDR
          lda #Write
          sta W_WRITEOFS
-         lda #DrawS_normalEnd
+         lda #DrawS_normalEnd - 1
          sta W_ENDDRAWS
         pla
 
@@ -1013,7 +933,7 @@ BattleItemFunc:
          lda #BattleWrite
          sta W_WRITEOFS
 
-         lda #BattleWriteEnd
+         lda #BattleWriteEnd - 1
          sta W_ENDDRAWS
          
          phx
@@ -1089,7 +1009,7 @@ BattleTechFunc:
          lda #BattleWrite
          sta W_WRITEOFS
 
-         lda #BattleWriteEnd
+         lda #BattleWriteEnd - 1
          sta W_ENDDRAWS
          
          phx
@@ -1126,9 +1046,10 @@ BattleWrite:
         lda #$FF
         sta $94B0,x
         inx
+        SET_16_BIT_A() ; write must return with A=16bit
         rts
+
 BattleWriteEnd:
-.(
         SET_16_BIT_A()
         
         ; Space-fill the buffer to end
@@ -1137,16 +1058,18 @@ BattleWriteEnd:
          bcs +
          SET_8_BIT_A()
          lda #$FF
--        sta $94A0,x
+      -  ; Loop filling
+         sta $94A0,x
          sta $94B0,x
          inx
          cpx #$0010
          bcc -
          SET_16_BIT_A()
-+        lda W_VRAMADDR
+      +  ; Done filling
+         lda W_VRAMADDR
          sta @$002116 ; Tell PPU what we think
         pla
-        beq DontLoop
+        beq +   ; if X was 0, send nothing and rts immediately.
         asl
         tay
 
@@ -1155,7 +1078,7 @@ BattleWriteEnd:
          tdc : tax  ; smaller than ldx #$0000
          lda #$2118 ; to PPU
          tcd
--        ; If you want to unroll, choices are 1/2/4/8 lines
+      -  ; If you want to unroll, choices are 1/2/4/8 lines
          lda TILEBUF+$0,x : sta $00
          lda TILEBUF+$2,x : sta $00
          lda TILEBUF+$4,x : sta $00
@@ -1166,9 +1089,8 @@ BattleWriteEnd:
          dey
          bne -
         pld
-DontLoop:
-        rts
-.)
+      + rts
+
 
 DoTilenumber_8line:
          .al
@@ -1181,7 +1103,7 @@ DoTilenumber_8line:
          sta W_TILENUM
          lda #Write
          sta W_WRITEOFS
-         lda #DrawS_normalEnd
+         lda #DrawS_normalEnd - 1
          sta W_ENDDRAWS
          rts
 
@@ -1190,8 +1112,40 @@ TileNumberList:
         ; All of them display maximally 11 tiles wide names.
         ; Here are tilenum starting indices.
         
-        .word $0030, $003B, $0046, $0051, $005C
-        .word $0067, $0072, $007D, $0088, $0093
+        ; Tile map:
+        ; 00-20 = ?
+        ; 20-29 = item symbols
+        ; 2A-2D = "HMP:"  --USABLE--
+        ; 2E-2F = shield symbol, star-symbol
+        ; 30-5A = --USABLE--
+        ; 5B-5C = left,right symbols (?) --USABLE--
+        ; 5D-5F = "():" --USABLE--
+        ; 60-63 = hand symbol (weird but) --USABLE--
+        ; 64-66 = "HMP" --USABLE--
+        ; 67-6F = hpmeter(battle) --USABLE--
+        ; 70-72 = hiragana/katakana symbols --USABLE--
+        ; 73-7C = number font
+        ; 7D-7E = "DZ" --USABLE--
+        ; 7F    = arrow up --USABLE--
+        ; 80-9F = --USABLE--
+        ; A0-FF = user font
+
+        ; This table could be 16-bit, but we let
+        ; it be 8-bit because 16-bitness isn't
+        ; needed at the moment.
+
+        .word $15 ; -1F
+        .word $30 ; -3A
+        .word $3B ; -45
+        .word $46 ; -50
+        .word $51 ; -5B
+
+        .word $5C ; -66
+        .word $66 ; -71
+        .word $7D ; -87
+        .word $88 ; -92
+        .word $93 ; -9E
 
 TileNumberListInBattle:
+        ; 3 lines here
         .word $0150, $018A, $0195

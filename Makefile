@@ -97,6 +97,7 @@ DEPDIRS = utils/
 # VERSION 1.10.2 creates more useful information when dumping
 # VERSION 1.10.3 has technological updates but broken VWF8
 # VERSION 1.11.0 has technological updates and new item list code with VWF8
+# VERSION 1.11.1 adds the documentation core
 
 OPTIM=-O3
 #OPTIM=-O0
@@ -105,7 +106,7 @@ OPTIM=-O3
 
 CXXFLAGS += -I.
 
-VERSION=1.11.0
+VERSION=1.11.1
 ARCHFILES=utils/xray.cc utils/xray.h \
           utils/viewer.c \
           utils/vwftest.cc \
@@ -130,6 +131,8 @@ ARCHFILES=utils/xray.cc utils/xray.h \
           compress.cc compress.hh \
           scriptfile.cc scriptfile.hh \
           rangemap.hh rangemap.tcc \
+          rangeset.hh rangeset.tcc \
+          range.hh \
           space.cc space.hh \
           crc32.cc crc32.h \
           hash.hh \
@@ -164,7 +167,6 @@ ARCHFILES=utils/xray.cc utils/xray.h \
           extras.cc extras.hh \
           typefaces.cc typefaces.hh \
           taipus.rb \
-          progdesc.php \
           binpacker.tcc binpacker.hh \
           tristate \
           \
@@ -185,7 +187,16 @@ ARCHFILES=utils/xray.cc utils/xray.h \
           \
           dist/ct.cfg dist/ct.code \
           \
-          etc/ct.cfg etc/ct.code
+          etc/ct.cfg etc/ct.code \
+          \
+          DOCS/README.html progdesc.php \
+          DOCS/Makefile DOCS/docmaker.php \
+          DOCS/VWF8.html DOCS/VWF8.php \
+          DOCS/compression.html DOCS/compression.php \
+          DOCS/crononick.html DOCS/crononick.php \
+          DOCS/conjugation.html DOCS/conjugation.php \
+          DOCS/signature.html DOCS/signature.php \
+          DOCS/imageformat.html DOCS/imageformat.php
 
 NOGZIPARCHIVES=1
 
@@ -316,6 +327,10 @@ utils/dumpo65: utils/dumpo65.o
 utils/ctxtview: utils/ctxtview.o settings.o rommap.o
 	$(CXX) $(LDOPTS) $(CXXFLAGS) -g -O -Wall -W -pedantic -o $@ $^ $(LDFLAGS)
 
+
+DOCS/%: FORCE
+	@make "ARCHNAME=${ARCHNAME}" -C DOCS `echo $@|sed 's|^[^/]*/||'`
+
 #ct.txt: ctdump chrono-dumpee.smc
 #	./ctdump chrono-dumpee.smc >ct_tmp.txt || rm -f ct_tmp.txt && false
 #	mv ct_tmp.txt ct.txt
@@ -335,7 +350,8 @@ fullzip: \
 		utils/facegenerator \
 		utils/o65test utils/dumpo65 \
 		etc/ct.cfg etc/ct.code \
-		README.html README.TXT
+		DOCS/README.html \
+		README.TXT
 	@rm -rf $(ARCHNAME)
 	- mkdir $(ARCHNAME){,/utils,/etc}
 	for s in $^;do ln "$$s" $(ARCHNAME)/"$$s"; done
