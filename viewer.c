@@ -12,7 +12,7 @@
 #include <slang.h>
 
 /*
- Copyright (C) 1992,2002 Bisqwit (http://bisqwit.iki.fi/)
+ Copyright (C) 1992,2003 Bisqwit (http://iki.fi/bisqwit/)
  
  ROM viewer:
  

@@ -10,7 +10,7 @@ int main(int argc, const char *const *argv)
     if(argc != 3)
     {
         printf("unmakeips: A simple IPS patch maker with next to no error checks\n"
-               "Copyright (C) 1992,2002 Bisqwit (http://bisqwit.iki.fi/)\n"
+               "Copyright (C) 1992,2003 Bisqwit (http://iki.fi/bisqwit/)\n"
                "Usage: makeips oldfile newfile >patch.ips\n"
                "(Do not forget > !)\n");
         return -1;

@@ -9,7 +9,7 @@ int main(int argc, const char *const *argv)
     if(argc != 2)
     {
         printf("unmakeips: A simple IPS patcher with lots of error checks\n"
-               "Copyright (C) 1992,2002 Bisqwit (http://bisqwit.iki.fi/)\n"
+               "Copyright (C) 1992,2003 Bisqwit (http://iki.fi/bisqwit/)\n"
                "Usage: unmakeips ipsfile.ips <oldfile >newfile\n"
                "(Do not forget < and > !)\n");
         return -1;
@@ -45,18 +45,18 @@ int main(int argc, const char *const *argv)
                       |(((unsigned)Buf[1]) << 8)
                       | ((unsigned)Buf[2]);
         c = fread(Buf, 1, 2, fp);
-        if(c < 0 && ferror(fp)) { goto ipserr; }
+        if(c < 0 && ferror(fp)) { fprintf(stderr, "Got pos %X\n", pos); goto ipserr; }
         if(c < 2) { goto ipseof; }
         unsigned len = (((unsigned)Buf[0]) << 8)
                       | ((unsigned)Buf[1]);
+        
+        fprintf(stderr, "%u bytes hunk at %X\n", len, pos);
         
         vector<char> Buf2(len);
         c = fread(&Buf2[0], 1, len, fp);
         if(c < 0 && ferror(fp)) { goto ipserr; }
         if(c != (int)len) { goto ipseof; }
         lumps.insert(pair<unsigned, vector<char> > (pos, Buf2));
-        
-        fprintf(stderr, "%u bytes hunk at %X\n", len, pos);
     }
     fclose(fp);
     

@@ -47,7 +47,7 @@ static void LoadROM()
     ROM = (unsigned char *)mmap(NULL, romsize, PROT_READ, MAP_PRIVATE, fileno(fp), hdrskip);
 #endif
     /* mmap could have failed, so revert to reading */
-    if(!ROM)
+    if(ROM == (unsigned char*)(-1))
     {
         /* This takes about 5s on my computer over nfs */
         ROM = new unsigned char [romsize];
@@ -70,9 +70,10 @@ static void markspace(unsigned offs, unsigned size)
 // Load an array of pascal style strings
 static const vector<string> LoadPStrings(unsigned offset, unsigned count)
 {
+#define LOADP_DEBUG 1
     unsigned segment = offset & 0xFF0000;
     vector<string> strings(count);
-#if 0
+#if LOADP_DEBUG
     const unsigned maxco=10;
     unsigned col=maxco;
 #endif
@@ -80,7 +81,7 @@ static const vector<string> LoadPStrings(unsigned offset, unsigned count)
     {
         unsigned stringptr = ROM[offset] + 256*ROM[offset + 1];
         
-#if 0
+#if LOADP_DEBUG
         if(col==maxco){printf(";ptr%2u ", a);col=0;}
         else if(!col)printf(";%5u ", a);
         if(maxco==10 && col==5)putchar(' ');
@@ -100,7 +101,7 @@ static const vector<string> LoadPStrings(unsigned offset, unsigned count)
          || ROM[freebyte] == 0xEF //also space
          ; space[freebyte++]=true);
     }
-#if 0
+#if LOADP_DEBUG
     if(col)printf("\n");
 #endif
     return strings;
@@ -669,7 +670,7 @@ int main(void)
 {
     fprintf(stderr,
         "Chrono Trigger script dumper version "VERSION"\n"
-        "Copyright (C) 1992,2002 Bisqwit (http://bisqwit.iki.fi/)\n");
+        "Copyright (C) 1992,2003 Bisqwit (http://iki.fi/bisqwit/)\n");
     
     LoadROM();
 

@@ -1,374 +1,389 @@
-; Note: There is a one byte sequence for [nl] and three spaces.
-;       Don't attempt to save space by removing those spaces,
-;       you will only make things worse...
-;       Similar for [pause]s, [pausenl]s and [cls]s.
-;
+;MATERIAALINA VOI KÄYTTÄÄ:
+;http://www.squareinfo.com/fin/pelit/ct/
+
 *d1EFA00:127 ;127 substrings in dictionary
-$0:e ; score: 10465.1
-$1:       ; score: 9580.0
-$2: th; score: 7299.2
-$3:t ; score: 4916.5
-$4:s ; score: 4699.6
-$5:: ; score: 4515.4
-$6:ou; score: 3837.1
-$7:in; score: 3601.0
-$8:er; score: 3072.7
-$9:   ; score: 2518.4
-$10:an; score: 2447.3
-$11:, ; score: 2275.9
-$12:on; score: 2118.4
-$13:d ; score: 2022.4
-$14:en; score: 1932.5
-$15:ha; score: 1778.0
-$16:or; score: 1719.2
-$17:o ; score: 1689.1
-$18:ll ; score: 1558.5
-$19:th; score: 1501.9
-$20:y ; score: 1432.7
-$21:ea; score: 1402.9
-$22:you ; score: 1358.4
-$23:ing ; score: 1330.7
-$24: the ; score: 1191.4
-$25:es; score: 1148.3
-$26:CHANCELLOR: ; score: 974.0
-$27:ow; score: 910.1
-$28:'s ; score: 866.5
-$29:om; score: 839.7
-$30:ar; score: 818.9
-$31:st; score: 809.3
-$32:Th; score: 792.7
-$33:a ; score: 785.1
-$34:is ; score: 745.9
-$35:igh; score: 712.1
-$36:of ; score: 693.6
-$37:al; score: 670.7
-$38:to ; score: 640.3
-$39:it; score: 619.1
-$40:el; score: 592.6
-$41:e!; score: 571.6
-$42:ve ; score: 550.9
-$43:at; score: 541.2
-$44:I ; score: 537.5
-$45:you; score: 531.9
-$46:You ; score: 524.5
-$47:ack; score: 517.6
-$48:            Got 1 ; score: 498.9
-$49:is; score: 484.4
-$50:us; score: 459.9
-$51:MELCHIOR: ; score: 456.8
-$52:e.; score: 451.4
-$53:'re ; score: 422.3
-$54:ch; score: 419.1
-$55:ed; score: 413.2
-$56:to; score: 403.3
-$57:Lavo; score: 398.5
-$58:ed ; score: 384.5
-$59:for; score: 381.8
-$60:er ; score: 379.2
-$61:ing; score: 369.6
-$62:et; score: 353.6
-$63:with; score: 341.7
-$64:im; score: 334.1
-$65:I'm ; score: 328.5
-$66:ur; score: 324.2
-$67:wa; score: 322.3
-$68:en ; score: 320.1
-$69:like ; score: 306.9
-$70:OLD MAN: ; score: 304.4
-$71:oo; score: 292.9
-$72:The ; score: 289.5
-$73:r ; score: 287.6
-$74:em; score: 284.6
-$75:'t ; score: 279.3
-$76:hat ; score: 277.6
-$77:: W; score: 270.0
-$78:   No.; score: 268.6
-$79:ag; score: 265.2
-$80:her; score: 263.9
-$81:   Yes.; score: 257.2
-$82:un; score: 249.8
-$83:DALTON: ; score: 247.1
-$84:ow ; score: 243.6
-$85:ic; score: 242.0
-$86:an ; score: 240.7
-$87:am; score: 239.7
-$88:tr; score: 237.3
-$89: that ; score: 235.1
-$90:il; score: 234.0
-$91:ake ; score: 229.8
-$92:and ; score: 225.2
-$93:ough; score: 223.7
-$94:rea; score: 216.5
-$95:!!; score: 215.2
-$96:ir; score: 208.1
-$97:ec; score: 206.9
-$98:it ; score: 201.1
-$99:It's ; score: 199.1
-$100:e...; score: 196.8
-$101:e, ; score: 190.7
-$102:es ; score: 188.3
-$103:OZZIE: ; score: 185.3
-$104:la; score: 183.0
-$105:of; score: 180.7
-$106:on ; score: 179.5
-$107:k ; score: 176.1
-$108:in ; score: 174.0
-$109:SCHALA: ; score: 171.4
-$110:the ; score: 170.6
-$111:ould ; score: 169.5
-$112:os; score: 169.0
-$113:ot ; score: 168.5
-$114:will ; score: 165.9
-$115:be ; score: 164.5
-$116:et ; score: 163.9
-$117:But ; score: 163.4
-$118:ev; score: 162.7
-$119:from; score: 161.6
-$120:ear; score: 160.3
-$121: the; score: 159.5
-$122:be; score: 158.5
-$123:id; score: 157.4
-$124:wh; score: 156.0
-$125:KNIGHT CAPTAIN; score: 154.9
-$126:ab; score: 152.3
-;Original script size: 238068 bytes; new script size: 145513 bytes
-;Saved: 92555 bytes; dictionary size: 470 bytes
+$0:e ; score: 10313.8
+$1:      ; score: 9612.3
+$2: th; score: 7092.7
+$3:t ; score: 4879.7
+$4:: ; score: 4667.7
+$5:s ; score: 4467.1
+$6:in; score: 3801.7
+$7:ou; score: 3662.4
+$8:er; score: 3013.4
+$9:an; score: 2514.2
+$10:, ; score: 2320.8
+$11:on; score: 2197.5
+$12:en; score: 2075.8
+$13:d ; score: 1962.3
+$14:ha; score: 1790.9
+$15:o ; score: 1717.6
+$16:or; score: 1679.9
+$17:   ; score: 1601.2
+$18:ll; score: 1534.8
+$19:th; score: 1475.0
+$20:ea; score: 1403.9
+$21:y ; score: 1371.4
+$22:you ; score: 1328.9
+$23:ing ; score: 1305.1
+$24: the ; score: 1162.1
+$25:st; score: 1150.6
+$26:CHANCELLOR: ; score: 976.1
+$27:a ; score: 930.4
+$28:es; score: 892.3
+$29:ow; score: 873.2
+$30:ar; score: 839.1
+$31:'s ; score: 813.1
+$32:om; score: 803.4
+$33:Th; score: 773.9
+$34:is ; score: 725.8
+$35:igh; score: 697.4
+$36:it; score: 685.2
+$37:of ; score: 672.2
+$38:ll ; score: 629.6
+$39:to ; score: 620.3
+$40:at; score: 590.4
+$41:is; score: 573.9
+$42:e!; score: 570.1
+$43:ve ; score: 545.3
+$44:I ; score: 533.7
+$45:you; score: 518.2
+$46:ack; score: 510.0
+$47:You ; score: 505.7
+$48:al; score: 497.1
+$49:us; score: 462.8
+$50:MELCHIOR: ; score: 458.3
+$51:e.; score: 452.4
+$52:re; score: 422.2
+$53:ch; score: 413.9
+$54:to; score: 410.1
+$55:Lavo; score: 407.2
+$56:'re ; score: 389.8
+$57:en ; score: 387.2
+$58:el; score: 380.3
+$59:er ; score: 373.7
+$60:ing; score: 367.8
+$61:for; score: 364.3
+$62:im; score: 355.2
+$63:ed; score: 352.2
+$64:ed ; score: 341.3
+$65:with; score: 338.4
+$66:            Got 1 ; score: 332.6
+$67:et; score: 326.9
+$68:wa; score: 317.1
+$69:I'm ; score: 313.4
+$70:OLD MAN: ; score: 305.0
+$71:r ; score: 303.0
+$72:like ; score: 291.0
+$73:oo; score: 286.3
+$74:The ; score: 285.1
+$75:em; score: 281.7
+$76:   No.; score: 278.8
+$77:un; score: 275.0
+$78:'t ; score: 272.2
+$79:DALTON: ; score: 269.6
+$80:an ; score: 267.1
+$81:   Yes.; score: 265.0
+$82:hat ; score: 263.6
+$83:ma; score: 261.3
+$84:ur; score: 259.5
+$85:her; score: 253.0
+$86:: W; score: 249.1
+$87:ow ; score: 237.3
+$88:rea; score: 234.3
+$89: that ; score: 233.3
+$90:ic; score: 227.3
+$91:and ; score: 225.1
+$92:on ; score: 223.4
+$93:ough; score: 221.0
+$94:!!; score: 217.9
+$95:ta; score: 211.2
+$96:ro; score: 208.4
+$97:in ; score: 206.6
+$98:be; score: 203.4
+$99:la; score: 200.2
+$100:it ; score: 199.2
+$101:It's ; score: 192.0
+$102:se; score: 187.9
+$103:OZZIE: ; score: 186.2
+$104:am; score: 185.0
+$105:id; score: 175.9
+$106:of; score: 174.8
+$107:SCHALA: ; score: 172.9
+$108:k ; score: 172.1
+$109:e, ; score: 170.7
+$110:ut; score: 169.7
+$111:the ; score: 167.9
+$112:ir; score: 167.1
+$113:ould ; score: 165.6
+$114:ot ; score: 165.1
+$115:But ; score: 164.1
+$116: the; score: 163.2
+$117:will ; score: 160.8
+$118:es ; score: 159.5
+$119:KNIGHT CAPTAIN; score: 158.9
+$120:from; score: 157.3
+$121:et ; score: 156.2
+$122:wh; score: 155.5
+$123:s.; score: 154.8
+$124:be ; score: 154.0
+$125:ag; score: 153.1
+$126:ev; score: 152.2
+;Original script size: 239011 bytes; new script size: 147662 bytes
+;Saved: 91349 bytes; dictionary size: 465 bytes
 
-
+;
 ;items
 *l11;242 fixed length strings (length: 11 bytes)
 $3JLK:           
-$3JLV:[bladesymbol]Wood_Sword
-$3JLg:[bladesymbol]Iron_Blade
-$3JLr:[bladesymbol]SteelSaber
-$3JM2:[bladesymbol]Lode_Sword
-$3JMD:[bladesymbol]Red_Katana
-$3JMO:[bladesymbol]Flint_Edge
-$3JMZ:[bladesymbol]Dark_Saber
-$3JMk:[bladesymbol]Aeon_Blade
-$3JMv:[bladesymbol]Demon_Edge
-$3JN6:[bladesymbol]AlloyBlade
-$3JNH:[bladesymbol]Star_Sword
-$3JNS:[bladesymbol]VedicBlade
-$3JNd:[bladesymbol]Kali_Blade
-$3JNo:[bladesymbol]Shiva_Edge
-$3JNz:[bladesymbol]Bolt_Sword
-$3JOA:[bladesymbol]Slasher   
-$3JOL:[bowsymbol]Bronze_Bow
-$3JOW:[bowsymbol]Iron_Bow  
-$3JOh:[bowsymbol]Lode_Bow  
-$3JOs:[bowsymbol]Robin_Bow 
-$3JP3:[bowsymbol]Sage_Bow  
-$3JPE:[bowsymbol]Dream_Bow 
-$3JPP:[bowsymbol]CometArrow
-$3JPa:[bowsymbol]SonicArrow
-$3JPl:[bowsymbol]Valkerye  
-$3JPw:[bowsymbol]Siren     
+$3JLV:[bladesymbol]Puumiekka 
+$3JLg:[bladesymbol]Rautasapel
+$3JLr:[bladesymbol]Terässapel
+$3JM2:[bladesymbol]Malmimiekk
+$3JMD:[bladesymbol]Pun.katana
+$3JMO:[bladesymbol]Piikärki  
+$3JMZ:[bladesymbol]TummaSapel
+$3JMk:[bladesymbol]Ikuis.terä
+$3JMv:[bladesymbol]Demonikärk
+$3JN6:[bladesymbol]Seosterä  
+$3JNH:[bladesymbol]Tähtimiekk
+$3JNS:[bladesymbol]VedicMiekk
+$3JNd:[bladesymbol]Kalimiekka
+$3JNo:[bladesymbol]Shiva-terä
+$3JNz:[bladesymbol]Ukkosmiekk
+$3JOA:[bladesymbol]Viillin   
+$3JOL:[bowsymbol]Pronssijou
+$3JOW:[bowsymbol]Rautajousi
+$3JOh:[bowsymbol]Malmijousi
+$3JOs:[bowsymbol]Lintujousi
+$3JP3:[bowsymbol]Sage-jousi
+$3JPE:[bowsymbol]Unelmajous
+$3JPP:[bowsymbol]Astrojousi
+$3JPa:[bowsymbol]Vauhtijous
+$3JPl:[bowsymbol]Valkyria  
+$3JPw:[bowsymbol]Sireeni   
 $3JQ7:[bowsymbol]          
 $3JQI:[bowsymbol]          
 $3JQT:[bowsymbol]          
 $3JQe:[bowsymbol]          
-$3JQp:[gunsymbol]Air_Gun   
-$3JR0:[gunsymbol]Dart_Gun  
-$3JRB:[gunsymbol]Auto_Gun  
-$3JRM:[gunsymbol]PicoMagnum
-$3JRX:[gunsymbol]Plasma_Gun
-$3JRi:[gunsymbol]Ruby_Gun  
-$3JRt:[gunsymbol]Dream_Gun 
-$3JS4:[gunsymbol]Megablast 
-$3JSF:[gunsymbol]Shock_Wave
-$3JSQ:[gunsymbol]WonderShot
+$3JQp:[gunsymbol]Ilmapyssy 
+$3JR0:[gunsymbol]Piikkipyss
+$3JRB:[gunsymbol]Autom.pyss
+$3JRM:[gunsymbol]PikoMagnum
+$3JRX:[gunsymbol]Plasmapyss
+$3JRi:[gunsymbol]Rubiinipys
+$3JRt:[gunsymbol]Unelmapyss
+$3JS4:[gunsymbol]Megaräjäys
+$3JSF:[gunsymbol]Shokkiaalt
+;WonderShot
+$3JSQ:[gunsymbol]Loistokuti
 $3JSb:[gunsymbol]Graedus   
 $3JSm:[gunsymbol]          
 $3JSx:[gunsymbol]          
 $3JT8:[gunsymbol]          
 $3JTJ:[gunsymbol]          
-$3JTU:[armsymbol]Tin_Arm   
-$3JTf:[armsymbol]Hammer_Arm
-$3JTq:[armsymbol]MirageHand
-$3JU1:[armsymbol]Stone_Arm 
-$3JUC:[armsymbol]DoomFinger
-$3JUN:[armsymbol]Magma_Hand
-$3JUY:[armsymbol]MegatonArm
-$3JUj:[armsymbol]Big_Hand  
-$3JUu:[armsymbol]Kaiser_Arm
-$3JV5:[armsymbol]Giga_Arm  
-$3JVG:[armsymbol]Terra_Arm 
-$3JVR:[armsymbol]Crisis_Arm
+$3JTU:[armsymbol]Tinakäsi  
+$3JTf:[armsymbol]Vasarakäsi
+$3JTq:[armsymbol]Harhakäsi 
+$3JU1:[armsymbol]Kivikäsi  
+$3JUC:[armsymbol]Koht.sormi
+$3JUN:[armsymbol]Magmakäsi 
+$3JUY:[armsymbol]Megat.käsi
+$3JUj:[armsymbol]Suurkäsi  
+$3JUu:[armsymbol]Kaiserkäsi
+$3JV5:[armsymbol]Gigakäsi  
+$3JVG:[armsymbol]Terakäsi  
+$3JVR:[armsymbol]Kriisikäsi
 $3JVc:[armsymbol]          
-$3JVn:[swordsymbol]BronzeEdge
-$3JVy:[swordsymbol]Iron_Sword
+$3JVn:[swordsymbol]Prons.miek
+$3JVy:[swordsymbol]Rautamiekk
 $3JW9:[swordsymbol]Masamune  
-$3JWK:[swordsymbol]FlashBlade
-$3JWV:[swordsymbol]Pearl_Edge
-$3JWg:[swordsymbol]Rune_Blade
-$3JWr:[swordsymbol]BraveSword
+$3JWK:[swordsymbol]Salamaterä
+$3JWV:[swordsymbol]Helmiterä 
+$3JWg:[swordsymbol]Riimumiekk
+$3JWr:[swordsymbol]Urhomiekka
 $3JX2:[swordsymbol]Masamune  
-$3JXD:[swordsymbol]Demon_Hit 
-$3JXO:[fistsymbol]Fist      
-$3JXZ:[fistsymbol]Fist      
-$3JXk:[fistsymbol]Fist      
-$3JXv:[fistsymbol]Iron_Fist 
-$3JY6:[fistsymbol]BronzeFist
+$3JXD:[swordsymbol]Demoni-isk
+$3JXO:[fistsymbol]Nyrkki    
+$3JXZ:[fistsymbol]Nyrkki    
+$3JXk:[fistsymbol]Nyrkki    
+$3JXv:[fistsymbol]Rautanyrkk
+$3JY6:[fistsymbol]Pronssinyr
 $3JYH:[fistsymbol]          
 $3JYS:[fistsymbol]          
-$3JYd:[scythesymbol]DarkScythe
-$3JYo:[scythesymbol]Hurricane 
-$3JYz:[scythesymbol]StarScythe
-$3JZA:[scythesymbol]DoomSickle
-$3JZL:[bladesymbol]Mop       
-$3JZW:[swordsymbol]Bent_Sword
-$3JZh:[swordsymbol]Bent_Hilt 
+$3JYd:[scythesymbol]Yöviikate 
+$3JYo:[scythesymbol]Hurrikaani
+$3JYz:[scythesymbol]Tähtiviika
+$3JZA:[scythesymbol]Tuomiosirp
+$3JZL:[bladesymbol]Moppi     
+$3JZW:[swordsymbol]Taipumiekk
+$3JZh:[swordsymbol]Taipukahva
 $3JZs:[swordsymbol]Masamune  
-$3Ja3:[bladesymbol]Swallow   
+$3Ja3:[bladesymbol]Nielaisu  
 $3JaE:[bladesymbol]Slasher_2 
-$3JaP:[bladesymbol]Rainbow   
+$3JaP:[bladesymbol]Sateenkaar
 $3Jaa:           
 $3Jal:           
 $3Jaw:           
 $3Jb7:           
 $3JbI:           
-$3JbT:[armorsymbol]Hide_Tunic
+;HideTunica
+$3JbT:[armorsymbol]Tunika    
 $3Jbe:[armorsymbol]Karate_Gi 
-$3Jbp:[armorsymbol]BronzeMail
-$3Jc0:[armorsymbol]MaidenSuit
-$3JcB:[armorsymbol]Iron_Suit 
-$3JcM:[armorsymbol]Titan_Vest
-$3JcX:[armorsymbol]Gold_Suit 
-$3Jci:[armorsymbol]Ruby_Vest 
-$3Jct:[armorsymbol]Dark_Mail 
-$3Jd4:[armorsymbol]Mist_Robe 
-$3JdF:[armorsymbol]Meso_Mail 
-$3JdQ:[armorsymbol]Lumin_Robe
-$3Jdb:[armorsymbol]Flash_Mail
-$3Jdm:[armorsymbol]Lode_Vest 
-$3Jdx:[armorsymbol]Aeon_Suit 
-$3Je8:[armorsymbol]ZodiacCape
-$3JeJ:[armorsymbol]Nova_Armor
-$3JeU:[armorsymbol]PrismDress
-$3Jef:[armorsymbol]Moon_Armor
-$3Jeq:[armorsymbol]Ruby_Armor
-$3Jf1:[armorsymbol]RavenArmor
-$3JfC:[armorsymbol]Gloom_Cape
-$3JfN:[armorsymbol]White_Mail
-$3JfY:[armorsymbol]Black_Mail
-$3Jfj:[armorsymbol]Blue_Mail 
-$3Jfu:[armorsymbol]Red_Mail  
-$3Jg5:[armorsymbol]White_Vest
-$3JgG:[armorsymbol]Black_Vest
-$3JgR:[armorsymbol]Blue_Vest 
-$3Jgc:[armorsymbol]Red_Vest  
-$3Jgn:[armorsymbol]Taban_Vest
-$3Jgy:[armorsymbol]Taban_Suit
+;mail
+$3Jbp:[armorsymbol]PronssiPan
+;suit
+$3Jc0:[armorsymbol]Neidonpuku
+$3JcB:[armorsymbol]Rautapuku 
+;vest
+$3JcM:[armorsymbol]Titaanilii
+$3JcX:[armorsymbol]Kultapuku 
+$3Jci:[armorsymbol]Rubiinilii
+$3Jct:[armorsymbol]Synkkäpans
+;robe
+$3Jd4:[armorsymbol]Usvakaapu 
+$3JdF:[armorsymbol]Mesopanssa
+;Lumin_
+$3JdQ:[armorsymbol]Loistokaap
+$3Jdb:[armorsymbol]Välkepanss
+$3Jdm:[armorsymbol]Malmiliivi
+$3Jdx:[armorsymbol]Ikuis.puku
+;ZodiacCape
+$3Je8:[armorsymbol]Zod.kaapu 
+;armor
+$3JeJ:[armorsymbol]Novahaarni
+;dress
+$3JeU:[armorsymbol]Prismahame
+$3Jef:[armorsymbol]Kuuhaarnis
+$3Jeq:[armorsymbol]Rubiinihaa
+$3Jf1:[armorsymbol]Korppihaar
+$3JfC:[armorsymbol]Synkkäkaap
+$3JfN:[armorsymbol]Valkopanss
+$3JfY:[armorsymbol]Mustapanss
+$3Jfj:[armorsymbol]Sinipanssa
+$3Jfu:[armorsymbol]Punapanssa
+$3Jg5:[armorsymbol]Valkoliivi
+$3JgG:[armorsymbol]Mustaliivi
+$3JgR:[armorsymbol]Siniliivi 
+$3Jgc:[armorsymbol]Punaliivi 
+$3Jgn:[armorsymbol]Taban-liiv
+$3Jgy:[armorsymbol]Taban-puku
 $3Jh9:           
-$3JhK:[helmsymbol]Hide_Cap  
-$3JhV:[helmsymbol]BronzeHelm
-$3Jhg:[helmsymbol]Iron_Helm 
-$3Jhr:[helmsymbol]Beret     
-$3Ji2:[helmsymbol]Gold_Helm 
-$3JiD:[helmsymbol]Rock_Helm 
+$3JhK:[helmsymbol]Lakki     
+$3JhV:[helmsymbol]Pronssikyp
+$3Jhg:[helmsymbol]Rautakypär
+$3Jhr:[helmsymbol]Baskeri   
+$3Ji2:[helmsymbol]Kultakypär
+$3JiD:[helmsymbol]Kultakypär
 $3JiO:[helmsymbol]CeraTopper
-$3JiZ:[helmsymbol]Glow_Helm 
-$3Jik:[helmsymbol]Lode_Helm 
-$3Jiv:[helmsymbol]Aeon_Helm 
-$3Jj6:[helmsymbol]Prism_Helm
-$3JjH:[helmsymbol]Doom_Helm 
-$3JjS:[helmsymbol]Dark_Helm 
-$3Jjd:[helmsymbol]Gloom_Helm
-$3Jjo:[helmsymbol]Safe_Helm 
-$3Jjz:[helmsymbol]Taban_Helm
-$3JkA:[helmsymbol]Sight_Cap 
-$3JkL:[helmsymbol]Memory_Cap
-$3JkW:[helmsymbol]Time_Hat  
-$3Jkh:[helmsymbol]Vigil_Hat 
-$3Jks:[helmsymbol]OzziePants
-$3Jl3:[helmsymbol]Haste_Helm
-$3JlE:[helmsymbol]R'bow_Helm
-$3JlP:[helmsymbol]MermaidCap
+$3JiZ:[helmsymbol]Hohtokypär
+$3Jik:[helmsymbol]Malmikypär
+$3Jiv:[helmsymbol]Ikuis.kypä
+$3Jj6:[helmsymbol]Prismakypä
+$3JjH:[helmsymbol]Tuomiokypä
+$3JjS:[helmsymbol]Pimeäkypär
+$3Jjd:[helmsymbol]Synkkäkypä
+$3Jjo:[helmsymbol]Suojakypär
+$3Jjz:[helmsymbol]Taban-kypä
+$3JkA:[helmsymbol]Näkylakki 
+$3JkL:[helmsymbol]Muistilakk
+$3JkW:[helmsymbol]Aikahattu 
+$3Jkh:[helmsymbol]Aattohattu
+$3Jks:[helmsymbol]Ozzie-hous
+$3Jl3:[helmsymbol]Kiirekypär
+$3JlE:[helmsymbol]Satenk.kyp
+$3JlP:[helmsymbol]M.neitokyp
 $3Jla:           
-$3Jll:[ringsymbol]Bandana   
-$3Jlw:[ringsymbol]Ribbon    
-$3Jm7:[ringsymbol]PowerGlove
-$3JmI:[ringsymbol]Defender  
-$3JmT:[ringsymbol]MagicScarf
-$3Jme:[ringsymbol]Amulet    
-$3Jmp:[ringsymbol]Dash_Ring 
-$3Jn0:[ringsymbol]Hit_Ring  
-$3JnB:[ringsymbol]Power_Ring
-$3JnM:[ringsymbol]Magic_Ring
-$3JnX:[ringsymbol]Wall_Ring 
-$3Jni:[ringsymbol]SilverErng
+$3Jll:[ringsymbol]Hikinauha 
+$3Jlw:[ringsymbol]Hiusnauha 
+$3Jm7:[ringsymbol]Voimakäsin
+$3JmI:[ringsymbol]Puolustaja
+$3JmT:[ringsymbol]Taikahuivi
+$3Jme:[ringsymbol]Amuletti  
+$3Jmp:[ringsymbol]Hölkkäsorm
+$3Jn0:[ringsymbol]Osumasormu
+$3JnB:[ringsymbol]Voimasormu
+$3JnM:[ringsymbol]Taikasormu
+$3JnX:[ringsymbol]Seinäsormu
+;Erng = ?
+$3Jni:[ringsymbol]HopearErng
 $3Jnt:[ringsymbol]Gold_Erng 
-$3Jo4:[ringsymbol]SilverStud
-$3JoF:[ringsymbol]Gold_Stud 
-$3JoQ:[ringsymbol]SightScope
-$3Job:[ringsymbol]Charm_Top 
-$3Jom:[ringsymbol]Rage_Band 
-$3Jox:[ringsymbol]FrenzyBand
-$3Jp8:[ringsymbol]Third_Eye 
-$3JpJ:[ringsymbol]Wallet    
-$3JpU:[ringsymbol]GreenDream
-$3Jpf:[ringsymbol]Berserker 
-$3Jpq:[ringsymbol]PowerScarf
-$3Jq1:[ringsymbol]Speed_Belt
-$3JqC:[ringsymbol]Black_Rock
-$3JqN:[ringsymbol]Blue_Rock 
-$3JqY:[ringsymbol]SilverRock
-$3Jqj:[ringsymbol]White_Rock
-$3Jqu:[ringsymbol]Gold_Rock 
-$3Jr5:[ringsymbol]Hero_Medal
-$3JrG:[ringsymbol]MuscleRing
-$3JrR:[ringsymbol]Flea_Vest 
-$3Jrc:[ringsymbol]Magic_Seal
-$3Jrn:[ringsymbol]Power_Seal
-$3Jry:[ringsymbol]Relic     
-$3Js9:[ringsymbol]SeraphSong
-$3JsK:[ringsymbol]Sun_Shades
+$3Jo4:[ringsymbol]Hopeanappi
+$3JoF:[ringsymbol]Kultanappi
+$3JoQ:[ringsymbol]Tähystin  
+$3Job:[ringsymbol]Sulotoppi 
+$3Jom:[ringsymbol]Raivonauha
+$3Jox:[ringsymbol]Vimmanauha
+$3Jp8:[ringsymbol]3.silmä   
+$3JpJ:[ringsymbol]Lompakko  
+$3JpU:[ringsymbol]Vihreä uni
+$3Jpf:[ringsymbol]Raivopää  
+$3Jpq:[ringsymbol]Voimahuivi
+$3Jq1:[ringsymbol]Vauhtivyö 
+$3JqC:[ringsymbol]Mustakivi 
+$3JqN:[ringsymbol]Sinikivi  
+$3JqY:[ringsymbol]Hopeakivi 
+$3Jqj:[ringsymbol]Valkokivi 
+$3Jqu:[ringsymbol]Kultakivi 
+$3Jr5:[ringsymbol]Sankarimit
+$3JrG:[ringsymbol]Muskelisor
+$3JrR:[ringsymbol]Flea-liivi
+$3Jrc:[ringsymbol]Taikasinet
+$3Jrn:[ringsymbol]Voimasinet
+$3Jry:[ringsymbol]Reliikki  
+$3Js9:[ringsymbol]Serafilaul
+$3JsK:[ringsymbol]Aurinkosäv
 $3JsV:[ringsymbol]PrismSpecs
 $3Jsg:           
-$3Jsr:_Tonic     
-$3Jt2:_Mid_Tonic 
-$3JtD:_Full_Tonic
-$3JtO:_Ether     
-$3JtZ:_Mid_Ether 
-$3Jtk:_Full_Ether
-$3Jtv:_Elixir    
-$3Ju6:_HyperEther
-$3JuH:_MegaElixir
-$3JuS:_Heal      
-$3Jud:_Revive    
-$3Juo:_Shelter   
-$3Juz:_Power_Meal
+$3Jsr:_Lääke     
+$3Jt2:_Lääke2    
+$3JtD:_Lääke3    
+$3JtO:_Eetteri   
+$3JtZ:_Eetteri2  
+$3Jtk:_Eetteri3  
+$3Jtv:_Eliksiiri 
+$3Ju6:_Eliksiiri2
+$3JuH:_Eliksiiri3
+$3JuS:_Parannus  
+$3Jud:_Elämä     
+$3Juo:_Kota      
+$3Juz:_Voimasafka
 $3JvA:_Lapis     
-$3JvL:_Barrier   
-$3JvW:_Shield    
-$3Jvh:_Power_Tab 
-$3Jvs:_Magic_Tab 
-$3Jw3:_Speed_Tab 
-$3JwE:_Petal     
-$3JwP:_Fang      
-$3Jwa:_Horn      
-$3Jwl:_Feather   
-$3Jww:_Seed      
-$3Jx7:_Bike_Key  
-$3JxI:_Pendant   
-$3JxT:_Gate_Key  
-$3Jxe:_PrismShard
-$3Jxp:_C._Trigger
-$3Jy0:_Tools     
-$3JyB:_Jerky     
-$3JyM:_Dreamstone
-$3JyX:_Race_Log  
-$3Jyi:_Moon_Stone
-$3Jyt:_Sun_Stone 
-$3Jz4:_Ruby_Knife
-$3JzF:_Yakra_Key 
-$3JzQ:_Clone     
-$3Jzb:_Toma's_Pop
-$3Jzm:_2_Petals  
-$3Jzx:_2_Fangs   
-$3K08:_2_Horns   
-$3K0J:_2_Feathers
+$3JvL:_Suojaus   
+$3JvW:_Suoja     
+$3Jvh:_Voimanappi
+$3Jvs:_Taikanappi
+$3Jw3:_Nopsanappi
+;Petal
+$3JwE:_Terälehti 
+;Fang
+$3JwP:_Hammas    
+;Horn
+$3Jwa:_Sarvi     
+;Feather
+$3Jwl:_Sulka     
+;Seed
+$3Jww:_Siemen    
+$3Jx7:_Pyöräavain
+$3JxI:_Medaljonki
+$3JxT:_Porttiavai
+$3Jxe:_Prismasiru
+;C. Trigger
+$3Jxp:_C. Trigger
+$3Jy0:_Työkalut  
+$3JyB:_Paisti    
+$3JyM:_Unelmakivi
+$3JyX:_Kilpakirja
+$3Jyi:_Kuukivi   
+$3Jyt:_Aurinkokiv
+$3Jz4:_Rub.veitsi
+$3JzF:_Yakra-avai
+$3JzQ:_Klooni    
+$3Jzb:_Toman lims
+$3Jzm:_2_teräleht
+$3Jzx:_2_hammasta
+$3K08:_2_sarvea  
+$3K0J:_2_sulkaa  
 $3K0U:           
 $3K0f:           
 $3K0q:           
@@ -388,7 +403,7 @@ $3LhD:
 $3LhF:
 $3LhH:
 $3LhJ:
-$3LhL:Magic +2
+$3LhL:Taika +2
 $3LhN:
 $3LhP:
 $3LhR:
@@ -397,9 +412,9 @@ $3LhV:
 $3LhX:
 $3LhZ:
 $3Lhb:
-$3Lhd:4x damage at critical
+$3Lhd:4x tuho jos kriittinen
 $3Lhf:
-$3Lhh:Speed +2
+$3Lhh:Nopeus +2
 $3Lhj:
 $3Lhl:
 $3Lhn:
@@ -423,8 +438,8 @@ $3LiL:
 $3LiN:
 $3LiP:
 $3LiR:Random «Chaos»
-$3LiT:Damage can vary
-$3LiV:Cuts enemy's HP by 1/2
+$3LiT:Tuho vaihtelee
+$3LiV:Puolittaa vihollisen hp:n
 $3LiX:
 $3LiZ:
 $3Lib:
@@ -440,17 +455,17 @@ $3Lit:
 $3Liv:
 $3Lix:
 $3Liz:
-$3Lj1:Attack changes below 10 HP
+$3Lj1:Hyökkäys muuttuu alla 10 hp:n
 $3Lj3:
 $3Lj5:
 $3Lj7:
 $3Lj9:
 $3LjB:
 $3LjD:1.5x hit for Mg enemies
-$3LjF:Magic +4
-$3LjH:2x hit for Mg enemies
-$3LjJ:2x hit for Mg enemies
-$3LjL:2x hit for Mg enemies
+$3LjF:Taika +4
+$3LjH:2x tuho taikavastuksille
+$3LjJ:2x tuho taikavastuksille
+$3LjL:2x tuho taikavastuksille
 $3LjN:
 $3LjP:
 $3LjR:
@@ -461,14 +476,14 @@ $3LjZ:
 $3Ljb:
 $3Ljd:
 $3Ljf:
-$3Ljh:Attack up when ally falls
+$3Ljh:+Hyökkäys jos kaveri tippuu
 $3Ljj:
 $3Ljl:
 $3Ljn:
 $3Ljp:
-$3Ljr:Speed +3
+$3Ljr:Nopeus +3
 $3Ljt:
-$3Ljv:70 % critical hit rate
+$3Ljv:Kriittistahti +70%
 $3Ljx:
 $3Ljz:
 $3Lk1:
@@ -481,31 +496,32 @@ $3LkD:
 $3LkF:
 $3LkH:
 $3LkJ:
-$3LkL:Cuts «Fire» by 50%
-$3LkN:Mg Defense +5
+$3LkL:Puolittaa «Fire»-iskut
+$3LkN:Taikapuolustus +5
 $3LkP:
 $3LkR:
-$3LkT:Mg Defense +5
+$3LkT:Taikapuolustus +5
 $3LkV:
 $3LkX:
 $3LkZ:
-$3Lkb:Mg Defense +10
-$3Lkd:Protects status
-$3Lkf:Cuts Mg attack by 1/3
-$3Lkh:Mg Defense  +10
-$3Lkj:Cuts «Fire» by 80%
+$3Lkb:Taikapuolustus +10
+$3Lkd:Suojaa statusta
+$3Lkf:Vähentää taikaiskuja 33%:lla
+$3Lkh:Taikapuolustus +10
+$3Lkj:Vähentää «Fire»-iskuja 80%:lla
 $3Lkl:
 $3Lkn:
-$3Lkp:Absorbs «Lightning» hits
-$3Lkr:Absorbs «Shadow» hits
-$3Lkt:Absorbs «Water» hits
-$3Lkv:Absorbs «Fire» hits
-$3Lkx:Absorbs 50% of «Lightning» hits
-$3Lkz:Absorbs 50% of «Shadow» hits
-$3Ll1:Absorbs 50% of «Water» hits
-$3Ll3:Absorbs 50% of «Fire» hits
-$3Ll5:Speed +2/«Fire» guard up
-$3Ll7:Speed +3/«Fire» guard up
+;Absorbs
+$3Lkp:Vaimentaa «Lightning»-iskuja
+$3Lkr:Vaimentaa «Shadow»-iskuja
+$3Lkt:Vaimentaa «Water»-iskuja
+$3Lkv:Vaimentaa «Fire»-iskuja
+$3Lkx:Vaimentaa 50% «Lightning»-iskuista
+$3Lkz:Vaimentaa 50% «Shadow»-iskuista
+$3Ll1:Vaimentaa 50% «Water»-iskuista
+$3Ll3:Vaimentaa 50% «Fire»-iskuista
+$3Ll5:Nopeus +2 ja +«Fire»-puolustus
+$3Ll7:Nopeus +3 ja +«Fire»-puolustus
 $3Ll9:
 $3LlB:
 $3LlD:
@@ -517,54 +533,59 @@ $3LlN:
 $3LlP:
 $3LlR:
 $3LlT:
-$3LlV:Def. +9/locks status 
+$3LlV:Puolustus +9 ja lukitsee statuksen
 $3LlX:
-$3LlZ:Cuts «Shadow» hits by 50%
-$3Llb:Protects status
-$3Lld:Cuts physical damage by 1/3 
-$3Llf:Mg Defense +10
-$3Llh:Prevents «Chaos»
-$3Llj:Prevents «Lock»
-$3Lll:Prevents «Stop,» «Slow»
-$3Lln:Protects status
+$3LlZ:Puolittaa «Shadow»-iskut
+$3Llb:Suojaa statusta
+$3Lld:Vähentää fys. iskuja 33%:lla
+$3Llf:Taikapuolustus +10
+$3Llh:Estää «Chaos»
+$3Llj:Estää «Lock»
+$3Lll:Estää «Stop,» «Slow»
+$3Lln:Suojaa statusta
 $3Llp:???
 $3Llr:50% less time between attacks
 $3Llt:Cuts «Lightning» hits by 50%
 $3Llv:Cuts «Water» hits by  50%
 $3Llx:
-$3Llz:Speed +1
-$3Lm1:Strike +2
-$3Lm3:Power +2
-$3Lm5:Vigor +2
-$3Lm7:Magic +2
-$3Lm9:Protects status
-$3LmB:Speed +3
-$3LmD:Strike +10
-$3LmF:Power +6
-$3LmH:Magic +6
-$3LmJ:Mg Defense +10
-$3LmL:Max HP up by 25% 
-$3LmN:Max HP up by 50%
-$3LmP:MP use cut by 50%
-$3LmR:MP use cut by 75%
-$3LmT:Shows enemy's HP
-$3LmV:«Charm» power up
-$3LmX:50% Counter attack rate
-$3LmZ:80% Counter attack rate
-$3Lmb:2x Evade
+;Speed
+$3Llz:Nopeus +1
+;Strike
+$3Lm1:Isku +2
+;Power
+$3Lm3:Voima +2
+;Vigor
+$3Lm5:Tarmo +2
+$3Lm7:Taika +2
+$3Lm9:Suojaa statusta
+$3LmB:Nopeus +3
+$3LmD:Isku +10
+$3LmF:Voima +6
+$3LmH:Taika +6
+$3LmJ:Taikapuolustus +10
+$3LmL:Maksimi-hp +25%
+$3LmN:Maksimi-hp +50%
+$3LmP:MP:n käyttö -50%
+$3LmR:MP:n käyttö -75%
+$3LmT:Näyttää vihollisen hp:n
+$3LmV:+«Charm»-teho
+$3LmX:50% vastaiskutahti
+$3LmZ:80% vastaiskutahti
+;Evade
+$3Lmb:2x väistö
 $3Lmd:Turns Exp. into G
-$3Lmf:One-time auto reanimate
+$3Lmf:Pelastaa hengen kerran
 $3Lmh:Auto attack / Hit & Def. up
-$3Lmj:Power +4
-$3Lml:Speed +2
-$3Lmn:Invokes triple tech. «DarkEternal»
-$3Lmp:Invokes triple tech. «OmegaFlare»
-$3Lmr:Invokes triple tech. «SpinStrike»
-$3Lmt:Invokes triple tech. «Poyozo Dance»
-$3Lmv:Invokes triple tech. «Grand Dream»
+$3Lmj:Voima +4
+$3Lml:Nopeus +2
+$3Lmn:Sallii 3tekn. «DarkEternal»
+$3Lmp:Sallii 3tekn. «OmegaFlare»
+$3Lmr:Sallii 3tekn. «SpinStrike»
+$3Lmt:Sallii 3tekn. «Poyozo Dance»
+$3Lmv:Sallii 3tekn. «Grand Dream»
 $3Lmx:Ups critical hit rate of Masamune
-$3Lmz:Vigor +6
-$3Ln1:Mg Defense +12
+$3Lmz:Tarmo +6
+$3Ln1:Taikapuolustus +12
 $3Ln3:
 $3Ln5:
 $3Ln7:
@@ -572,25 +593,25 @@ $3Ln9:
 $3LnB:Ups attack power
 $3LnD:Ups attack pwr. to the max
 $3LnF:
-$3LnH:Restores 50 HP
-$3LnJ:Restores 200 HP
-$3LnL:Restores 500 HP
-$3LnN:Restores 10 MP
-$3LnP:Restores 30 MP
-$3LnR:Restores 60 MP
-$3LnT:Restores HP/MP
-$3LnV:Restores MP
-$3LnX:Restores HP/MP for all
-$3LnZ:Restores Status
-$3Lnb:Revives an ally
-$3Lnd:Recovers HP/MP at Save Pts.
-$3Lnf:Recovers from «?»
-$3Lnh:Restores 200 HP for all
-$3Lnj:Cuts magic hits by 1/3
-$3Lnl:Cuts physical hits by 1/3
-$3Lnn:«Power» +1
-$3Lnp:«Magic» +1
-$3Lnr:«Speed» +1
+$3LnH:Palauttaa 50 HP
+$3LnJ:Palauttaa 200 HP
+$3LnL:Palauttaa 500 HP
+$3LnN:Palauttaa 10 MP
+$3LnP:Palauttaa 30 MP
+$3LnR:Palauttaa 60 MP
+$3LnT:Palauttaa HP/MP
+$3LnV:Palauttaa MP
+$3LnX:Palauttaa HP/MP kaikille
+$3LnZ:Palauttaa statuksen
+$3Lnb:Herättää henkiin
+$3Lnd:Palauttaa HP/MP tall.pisteissä
+$3Lnf:Parantaa «?»:stä
+$3Lnh:Palauttaa 200 HP kaikille
+$3Lnj:Taikaiskut -33%
+$3Lnl:Fys. iskut -33%
+$3Lnn:Voima +1 (pysyvästi)
+$3Lnp:Taika +1 (pysyvästi)
+$3Lnr:Nopeus +1 (pysyvästi)
 $3Lnt:
 $3Lnv:
 $3Lnx:
@@ -604,7 +625,8 @@ $3LoB:
 $3LoD:
 $3LoF:
 $3LoH:
-$3LoJ:Logs the Bike Race score
+;Logs the Bike Race score
+$3LoJ:Kirjaa pyöräkisan pisteet
 $3LoL:
 $3LoN:
 $3LoP:
@@ -630,102 +652,111 @@ $3Lox:
 ;techs
 *l11;118 fixed length strings (length: 11 bytes)
 $3K2G:           
-$3K2R:Cyclone    
-$3K2c:Slash      
-$3K2n:[starsymbol]Lightning 
-$3K2y:Spincut    
-$3K39:[starsymbol]Lightning2
-$3K3K:[starsymbol]Life      
-$3K3V:Confuse    
-$3K3g:[starsymbol]Luminaire 
+$3K2R:Sykloni    
+$3K2c:Viilto     
+$3K2n:[starsymbol]Ukkonen   
+$3K2y:Pyörölyönti
+$3K39:[starsymbol]Ukkonen2  
+$3K3K:[starsymbol]Elämä     
+$3K3V:Hämmennys  
+;Luminaire
+$3K3g:[starsymbol]Valaistus 
 $3K3r:Aura       
-$3K42:Provoke    
-$3K4D:[starsymbol]Ice       
-$3K4O:[starsymbol]Cure      
-$3K4Z:[starsymbol]Haste     
-$3K4k:[starsymbol]Ice_2     
-$3K4v:[starsymbol]Cure_2    
-$3K56:[starsymbol]Life_2    
-$3K5H:Flame_Toss 
-$3K5S:Hypno_Wave 
-$3K5d:[starsymbol]Fire      
-$3K5o:Napalm     
-$3K5z:[starsymbol]Protect   
-$3K6A:[starsymbol]Fire_2    
-$3K6L:Mega_Bomb  
-$3K6W:[starsymbol]Flare     
+$3K42:Ehdotus    
+$3K4D:[starsymbol]Jää       
+$3K4O:[starsymbol]Parannus  
+$3K4Z:[starsymbol]Nopeutus  
+$3K4k:[starsymbol]Jää2      
+$3K4v:[starsymbol]Parannus2 
+$3K56:[starsymbol]Elämä2    
+$3K5H:Tuliviskaus
+$3K5S:Hypnoaalto 
+$3K5d:[starsymbol]Tuli      
+$3K5o:Napalmi    
+$3K5z:[starsymbol]Suojaus   
+$3K6A:[starsymbol]Tuli2     
+$3K6L:Megapommi  
+$3K6W:[starsymbol]Roihu     
 $3K6h:RocketPunch
-$3K6s:Cure_Beam  
-$3K73:Laser_Spin 
-$3K7E:Robo_Tackle
-$3K7P:Heal_Beam  
-$3K7a:Uzzi_Punch 
-$3K7l:Area_Bomb  
-$3K7w:Shock      
-$3K87:Slurp      
-$3K8I:Slurp_Cut  
-$3K8T:[starsymbol]Water     
-$3K8e:[starsymbol]Heal      
-$3K8p:Leap_Slash 
-$3K90:[starsymbol]Water_2   
-$3K9B:[starsymbol]Cure_2    
-$3K9M:Frog_Squash
-$3K9X:Kiss       
-$3K9i:Rollo_Kick 
-$3K9t:Cat_Attack 
-$3KA4:Rock_Throw 
-$3KAF:Charm      
-$3KAQ:Tail_Spin  
-$3KAb:Dino_Tail  
-$3KAm:Triple_Kick
-$3KAx:[starsymbol]Lightning2
-$3KB8:[starsymbol]Ice_2     
-$3KBJ:[starsymbol]Fire_2    
-$3KBU:[starsymbol]Dark_Bomb 
-$3KBf:[starsymbol]Magic_Wall
-$3KBq:[starsymbol]Dark_Mist 
-$3KC1:[starsymbol]Black_Hole
-$3KCC:[starsymbol]DarkMatter
-$3KCN:Aura_Whirl 
-$3KCY:Ice_Sword  
-$3KCj:Ice_Sword 2
-$3KCu:Fire_Whirl 
-$3KD5:Fire_Sword 
-$3KDG:FireSword 2
+;Cure_beam
+$3K6s:Lääkesäde1 
+$3K73:Lasertanssi
+$3K7E:Robotaklaus
+;Heal_beam
+$3K7P:Lääkesäde2 
+;Uzzi_punch
+$3K7a:Hakkelus   
+$3K7l:Aluepommi  
+$3K7w:Shokki     
+$3K87:Nuolaisu   
+$3K8I:Kieli-isku 
+$3K8T:[starsymbol]Vesi      
+$3K8e:[starsymbol]Lääke     
+$3K8p:Hyppyisku  
+$3K90:[starsymbol]Vesi2     
+$3K9B:[starsymbol]Lääke2    
+;Frog_Squash
+$3K9M:Konnaloikka
+$3K9X:Suukko     
+$3K9i:Pyöröpotku 
+$3K9t:Kissaisku  
+$3KA4:Kivenheitto
+$3KAF:Lumous     
+$3KAQ:Häntäkieppi
+$3KAb:Dinohäntä  
+$3KAm:Tripapotku 
+$3KAx:[starsymbol]Ukkonen2  
+$3KB8:[starsymbol]Jää2      
+$3KBJ:[starsymbol]Tuli2     
+$3KBU:[starsymbol]Pimeäpommi
+$3KBf:[starsymbol]Taikaseinä
+$3KBq:[starsymbol]SynkkäUsva
+$3KC1:[starsymbol]MustaAukko
+$3KCC:[starsymbol]Pimeä aine
+$3KCN:Aurakierros
+$3KCY:Jäämiekka  
+$3KCj:Jäämiekka2 
+$3KCu:Tulikierros
+$3KD5:Tulimiekka 
+$3KDG:Tulimiekka2
 $3KDR:Rocket_Roll
-$3KDc:Max_Cyclone
-$3KDn:Super_Volt 
-$3KDy:X_Strike   
-$3KE9:SwordStream
-$3KEK:Spire      
-$3KEV:Drill_Kick 
-$3KEg:Volt_Bite  
-$3KEr:Falcon_Hit 
-$3KF2:Antipode   
-$3KFD:Antipode_2 
-$3KFO:Antipode_3 
-$3KFZ:Aura_Beam  
-$3KFk:Ice_Tackle 
-$3KFv:Cure_Touch 
-$3KG6:Ice_Water  
-$3KGH:Glacier    
-$3KGS:Double_Cure
-$3KGd:Twin_Charm 
-$3KGo:Ice_Toss   
-$3KGz:Cube_Toss  
-$3KHA:Fire_Punch 
-$3KHL:Fire_Tackle
+$3KDc:Max-sykloni
+$3KDn:Suurjännite
+$3KDy:X-isku     
+$3KE9:Miekkavirta
+;Spire
+$3KEK:Nasta      
+$3KEV:Porapotku  
+;Volt_Bite
+$3KEg:Sähköisku  
+$3KEr:Haukkaisku 
+$3KF2:Antipodi   
+$3KFD:Antipodi_2 
+$3KFO:Antipodi_3 
+$3KFZ:Aurasäde   
+$3KFk:Jäätaklaus 
+$3KFv:Hoivahetki 
+$3KG6:Jäävesi    
+$3KGH:Jäätikkö   
+$3KGS:Tuplalääke 
+$3KGd:Kaksoislumo
+$3KGo:Jääviskaus 
+;Cube_Toss
+$3KGz:Jääviskaus2
+$3KHA:Tulinyrkki 
+$3KHL:Tulitaklaus
 $3KHW:DoublevBomb
-$3KHh:Flame_Kick 
-$3KHs:Fire_Whirl 
-$3KI3:Blaze_Kick 
+$3KHh:Tulipotku  
+$3KHs:Tulipyöräys
+$3KI3:Lieskapotku
 $3KIE:Blade_Toss 
-$3KIP:Bubble_Snap
-$3KIa:Cure_Wave  
+;Bubble_Snap
+$3KIP:Poksahdus  
+$3KIa:Lääkeaalto 
 $3KIl:Boogie     
 $3KIw:Spin_Kick  
 $3KJ7:Beast_Toss 
-$3KJI:Slurp_Kiss 
+$3KJI:Kielisuukko
 $3KJT:Bubble_Hit 
 $3KJe:Drop_Kick  
 $3KJp:Red_Pin    
@@ -1145,96 +1176,118 @@ $0j0a:Accessory
 ;Location titles
 *z;112 pointerstrings (12pix font)
 $1uXg:
-$1uXi:Mayor's Manor
-$1uXk:Residence
-$1uXm:Crono's house
-$1uXo:Lucca's house
-$1uXq:Gobb's house
-$1uXs:Truce Inn
-$1uXu:Snail Stop
-$1uXw:Eternal repose
-$1uXy:Breakwave Pt.
-$1uY0:Leene Square
-$1uY2:Market
-$1uY4:Porre Inn
-$1uY6:Ticket Office
-$1uY8:Guardia Forest
-$1uYA:Guardia Castle
-$1uYC:Zenan Bridge
-$1uYE:Melchior's Hut
-$1uYG:Forest Ruins
-$1uYI:Heckran Cave
-$1uYK:Fiona's Shrine
-$1uYM:West Cape
-$1uYO:Sun Keep
-$1uYQ:Hero's Grave
-$1uYS:Truce Canyon
-$1uYU:Cathedral
-$1uYW:Cursed Woods
-$1uYY:Denadoro Mts
-$1uYa:Tata's House
-$1uYc:Fiona's Villa
-$1uYe:Sunken Desert
-$1uYg:Magic Cave
-$1uYi:Magus's Lair
-$1uYk:Ozzie's Fort
+;     TÄSSÄ PISIN
+;     **************
+$1uXi:Pormestarin kartano
+$1uXk:Asuintalo
+$1uXm:Cronon koti
+$1uXo:Luccan koti
+;Gobb's house???
+$1uXq:
+$1uXs:Trucen majatalo
+;Snail Stop
+$1uXu:Etanapysäkki
+$1uXw:Ikuinen lepotyyssija
+;Breakwave Pt.
+$1uXy:Murtoaaltopiste
+$1uY0:Leenen aukio
+$1uY2:Tori
+$1uY4:Porren majatalo
+$1uY6:Lipputoimisto
+$1uY8:Guardian metsä
+$1uYA:Guardian linna
+$1uYC:Zenanin silta
+$1uYE:Melchiorin mökki
+;Forest Ruins
+$1uYG:Metsärauniot
+$1uYI:Heckranin luola
+$1uYK:Fionan alttari
+;West Cape
+$1uYM:Länsiniemi
+;Sun Keep
+$1uYO:Auringonvalon tyyssija
+;Hero's Grave
+$1uYQ:Sankarin hauta
+$1uYS:Trucen kanjoni
+$1uYU:Katedraali
+$1uYW:Kirottu metsä
+$1uYY:Denadoron vuoret
+$1uYa:Tatan koti
+$1uYc:Fionan huvila
+$1uYe:Vajonnut aavikko
+$1uYg:Taikaluola
+$1uYi:Maguksen maja
+$1uYk:Ozzien linnake
 $1uYm: 
-$1uYo:Elder's House
-$1uYq:Northern Ruins
+;Elder's House
+$1uYo:Vanhimman talo
+;Northern Ruins
+$1uYq:Pohjoiset rauniot
 $1uYs:
-$1uYu:Bangor Dome
-$1uYw:Trann Dome
-$1uYy:Lab 16
-$1uZ0:Arris Dome
-$1uZ2:Lab 32
-$1uZ4:Proto Dome
-$1uZ6:Factory
-$1uZ8:Sewer Access
-$1uZA:Keeper's Dome
-$1uZC:Death Peak
-$1uZE:Geno Dome
-$1uZG:Sun Palace
+$1uYu:Kupoli Bangor
+$1uYw:Kupoli Trann
+$1uYy:Labra 16
+$1uZ0:Kupoli Arris
+$1uZ2:Labra 32
+$1uZ4:Kupoli Proto
+$1uZ6:Tehdas
+;Sewer Access
+$1uZ8:Viemäri
+;Keeper's Dome
+$1uZA:Isännän kupoli
+$1uZC:Kuolemankärki
+$1uZE:Kupoli Geno
+$1uZG:Aurinkopalatsi
+;Robot village???
 $1uZI:Robot village
-$1uZK:Mystic Mts
-$1uZM:Ioka Hut
-$1uZO:Chief's Hut
-$1uZQ:Meeting Site
-$1uZS:Forest Maze
-$1uZU:Reptite Lair
-$1uZW:Hunting Range
-$1uZY:Dactyl Nest
-$1uZa:Tyrano Lair
-$1uZc:Chanting Mt
-$1uZe:Cave
+;Mystic Mts
+$1uZK:Mystiset vuoret
+$1uZM:Ioka maja
+$1uZO:Päällikön kota
+$1uZQ:Kohtauspaikka
+$1uZS:Metsäsokkelo
+$1uZU:Matelijaluola
+;Hunting Range
+$1uZW:Metsästystienoo
+$1uZY:Daktyylien tyyssija
+$1uZa:Tyranoluola
+;Chanting Mt
+$1uZc:Loitsuvuori
+$1uZe:Luola
 $1uZg:Enhasa
 $1uZi:Kajar
-$1uZk:Blackbird
-$1uZm:North Keep
-$1uZo:Terra Cave
-$1uZq:Zeal Palace
-$1uZs:Ocean Palace
-$1uZu:Last Village
-$1uZw:North Cape
-$1uZy:Exoskeleton
+;Blackbird
+$1uZk:Mustalintu
+;North Keep
+$1uZm:Pohjoistalle
+;Terra Cave
+$1uZo:Maaluola
+$1uZq:Palatsi Zeal
+;Ocean Palace
+$1uZs:Meripalatsi
+$1uZu:Viimeinen kylä
+$1uZw:Pohjoisniemi
+$1uZy:Jättiluuranko
 $1ua0:
 $1ua2:
-$1ua4:Cafe
-$1ua6:Medina Square
-$1ua8:Black Omen
-$1uaA:Vortex Pt
-$1uaC:Skyway
-$1uaE:Land Bridge
-$1uaG:Ayla's tent
-$1uaI:Laruba ruins
-$1uaK:Lair Ruins
-$1uaM:Commons
-$1uaO:Medina Inn
-$1uaQ:Choras Inn
-$1uaS:Truce Inn
-$1uaU:Dorino Inn
-$1uaW:Porre Inn
-$1uaY:Choras Inn
-$1uaa:Giant's Claw
+$1ua4:Kahvila
+$1ua6:Medinan aukio
+;Black Omen
+$1ua8:Synkkä Enne
+$1uaA:Pyörrepaikka
+$1uaC:Taivastie
+$1uaE:Maasilta
+$1uaG:Aylan teltta
+$1uaI:Laruban rauniot
+$1uaK:Luolan rauniot
+$1uaM:Kansa
+$1uaO:Medinan majatalo
+$1uaQ:Chorasin majatalo
+$1uaS:Trucen majatalo
+$1uaU:Dorinon majatalo
+$1uaW:Porren majatalo
+$1uaY:Chorasin majatalo
+$1uaa:Jätin kynsi
 $1uac:
 $1uae:
 $1uag:
@@ -1260,29 +1313,30 @@ $1ubG:??????
 
 ;Battle announcements
 *z;14 pointerstrings (12pix font)
-$46bZ:Got [num32] experience point(s)!
-$46bb:Got [num32] tech point(s)!
-$46bd:Found [num32]G!
-$46bf:Got 1x [item]!
-$46bh:[member]'s level up!
-$46bj:[member] learns [tech]
-$46bl:Learns Dual Tech, [tech]
-$46bn:Learns Triple Tech, [tech]
-$46bp:Ran away!
+$46bZ:[num32] p. kokemusta saatu!
+$46bb:[num32] tek.pistettä saatu!
+$46bd:Löytyi [num32]G!
+$46bf:1x [item] löytyi!
+$46bh:[member] nousi tason!
+$46bj:[member] oppi: [tech]
+$46bl:Tuplatekn. opittu: [tech]
+$46bn:Triplatekn. opittu: [tech]
+$46bp:Pakenit!
 $46br:[member] got up!
-$46bt:Nothing there!
+$46bt:Ei siellä mitään ole.
 $46bv:[tech][1] [num16]/[num16]
 $46bx:[tech][1]
-$46bz:It was the thought that counted...
+;     It was the thought that counted...
+$46bz:Ajatus oli tärkein...
 
 
 ;Battle messages
 *z;227 pointerstrings (12pix font)
-$3W9p:Head repairs damage.
-$3W9r:Head repairs damage.
-$3W9t:Energy is stored in the wheels.
-$3W9v:Too far away to counterattack.
-$3W9x:Too close, can't counterattack.
+$3W9p:Pää korjaa vahinkoja.
+$3W9r:Pää korjaa vahinkoja.
+$3W9t:Energia sijaitsee renkaissa.
+$3W9v:Liian kaukana vastaiskuun.
+$3W9x:Liian lähellä vastaiskuun.
 $3W9z:Mortal blow!
 $3WA1:NeedleSpin / Yakra's needle attack.
 $3WA3:Naga-ette's[heartsymbol][heartsymbol][heartsymbol] / Slow spell!
@@ -1290,7 +1344,7 @@ $3WA5:Ding-a-ling / Chaos
 $3WA7:Drrrrrooooo...
 $3WA9:Attacked by moving object.
 $3WAB:I'll shred ya.
-$3WAD:Break down
+$3WAD:Hajotus
 $3WAF:AmpliFire
 $3WAH:Ozzie's spell is broken.
 $3WAJ:Ozzie needs help!
@@ -1307,7 +1361,7 @@ $3WAd:Chemically fuse with other members.
 $3WAf:Storing Tornado Energy.
 $3WAh:Tornado Energy has been neutralized.
 $3WAj:AmpliFire Counterattack
-$3WAl:Pain...
+$3WAl:Tuska...
 $3WAn:What are you aiming at, you fool?
 $3WAp:Yes indeed!
 $3WAr:Hahahaha...
@@ -1512,417 +1566,426 @@ $3WH7:GolemBoss «1»
 *z;78 pointerstrings (12pix font)
 $6p1c:
 LEENE: Cyrus![nl]
-   Are you leaving?
+   Oletteko lähdössä?
 $6p1e:
-CYRUS: Yes, it's time we took back the[nl]
-   Medal from the Frog King.[nl]
-   And I'd like to see that mythical[nl]
-   sword for myself.
+CYRUS: Kyllä. On aika ottaa mitali[nl]
+   takaisin sammakkokuninkaalta.[nl]
+   Ja haluan nähdä sen mystisen[nl]
+   miekan itsekin.
 $6p1g:
-GUARDIA: But Cyrus, the kingdom needs[nl]
-   you!
+GUARDIA: Mutta Cyrus, valtakunta[nl]
+   tarvitsee sinua!
 [pause]
-   And Leene and I need you.[nl]
-   You must return to us!
+   Ja Leene ja minä tarvitsemme[nl]
+   sinua. Sinun on palattava luoksemme!
 $6p1i:
-CYRUS: As long as there is life in these[nl]
-   bones, I shall return!
+CYRUS: Niin kauan kuin näissä luissa[nl]
+   on elämää, minä palaan!
 [pause]
-   By your leave...
+;  By your leave...  = ?
+   Ennen kuin lähdet...
 $6p1k:
-SOLDIER: Sir Cyrus!!
+SOLDIER: Herra Cyrus!!
 $6p1m:
-SOLDIER: We, the Knights of the Square[nl]
-   Table, wish you a safe journey!
+SOLDIER: Me, Neliskulkaisen Pöydän[nl]
+   Ritarit, toivotamme sinulle[nl]
+   turvallista matkaa!
 $6p1o:
-CYRUS: Listen well, my friends...
+CYRUS: Kuulkaa, ystävät...
 $6p1q:
-CYRUS: I now entrust the safety of the[nl]
-   kingdom to you!
+CYRUS: Minä täten uskon valtakunnan[nl]
+   turvallisuuden teidän käsiinne!
 $6p1s:
-CYRUS: Pardon the delay.[nl]
-   Shall we be off?
+CYRUS: Pahoittelen viivästystä.[nl]
+   Lähdemmekö?
 $6p1u:
-LEENE: Glenn, you be careful too!
+LEENE: Glenn, ole sinäkin varovainen!
 $6p1w:
-GLENN: Be of sound health, your[nl]
-   Majesty!
+GLENN: Voikaatte hyvin, teidän[nl]
+   majesteettinne!
 $6p1y:
-So! You want the Badge of Courage,[nl]
-dear knight of the kingdom?[nl]
-Well come and take it...if you can!!![nl]
-Grribit...
+Sinäkö haluat Rohkeuden Mitalin,[nl]
+pikku ritari? Sen kun yrität ottaa...[nl]
+Krroaks...
 $6p20:
-CYRUS: Prepare yourself, polywog![nl]
-   En guarde!
+CYRUS: Varo vain, nilviäinen![nl]
 [pause]
-   Nirvana Strike!
+   Nirvanaisku!
 $6p22:
-GRAAAACK...![nl]
-How dare you pick on a helpless[nl]
-amphibian!
+KRAAAAK...![nl]
+Kuinka kehtaatkin kiusata[nl]
+avutonta sammakkoeläintä!
 [pause]
-Filthy medal![nl]
-I won't forget this!
+Törkyinen mitali![nl]
+Minä en unohda tätä!
 $6p24:
-KID: I'm the wind![nl]
+KID: Olen tuuli![nl]
    Whoosh!
 $6p26:
-KID: Stop!
+KID: Seis!
 $6p28:
-KID: Are you here for the Masamune?[nl]
-      Yes[nl]
-      No
+KID: Oletteko täällä Masamunen takia?[nl]
+      Olemme[nl]
+      Emme
 $6p2A:
-KID: You're not?[nl]
-   Then you should leave quickly.
+KID: Ette?[nl]
+   Siinä tapauksessa teidän pitäisi[nl]
+   lähteä pian.
 $6p2C:
 KID: Thought so...[nl]
    Wait a second, okay?
 $6p2E:
-KID: Oh big broooother...[nl]
+;Big brother.
+KID: Veeeliiii...[nl]
    Where are you, Masa?!
 $6p2G:
-MASA: What is it, Mune?
+MASA: Mitä nyt, Mune?
 $6p2I:
-MASA: Not again!?
+MASA: Taasko!?
 $6p2K:
-MASA: So! You want to get a name for[nl]
-   yourself by grabbing the Masamune?[nl]
-   What a buffoon!
+MASA: No niin! Tekö haluatte tulla[nl]
+   tunnetuiksi Masamunen saajina?[nl]
+   Mitä pellejä!
 $6p2M:
-MUNE: Humans are so...silly![nl]
-   It's how you USE the sword that's[nl]
-   important...not who owns it!
+MUNE: Ihmiset ovat niin... hölmöjä![nl]
+   Ratkaisevaa on se, MITEN miekkaa[nl]
+   käytetään... ei se, kuka sen omistaa!
 $6p2O:
-MASA: You can't even understand[nl]
-   something as simple as that.[nl]
-   That's why you're human.
+MASA: Ette ymmärrä edes noin[nl]
+   yksinkertaista asiaa. Siksi[nl]
+   te olette ihmisiä.
 $6p2Q:
-MUNE: What should we do?
+MUNE: Mitäs tehdään?
 $6p2S:
-MASA: The usual...test them.[nl]
-   You can entertain us for awhile.
+MASA: Se tavanomainen...[nl]
+   testataan heidät.[nl]
+   Voitte viihdyttää meitä hetkisen.
 $6p2U:
-MUNE: All right![nl]
-   Here we go!!![nl]
+MUNE: Selvä on![nl]
+   Aloitetaan!!![nl]
    Whooosh!
 $6p2W:
-MUNE: Hey they're pretty tough.
+MUNE: Hei, hehän ovat aika[nl]
+   kovia.
 $6p2Y:
-MASA: Only Cyrus made it this far.
+MASA: Vain Cyrus on päässyt[nl]
+   tähän asti.
 $6p2a:
-MASA: This time it's for real!
+MASA: Noh, nyt taistellaan[nl]
+   oikeasti.
 $6p2c:
-MUNE: All right, this is it...[nl]
-MASA: Yeah.[nl]
-   We mean business!
+MUNE: No niin, tästä se alkaa...[nl]
+MASA: Joo.[nl]
+   Nyt me olemme tosissamme!
 $6p2e:
-With Masa's bravery and...
+Masan rohkeudella ja...
 $6p2g:
-...Mune's knowledge!
+...Munen taidoilla!
 $6p2i:
-Two become one!!
+Kahdesta tulee yksi!!
 $6p2k:
-MUNE: They beat us, big brother...
+MUNE: Ne voitti meidät, isoveli...
 $6p2m:
-MASA: That was fun!
+MASA: Se oli hauskaa!
 $6p2o:
-MUNE: Will they fix us?
+MUNE: Korjaavatko he meidät?
 [pause]
-   Will they find us an owner?
+   Löytävätkö he meille omistajan?
 $6p2q:
-MASA: Yeah, it'll be all right.
+MASA: Eiköhän se järjesty.
 $6p2s:
-MUNE: Good luck to you.
+MUNE: Onnea teille.
 $6p2u:
-MASA: Allow me! We'll ride the wind to[nl]
-   the base of the mountain!
+MASA: Antakaas minun! Ratsastamme[nl]
+   tuulella vuoren juurelle!
 $6p2w:
-Lucca: So this is the Masamune...
+Lucca: Eli tämä on siis Masamune...
 [pause]
-   But it looks like it's been broken for[nl]
-   ages.
+   Mutta näyttää siltä kuin se olisi[nl]
+   ollut rikki ties kuinka kauan.
 $6p2y:
-Robo: So![nl]
-   The Masamune is not just a myth...
+Robo: No niin![nl]
+   Masamune ei siis ole vain myytti...
 [pause]
-   But it has long been broken.
+   Mutta se on ollut jo pitkään rikki.
 $6p30:
 [nl]
-       You got the broken Masamune!
+     Sait rikkinäisen Masamunen!
 $6p32:
-Ride the wind?[nl]
-      Yes[nl]
-      No
+Ratsastatko tuulella?[nl]
+      Kyllä[nl]
+      Ei
 $6p34:
 Frog: I await thee, Free Lancer!
 $6p36:
 [nl]
-   It starts glowing in Frog's hand!
+   Se alkaa hehkua Frogin kädessä!
 $6p38:
 [nl]
-          You got the Gold Rock!
+          Sait Kultakiven!
 $6p3A:
 Frog: A changed frog art I!
 $6p3C:
-Y, you're humans?
+Te... olette ihmisiä?
 [pause]
-They're hiding the Queen in the back.[nl]
-Please rescue her!
+He piilottelevat kuningatarta[nl]
+takana. Pelastakaa hänet!
 $6p3E:
-Inside this building, there's a room[nl]
-dedicated to Magus...[nl]
-Heard something about a treasure[nl]
-there...
+Tässä rakennuksessa on Magukselle[nl]
+omistettu huone...[nl]
+Kuulin vähän sen suuntaista kuin[nl]
+siellä olisi jokin aarre...
 $6p3G:
-Found the secret Naga-ette Bromide!
+Löysit salaisen Naga-ette Bromidin!
 $6p3I:
-Hey everyone![nl]
-Humans!
+Hei kaikki![nl]
+Ihmisiä!
 $6p3K:
-They're after the Bromide!
+He etsiskelevät bromidia!
 $6p3M:
-Get them!
+Napatkaa heidät!
 $6p3O:
-Buurp![nl]
-Hey what's with the disguise?
+Rrröyh![nl]
+Hei mites tämä valeasu?
 [pause]
-No need for them here!
+Ei sitä tarvita täällä!
 $6p3Q:
-It's almost my shift.[nl]
-I hate pretending to be human...[nl]
-it's so repulsive.
+Se on kohta minun vuoroni.[nl]
+Inhoan ihmisenä esiintymistä...[nl]
+se on kuvottavaa.
 $6p3S:
-I'll look in on Magus's statue[nl]
-before my shift.
+Vilkaisen Maguksen patsaaseen[nl]
+ennen vuoroani.
 $6p3U:
-Burrp![nl]
-The ones we ate recently weren't SO[nl]
-bad.
+Rröyh![nl]
+Äskeittäin syömämme eivät[nl]
+olleet ollenkaan hullumpia.
 [pause]
-And those 2 soldiers we caught look[nl]
-rather plump and juicy...
+Ja ne nappaamamme kaksi sotilasta[nl]
+näyttävät itse asiassa aika[nl]
+pulleilta ja meheviltä...
 $6p3W:
-Yakra's so smart![nl]
-His plan to capture the Chancellor and[nl]
-take his place worked perfectly!
+Yakra on niin fiksu![nl]
+Hänen suunnitelmansa napata[nl]
+kansleri ottaa hänen paikkansa[nl]
+toimi täydellisesti!
 [pause]
-Now the Queen's captive, and the[nl]
-castle's in an uproar.[nl]
-This is rich!
+Nyt kuningatar on vankina ja[nl]
+koko linna on ihan sekaisin.[nl]
+Tämä on loistavaa!
 $6p3Y:
-How nice of you to come.[nl]
-I'm sure Yakra will be just as pleased.
+Miten kivaa kun tulitte.[nl]
+Yakra on varmasti yhtä iloinen.
 [pause]
-Why not rest in here until he's[nl]
-available?
+Miksette lepäisi täällä[nl]
+kunnes hän on tavattavissa?
 $6p3a:
-There was no need for you to come[nl]
-rescue me!
+Ei teidän olisi tarvinnut[nl]
+tulla pelastamaan minua!
 [pause]
-The master, Yakra is very kind! I've[nl]
-decided to stay here.[nl]
-Now why don't you make yourselves at[nl]
-home, too!
+Mestari Yakra on hyvin ystävällinen![nl]
+Olen päättänyt pysyä täällä.[nl]
+Miksette tekin asettuisi tänne[nl]
+asumaan?
 $6p3c:
-A...are you here to save Queen Leene?!
+O...oletteko te täällä[nl]
+pelastamassa kuningatar Leeneä?!
 [pause]
-Oh, what a relief!
+Voi, mikä helpotus!
 $6p3e:
-Don't be in such a hurry...[nl]
-Enjoy yourselves first...Hee hee.
+Älkääs nyt niin hosuko...[nl]
+Nauttikaa olostanne ensin...Hee hee.
 $6p3g:
-Oh...dearest Magus...[musicsymbol][nl]
-Your flashing eyes...like stars...[musicsymbol][nl]
-And flowing hair...[musicsymbol][nl]
-Like waves atop the sea...[musicsymbol]
+Oi...Magus-kulta...[musicsymbol][nl]
+Välkkyvät silmäsi...kuin tähdet...[musicsymbol][nl]
+Ja virtaavat hiuksesi...[musicsymbol][nl]
+Kuin aallot meren yllä...[musicsymbol]
 [pause]
-No sad sunny day nor any frightful[musicsymbol][nl]
-bright place can get us down[musicsymbol][nl]
-as long as you're near...[musicsymbol][nl]
-There's nothing to fear...[musicsymbol]
+Ei apea aurinkoinen päivä eikä mikään[musicsymbol][nl]
+pelottava kirkas paikka voi masentaa[musicsymbol][nl]
+meitä... kun sinä olet lähellä...[musicsymbol][nl]
+Ei ole mitään pelättävää...[musicsymbol]
 $6p3i:
-CHORUS: Magus, oh Magus[musicsymbol][nl]
-   Our Hero, Magus[musicsymbol]
+CHORUS: Magus, voi Magus[musicsymbol][nl]
+   Sankarimme, Magus[musicsymbol]
 $6p3k:
-Come join us in singing your funeral[nl]
-dirge![nl]
-Gyah hah ha!
+Liittykää joukkoomme laulamaan[nl]
+hautajaisvalitusvirttänne![nl]
+Ghah hah ha!
 $6p3m:
 [nl]
-            You got 1 [item]!
+           1 [item] saatu!
 $6p3o:
 [nl]
-          You found 1 [item]!
+          1 [item] löydetty!
 $6p3q:
-DALTON: You made it THIS far.[nl]
-   Maybe I underestimated you...
+DALTON: Pääsitte TÄNNE asti.[nl]
+   Ehkä aliarvioin teidät...
 $6p3s:
-DALTON: But this is the end![nl]
-   THEY will take care of you!
+DALTON: Mutta tämä on loppunne![nl]
+   HE pitävät teistä huolen!
 $6p3u:
-DALTON: Come, GolemTwins!
+DALTON: Tulkaa, GolemKaksoset!
 $6p3w:
-DALTON: They beat the GolemTwins!?[nl]
-   All right, this calls for the GolemBoss.
+DALTON: He voittivat GolemKaksoset!?[nl]
+   Noh, tämä on GolemPomon heiniä.
 $6p3y:
-DALTON: W, what's this strange force?
+DALTON: Mi.. mikä tämä vahva voima on?
 [pause]
-   Could this be...Lavos's energy?!
+   Voisiko se olla..[nl]
+   Lavoksen energiaa?!
 $6p40:
 DALTON: ...[nl]
-   I've got a bad feeling about this...
+   Minulla on paha aavistus tästä...
 [pause]
-   All my work will be in vain if I expire[nl]
-   before I'm immortal!
+   Kaikki työni menee hukkaan jos[nl]
+   häviän ennen kuin olen kuolematon!
 $6p42:
-DALTON: This is your lucky day!
+DALTON: Tämä on onnenpäivänne!
 [pause]
-   Bye-bye!
+   Heippa!
 $6p44:
-If history is to change, let it change! If[nl]
-the world is to be destroyed, so be it![delay 12]
+Jos historian on tarkoitus muuttua,[nl]
+muuttukoon! Jos maailman on tarkoitus[nl]
+tuhoutua, niin olkoon![delay 12]
 [cls]
-If my fate is to be destroyed...[nl]
-I must simply laugh!![delay 14][delay 00]
+Jos minun kohtaloni on tuhoutua...[nl]
+En voi kuin nauraa!![delay 14][delay 00]
 $6p46:
-I'm coming, Lavos![delay 0C][delay 00]
+Minä tulen, Lavos![delay 0C][delay 00]
 
 
 ;65Mbc
 *z;254 pointerstrings (12pix font)
 $6pvM:
-Marle: Wh...what are those?
+Marle: Mi..mitä nuo ovat?
 $6pvO:
-Lucca: They're all green and scaly!
+Lucca: Ne ovat vihreitä ja[nl]
+   suomujen peitossa!
 $6pvQ:
-Robo: Half human, half dinosaur...[nl]
-   An unlikely life form.
+Robo: Puoliksi ihmisiä, puoliksi[nl]
+   dinosaurusta...[nl]
+   Epätodennäköinen elämänmuoto.
 $6pvS:
-Marle: What should we do,[nl]
+Marle: Mitä me teemme,[nl]
    Crono?!
 $6pvU:
-Lucca: We're outnumbered!
+Lucca: Meillä on alivoima!
 $6pvW:
-Marle: Goodness![nl]
-   She is tough!
+Marle: Ohhoh![nl]
+   Hän on aika vahva!
 $6pvY:
-Lucca: Who IS that woman?!
+Lucca: KUKA ihme tämä nainen on?!
 $6pva:
-Robo: Her fighting capabilities far[nl]
-   exceed those of humans!
+Robo: Hänen taistelukykynsä ovat[nl]
+   reilusti ihmistä paremmat!
 $6pvc:
-Marle: Uh oh...they're coming our[nl]
-   way!
+Marle: Oijoi...ne tulevat tänne päin!
 $6pve:
-Robo: Now they're after us!
+Robo: Nyt ne ovat meidän perässämme!
 $6pvg:
-Marle: Wh...what do you want?
+Marle: Mi...mitä te haluatte?
 $6pvi:
-Lucca: What the...!
+Lucca: Mitä ihm...!
 $6pvk:
-Robo: Do not upset her.[nl]
-   She's rather agitated right now.
+Robo: Älkää säikyttökö häntä.[nl]
+   Hän on hieman kiihkoissaan nyt.
 $6pvm:
 Marle: Ack!
 $6pvo:
-Lucca: We're not looking for a[nl]
-   fight!
+Lucca: Emme tulleet taistelemaan!
 $6pvq:
 Crono!
 $6pvs:
-Robo: Her...expressive abilities are[nl]
-   also greater.
+Robo: Myös hänen ilmaisutaitonsa[nl]
+   ovat paremmat kuin ihmisillä...
 $6pvu:
-Woman: You strong.[nl]
-   What name?
+Nainen: Sinä vahva.[nl]
+   Mikä nimi?
 [pause]
-   [crononick], huh?[nl]
-   Good name.[nl]
-   Me?[nl]
-   Me...
+   [crononick], vai?[nl]
+   Hyvä nimi.[nl]
+   Minä?[nl]
+   Minä...
 $6pvw:
-Ayla: Me Ayla.[nl]
-   Ayla like strong people.[nl]
-   So Ayla like [crononick]!
+Ayla: Minä Ayla.[nl]
+   Ayla tykkää vahva.[nl]
+   Siis Ayla tykkää [crononick]!
 $6pvy:
-Marle: Get away from her,[nl]
+Marle: Mene pois hänen luotaan,[nl]
    Crono!
 $6pw0:
-Lucca: I think she likes you,[nl]
-   Crono...
+Lucca: Luulen, että hän pitää[nl]
+   sinusta, Crono...
 $6pw2:
-Ayla: You strong too.[nl]
-   Ayla respect strong people.[nl]
-   Men and women.
+Ayla: Sinäkin vahva.[nl]
+   Ayla arvostaa vahva.[nl]
+   Miehet ja naiset.
 $6pw4:
-Marle: Oh, brother...
+Marle: Voi veljet...
 $6pw6:
-Lucca: Where have they been[nl]
-   keeping her?
+Lucca: Missä häntä on pidetty?
 $6pw8:
-Robo: Y, yes?
+Robo: N, niin?
 $6pwA:
-Ayla: You different, but strong[nl]
-   too.
+Ayla: Sinä erilainen, mutta myös vahva.
 $6pwC:
-Robo: It's because I'm a robot.
+Robo: Johtuu siitä, että olen robotti.
 $6pwE:
-Ayla: «Rawboot?» What that?[nl]
-   Ayla don't know.
+Ayla: «Ropotti?» Mikä se?[nl]
+   Ayla ei tietää.
 $6pwG:
-Robo: It's a machine that looks like[nl]
-   a man.
+Robo: Se on ihmisen näköinen kone.
 $6pwI:
-Ayla: What you say?![nl]
-   No rubbish or Ayla, head go[nl]
-   boom!
+Ayla: Mitä sanot?![nl]
+   Ei roskaa tai Ayla, pää[nl]
+   menee pam!
 $6pwK:
-Ayla: [crononick], where from?
+Ayla: [crononick], mistä?
 $6pwM:
-Marle: Uh, how can we explain?
+Marle: Öh, miten selittäisimme?
 $6pwO:
-Robo: It is beyond her grasp.
+Robo: Ei hän voi ymmärtää.
 $6pwQ:
-Lucca: We're from way after the[nl]
-   day after tomorrow.
+Lucca: Tulemme huomista[nl]
+   seuraavan päivän takaa.
 $6pwS:
-Marle: We're from many days[nl]
-   ahead of tomorrow.
+Marle: Kotimme on monen päivän[nl]
+   päässä huomisesta.
 $6pwU:
-Ayla: Ha ha, you funny.[nl]
-   Ayla like funny people.
+Ayla: Hahha, te hauskoja.[nl]
+   Ayla tykkää hauska.
 $6pwW:
-Lucca: It's no use...
+Lucca: Hyödytöntä...
 $6pwY:
-Ayla: Come to village![nl]
-   We talk and eat.[nl]
-   Dance! Eat![nl]
-   Fun!!
+Ayla: Tulkaa kylä![nl]
+   Puhumme ja syömme.[nl]
+   Tanssimme! Syömme![nl]
+   Hauskaa!!
 $6pwa:
-Marle: Thank you but we can't.[nl]
-   We're looking for a Dreamstone.
+Marle: Kiitos vain, mutta emme[nl]
+   voi. Tulimme etsimään Unelmakiveä.
 $6pwc:
-Lucca: We'd love to go, but we've[nl]
-   got to look for the Dreamstone now.
+Lucca: Se olisi hauskaa, mutta[nl]
+   meidän on etsittävä Unelmakiveä nyt.
 $6pwe:
-Ayla: Stone?[nl]
-   Plenty stones![nl]
-   Here, there, at village.[nl]
-   You take plenty.
+Ayla: Kiveä?[nl]
+   Paljon kiviä![nl]
+   Siellä, täällä, kylässä.[nl]
+   Otatte monta.
 $6pwg:
-[crononick] come, Ioka village this way.
+[crononick] tule, Ioka kylä täällä.
 $6pwi:
-Ayla: [crononick] too slow!
+Ayla: [crononick] liian hidas!
 $6pwk:
-Jump?[nl]
-      Yes.[nl]
-      No.
+Hyppäätkö?[nl]
+      Kyllä.[nl]
+      Ei.
 $6pwm:
-Chief's hut, north of village.
+Päällikön kota, kylän pohjoispuoli.
 $6pwo:
-You wear odd skins.
+Teillä oudot nahat.
+;;;FIXME: TÄSSÄ KESKEN
 $6pwq:
 You one of Reptites?[nl]
 I beat you up!
@@ -17856,44 +17919,44 @@ $HYFU:
 ;Era list
 *r;8 pointerstrings (8pix font)
 $HYAg:     ???
-$HYAi:  Present
-$HYAk:Middle Ages
-$HYAm:   Future
-$HYAo:Pre-historic
-$HYAq: Dark Ages
-$HYAs:Black Omen
-$HYAu:End of Time
+$HYAi:  Nykyaika
+$HYAk: Keskiaika
+$HYAm:Tulevaisuus
+$HYAo:Esihistoria
+$HYAq:Pimeät ajat
+$HYAs:Synkkä enne
+$HYAu: Ajan loppu
 
 
 ;Episode list
 *r;27 pointerstrings (8pix font)
 $HXws:   The Millennial Fair
-$HXwu:  The Queen Returns
-$HXww:  The Queen is Gone
+$HXwu:  Kuningatar palaa
+$HXww:  Kuningatar poissa
 $HXwy:       We're Back!
-$HXx0:         The Trial
-$HXx2:    Beyond the Ruins
-$HXx4:   The Factory Ruins
-$HXx6:    The End of Time
-$HXx8: The Village of Magic
-$HXxA:   The Hero Appears
-$HXxC:   Tata and the Frog
-$HXxE:  The Rare Red Rock
-$HXxG:   Footsteps! Follow!
-$HXxI:     The Masamune!
-$HXxK:      Magus' Castle
-$HXxM:Forward to the Past
-$HXxO:Unnatural Selection?
-$HXxQ:  The Magic Kingdom
-$HXxS:     Break the Seal!
-$HXxU: The Guru on Mt.Woe
+$HXx0:    Oikeudenkäynti
+$HXx2:Raunioiden tuolla puolen
+$HXx4:    Tehtaan rauniot
+$HXx6:        Ajan loppu
+$HXx8:     Taikuuden kylä
+$HXxA:    Sankari ilmestyy
+$HXxC:    Tata ja Sammakko
+$HXxE:   The Rare Red Rock
+$HXxG:  Jalanjälkiä! Seuraa!
+$HXxI:         Masamune!
+$HXxK:    Maguksen linna
+$HXxM: Edelleen menneisyyteen
+$HXxO:   Luonnoton valinta?
+$HXxQ: Taikuuden valtakunta
+$HXxS:     Riko sinetti!
+$HXxU:Valituksen Vuoren Guru
 $HXxW:  What Lies Beyond?
-$HXxY:     Lavos Beckons
-$HXxa:      The New King
+$HXxY:     Lavos kutsuu
+$HXxa:    Uusi kuningas
 $HXxc:      The Time Egg
-$HXxe:     The Fated Hour
-$HXxg:     The Final Battle
-$HXxi:          No data
+$HXxe:   Kohtalon tunti
+$HXxg:    Lopputaistelu
+$HXxi:    Ei tallennusta
 
 
 *s06 ;Free space in segment $06:

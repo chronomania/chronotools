@@ -1,5 +1,6 @@
 #CXX=g++
-CXX=/usr/gcc3/bin/i586-pc-linux-gnu-g++
+CXX=g++-2.95
+#CXX=/usr/gcc3/bin/i586-pc-linux-gnu-g++
 CC=$(CXX)
 CPPFLAGS=-Wall -W -pedantic -g -DVERSION=\"$(VERSION)\"
 LDFLAGS=-L/usr/lib/graphics
@@ -17,7 +18,9 @@ LDFLAGS=-L/usr/lib/graphics
 # VERSION 1.0.13 used 62-base numbers
 # VERSION 1.0.14 added taipus.cc
 # VERSION 1.0.15 updated FIN/README and ct_fin.txt, but neither are archived
-VERSION=1.0.15
+# VERSION 1.0.16 added taipus.rb, fixed homepage urls and fixed mmap error checking.
+
+VERSION=1.0.16
 ARCHFILES=xray.c xray.h \
           viewer.c \
           ctcset.cc \
@@ -25,7 +28,7 @@ ARCHFILES=xray.c xray.h \
           wstring.cc wstring.hh \
           ctdump.cc ctinsert.cc \
           makeips.cc unmakeips.cc \
-          taipus.cc \
+          taipus.cc taipus.rb \
           README
 EXTRA_ARCHFILES=ct_eng.txt \
           dictionary5 \

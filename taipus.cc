@@ -2,6 +2,74 @@
 #include <cstring>
 #include <string>
 
+/* Finnish name conjugation design tester (1-5 character version)
+ * for Chrono Trigger Finnish translation
+ *
+ * Homepage of the project: http://bisqwit.iki.fi/ctfin/
+ *
+ * Conjugates names.
+ * Doesn't know of any exceptions. (Mäki?)
+ * Doesn't handle plurals. (Names don't usually come in plurals.)
+ *
+ * Algorithm:
+ *     Vowel means character is in aeiouyäöåé.
+ *     For the word to be conjugated, check these variables:
+ *       Front
+ *         - Initially true, unless the name starts with h/k/q/z
+ *         - True if last aouäöy0-9 is in äöy14579
+ *         - False if last aouäöy0-9 is in aou02368
+ *       HasVowel
+ *         - True if last aouäöy is in aouäöy
+ *       LastChar
+ *         - Last char of word
+ *       LastChar2
+ *         - Second last char of word (or first)
+ *       LastChar3
+ *         - Third last char of word
+ *       Size
+ *         - Length of the name
+ *     If conjugating to PARTitive:
+ *       Display the full name.
+ *       If size=1 or !HasVowel
+ *         Display ':'
+ *         If LastChar is in flmnlrsx, display 'ä' and set Front=true
+ *         Else If LastChar is z, display 'a' and set Front=false
+ *         Else display 't'
+ *       Else If LastChar is 's' and lastchar2 is not vowel,
+ *         Display 't'
+ *       Else if LastChar is not vowel,
+ *         Display 'i'
+ *     Else
+ *       I
+ f size=1 or !HasVowel
+ *         Display the full name and ':'
+ *       Else If LastChar is 's' and lastchar2 is not vowel,
+ *         Display the full name and 'kse'
+ *       Else if LastChar is vowel
+ *         Display the full name and 'i'
+ *       Else If size <= 2
+ *         Display the full name
+ *       Else If LastChar is vowel and lastchar2 = lastchar3
+ *                                 and lastchar2 in kpt,
+ *         Display the name except second last character
+ *       Else
+ *         Display the full name
+ *
+ *     If conjugating to ACCusative
+ *       Display 'n'
+ *     Else If conjugating to PARTitive
+ *       Display 'ä' or 'a' depending on Front
+ *     Else if conjugating to GENitive
+ *       Display 'n'
+ *     Else if conjugating to ADEssiive
+ *       Display 'll'
+ *       Display 'ä' or 'a' depending on Front
+ *     Else if conjugating to ALLAtive
+ *       Display 'lle'
+ *
+ * Copyright (C) 1992,2003 Bisqwit (http://iki.fi/bisqwit/)
+ */
+
 // These functions do not handle plural (never needed
 // with names) or alphanumeric codenames.
 
@@ -112,6 +180,7 @@ ConjugateTest:
 
     if(ConjuCode == PART)
     {
+    	for(unsigned a=0; a<size; ++a)RealDispChar(ConjuWord[a]);
         // Case "hard body"
         if(size == 1 || !hasvowel)
         {
@@ -119,7 +188,6 @@ ConjugateTest:
             // Examples: X,a -> X:ää
             //           A,a -> A:ta
             //           P,a -> P:tä
-            for(unsigned a=0; a<size; ++a)RealDispChar(ConjuWord[a]);
             RealDispChar(':');
             if(lastchar == 'f' || lastchar == 'F'
             || lastchar == 'l' || lastchar == 'L'
@@ -146,18 +214,12 @@ ConjugateTest:
         {
             // If the word ends with s, add "t"
             // Example: Magus,a -> Magusta
-            for(unsigned a=0; a<size; ++a)RealDispChar(ConjuWord[a]);
             RealDispChar('t');
         }
-        else if(isvowel(lastchar))
-        {
-            for(unsigned a=0; a<size; ++a)RealDispChar(ConjuWord[a]);
-        }
-        else
+        else if(!isvowel(lastchar))
         {
             // If the word does not end with vowel, add "i"
             // Example: John,a -> Johnia
-            for(unsigned a=0; a<size; ++a)RealDispChar(ConjuWord[a]);
             RealDispChar('i');
         }
     }
@@ -249,8 +311,24 @@ static void Hoitele(const char *s)
 
 int main(int argc, const char *const *argv)
 {
+	if(!argv[1])
+	{
+		std::fprintf(std::stderr,
+		    "Usage: taipus <name>\n"
+            "Name is 1-5 characters long name, consisting of characters a-z,å,ä,ö,é.\n");
+		return 0;
+	}
     std::strncpy(NameBuf, argv[1], 5);
     NameBuf[5] = 0;
+    
+    /* All different test cases:
+     *    mikko, mökki
+     *    zgw, r1234
+     *    magus, teräs
+     *    simo, lätsä
+     *
+     * Bugi: mäki, käsi
+     */
     
     Hoitele((
         "Pasi näki " + ACC + NAME + "\n"

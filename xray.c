@@ -10,7 +10,7 @@
 #endif
 
 /*
- Copyright (C) 1992,2002 Bisqwit (http://bisqwit.iki.fi/)
+ Copyright (C) 1992,2003 Bisqwit (http://iki.fi/bisqwit/)
  
  ROM viewer:
  
@@ -340,7 +340,7 @@ int main(int argc, const char *const *argv)
     {
         printf(
             "Designed for Game Boy, SNES and NES files, but can be used on others as well\n"
-            "Copyright (C) 1992,2002 Bisqwit (http://bisqwit.iki.fi/)\n"
+            "Copyright (C) 1992,2003 Bisqwit (http://iki.fi/bisqwit/)\n"
             "Usage: xray <filename>\n");
         return 0;
     }

@@ -1202,7 +1202,8 @@ void insertor::LoadFile(FILE *fp)
             strings[label] = model;
             
             static char cursbuf[]="-/|\\",curspos=0;
-            fprintf(stderr,"%c\010",cursbuf[++curspos&3]);
+            if(!(curspos%4)) fprintf(stderr,"%c\010",cursbuf[curspos/4]);
+            curspos=(curspos+1)%(4*4);
             if(c == '*')fputs(" \n", stderr);
            
             continue;
@@ -1216,7 +1217,7 @@ int main(void)
 {
     fprintf(stderr,
         "Chrono Trigger script insertor version "VERSION"\n"
-        "Copyright (C) 1992,2002 Bisqwit (http://bisqwit.iki.fi/)\n");
+        "Copyright (C) 1992,2003 Bisqwit (http://iki.fi/bisqwit/)\n");
     
     insertor ins;
     
