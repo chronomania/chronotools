@@ -1,12 +1,12 @@
 include Makefile.sets
 
 # Building for Windows:
-HOST=/opt/xmingw/bin/i386-mingw32msvc-
-CFLAGS += -Iwinlibs
-CPPFLAGS += -Iwinlibs
-CXXFLAGS += -Iwinlibs
-LDOPTS += -L/opt/xmingw/lib
-LDFLAGS += -Lwinlibs -liconv
+#HOST=/opt/xmingw/bin/i386-mingw32msvc-
+#CFLAGS += -Iwinlibs
+#CPPFLAGS += -Iwinlibs
+#CXXFLAGS += -Iwinlibs
+#LDOPTS += -L/opt/xmingw/lib
+#LDFLAGS += -Lwinlibs -liconv
 
 # Or:
 #HOST=/usr/local/mingw32/bin/i586-mingw32msvc-
@@ -14,7 +14,7 @@ LDFLAGS += -Lwinlibs -liconv
 
 
 # Building for native:
-#HOST=
+HOST=
 
 
 # Which compiler to use
@@ -126,22 +126,23 @@ DEPDIRS = utils/
 # VERSION 1.13.7 brings an improvement to the sluggish VWF8 screens problem
 # VERSION 1.13.8 C++ standard compliance upgrade... also a new eq-related feature
 # VERSION 1.13.9 is a vwf8 bugfix, but seems to have other problems!
+# VERSION 1.14.0 is a new "stable" release, at least for posix.
 
-OPTIM=-Os
+#OPTIM=-Os
 # -fshort-enums
 # -fpack-struct
 #OPTIM=-O0
 #OPTIM=-O1 -pg
 #OPTIM=-O3 -pg
 #LDFLAGS += -pg
-#OPTIM=-O3
+OPTIM=-O3
 
 CXXFLAGS += -I.
 CFLAGS += -I/usr/include/slang
 LDFLAGS += -L/usr/lib/slang
 
 
-VERSION=1.13.9
+VERSION=1.14.0
 ARCHFILES=utils/xray.cc utils/xray.h \
           utils/viewer.c \
           utils/vwftest.cc \

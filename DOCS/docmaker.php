@@ -65,6 +65,8 @@ BODY{background:white;color:black}
 CODE{font-family:lucida console,courier new,courier;color:#105000}
 PRE.smallerpre{font-family:lucida console,courier new,courier;font-size:80%;color:#500010;margin-left:30px}
 SMALL    {font-size:70%}
+.nonmail { visibility:hidden;position:absolute; top:0px;left:0px }
+.ismail  { font-weight:normal }
 --></style></head>
  <body>
   <h1><?=htmlspecialchars($title)?></h1>

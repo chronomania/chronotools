@@ -52,7 +52,7 @@ So here's what you do if you want to translate Chrono Trigger.
  <li>You ask me how to do this and that what you don't know. :)<br>
      For example, what to do if ctinsert reports errors,
      or if you want features like
-     <a href=\"#conj\">name conjugation</a> or
+     <a href=\"#conj\">player name inflection</a> or
      <a href=\"#vwf8\">variable width 8pix font</a>.</li>
 </ul>
 
@@ -85,7 +85,7 @@ Last updated:
 <tr><td>Compression algorithms</td>
     <td>100%</td> <td>everything works</td></tr>
 <tr><td>Item/tech/monster font handling</td>
-    <td>99%</td> <td>equipment screen lags</td></tr>
+    <td>99%</td> <td>everything works well enough</td></tr>
 <tr><td>Graphics handling</td>
     <td>95%</td> <td>minor details left</td></tr>
 <tr><td>Signature feature</td>
@@ -201,6 +201,7 @@ Copypaste from the Makefile:
 # VERSION 1.13.7 brings an improvement to the sluggish VWF8 screens problem
 # VERSION 1.13.8 C++ standard compliance upgrade... also a new eq-related feature
 # VERSION 1.13.9 is a vwf8 bugfix, but seems to have other problems!
+# VERSION 1.14.0 is a new \"stable\" release, at least for posix.
 </pre>
 
 Users of previous versions are advised to do the following:
@@ -305,7 +306,7 @@ dumps to reduce the amount of code written.
 
 ", '1. Useful features' => "
 
-", 'conj:1.1. Name conjugation' => "
+", 'conj:1.1. Player name inflection' => "
 
 <a href=\"/ctfin/ct-code.txt\">
 <img src=\"/ctfin/dev/ct-taipus2.png\" alt=\"It works!\" align=right>
@@ -442,6 +443,13 @@ may have when compared to the standard English version:
    <li>Expansion to 48 Mbit or 64 Mbit</li>
   </ul>
 
+These things are not implemented:
+  <ul>
+   <li>Changing the length limit of character names</li>
+   <li>Changing the default character names</li>
+   <li>Changing the length limit of place names (but you can use an alternate thinner font to fit more text)</li>
+  </ul>
+
 ", 'req:1. Requirements' => "
 
 For source code (if you're a developer):
@@ -507,7 +515,7 @@ files.
 
 <ul>
  <li><a href=\"compression.html\">Compression</a></li>
- <li><a href=\"conjugation.html\">Conjugation</a></li>
+ <li><a href=\"conjugation.html\">Conjugation</a> (inflection)</li>
  <li><a href=\"crononick.html\">Crononick</a></li>
  <li><a href=\"imageformat.html\">Image format</a></li>
  <li><a href=\"signature.html\">Signature</a></li>

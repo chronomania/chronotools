@@ -784,9 +784,8 @@ EquipRightItemFunc:        ;also used in shop
          ; Find out if we were called from the routine
          ; that displays equipment (4 lines)...
          lda 6,s
-         cmp #$A70F
-         beq were
-         ; We weren't - must be from shop then
+         cmp #$A70F: beq were ; eq-viewer?
+         ; We weren't - must be from shop-equipper.
          bra +
        were:
          ; We were called from equipviewer.
@@ -796,6 +795,10 @@ EquipRightItemFunc:        ;also used in shop
          clc:adc $1043 ;sell-listbegin
          ; This works
          sta W_TILENUM
+         
+         ; The buybuy-lister in shop must not ignore lines.
+         lda 6,s
+         cmp #$DD65: beq ignoreclockcheck
 
          jsr CalculateClockDifference
          cmp #3
@@ -804,6 +807,7 @@ EquipRightItemFunc:        ;also used in shop
          bcc IgnoreItemListVWF8 ; Okay to ignore
          ; Not ignored
          jsr SaveClock
+      ignoreclockcheck:
       + pla
         SET_16_BIT_AX()
         
@@ -822,7 +826,10 @@ EquipRightItemFunc:        ;also used in shop
 
 IgnoreItemListVWF8:
         .al
+        .xl
         pla
+        ; Skip past 10 characters (20 bytes)
+        stx W_TILENUM : lda #10*2: clc: adc W_TILENUM : tax
         lda #$00DC: trb $7E
         rtl
         

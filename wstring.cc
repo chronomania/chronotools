@@ -305,10 +305,10 @@ char WcharToAsc(wchar_t c)
 
 long atoi(const wchar_t *p, int base)
 {
-#ifdef WIN32
-    return wcstol(p, 0, base);
-#else
+#ifndef WIN32
     return std::wcstol(p, 0, base);
+#else
+    return wcstol(p, 0, base);
 #endif
 #if 0
     long ret=0, sign=1;
@@ -339,10 +339,10 @@ const std::wstring wformat(const wchar_t* fmt, ...)
     wchar_t Buf[4096];
     va_list ap;
     va_start(ap, fmt);
-#ifdef WIN32
-    vswprintf(Buf, fmt, ap);
-#else
+#ifndef WIN32
     std::vswprintf(Buf, 4096, fmt, ap);
+#else
+    vswprintf(Buf, fmt, ap);
 #endif
     va_end(ap);
     return Buf;

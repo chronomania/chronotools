@@ -540,6 +540,8 @@ void freespacemap::OrganizeO65linker(O65linker& objects)
         const unsigned page = i->first;
         const vector<unsigned>& items = i->second;
         
+        //fprintf(stderr, "Linking %u items to page $%02X:\n", items.size(), page);
+        
         vector<freespacerec> Organization(items.size());
         
         for(unsigned c=0; c<items.size(); ++c)
@@ -555,7 +557,12 @@ void freespacemap::OrganizeO65linker(O65linker& objects)
                 addr |= (page << 16);
                 addr = ROM2SNESaddr(addr);
             }
-            addrs[items[c]] = addr;
+            
+            unsigned objno = items[c];
+            
+            //fprintf(stderr, "%5u: %06X (%s)\n", c, addr, objects.GetName(objno).c_str());
+            
+            addrs[objno] = addr;
         }
     }
     
@@ -576,6 +583,8 @@ void freespacemap::OrganizeO65linker(O65linker& objects)
         unsigned page = NOWHERE;
         OrganizeToAnySamePage(Organization, page);
         
+        //fprintf(stderr, "Linking %u items to page $%02X (group %u)\n", items.size(), page, i->first);
+        
         for(unsigned c=0; c<items.size(); ++c)
         {
             unsigned addr = Organization[c].pos;
@@ -584,12 +593,18 @@ void freespacemap::OrganizeO65linker(O65linker& objects)
                 addr |= (page << 16);
                 addr = ROM2SNESaddr(addr);
             }
-            addrs[items[c]] = addr;
+            unsigned objno = items[c];
+            
+            //fprintf(stderr, "%5u: %06X (%s)\n", c, addr, objects.GetName(objno).c_str());
+            
+            addrs[objno] = addr;
         }
     }
     
     /* LAST link those which go anywhere */
 
+    //fprintf(stderr, "Linking %u items to various addresses\n", items.size());
+    
     vector<freespacerec> Organization(items.size());
 
     for(unsigned c=0; c<items.size(); ++c)
@@ -604,7 +619,11 @@ void freespacemap::OrganizeO65linker(O65linker& objects)
         {
             addr = ROM2SNESaddr(addr);
         }
-        addrs[items[c]] = addr;
+        unsigned objno = items[c];
+        
+        //fprintf(stderr, "%5u: %06X (%s)\n", c, addr, objects.GetName(objno).c_str());
+        
+        addrs[objno] = addr;
     }
     
     /* Everything done. */

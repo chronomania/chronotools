@@ -1036,10 +1036,11 @@ void insertor::WriteVWF12()
     /* Create a patch for both tile tables. */
     block1.LoadSegFrom(CODE, Font12.GetTab1());
     block2.LoadSegFrom(CODE, Font12.GetTab2());
-    block1.Locate(CODE, font_begin * 24);
-    block2.Locate(CODE, font_begin * 12);
-    block1.DeclareGlobal(CODE, "VWF12_TABLE1", 0);
-    block2.DeclareGlobal(CODE, "VWF12_TABLE2", 0);
+    //block1.Locate(CODE, font_begin * 24);
+    //block2.Locate(CODE, font_begin * 12);
+    block1.DeclareGlobal(CODE, "VWF12_TABLES", 0);
+    block1.DeclareGlobal(CODE, "VWF12_TABLE1", font_begin*-24);
+    block2.DeclareGlobal(CODE, "VWF12_TABLE2", font_begin*-12);
     
     LinkageWish wish;
     wish.SetLinkageGroup(pagegroup);
@@ -1047,9 +1048,30 @@ void insertor::WriteVWF12()
     objects.AddObject(block1, "VWF12_TABLE1", wish);
     objects.AddObject(block2, "VWF12_TABLE2", wish);
     
-    objects.AddReference("VWF12_TABLE1", PagePtrFrom(GetConst(VWF12_SEGMENT)));
-    objects.AddReference("VWF12_TABLE1", OffsPtrFrom(GetConst(VWF12_TAB1_OFFSET)));
+    /*
+     C2:5DCE:
+         0        clc
+         1        adc TAB1_OFFSET
+         4        sta $76
+         6        lda $35
+         8        lsr
+      Will be changed to:
+         0        adc TAB1_OFFSET
+         3        sta $76
+         5        lda $35
+         7        clc
+         8        lsr
+    */
+    PlaceByte(0x69, GetConst(VWF12_TAB1_OFFSET)-2, L"vwf12 patch"); // adc
+    PlaceByte(0x85, GetConst(VWF12_TAB1_OFFSET)+1, L"vwf12 patch"); // sta $76
+    PlaceByte(0x76, GetConst(VWF12_TAB1_OFFSET)+2, L"vwf12 patch");
+    PlaceByte(0xA5, GetConst(VWF12_TAB1_OFFSET)+3, L"vwf12 patch"); // lda $35
+    PlaceByte(0x35, GetConst(VWF12_TAB1_OFFSET)+4, L"vwf12 patch");
+    PlaceByte(0x18, GetConst(VWF12_TAB1_OFFSET)+5, L"vwf12 patch"); // clc
+    
+    objects.AddReference("VWF12_TABLE1", OffsPtrFrom(GetConst(VWF12_TAB1_OFFSET)-1));
     objects.AddReference("VWF12_TABLE2", OffsPtrFrom(GetConst(VWF12_TAB2_OFFSET)));
+    objects.AddReference("VWF12_TABLES", PagePtrFrom(GetConst(VWF12_SEGMENT)));
 }
 
 void insertor::WriteVWF8()

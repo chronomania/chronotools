@@ -94,7 +94,7 @@ const std::wstring Base62Label(const unsigned noffs)
 }
 void PutBase62Label(const unsigned noffs)
 {
-    PutAscii(wformat(L"$%s:", Base62Label(noffs).c_str()));
+    PutAscii(wformat(L"$%ls:", Base62Label(noffs).c_str()));
 }
 void PutBase16Label(const unsigned noffs)
 {

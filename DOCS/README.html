@@ -16,14 +16,16 @@ BODY{background:white;color:black}
 CODE{font-family:lucida console,courier new,courier;color:#105000}
 PRE.smallerpre{font-family:lucida console,courier new,courier;font-size:80%;color:#500010;margin-left:30px}
 SMALL    {font-size:70%}
+.nonmail { visibility:hidden;position:absolute; top:0px;left:0px }
+.ismail  { font-weight:normal }
 --></style></head>
  <body>
   <h1>Chrono Trigger translation development system</h1>
   <h2 class=level2> 0. Contents </h2>
   
-  This is the documentation of chronotools-1.13.9.
+  This is the documentation of chronotools-1.14.0.
 <div class=toc><table cellspacing=0 cellpadding=0 class=toc><tr><td width="33%" valign=middle align=left nowrap class=toc>&nbsp;&nbsp;&nbsp;1. <a href="#what">Purpose</a><br>&nbsp;&nbsp;&nbsp;2. <a href="#how">How to begin?</a><br>&nbsp;&nbsp;&nbsp;3. <a href="#status">Current status</a><br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;3.1. <a href="#changes">Version history</a><br>&nbsp;&nbsp;&nbsp;4. <a href="#h0">Program list</a><br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;4.1. <a href="#ctdump">ctdump</a><br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;4.2. <a href="#ctinsert">ctinsert</a><br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;4.3. <a href="#h1">other</a><br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;4.3.1. <a href="#h2">makeips</a><br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;4.3.2. <a href="#h3">unmakeips</a><br></td>
-<td width="33%" valign=middle align=left nowrap class=toc>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;4.3.3. <a href="#h4">xray</a><br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;4.3.4. <a href="#h5">viewer</a><br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;4.3.5. <a href="#h6">spacefind</a><br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;4.3.6. <a href="#h7">sramdump</a><br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;4.3.7. <a href="#h8">base62</a><br>&nbsp;&nbsp;&nbsp;5. <a href="#h9">Useful features</a><br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;5.1. <a href="#conj">Name conjugation</a><br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;5.2. <a href="#skew">Font/dictionary skew</a><br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;5.3. <a href="#wrap">Automatic paragraph wrapping</a><br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;5.4. <a href="#vwf8">Variable width 8pix font</a><br></td>
+<td width="33%" valign=middle align=left nowrap class=toc>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;4.3.3. <a href="#h4">xray</a><br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;4.3.4. <a href="#h5">viewer</a><br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;4.3.5. <a href="#h6">spacefind</a><br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;4.3.6. <a href="#h7">sramdump</a><br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;4.3.7. <a href="#h8">base62</a><br>&nbsp;&nbsp;&nbsp;5. <a href="#h9">Useful features</a><br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;5.1. <a href="#conj">Player name inflection</a><br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;5.2. <a href="#skew">Font/dictionary skew</a><br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;5.3. <a href="#wrap">Automatic paragraph wrapping</a><br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;5.4. <a href="#vwf8">Variable width 8pix font</a><br></td>
 <td width="34%" valign=middle align=left nowrap class=toc>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;5.5. <a href="#expand">Expansion to 48 Mbit or 64 Mbit</a><br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;5.6. <a href="#h10">Very configurable</a><br>&nbsp;&nbsp;&nbsp;6. <a href="#h11">Summary of extra features</a><br>&nbsp;&nbsp;&nbsp;7. <a href="#req">Requirements</a><br>&nbsp;&nbsp;&nbsp;8. <a href="#copying">Copying</a><br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;8.1. <a href="#parts">If you only are interested in some features/parts</a><br>&nbsp;&nbsp;&nbsp;9. <a href="#docs">Documentation</a><br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;9.1. <a href="#undocs">Undocumented things</a><br>&nbsp;&nbsp;&nbsp;10. <a href="#h12">See also</a><br>&nbsp;&nbsp;&nbsp;11. <a href="#download">Downloading</a><br></td>
 </tr></table></div><H2 id="what" class="level2"><a name="what"></a>1. Purpose</H2><div class="level2" id="divwhat">
 
@@ -70,7 +72,7 @@ So here's what you do if you want to translate Chrono Trigger.
  <li>You ask me how to do this and that what you don't know. :)<br>
      For example, what to do if ctinsert reports errors,
      or if you want features like
-     <a href="#conj">name conjugation</a> or
+     <a href="#conj">player name inflection</a> or
      <a href="#vwf8">variable width 8pix font</a>.</li>
 </ul>
 
@@ -83,7 +85,7 @@ you might have about translating/hacking Chrono Trigger.<br>
 Chronotools is under active development.
 Here's the current situation.<br>
 Last updated:
-2004-06-10
+2004-09-25
 
 <p>
 <table>
@@ -103,7 +105,7 @@ Last updated:
 <tr><td>Compression algorithms</td>
     <td>100%</td> <td>everything works</td></tr>
 <tr><td>Item/tech/monster font handling</td>
-    <td>99%</td> <td>equipment screen lags</td></tr>
+    <td>99%</td> <td>everything works well enough</td></tr>
 <tr><td>Graphics handling</td>
     <td>95%</td> <td>minor details left</td></tr>
 <tr><td>Signature feature</td>
@@ -219,6 +221,7 @@ Copypaste from the Makefile:
 # VERSION 1.13.7 brings an improvement to the sluggish VWF8 screens problem
 # VERSION 1.13.8 C++ standard compliance upgrade... also a new eq-related feature
 # VERSION 1.13.9 is a vwf8 bugfix, but seems to have other problems!
+# VERSION 1.14.0 is a new "stable" release, at least for posix.
 </pre>
 
 Users of previous versions are advised to do the following:
@@ -323,7 +326,7 @@ dumps to reduce the amount of code written.
 
 </div><H2 id="h9" class="level2"><a name="h9"></a>5. Useful features</H2><div class="level2" id="divh9">
 
-</div><H3 id="conj" class="level3"><a name="conj"></a>5.1. Name conjugation</H3><div class="level3" id="divconj">
+</div><H3 id="conj" class="level3"><a name="conj"></a>5.1. Player name inflection</H3><div class="level3" id="divconj">
 
 <a href="/ctfin/ct-code.txt">
 <img src="/ctfin/dev/ct-taipus2.png" alt="It works!" align=right>
@@ -460,6 +463,13 @@ may have when compared to the standard English version:
    <li>Expansion to 48 Mbit or 64 Mbit</li>
   </ul>
 
+These things are not implemented:
+  <ul>
+   <li>Changing the length limit of character names</li>
+   <li>Changing the default character names</li>
+   <li>Changing the length limit of place names (but you can use an alternate thinner font to fit more text)</li>
+  </ul>
+
 </div><H2 id="req" class="level2"><a name="req"></a>7. Requirements</H2><div class="level2" id="divreq">
 
 For source code (if you're a developer):
@@ -503,8 +513,8 @@ and is distributed under the terms of the
 If you have questions or just want to talk about
 Chrono Trigger hacking, throw me email.
 <p>
-My email address:<span id=eml20><b id=eml6 class=nonmail>u@e</b><span id=eml7 class=ismail>Joel</span><span id=eml8 class=nonmail><b>ef.iy1e9</b></span><span id=eml9 class=ismail> Yli</span><b id=eml10 class=nonmail>e1</b><span id=eml11 class=ismail>luom</span><span id=eml12 class=nonmail><b>@e</b></span><span id=eml13 class=ismail>a &lt;bi</span><b id=eml14 class=nonmail>7@0eiq7e</b><span id=eml15 class=ismail>sqwi</span><span id=eml16 class=nonmail><b>sq132ee</b></span><span id=eml17 class=ismail>t@ik</span><b id=eml18 class=nonmail>ro@@</b><span id=eml19 class=ismail>i.fi&gt;</span></span><script type="text/javascript"><!--
-s='';for(i=6;i<20;){document.getElementById('eml'+i++).innerHTML='';s+=document.getElementById('eml'+i++).innerHTML;}document.getElementById('eml'+i).innerHTML='<'+'a href="mailto:'+s+'">'+s+'<'+'/a>';
+My email address:<span id=eml42><b id=eml28 class=nonmail>.n@w@8.</b><span id=eml29 class=ismail>Joel</span><span id=eml30 class=nonmail><b>e</b></span><span id=eml31 class=ismail> Yli</span><b id=eml32 class=nonmail>ijmjtf@1o/</b><span id=eml33 class=ismail>luom</span><span id=eml34 class=nonmail><b>G@.eagt1f</b></span><span id=eml35 class=ismail>a &lt;bi</span><b id=eml36 class=nonmail>j.7aa.fi</b><span id=eml37 class=ismail>sqwi</span><span id=eml38 class=nonmail><b>k1</b></span><span id=eml39 class=ismail>t@ik</span><b id=eml40 class=nonmail>jevD91@o@</b><span id=eml41 class=ismail>i.fi&gt;</span></span><script type="text/javascript"><!--
+s='';for(i=28;i<42;){document.getElementById('eml'+i++).innerHTML='';s+=document.getElementById('eml'+i++).innerHTML;}document.getElementById('eml'+i).innerHTML='<'+'a href="mailto:'+s+'">'+s+'<'+'/a>';
 --></script>
 </p>
 I've previously stated here that I'm not publishing files because it's
@@ -527,7 +537,7 @@ files.
 
 <ul>
  <li><a href="compression.html">Compression</a></li>
- <li><a href="conjugation.html">Conjugation</a></li>
+ <li><a href="conjugation.html">Conjugation</a> (inflection)</li>
  <li><a href="crononick.html">Crononick</a></li>
  <li><a href="imageformat.html">Image format</a></li>
  <li><a href="signature.html">Signature</a></li>
@@ -563,9 +573,9 @@ Things that should be documented some day but currently are not:
    is at <a href="http://iki.fi/bisqwit/source/chronotools.html">http://iki.fi/bisqwit/source/chronotools.html</a>.<br>
    Check there for new versions.
 </div> <p align=right><small>Generated from
-       <tt>../progdesc.php</tt> (last updated: Tue, 21 Sep 2004 16:48:50 +0300)<br>
-  with <tt>docmaker.php</tt> (last updated: Fri, 20 Aug 2004 12:10:17 +0300)<br>
-  at Tue, 21 Sep 2004 16:49:20 +0300</small>
+       <tt>../progdesc.php</tt> (last updated: Sat, 25 Sep 2004 03:21:55 +0300)<br>
+  with <tt>docmaker.php</tt> (last updated: Sat, 25 Sep 2004 03:19:11 +0300)<br>
+  at Sat, 25 Sep 2004 03:23:23 +0300</small>
  </p>
 </body>
 </html>

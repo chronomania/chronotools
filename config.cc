@@ -14,6 +14,7 @@ namespace
 # Complete enough for only ctdump to work.\n\
 [general]\n\
 characterset=\"iso-8859-15\"\n\
+romsize=32\n\
 [dumper]\n\
 font8fn=\"ct8fn.tga\"\n\
 font12fn=\"ct16fn.tga\"\n\

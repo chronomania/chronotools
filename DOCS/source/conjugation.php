@@ -8,10 +8,10 @@ $progname = 'chronotools';
 $text = Array(
    '1. Introduction' => "
    
-Chronotools supports conjugation.
-<p>
+Chronotools supports conjugation - inflecting the character names depending on context.
+ <p>
 Here I'll explain how it was done for Finnish.
-<p>
+ <p>
 This consists of the following sections:
 <ul>
  <li><a href=\"#plan\">Planning</a></li>

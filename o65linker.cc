@@ -269,14 +269,19 @@ void O65linker::FinishReference(const ReferMethod& reference,
                                 unsigned target,
                                 const std::string& what)
 {
-    unsigned pos = reference.GetAddr();
-    unsigned value = reference.Evaluate(target);
+    unsigned pos    = reference.GetAddr();
+    unsigned value  = reference.Evaluate(target);
+    unsigned nbytes = reference.GetSize();
     
+    if(nbytes < 4)
+    {
+        value &= (1 << (nbytes*8)) - 1;
+    }
     std::string title =
-        format("ref %s: $%0*X", what.c_str(), reference.GetSize()*2, value);
+        format("ref %s: $%0*X", what.c_str(), nbytes*2, value);
 
     vector<unsigned char> bytes;
-    for(unsigned n=0; n<reference.GetSize(); ++n)
+    for(unsigned n=0; n<nbytes; ++n)
     {
         bytes.push_back(value & 255);
         value >>= 8;
