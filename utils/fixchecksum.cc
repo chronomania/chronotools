@@ -4,12 +4,15 @@
 #include <map>
 using namespace std;
 
+#define IPS_ADDRESS_EXTERN 0x01
+#define IPS_ADDRESS_GLOBAL 0x02
+
 int main(int argc, const char *const *argv)
 {
     if(argc != 1+3)
     {
         fprintf(stderr, "fixchecksum: Fixes SNES patch checksum.\n"
-               "Copyright (C) 1992,2003 Bisqwit (http://iki.fi/bisqwit/)\n"
+               "Copyright (C) 1992,2004 Bisqwit (http://iki.fi/bisqwit/)\n"
                "Usage: unmakeips ipsfile.ips oldfile newfile\n");
         return -1;
     }
@@ -21,7 +24,8 @@ int main(int argc, const char *const *argv)
     if(!fp) { perror(patchfn); }
     
     FILE *original = fopen(origfn, "rb");
-    if(!original) { perror(origfn); }
+    if(!original) { if(!strcmp(origfn, "-")) original = stdin;
+                    else perror(origfn); }
     
     if(!fp || !original)
         return -1;
@@ -79,16 +83,23 @@ int main(int argc, const char *const *argv)
         if(c < 0 && ferror(fp)) { goto ipserr; }
         if(c != (wanted=(int)len)) { goto ipseof; }
         
-        for(unsigned a=0; a<len; ++a)
+        if(pos == IPS_ADDRESS_EXTERN || pos == IPS_ADDRESS_GLOBAL)
         {
-            if(pos+a >= ROM.size())
+            /* Ignore these */
+        }
+        else
+        {
+            for(unsigned a=0; a<len; ++a)
             {
-                fprintf(stderr, "Got too big pos %u+%u (ROM size only %u)\n",
-                    pos,len, ROM.size());
-                goto arf;
+                if(pos+a >= ROM.size())
+                {
+                    fprintf(stderr, "Got too big pos %u+%u (ROM size only %u)\n",
+                        pos,len, ROM.size());
+                    goto arf;
+                }
+                ROM[pos+a] = Buf2[a];
+                Touched[pos+a] = true;
             }
-            ROM[pos+a] = Buf2[a];
-            Touched[pos+a] = true;
         }
     }
     if(col) fprintf(stderr, "\n");

@@ -2,7 +2,7 @@
  * For loading and linking 65816 object files
  * Copyright (C) 1992,2003 Bisqwit (http://iki.fi/bisqwit/)
  *
- * Version 1.1.0 - Aug 18 2003, Sep 4 2003
+ * Version 1.2.0 - Aug 18 2003, Sep 4 2003, Jan 23 2004
  */
 
 #define DEBUG_FIXUPS 0
@@ -59,6 +59,18 @@ namespace
         unsigned temp = fgetc(fp);
         if(temp == (unsigned)EOF)return temp;
         return temp | (fgetc(fp) << 8);
+    }
+    unsigned LoadDWord(FILE *fp)
+    {
+        unsigned temp = LoadWord(fp);
+        if(temp == (unsigned)EOF) return temp;
+        unsigned temp2 = LoadWord(fp);
+        if(temp2 == (unsigned)EOF) return temp2;
+        return temp | (temp2 << 16);
+    }
+    unsigned LoadSWord(FILE *fp, bool use32)
+    {
+        return use32 ? LoadDWord(fp) : LoadWord(fp);
     }
     
     void LoadRelocations(FILE *fp, O65::segment& seg)
@@ -195,7 +207,7 @@ void O65::operator= (const O65& b)
     undefines = b.undefines;
 }
 
-void O65::Load(FILE *fp)
+void O65::Load(FILE* fp)
 {
     rewind(fp);
     
@@ -205,7 +217,9 @@ void O65::Load(FILE *fp)
     
     /* FIXME: No validity checks here */
     // Skip mode
-    LoadWord(fp);
+    unsigned mode = LoadWord(fp);
+    
+    bool use32 = mode & 0x2000;
     
     if(this->code) delete this->code;
     if(this->data) delete this->data;
@@ -213,17 +227,17 @@ void O65::Load(FILE *fp)
     this->code = new segment;
     this->data = new segment;
     
-    this->code->base = LoadWord(fp);
-    this->ResizeCode(LoadWord(fp));
+    this->code->base = LoadSWord(fp, use32);
+    this->ResizeCode(LoadSWord(fp, use32));
 
-    this->data->base = LoadWord(fp);
-    this->ResizeData(LoadWord(fp));
+    this->data->base = LoadSWord(fp, use32);
+    this->ResizeData(LoadSWord(fp, use32));
     
-    LoadWord(fp); // Skip bss_base
-    LoadWord(fp); // Skip bss_len
-    LoadWord(fp); // Skip zero_base
-    LoadWord(fp); // Skip zero_len
-    LoadWord(fp); // Skip stack_len
+    LoadSWord(fp, use32); // Skip bss_base
+    LoadSWord(fp, use32); // Skip bss_len
+    LoadSWord(fp, use32); // Skip zero_base
+    LoadSWord(fp, use32); // Skip zero_len
+    LoadSWord(fp, use32); // Skip stack_len
     
     // Skip some headers
     for(;;)
@@ -237,7 +251,7 @@ void O65::Load(FILE *fp)
     fread(&this->code->space[0], this->code->space.size(), 1, fp);
     fread(&this->data->space[0], this->data->space.size(), 1, fp);
     
-    unsigned num_und = LoadWord(fp);
+    unsigned num_und = LoadSWord(fp, use32);
     for(unsigned a=0; a<num_und; ++a)
     {
         string varname;
@@ -254,14 +268,14 @@ void O65::Load(FILE *fp)
         fprintf(stderr, "Warning: Nonempty data segment completely ignored.\n");
     }
     
-    unsigned num_global = LoadWord(fp);
+    unsigned num_global = LoadSWord(fp, use32);
     for(unsigned a=0; a<num_global; ++a)
     {
         string varname;
         while(int c = fgetc(fp)) { if(c==EOF)break; varname += (char) c; }
         
         unsigned seg = fgetc(fp);
-        unsigned value = LoadWord(fp);
+        unsigned value = LoadSWord(fp, use32);
         
         switch(seg)
         {
@@ -332,7 +346,7 @@ void O65::segment::Locate(unsigned newaddress)
     /* Fix all references to local symbols */
     for(unsigned a=0; a<R16.Fixups.size(); ++a)
     {
-        unsigned addr = R16.Fixups[a];
+        unsigned addr = R16.Fixups[a] - base;
         unsigned oldvalue = space[addr] | (space[addr+1] << 8);
         unsigned newvalue = oldvalue + diff;
         
@@ -344,7 +358,7 @@ void O65::segment::Locate(unsigned newaddress)
     }
     for(unsigned a=0; a<R16lo.Fixups.size(); ++a)
     {
-        unsigned addr = R16lo.Fixups[a];
+        unsigned addr = R16lo.Fixups[a] - base;
         unsigned oldvalue = space[addr];
         unsigned newvalue = oldvalue + diff;
 #if DEBUG_FIXUPS
@@ -354,7 +368,7 @@ void O65::segment::Locate(unsigned newaddress)
     }
     for(unsigned a=0; a<R16hi.Fixups.size(); ++a)
     {
-        unsigned addr = R16hi.Fixups[a].first;
+        unsigned addr = R16hi.Fixups[a].first - base;
         unsigned oldvalue = (space[addr] << 8) | R16hi.Fixups[a].second;
         unsigned newvalue = oldvalue + diff;
 #if DEBUG_FIXUPS
@@ -364,7 +378,7 @@ void O65::segment::Locate(unsigned newaddress)
     }
     for(unsigned a=0; a<R24.Fixups.size(); ++a)
     {
-        unsigned addr = R24.Fixups[a];
+        unsigned addr = R24.Fixups[a] - base;
         unsigned oldvalue = space[addr] | (space[addr+1] << 8) | (space[addr+2] << 16);
         unsigned newvalue = oldvalue + diff;
         
@@ -377,7 +391,7 @@ void O65::segment::Locate(unsigned newaddress)
     }
     for(unsigned a=0; a<R24seg.Fixups.size(); ++a)
     {
-        unsigned addr = R24seg.Fixups[a].first;
+        unsigned addr = R24seg.Fixups[a].first - base;
         unsigned oldvalue = (space[addr] << 16) | R24seg.Fixups[a].second;
         unsigned newvalue = oldvalue + diff;
         
@@ -386,6 +400,22 @@ void O65::segment::Locate(unsigned newaddress)
 #endif
         space[addr] = (newvalue>>16) & 255;
     }
+
+    // Update the relocs and fixups so that they are still usable
+    // after this operation. Enables also subsequent Locate() calls.
+    
+    for(unsigned a=0; a<R16.Relocs.size(); ++a) R16.Relocs[a].first += diff;
+    for(unsigned a=0; a<R16lo.Relocs.size(); ++a) R16lo.Relocs[a].first += diff;
+    for(unsigned a=0; a<R16hi.Relocs.size(); ++a) R16hi.Relocs[a].first.first += diff;
+    for(unsigned a=0; a<R24.Relocs.size(); ++a) R24.Relocs[a].first += diff;
+    for(unsigned a=0; a<R24seg.Relocs.size(); ++a) R24seg.Relocs[a].first.first += diff;
+
+    for(unsigned a=0; a<R16.Fixups.size(); ++a) R16.Fixups[a] += diff;
+    for(unsigned a=0; a<R16lo.Fixups.size(); ++a) R16lo.Fixups[a] += diff;
+    for(unsigned a=0; a<R16hi.Fixups.size(); ++a) R16hi.Fixups[a].first += diff;
+    for(unsigned a=0; a<R24.Fixups.size(); ++a) R24.Fixups[a] += diff;
+    for(unsigned a=0; a<R24seg.Fixups.size(); ++a) R24seg.Fixups[a].first += diff;
+
     base = newaddress;
 }
 
@@ -397,7 +427,7 @@ void O65::segment::LocateSym(unsigned symno, unsigned value)
     for(unsigned a=0; a<R16.Relocs.size(); ++a)
     {
         if(R16.Relocs[a].second != symno) continue;
-        unsigned addr = R16.Relocs[a].first;
+        unsigned addr = R16.Relocs[a].first - base;
         unsigned oldvalue = space[addr] | (space[addr+1] << 8);
         unsigned newvalue = oldvalue + value;
 #if DEBUG_FIXUPS
@@ -409,7 +439,7 @@ void O65::segment::LocateSym(unsigned symno, unsigned value)
     for(unsigned a=0; a<R16lo.Relocs.size(); ++a)
     {
         if(R16lo.Relocs[a].second != symno) continue;
-        unsigned addr = R16lo.Relocs[a].first;
+        unsigned addr = R16lo.Relocs[a].first - base;
         unsigned oldvalue = space[addr];
         unsigned newvalue = oldvalue + value;
 #if DEBUG_FIXUPS
@@ -420,7 +450,7 @@ void O65::segment::LocateSym(unsigned symno, unsigned value)
     for(unsigned a=0; a<R16hi.Relocs.size(); ++a)
     {
         if(R16hi.Relocs[a].second != symno) continue;
-        unsigned addr = R16hi.Relocs[a].first.first;
+        unsigned addr = R16hi.Relocs[a].first.first - base;
         unsigned oldvalue = (space[addr] << 8) | R16hi.Relocs[a].first.second;
         unsigned newvalue = oldvalue + value;
 #if DEBUG_FIXUPS
@@ -432,7 +462,7 @@ void O65::segment::LocateSym(unsigned symno, unsigned value)
     for(unsigned a=0; a<R24.Relocs.size(); ++a)
     {
         if(R24.Relocs[a].second != symno) continue;
-        unsigned addr = R24.Relocs[a].first;
+        unsigned addr = R24.Relocs[a].first - base;
         unsigned oldvalue = space[addr] | (space[addr+1] << 8) | (space[addr+2] << 16);
         unsigned newvalue = oldvalue + value;
         
@@ -446,7 +476,7 @@ void O65::segment::LocateSym(unsigned symno, unsigned value)
     for(unsigned a=0; a<R24seg.Relocs.size(); ++a)
     {
         if(R24seg.Relocs[a].second != symno) continue;
-        unsigned addr = R24seg.Relocs[a].first.first;
+        unsigned addr = R24seg.Relocs[a].first.first - base;
         unsigned oldvalue = (space[addr] << 16) | R24seg.Relocs[a].first.second;
         unsigned newvalue = oldvalue + value;
         
@@ -623,4 +653,79 @@ bool O65::Error() const
 void O65::SetError()
 {
     error = true;
+}
+
+void O65::DeclareByteRelocation(const string& name, unsigned addr)
+{
+    unsigned undef_idx = undefines.size();
+    for(unsigned a=0; a<undefines.size(); ++a)
+    {
+        if(undefines[a].first == name)
+        {
+            if(undefines[a].second.first)
+            {
+                // Already known!
+                unsigned value = undefines[a].second.second;
+                addr -= code->base;
+                code->space[addr] = value & 0xFF;
+                return;
+            }
+            undef_idx = a;
+        }
+    }
+    if(undef_idx == undefines.size())
+        undefines.push_back(make_pair(name, make_pair(false, 0)));
+
+    code->R16lo.Relocs.push_back(make_pair(addr, undef_idx));
+}
+
+void O65::DeclareWordRelocation(const string& name, unsigned addr)
+{
+    unsigned undef_idx = undefines.size();
+    for(unsigned a=0; a<undefines.size(); ++a)
+    {
+        if(undefines[a].first == name)
+        {
+            if(undefines[a].second.first)
+            {
+                // Already known!
+                unsigned value = undefines[a].second.second;
+                addr -= code->base;
+                code->space[addr    ] =  value       & 0xFF;
+                code->space[addr + 1] = (value >> 8) & 0xFF;
+                return;
+            }
+            undef_idx = a;
+        }
+    }
+    if(undef_idx == undefines.size())
+        undefines.push_back(make_pair(name, make_pair(false, 0)));
+
+    code->R16.Relocs.push_back(make_pair(addr, undef_idx));
+}
+
+void O65::DeclareLongRelocation(const string& name, unsigned addr)
+{
+    unsigned undef_idx = undefines.size();
+    for(unsigned a=0; a<undefines.size(); ++a)
+    {
+        if(undefines[a].first == name)
+        {
+            if(undefines[a].second.first)
+            {
+                // Already known!
+                unsigned value = undefines[a].second.second;
+                addr -= code->base;
+                code->space[addr    ] =  value       & 0xFF;
+                code->space[addr + 1] = (value >> 8) & 0xFF;
+                code->space[addr + 2] = (value >>16) & 0xFF;
+                return;
+            }
+            undef_idx = a;
+        }
+    }
+    if(undef_idx == undefines.size())
+        undefines.push_back(make_pair(name, make_pair(false, 0)));
+
+    code->R24.Relocs.push_back(make_pair(addr, undef_idx));
 }

@@ -1,6 +1,13 @@
 #include "o65linker.hh"
 #include "msginsert.hh"
 
+#define IPS_ADDRESS_EXTERN 0x01
+#define IPS_ADDRESS_GLOBAL 0x02
+
+#include <list>
+
+using std::list;
+
 struct Object
 {
     O65 object;
@@ -29,7 +36,7 @@ public:
     }
 };
 
-void O65linker::AddObject(const O65& object, const string& what)
+void O65linker::AddObject(const O65& object, const string& what, unsigned addr)
 {
     if(linked)
     {
@@ -39,6 +46,7 @@ void O65linker::AddObject(const O65& object, const string& what)
         return;
     }
     Object *newobj = new Object(object, what);
+    newobj->addr = addr;
     
     const vector<string>& symlist = newobj->symlist;
     
@@ -130,7 +138,7 @@ void O65linker::DefineSymbol(const string& name, unsigned value)
             return;
         }
     }
-    defines.push_back(make_pair(name, make_pair(value, false)));
+    defines.push_back(std::make_pair(name, std::make_pair(value, false)));
 }
 
 void O65linker::AddReference(const string& name, const ReferMethod& reference)
@@ -296,4 +304,176 @@ O65linker::O65linker(): linked(false)
 
 O65linker::~O65linker()
 {
+}
+
+namespace
+{
+    unsigned LoadIPSword(FILE *fp)
+    {
+        unsigned char Buf[2];
+        fread(Buf, 2, 1, fp);
+        return (Buf[0] << 8) | Buf[1];
+    }
+    unsigned LoadIPSlong(FILE *fp)
+    {
+        unsigned char Buf[3];
+        fread(Buf, 3, 1, fp);
+        return (Buf[0] << 16) | (Buf[1] << 8) | Buf[2];
+    }
+    
+    struct IPS_item
+    {
+        unsigned addr;
+
+        bool operator< (const IPS_item& b) const { return addr < b.addr; }
+    };
+    
+    struct IPS_global: public IPS_item
+    {
+        string   name;
+    };
+    struct IPS_extern: public IPS_item
+    {
+        string   name;
+        unsigned size;
+    };
+    struct IPS_lump: public IPS_item
+    {
+        vector<unsigned char> data;
+    };
+}
+
+void O65linker::LoadIPSfile(FILE* fp, const string& what)
+{
+    rewind(fp);
+    
+    /* FIXME: No validity checks here */
+    
+    for(int a=0; a<5; ++a) fgetc(fp); // Skip header which should be "PATCH"
+    
+    list<IPS_global> globals;
+    list<IPS_extern> externs;
+    list<IPS_lump> lumps;
+    
+    for(;;)
+    {
+        unsigned addr = LoadIPSlong(fp);
+        if(feof(fp) || addr == 0x454F46) break;
+        
+        unsigned length = LoadIPSword(fp);
+        
+        vector<unsigned char> Buf2(length);
+        int c = fread(&Buf2[0], 1, length, fp);
+        if(c < 0 || c != (int)length) break;
+        
+        switch(addr)
+        {
+            case IPS_ADDRESS_GLOBAL:
+            {
+                std::string name((const char *)&Buf2[0], Buf2.size());
+                name = name.c_str();
+                unsigned addr = Buf2[name.size()+1]
+                             | (Buf2[name.size()+2] << 8)                       
+                             | (Buf2[name.size()+3] << 16);
+                
+                IPS_global tmp;
+                tmp.name = name;
+                tmp.addr = addr;
+                
+                globals.push_back(tmp);
+
+                break;
+            }
+            case IPS_ADDRESS_EXTERN:
+            {
+                std::string name((const char *)&Buf2[0], Buf2.size());
+                name = name.c_str();
+                unsigned addr = Buf2[name.size()+1]
+                             | (Buf2[name.size()+2] << 8)  
+                             | (Buf2[name.size()+3] << 16);
+                unsigned size = Buf2[name.size()+4];
+
+                IPS_extern tmp;
+                tmp.name = name;
+                tmp.addr = addr;
+                tmp.size = size;
+                
+                externs.push_back(tmp);
+                
+                break;
+            }
+            default:
+            {
+                IPS_lump tmp;
+                tmp.data = Buf2;
+                tmp.addr = addr;
+                
+                lumps.push_back(tmp);
+                
+                break;
+            }
+        }
+    }
+    
+    globals.sort();
+    externs.sort();
+    lumps.sort();
+    
+    for(list<IPS_lump>::const_iterator next_lump,
+        i = lumps.begin(); i != lumps.end(); i=next_lump)
+    {
+        next_lump = i; ++next_lump;
+        const IPS_lump& lump = *i;
+        
+        O65 tmp;
+        
+        tmp.LoadCodeFrom(lump.data);
+        tmp.LocateCode(lump.addr);
+        
+        bool last = next_lump == lumps.end();
+
+        for(list<IPS_global>::iterator next_global,
+            j = globals.begin(); j != globals.end(); j = next_global)
+        {
+            next_global = j; ++next_global;
+            
+            if(last
+            || (j->addr >= lump.addr && j->addr < lump.addr + lump.data.size())
+              )
+            {
+                tmp.DeclareCodeGlobal(j->name, j->addr);
+                globals.erase(j);
+            }
+        }
+
+        for(list<IPS_extern>::iterator next_extern,
+            j = externs.begin(); j != externs.end(); j = next_extern)
+        {
+            next_extern = j; ++next_extern;
+            
+            if(last
+            || (j->addr >= lump.addr && j->addr < lump.addr + lump.data.size())
+              )
+            {
+                switch(j->size)
+                {
+                    case 1:
+                        tmp.DeclareByteRelocation(j->name, j->addr);
+                        break;
+                    case 2:
+                        tmp.DeclareWordRelocation(j->name, j->addr);
+                        break;
+                    case 3:
+                        tmp.DeclareLongRelocation(j->name, j->addr);
+                        break;
+                }
+                externs.erase(j);
+            }
+        }
+        
+        char Buf[64];
+        sprintf(Buf, "block $%06X of ", lump.addr);
+        
+        AddObject(tmp, Buf + what, lump.addr);
+    }
 }

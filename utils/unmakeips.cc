@@ -2,14 +2,18 @@
 #include <cstring>
 #include <vector>
 #include <map>
+
 using namespace std;
+
+#define IPS_ADDRESS_EXTERN 0x01
+#define IPS_ADDRESS_GLOBAL 0x02
 
 int main(int argc, const char *const *argv)
 {
     if(argc != 1+3)
     {
         fprintf(stderr, "unmakeips: A simple IPS patcher with lots of error checks\n"
-               "Copyright (C) 1992,2003 Bisqwit (http://iki.fi/bisqwit/)\n"
+               "Copyright (C) 1992,2004 Bisqwit (http://iki.fi/bisqwit/)\n"
                "Usage: unmakeips ipsfile.ips oldfile newfile\n");
         return -1;
     }
@@ -21,7 +25,8 @@ int main(int argc, const char *const *argv)
     if(!fp) { perror(patchfn); }
     
     FILE *original = fopen(origfn, "rb");
-    if(!original) { perror(origfn); }
+    if(!original) { if(!strcmp(origfn, "-")) original = stdin;
+                    else perror(origfn); }
     
     FILE *resultfile = fopen(resfn, "wb");
     if(!resultfile) { perror(resfn); }
@@ -72,7 +77,15 @@ int main(int argc, const char *const *argv)
         c = fread(&Buf2[0], 1, len, fp);
         if(c < 0 && ferror(fp)) { goto ipserr; }
         if(c != (wanted=(int)len)) { goto ipseof; }
-        lumps.insert(pair<unsigned, vector<char> > (pos, Buf2));
+        
+        if(pos == IPS_ADDRESS_EXTERN || pos == IPS_ADDRESS_GLOBAL)
+        {
+            /* Ignore these */
+        }
+        else
+        {
+            lumps.insert(pair<unsigned, vector<char> > (pos, Buf2));
+        }
     }
     if(col) fprintf(stderr, "\n");
     fclose(fp);

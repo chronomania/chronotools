@@ -5,6 +5,7 @@
 using namespace std;
 
 #define word(x) x=fgetc(fp);x|=fgetc(fp)<<8
+#define sword(x) do{word(x);if(use32){x|=fgetc(fp)<<16;x|=fgetc(fp)<<24;}}while(0)
 
 namespace
 {
@@ -14,6 +15,8 @@ namespace
     unsigned bbase, blen;
     unsigned zbase, zlen;
     unsigned stack;
+    
+    bool use32;
 
     vector<unsigned char> text, data;
 
@@ -22,7 +25,7 @@ namespace
     
     FILE *fp;
     
-    void Relocations(const vector<unsigned char>& segment)
+    void Relocations(const vector<unsigned char>& segment, unsigned base)
     {
         int addr = -1;
         for(;;)
@@ -43,40 +46,43 @@ namespace
             {
                 unsigned apu;
                 word(apu);
-                printf("   Apu = %04X:\n", apu);
+                printf("   Extern = %04X:\n", apu);
             }
+            
+            unsigned actual = addr - base;
+            if(actual >= segment.size()-3) actual = 0;
 
             switch(type)
             {
                 case 0x20:
                 {
-                    unsigned value = segment[addr] << 8;
+                    unsigned value = segment[actual] << 8;
                     printf("Segid=%u, type 20; 16.LO [%04X]=%04X\n", seg, addr, value);
                     break;
                 }
                 case 0x40:
                 {
                     unsigned apu = fgetc(fp);
-                    unsigned value = (segment[addr] << 8) | apu;
+                    unsigned value = (segment[actual] << 8) | apu;
                     printf("Segid=%u, type 40; 16.HI [%04X]=%04X\n", seg, addr, value);
                     break;
                 }
                 case 0x80:
                 {
-                    unsigned value = (*(unsigned *)&segment[addr])&0xFFFF;
+                    unsigned value = (*(unsigned *)&segment[actual])&0xFFFF;
                     printf("Segid=%u, type 80; 16    [%04X]=%04X\n", seg, addr, value);
                     break;
                 }
                 case 0xA0:
                 {
-                    unsigned value = (*(unsigned *)&segment[addr])&0xFFFFFF;
+                    unsigned value = (*(unsigned *)&segment[actual])&0xFFFFFF;
                     unsigned apu; word(apu);
                     printf("Segid=%u, type A0; 24.SEG[%04X]=%06X,%04X\n", seg, addr, value,apu);
                     break;
                 }
                 case 0xC0:
                 {
-                    unsigned value = (*(unsigned *)&segment[addr])&0xFFFFFF;
+                    unsigned value = (*(unsigned *)&segment[actual])&0xFFFFFF;
                     printf("Segid=%u, type C0; 24    [%04X]=%06X\n", seg, addr, value);
                     break;
                 }
@@ -100,11 +106,14 @@ int main(int argc, const char *const *argv)
     fseek(fp, 6, SEEK_SET);
     
     word(mode);
-    word(tbase);  word(tlen);
-    word(dbase);  word(dlen);
-    word(bbase);  word(blen);
-    word(zbase);  word(zlen);
-    word(stack);
+    
+    use32 = mode & 0x2000;
+    
+    sword(tbase);  sword(tlen);
+    sword(dbase);  sword(dlen);
+    sword(bbase);  sword(blen);
+    sword(zbase);  sword(zlen);
+    sword(stack);
     
     text.resize(tlen);
     data.resize(dlen);
@@ -124,27 +133,30 @@ int main(int argc, const char *const *argv)
         printf("\n");
     }
     
-    printf("text length %u, data length %u\n", tlen, dlen);
+    printf("text is %u @ $%04X\n", tlen, tbase);
+    printf("data is %u @ $%04X\n", dlen, dbase);
+    printf("bss  is %u @ $%04X%s\n", blen, bbase, blen?" (huh?)":"");
+    printf("zero is %u @ $%04X%s\n", zlen, zbase, zlen?" (huh?)":"");
     
     if(tlen) fread(&text[0], tlen, 1, fp);
     if(dlen) fread(&data[0], dlen, 1, fp);
     
-    word(num_undefs);
-    printf("%u undefs:\n", num_undefs);
+    sword(num_undefs);
+    printf("%u externs:\n", num_undefs);
     for(unsigned a=0; a<num_undefs; ++a)
     {
         string varname;
         while(int c = fgetc(fp)) varname += (char) c;
-        printf("undef: %s\n", varname.c_str());
+        printf("extern %u: %s\n", a, varname.c_str());
     }
     
     printf("--text--\n");
-    Relocations(text);
+    Relocations(text, tbase);
     printf("--data--\n");
-    Relocations(data);
+    Relocations(data, dbase);
     
-    word(num_extrns);
-    printf("%u externs:\n", num_extrns);
+    sword(num_extrns);
+    printf("%u globals:\n", num_extrns);
     for(unsigned a=0; a<num_extrns; ++a)
     {
         string varname;
@@ -152,12 +164,10 @@ int main(int argc, const char *const *argv)
         
         unsigned seg = fgetc(fp);
         unsigned value;
-        word(value);
+        sword(value);
         
-        printf("extern: %s (seg %u, value %04X)\n",
+        printf("global: %s (seg %u, value %04X)\n",
             varname.c_str(), seg, value);
     }
-    
-    
     fclose(fp);
 }

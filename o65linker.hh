@@ -1,8 +1,10 @@
 #include <vector>
 #include <utility>
+#include <cstdio>
 
 using std::pair;
 using std::vector;
+using std::FILE;
 
 #include "o65.hh"
 #include "refer.hh"
@@ -13,7 +15,9 @@ public:
     O65linker();
     ~O65linker();
     
-    void AddObject(const O65& object, const string& what);
+    void LoadIPSfile(FILE* fp, const string& what);
+    
+    void AddObject(const O65& object, const string& what, unsigned addr=0);
     
     const vector<unsigned> GetSizeList() const;
     const vector<unsigned> GetAddrList() const;

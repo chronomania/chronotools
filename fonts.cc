@@ -44,7 +44,7 @@ void Font12data::LoadBoxAs(unsigned boxno, unsigned tileno, class TGAimage &imag
     
     static const char palette[] = {0,0,1,2,3,0};
     
-    vector<char> box = image.getbox(boxno);
+    vector<unsigned char> box = image.getbox(boxno);
     
     //fprintf(stderr, "Char $%X: dest index $%X\n", boxno, tileno);
 
@@ -217,7 +217,7 @@ void Font8data::LoadBoxAs(unsigned boxno, unsigned tileno, class TGAimage &image
 {
     static const char palette[] = {0,0,1,2,3,0};
 
-    vector<char> box = image.getbox(boxno);
+    vector<unsigned char> box = image.getbox(boxno);
     
     unsigned width=0;
     while(box[width] != 1 && width < 8)++width;

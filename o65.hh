@@ -5,7 +5,7 @@
  * For loading and linking 65816 object files
  * Copyright (C) 1992,2003 Bisqwit (http://iki.fi/bisqwit/)
  *
- * Version 1.2.0 - Aug 18 2003, Sep 4 2003
+ * Version 1.2.0 - Aug 18 2003, Sep 4 2003, Jan 23 2004
  */
 
 #include <cstdio>
@@ -62,6 +62,13 @@ public:
     
     /* Declares a global label in the DATA segment */
     void DeclareDataGlobal(const string& name, unsigned address);
+    
+    /* Declares a 8-bit relocation to given symbol at given TEXT address */
+    void DeclareByteRelocation(const string& name, unsigned addr);
+    /* Declares a 16-bit relocation to given symbol at given TEXT address */
+    void DeclareWordRelocation(const string& name, unsigned addr);
+    /* Declares a 24-bit relocation to given symbol at given TEXT address */
+    void DeclareLongRelocation(const string& name, unsigned addr);
     
     /* Returns the TEXT segment */
     const vector<unsigned char>& GetCode() const;

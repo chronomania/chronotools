@@ -83,12 +83,12 @@ private:
     unsigned char state;
     
     // unimplemented operators:
-    void operator< (tristate b) {}
-    void operator> (tristate b) {}
-    void operator<= (tristate b) {}
-    void operator>= (tristate b) {}
-    void operator- (tristate b) {}
-    void operator+ (tristate b) {}
+    void operator< (tristate ) {}
+    void operator> (tristate ) {}
+    void operator<= (tristate ) {}
+    void operator>= (tristate ) {}
+    void operator- (tristate ) {}
+    void operator+ (tristate ) {}
 
     tristate(int v) : state(v) {}
 };

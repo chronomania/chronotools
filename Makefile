@@ -100,15 +100,18 @@ DEPDIRS = utils/
 # VERSION 1.11.1 adds the documentation core
 # VERSION 1.11.2 is a backup before anything catastrophic happens
 # VERSION 1.11.3 is another backup
+# VERSION 1.11.4 is another backup again
 
-OPTIM=-O3
-#OPTIM=-O0
+#OPTIM=-Os
+# -fshort-enums
+# -fpack-struct
+OPTIM=-O0
 #OPTIM=-O0 -pg -fprofile-arcs
 #LDFLAGS += -pg -fprofile-arcs
 
 CXXFLAGS += -I.
 
-VERSION=1.11.3
+VERSION=1.11.4
 ARCHFILES=utils/xray.cc utils/xray.h \
           utils/viewer.c \
           utils/vwftest.cc \
@@ -181,6 +184,8 @@ ARCHFILES=utils/xray.cc utils/xray.h \
           ct-crononick.code \
           \
           utils/compiler2.cc utils/compiler2-parser.inc utils/ct.code2 \
+          utils/deasm-disasm.cc utils/deasm-disasm.hh \
+          utils/deasm-expr.hh \
           utils/o65test.cc utils/dumpo65.cc \
           \
           utils/ctxtview.cc \
@@ -274,7 +279,7 @@ utils/viewer: utils/viewer.o
 	$(CC) $(LDOPTS) -o $@ $^ $(LDFLAGS) -lslang
 
 # A certain disassembler (not generic)
-utils/deasm: utils/deasm.o utils/insdata.o rommap.o
+utils/deasm: utils/deasm.o utils/deasm-disasm.o utils/insdata.o rommap.o
 	$(CXX) $(LDOPTS) $(CXXFLAGS) -g -O -Wall -W -pedantic -o $@ $^ $(LDFLAGS)
 
 # Cursive/bold typeface font generator (obsolete)

@@ -529,13 +529,14 @@ RETURN
 
 # Outputs the character name conjugated in partitive (of/object).
 # Example: "Don't blame Marle" -> "Älä syytä Marlea"
+# (Marle is an unaffected object for action)
 FUNCTION Do_A
 CALL HardStem
 CALL Out_A
 RETURN
 
 # Outputs the character name conjugated in inessive (in).
-# Example: "There's something strange in Frog" -> "Frogissa on jotain outoa"
+# Example: "There's something strange _in_ Frog" -> "Frogissa on jotain outoa"
 FUNCTION Do_SSA
 CALL SoftStem
 OUT 's'
@@ -545,6 +546,7 @@ RETURN
 
 # Outputs the character name conjugated in adessive (on/with/has).
 # Example: "Crono has a cat" -> "Cronolla on kissa"
+# (cat is _on_ Crono's possession)
 FUNCTION Do_LLA
 CALL SoftStem
 OUT 'l'
@@ -553,7 +555,7 @@ CALL Out_A
 RETURN
 
 # Outputs the character name conjugated in ablative (from).
-# Example: "He stole it from Marle" -> "Hän varasti sen Marlelta"
+# Example: "He stole it _from_ Marle" -> "Hän varasti sen Marlelta"
 FUNCTION Do_LTA
 CALL SoftStem
 OUT 'l'
@@ -562,7 +564,7 @@ CALL Out_A
 RETURN
 
 # Outputs the character name conjugated in ablative (to/for).
-# Example: "Give it back to Marle" -> "Anna se takaisin Marlelle"
+# Example: "Give it back _to_ Marle" -> "Anna se takaisin Marlelle"
 FUNCTION Do_LLE
 CALL SoftStem
 OUT 'l'
@@ -572,6 +574,7 @@ RETURN
 
 # Outputs the character name conjugated in elative (from/by).
 # Example: "Ayla thinks Crono is strong" -> "Aylasta Crono on vahva"
+# (_from_ Ayla's opinion)
 FUNCTION Do_STA
 CALL SoftStem
 OUT 's'
@@ -580,7 +583,7 @@ CALL Out_A
 RETURN
 
 # Outputs the character name conjugated in abessive (without).
-# Example: "Would be boring without Robo" -> "Robotta olisi tylsää"
+# Example: "Would be boring _without_ Robo" -> "Robotta olisi tylsää"
 FUNCTION Do_TTA
 CALL SoftStem
 OUT 't'
@@ -589,7 +592,7 @@ CALL Out_A
 RETURN
 
 # Outputs the character name conjugated in translative (to (role of)).
-# Example: "He transformed to Magus" -> "Hän muuttui Magukseksi"
+# Example: "He transformed _to_ Magus" -> "Hän muuttui Magukseksi"
 FUNCTION Do_KSI
 CALL SoftStem
 OUT 'k'
@@ -599,7 +602,7 @@ RETURN
 
 # Outputs the character name conjugated in essive (as).
 # It needs its own stem function.
-# Example: "What would you do as Lucca?" -> "Mitä tekisit Luccana?"
+# Example: "What would you do _as_ Lucca?" -> "Mitä tekisit Luccana?"
 FUNCTION Do_NA
 CALL EssiveStem
 OUT 'n'
@@ -608,8 +611,9 @@ RETURN
 
 # Outputs the character name conjugated in illative (-n)
 # It needs its own stem function.
-# Example: "Board Epoch" -> "Asutkaa Epochiin"
+# Example: "Board Epoch" -> "Astukaa Epochiin"
 #          "Exchange the clone for Crono" -> "Vaihtaa klooni Cronoon"
+# (the noun is a target)
 FUNCTION Do_HUN
 CALL IllativeStem
 OUT 'n'

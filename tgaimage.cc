@@ -46,7 +46,7 @@ TGAimage::TGAimage(const string &filename)
     this->xdim=fgetc(fp); this->xdim += fgetc(fp)*256;
     this->ydim=fgetc(fp); this->ydim += fgetc(fp)*256;
     
-    fgetc(fp); // pixel bitness, should be 8
+    pixbitness = fgetc(fp); // pixel bitness, should be 8
     fgetc(fp); // misc, should be 0
     if(idlen)fseek(fp, idlen, SEEK_CUR);
     if(palsize)
@@ -72,16 +72,20 @@ TGAimage::TGAimage(const string &filename)
             fseek(fp, palsize * ((palbitness+7)/8), SEEK_CUR);
     }
     
-    data.resize(xdim*ydim);
+    unsigned pixbyteness = pixbitness / 8;
+
+    data.resize(xdim*ydim * pixbyteness);
     
     for(unsigned y=ydim; y-->0; )
-        fread(&data[y*xdim], 1, xdim, fp);
+        fread(&data[y*xdim*pixbyteness], 1, xdim * pixbyteness, fp);
     
     fclose(fp);
 }
 
 TGAimage::TGAimage(unsigned x, unsigned y, unsigned char color)
-    : xdim(x), ydim(y), data(x*y, color),
+    : xdim(x), ydim(y),
+      palsize(0), pixbitness(8),
+      data(x*y, color),
       xsize(8),ysize(18), xbox(32)
 {
 }
@@ -92,6 +96,8 @@ void TGAimage::Save(const string &fn, palettetype paltype, const unsigned *palet
     if(!fp) { perror(fn.c_str()); return; }
     
     vector<unsigned> FilePalette;
+    
+    int imagetype = 1;
     
     switch(paltype)
     {
@@ -125,18 +131,24 @@ void TGAimage::Save(const string &fn, palettetype paltype, const unsigned *palet
                 FilePalette.push_back(c + 256*c + 65536*c);
             }
             break;
+        case pal_none:
+            imagetype = 2;
+            break;
     }
     
     TgaPutB(fp, 0); // id field len
-    TgaPutB(fp, 1); // color map type
-    TgaPutB(fp, 1); // image type code
+    TgaPutB(fp, FilePalette.size() > 0); // color map type
+    TgaPutB(fp, imagetype); // image type code
     TgaPutW(fp, 0); // FilePalette start
     TgaPutW(fp, FilePalette.size());
     TgaPutB(fp, 24);// FilePalette bitness
     TgaPutW(fp, 0);    TgaPutW(fp, 0);
     TgaPutW(fp, xdim); TgaPutW(fp, ydim);
-    TgaPutB(fp, 8); // pixel bitness
-    TgaPutB(fp, 0); //misc
+    TgaPutB(fp, pixbitness); // pixel bitness
+    
+    int misc = 0;
+    if(pixbitness == 32) misc |= 8;
+    TgaPutB(fp, misc); //misc
     
     for(unsigned a=0; a<FilePalette.size(); ++a)
     {
@@ -145,13 +157,14 @@ void TGAimage::Save(const string &fn, palettetype paltype, const unsigned *palet
         TgaPutB(fp, (FilePalette[a] >> 16) & 255);
     }
     
+    unsigned pixbyteness = pixbitness / 8;
     for(unsigned y=ydim; y-->0; )
-        fwrite(&data[y*xdim], 1, xdim, fp);
+        fwrite(&data[y*xdim * pixbyteness], 1, xdim * pixbyteness, fp);
     
     fclose(fp);
 }
 
-const vector<char> TGAimage::getbox(unsigned boxnum) const
+const vector<unsigned char> TGAimage::getbox(unsigned boxnum) const
 {
     const unsigned boxposx = (boxnum%xbox) * (xsize+1) + 1;
     const unsigned boxposy = (boxnum/xbox) * (ysize+1) + 1;
@@ -162,7 +175,7 @@ const vector<char> TGAimage::getbox(unsigned boxnum) const
         boxposx, boxposy,
         xdim, ydim, data.size());*/
     
-    vector<char> result(xsize*ysize);
+    vector<unsigned char> result(xsize*ysize);
     unsigned pos=0;
     for(unsigned ny=0; ny<ysize; ++ny)
     {
@@ -178,12 +191,21 @@ unsigned TGAimage::getboxcount() const
     return (ydim-1)*(xdim-1) / (ysize+1) / (xsize+1);
 }
 
-void TGAimage::PSet(unsigned x,unsigned y, unsigned char value)
+void TGAimage::PSet(unsigned x,unsigned y, unsigned value)
 {
-    data[y*xdim + x] = value;
+    unsigned ofs = (y*xdim + x) * (pixbitness / 8);
+    for(unsigned tmp = pixbitness; tmp >= 8; tmp -= 8)
+    {
+        data[ofs++] = value & 255;
+        value >>= 8;
+    }
 }
 
-unsigned char TGAimage::Point(unsigned x,unsigned y) const
+unsigned TGAimage::Point(unsigned x,unsigned y) const
 {
-    return data[y*xdim + x];
+    unsigned ofs = (y*xdim + x) * (pixbitness / 8);
+    unsigned result = 0;
+    for(unsigned tmp = 0; tmp < pixbitness; tmp += 8)
+        result |= (data[ofs++] << tmp);
+    return result;
 }
