@@ -85,15 +85,15 @@ Last updated:
 <tr><td>Compression algorithms</td>
     <td>100%</td> <td>everything works</td></tr>
 <tr><td>Item/tech/monster font handling</td>
-    <td>80%</td> <td>useless in its current state; the old method works.</td></tr>
+    <td>90%</td> <td>tech/monster code is useless</td></tr>
 <tr><td>Graphics handling</td>
     <td>95%</td> <td>minor details left</td></tr>
 <tr><td>Signature feature</td>
     <td>100%</td> <td>everything works</td></tr>
 <tr><td>Error recovery</td>
-    <td>10%</td> <td>silent ignore</td></tr>
+    <td>20%</td> <td>not many error checks</td></tr>
 <tr><td>Documentation</td>
-    <td>1%</td> <td>if it isn't on this page, it's <a href=\"#undocs\">nowhere</a></td></tr>
+    <td>2%</td> <td>if it isn't on this page, it's <a href=\"#undocs\">nowhere</a></td></tr>
 </table>
 
 ", 'changes:1.1. Version history' => "
@@ -177,7 +177,18 @@ Copypaste from the Makefile:
 # VERSION 1.10.1 updated the docs and the conj.code generator
 # VERSION 1.10.2 creates more useful information when dumping
 # VERSION 1.10.3 has technological updates but broken VWF8
+# VERSION 1.11.0 has technological updates and new item list code with VWF8
 </pre>
+
+Users of previous versions are advised to do the following:
+<ul>
+ <li>Compare the old <code>etc/ct.cfg</code>
+     with the new one to see what changes
+     are required to update their configuration files.</li>
+ <li>Do a redump with <code>ctdump</code> and
+     see if their script file needs any converting.
+     (It's not required, but it's tidier now.)</li>
+</ul>
 
 ", '1. Program list' => "
 
@@ -376,9 +387,6 @@ This is way too little for Finnish, which has long words.
 <p>
 For this reason Chronotools creates a vwf8 engine that allows
 the game to draw the names in thinner font that fits on the screen.
-<p>
-It still has the length limitation in the ROM though,
-but this will be fixed eventually.
 
 <br clear=all>
 

@@ -56,7 +56,7 @@ void stringoffsmap::GenerateNeederList()
         }
     }
     
-    /* Nyt mapissa on listattu, kuka tarvitsee ketäkin. */
+    /* Now the map lists who needs who. */
 }
 
 void stringoffsmap::DumpNeederList() const
@@ -108,6 +108,11 @@ const set<unsigned> insertor::GetZStringPageList() const
             case stringdata::fixed:
                 // This is not a pointer
                 continue;
+            case stringdata::item:
+            case stringdata::tech:
+            case stringdata::monster:
+                // These are handled differently
+                continue;
             case stringdata::zptr8:
             case stringdata::zptr12:
                 // These are ok
@@ -131,12 +136,32 @@ const stringoffsmap insertor::GetZStringList(unsigned pagenum) const
             case stringdata::fixed:
                 // This is not a pointer
                 continue;
+            case stringdata::item:
+            case stringdata::tech:
+            case stringdata::monster:
+                // These are handled differently
+                continue;
             case stringdata::zptr8:
             case stringdata::zptr12:
                 // These are ok
                 break;
             // If we omitted something, compiler should warn
         }
+        stringoffsdata tmp;
+        tmp.str  = i->str;
+        tmp.offs = i->address;
+        result.push_back(tmp);
+    }
+    return result;
+}
+
+const class stringoffsmap insertor::GetStringList(stringdata::strtype type) const
+{
+    stringoffsmap result;
+    for(stringlist::const_iterator i=strings.begin(); i!=strings.end(); ++i)
+    {
+        if(i->type != type) continue;
+        
         stringoffsdata tmp;
         tmp.str  = i->str;
         tmp.offs = i->address;

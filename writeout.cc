@@ -220,6 +220,9 @@ void insertor::PatchROM(ROM &ROM)
     // Write the strings first because they require certain pages!
     WriteStrings(ROM);
     
+    // Then write items, techs, monsters.
+    WriteRelocatedStrings(ROM);
+    
     // Then generate various things to write
     GenerateCode();
     
@@ -265,7 +268,7 @@ void insertor::GenerateCode()
             if(!i->HasAddress())
             {
                 fprintf(stderr, " \"%s\"", i->GetName().c_str());
-                i->YourAddressIs(blocks[a++].pos);
+                i->YourAddressIs(blocks[a++].pos | 0xC00000);
             }
         fprintf(stderr, ", done\n");
     }
@@ -285,7 +288,7 @@ void insertor::LinkAndLocateCode()
         Organization[a].len = o65sizes[a];
     freespace.OrganizeToAnyPage(Organization);
     for(unsigned a=0; a<o65sizes.size(); ++a)
-        o65sizes[a] = Organization[a].pos;
+        o65sizes[a] = Organization[a].pos | 0xC00000;
     objects.PutAddrList(o65sizes);
     
     /* Link the code blobs */
@@ -316,6 +319,7 @@ void insertor::WriteCode(ROM &ROM) const
     // Patch the name entry function
     //  FIXME: Make this read the pointers from "strings" instead
     
+    // $HXVk
     if(ROM.touched(0x3FC4D3))
     {
         // Write the address of name input strings.
@@ -446,6 +450,9 @@ void insertor::WriteStrings(ROM &ROM)
                 for(; a < i->width; ++a)ROM.Write(pos++, 255);
                 break;
             }
+            case stringdata::item:
+            case stringdata::tech:
+            case stringdata::monster:
             case stringdata::zptr8:
             case stringdata::zptr12:
             {
@@ -455,13 +462,190 @@ void insertor::WriteStrings(ROM &ROM)
             // If we omitted something, the compiler should warn
         }
     }
-   
+    
     fprintf(stderr, "Writing other strings...\n");
     set<unsigned> zpages = GetZStringPageList();
     for(set<unsigned>::const_iterator i=zpages.begin(); i!=zpages.end(); ++i)
     {
        stringoffsmap pagestrings = GetZStringList(*i);
        WritePageZ(ROM, *i, pagestrings, freespace);
+    }
+}
+
+unsigned insertor::WriteStringTable(stringoffsmap& data, const string& what, ROM& ROM)
+{
+    if(data.empty()) return NOWHERE;
+    
+    FILE *log = GetLogFile("mem", "log_addrs");
+
+    data.GenerateNeederList();
+
+    const stringoffsmap::neederlist_t &neederlist = data.neederlist;
+    
+    unsigned tableptr = NOWHERE;
+        
+    rangemap<unsigned, bool> ranges;
+
+    if(true) /* First do hosts */
+    {
+        vector<unsigned> todo;
+        todo.reserve(data.size() - neederlist.size());
+        unsigned reusenum = 0;
+        for(unsigned stringnum=0; stringnum<data.size(); ++stringnum)
+        {
+            if(neederlist.find(stringnum) == neederlist.end())
+                todo.push_back(stringnum);
+            else
+                ++reusenum;
+        }
+
+        unsigned todobytes=0;
+        for(unsigned a=0; a<todo.size(); ++a)
+            todobytes += CalcSize(data[todo[a]].str) + 1;
+
+        vector<freespacerec> Organization(todo.size()+1);
+        
+        Organization[0].len = data.size() * 2;
+        for(unsigned a=0; a<todo.size(); ++a)
+            Organization[a+1].len = CalcSize(data[todo[a]].str) + 1;
+        
+        unsigned datapage = NOWHERE;
+        freespace.OrganizeToAnySamePage(Organization, datapage);
+        
+        tableptr = Organization[0].pos | (datapage << 16);
+        
+        /*
+           datapage     - page
+           todo.size()  - number of strings
+           todobytes    - bytes to write
+           reusenum     - number of strings reused
+           tableptr     - address of the table
+        */
+
+        /* Create the table of pointers */
+        for(unsigned a=0; a<data.size(); ++a)
+        {
+            data[a].offs = tableptr + a*2;
+        }
+
+        unsigned unwritten = 0;
+        for(unsigned a=0; a<todo.size(); ++a)
+        {
+            unsigned stringnum  = todo[a];
+            unsigned ptroffs    = data[stringnum].offs;
+            const ctstring &str = data[stringnum].str;
+
+            unsigned spaceptr = Organization[a+1].pos;
+            
+            ranges.set(spaceptr, spaceptr + Organization[a+1].len, true);
+            
+            if(spaceptr == NOWHERE) ++unwritten;
+            data[stringnum].offs = WriteZPtr(ROM, ptroffs, str, spaceptr);
+        }
+        if(unwritten && log)
+            fprintf(log, "  %u string%s unwritten\n", unwritten, unwritten==1?"":"s");
+    }
+
+    if(true) /* Then do parasites */
+    {
+        for(unsigned stringnum=0; stringnum<data.size(); ++stringnum)
+        {
+            stringoffsmap::neederlist_t::const_iterator i = neederlist.find(stringnum);
+            if(i == neederlist.end()) continue;
+            
+            unsigned parasitenum = i->first;
+            unsigned hostnum     = i->second;
+
+            unsigned hostoffs   = data[hostnum].offs;
+                    
+            unsigned ptroffs    = data[parasitenum].offs;
+            const ctstring &str = data[parasitenum].str;
+            
+            if(hostoffs == NOWHERE)
+            {
+                if(log)
+                    fprintf(log, "  Host %u doesn't exist! ", hostnum);
+                
+                // Try find another host
+                for(hostnum=0; hostnum<data.size(); ++hostnum)
+                {
+                    // Skip parasites
+                    if(neederlist.find(hostnum) != neederlist.end()) continue;
+                    // Skip unwritten ones
+                    if(data[hostnum].offs == NOWHERE) continue;
+                    const ctstring &host = data[hostnum].str;
+                    // Impossible host?
+                    if(host.size() < str.size()) continue;
+                    unsigned extralen = host.size() - str.size();
+                    if(str != host.substr(extralen)) continue;
+                    hostoffs = data[hostnum].offs;
+                    break;
+                }
+                if(hostoffs == NOWHERE)
+                {
+                    if(log)
+                        fprintf(log, "  String %u wasn't written.\n", parasitenum);
+                    continue;
+                }
+                if(log)
+                    fprintf(log, "  Substitute %u assigned for %u.\n",
+                        hostnum, parasitenum);
+            }
+
+            const ctstring &host = data[hostnum].str;
+            
+            unsigned place = hostoffs + CalcSize(host) - CalcSize(str);
+            
+            WritePtr(ROM, ptroffs, place);
+        }
+    }
+    
+    ranges.compact();
+
+    list<rangemap<unsigned,bool>::const_iterator> rangelist;
+    ranges.find_all_coinciding(0,0x10000, rangelist);
+    
+    fprintf(stderr,
+        "> %s: %u(table)@ $%06X",
+        what.c_str(),
+        data.size() * 2,
+        tableptr | 0xC00000);
+
+    for(list<rangemap<unsigned,bool>::const_iterator>::const_iterator
+        j = rangelist.begin();
+        j != rangelist.end();
+        ++j)
+    {
+        unsigned size = (*j)->first.upper - (*j)->first.lower;
+        unsigned ptr  = (*j)->first.lower | (tableptr & 0x3F0000) | 0xC00000;
+
+        fprintf(stderr, ", %u(data)@ $%06X", size, ptr);
+    }
+    fprintf(stderr, "\n");
+
+    return tableptr;
+}
+
+void insertor::WriteRelocatedStrings(ROM& ROM)
+{
+    stringoffsmap data;
+    data = GetStringList(stringdata::item);
+    if(!data.empty())
+    {
+        unsigned itemtable = WriteStringTable(data, "Items", ROM);
+        objects.DefineSymbol("ITEMTABLE", itemtable | 0xC00000);
+    }
+    data = GetStringList(stringdata::tech);
+    if(!data.empty())
+    {
+        unsigned techtable = WriteStringTable(data, "Techs", ROM);
+        objects.DefineSymbol("TECHTABLE", techtable | 0xC00000);
+    }
+    data = GetStringList(stringdata::monster);
+    if(!data.empty())
+    {
+        unsigned monstertable = WriteStringTable(data, "Monsters", ROM);
+        objects.DefineSymbol("MONSTERTABLE", monstertable | 0xC00000);
     }
 }
 
@@ -570,7 +754,7 @@ void insertor::PatchTimeBoxes()
           0x0C, 0x00, 0x8C, 0x01,
           0x1C, 0x00, 0x8E, 0x01,
           0x2C, 0x00, 0x8A, 0x01 };
-        PlaceData(vector<unsigned char>(Patch,Patch+16), 0x03F87F, "timebox patch -65M");
+        PlaceData(vector<unsigned char>(Patch,Patch+16), 0x03F87F, "patch -65M timebox");
     }
 
     // Patch tile indices in -12k textbox
@@ -579,6 +763,6 @@ void insertor::PatchTimeBoxes()
         { 0xFE, 0x00, 0xA0, 0x01,
           0x0E, 0x00, 0xA2, 0x01,
           0x1E, 0x00, 0x8A, 0x01 };
-        PlaceData(vector<unsigned char>(Patch,Patch+12), 0x03F890, "timebox patch -12k");
+        PlaceData(vector<unsigned char>(Patch,Patch+12), 0x03F890, "patch -12k timebox");
     }
 }

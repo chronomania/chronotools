@@ -44,18 +44,22 @@
 #define W_TILENUM  $6200
 #define W_VRAMADDR $6202
 
-; Tilebuf is at $7E620A - size maximally 11*64 bytes
+; Tilebuf is at $7E620C - size maximally 11*64 bytes
 #define W_ONESIZE  $6204
 #define W_ENDX     $6206
 #define B_PIXOFFS  $6208
 #define B_LENGTH   $6209
-#define TILEBUF    $620A
+#define B_WIDTH    $620A
+#define TILEBUF    $620C
 
 ; External symbols - defined by the linker:
 ;   Font address:
 ;    TILEDATA_ADDR - CONST
 ;   Width table address:
 ;    WIDTH_ADDR    - CONST
+
+;  Item table address:
+;    ITEMTABLE     - CONST
 
 .text
 .xl
@@ -76,14 +80,14 @@
 
 ; ENTRY - Draw string, create 2bit tiles
 DrawS_2bit:
-        jsr DrawS_boot        ;store regs to vars (B_LENGTH, P_STR, W_ENDX)
+        jsr DrawS_boot        ;store regs to vars (B_LENGTH, B_WIDTH, P_STR, W_ENDX)
         jsr DrawS_2bit_setup  ;sets W_ONESIZE and W_DATASIZE
         jsr DrawS_initdma
         bra DrawS_common
 
 ; ENTRY - Draw string, create 4bit tiles
 DrawS_4bit:
-        jsr DrawS_boot        ;store regs to vars (B_LENGTH, P_STR, W_ENDX)
+        jsr DrawS_boot        ;store regs to vars (B_LENGTH, B_WIDTH, P_STR, W_ENDX)
         jsr DrawS_4bit_setup  ;sets W_ONESIZE and W_DATASIZE
         jsr DrawS_initdma
         asl
@@ -492,6 +496,12 @@ End:    rts
 DrawS_boot:
         SET_8_BIT_A()
         sta B_LENGTH     ; Store Al
+        
+        cmp #$FE
+        bcc NotSpecialLength
+        sbc #$FE - 10
+  NotSpecialLength:
+        sta B_WIDTH
         xba
         sta P_STR+2      ; Store Ah
 
@@ -501,7 +511,7 @@ DrawS_boot:
         SET_16_BIT_AX()
         sty P_STR    ; Store Y
         
-        ; Calculate W_ENDX = X + B_LENGTH*2
+        ; Calculate W_ENDX = X + B_WIDTH*2
         asl
         sta W_ENDX
         txa
@@ -518,13 +528,13 @@ DrawS_boot:
 DrawS_2bit_setup:
         lda #$0010
         sta W_ONESIZE
-        lda B_LENGTH
+        lda B_WIDTH
         and #$00FF
         bra DrawS_setup_common
 DrawS_4bit_setup:
         lda #$0020
         sta W_ONESIZE
-        lda B_LENGTH
+        lda B_WIDTH
         and #$00FF
         asl ;8*4
 DrawS_setup_common:
@@ -684,14 +694,23 @@ GetItemName:
         SET_16_BIT_AX()
         and #$00FF
         asl
+        
+#if 0 /* OLD CODE */
         tay
         lda $7D00,y     ; $7E7D00 HAS ITEM OFFSET LIST.
         tay
         lda #$CC0B      ; ITEMLIST SEGMENT, LENGTH
-        ; The table has been built in:
-        ;   
+#else /* NEW CODE */
+        phx 
+         tax
+         lda @ITEMTABLE,x
+         tay
+        plx
+        .byt $A9, $FF, ^ITEMTABLE   ;Al=length, Ah=itemtable seg
+#endif
         rts
 GetItemName2:
+#if 0 /* OLD CODE */
         ; In - Al=item number
         ; Out- Al=maxlen
         ;      Ah,Y=address of string
@@ -711,6 +730,27 @@ GetItemName2:
         tay
         lda #$CC0B  ;ITEM LIST SEGMENT, LENGTH
         rts
+#else /* NEW CODE */
+        bra GetItemName
+#endif
+
+DialogItemCall:
+        jsr GetItemName
+        SET_8_BIT_A()
+        iny ;skip the first char
+        sty $0237
+        xba
+        sta $0239
+        ldy #0
+        jsr +
+        ; return value: length
+	tya
+	rtl
+      - iny
+      + lda [$37],y
+        bne -
+        rts
+
 GetTechName2:
         ; In - Al=item number
         ; Out- Al=maxlen
@@ -747,9 +787,9 @@ EquipLeftHelper:
 Skip:   pla
         rtl
 GetItemNum:
-        lda #$5840
+        lda #$5840 ; address of RTL in page C2, -1
         pha
-        jsl @$C2A59A
+        jmp @$C2A59A
 .)
 
 EquipLeftItemFunc:
@@ -986,7 +1026,7 @@ BattleItemFunc:
          
         pla
 
-        jsr DrawS_boot        ;store regs to vars (B_LENGTH, P_STR, W_ENDX)
+        jsr DrawS_boot        ;store regs to vars (B_LENGTH, B_WIDTH, P_STR, W_ENDX)
         
         ldx #$0000
         
@@ -1062,7 +1102,7 @@ BattleTechFunc:
          
         pla
 
-        jsr DrawS_boot        ;store regs to vars (B_LENGTH, P_STR, W_ENDX)
+        jsr DrawS_boot        ;store regs to vars (B_LENGTH, B_WIDTH, P_STR, W_ENDX)
         
         ldx #$0000
         

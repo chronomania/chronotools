@@ -45,7 +45,8 @@ private:
     struct stringdata
     {
         ctstring str;
-        enum { zptr8, zptr12, fixed } type;
+        typedef enum { zptr8, zptr12, fixed, item, tech, monster } strtype;
+        strtype type;
         unsigned width; // used if type==fixed;
         unsigned address;
     };
@@ -81,6 +82,8 @@ private:
     void GenerateVWF8code();
     void GenerateSignatureCode();
     void WriteDictionary();
+    void WriteRelocatedStrings(class ROM& ROM);
+    unsigned WriteStringTable(class stringoffsmap&, const string& what, class ROM& ROM);
     void PatchTimeBoxes();
     
     void PlaceData(const vector<unsigned char>&, unsigned address, const string& reason="");
@@ -94,8 +97,10 @@ private:
 
     // Get list of pages having zstrings
     const set<unsigned> GetZStringPageList() const;
+    
     // Get zstrings of page
     const class stringoffsmap GetZStringList(unsigned pagenum) const;
+    const class stringoffsmap GetStringList(stringdata::strtype type) const;
 
     unsigned CalculateScriptSize() const;
 

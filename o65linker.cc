@@ -34,7 +34,7 @@ void O65linker::AddObject(const O65& object, const string& what)
     if(linked)
     {
         fprintf(stderr,
-            "O65 linker: ERROR: Attempt to add object \"%s\""
+            "O65 linker: Attempt to add object \"%s\""
             " after linking already done\n", what.c_str());
         return;
     }
@@ -112,25 +112,33 @@ void O65linker::Release(unsigned objno)
 
 void O65linker::DefineSymbol(const string& name, unsigned value)
 {
+    if(linked)
+    {
+        fprintf(stderr, "O65 linker: Attempt to add symbols after linking\n");
+    }
     for(unsigned c=0; c<defines.size(); ++c)
     {
         if(defines[c].first == name)
         {
-            if(defines[c].second != value)
+            if(defines[c].second.first != value)
             {
                 fprintf(stderr,
                     "O65 linker: Error: %s previously defined as %X,"
                     " can not redefine as %X\n",
-                        name.c_str(), defines[c].second, value);
+                        name.c_str(), defines[c].second.first, value);
             }
             return;
         }
     }
-    defines.push_back(make_pair(name, value));
+    defines.push_back(make_pair(name, make_pair(value, false)));
 }
 
 void O65linker::AddReference(const string& name, const ReferMethod& reference)
 {
+    if(linked)
+    {
+        fprintf(stderr, "O65 linker: Attempt to add references after linking\n");
+    }
     referers.push_back(make_pair(reference, make_pair(name, 0)));
 }
 
@@ -138,7 +146,7 @@ const vector<pair<ReferMethod, pair<string, unsigned> > >& O65linker::GetReferen
 {
     if(!linked)
     {
-        fprintf(stderr, "O65 linker: Error: Asked for references before linking\n");
+        fprintf(stderr, "O65 linker: Asked for references before linking\n");
     }
     return referers;
 }
@@ -176,7 +184,7 @@ void O65linker::Link()
 {
     if(linked)
     {
-        fprintf(stderr, "O65 linker: ERROR: Attempt to link twice\n");
+        fprintf(stderr, "O65 linker: Attempt to link twice\n");
         return;
     }
     linked = true;
@@ -210,18 +218,19 @@ void O65linker::Link()
                 MessageWorking();
                 if(defines[c].first == ext)
                 {
-                    addr = defines[c].second;
+                    addr = defines[c].second.first;
+                    defines[c].second.second = true;
                     ++defcount;
                 }
             }
             if(found == 0 && !defcount)
             {
-                fprintf(stderr, "O65 linker: ERROR: Symbol '%s' still undefined\n", ext.c_str());
+                fprintf(stderr, "O65 linker: Symbol '%s' still undefined\n", ext.c_str());
                 // FIXME: where?
             }
             else if((found+defcount) != 1)
             {
-                fprintf(stderr, "O65 linker: ERROR: Symbol '%s' defined in %u module(s) and %u global(s)\n",
+                fprintf(stderr, "O65 linker: Symbol '%s' defined in %u module(s) and %u global(s)\n",
                     ext.c_str(), found, defcount);
             }
             
@@ -242,7 +251,7 @@ void O65linker::Link()
         }
         if(!o.extlist.empty())
         {
-            fprintf(stderr, "O65 linker: ERROR: Still %u undefined symbol(s)\n", o.extlist.size());
+            fprintf(stderr, "O65 linker: Still %u undefined symbol(s)\n", o.extlist.size());
             // FIXME: where?
         }
         
@@ -270,6 +279,14 @@ void O65linker::Link()
         {
             fprintf(stderr,
                 "O65 linker: Unresolved reference: %s\n", referers[a].second.first.c_str());
+        }
+
+    for(unsigned c=0; c<defines.size(); ++c)
+        if(!defines[c].second.second)
+        {
+            fprintf(stderr,
+                "O65 linker: Warning: Symbol \"%s\" was defined but never used.\n",
+                defines[c].first.c_str());
         }
 }
 

@@ -152,8 +152,8 @@ const O65 LoadObject(const string& filename, const string& what)
 
 const O65 CreateObject(const vector<unsigned char>& code, const string& name)
 {
-	O65 result;
-	result.LoadCodeFrom(code);
-	result.DeclareCodeGlobal(name, 0);
-	return result;
+    O65 result;
+    result.LoadCodeFrom(code);
+    result.DeclareCodeGlobal(name, 0);
+    return result;
 }

@@ -755,6 +755,9 @@ void insertor::ReorganizeFonts()
                 break;
             }
             case stringdata::fixed:
+            case stringdata::item:
+            case stringdata::tech:
+            case stringdata::monster:
             {
                 for(unsigned a=0; a<str.size(); ++a)
                 {
@@ -891,6 +894,9 @@ void insertor::ReorganizeFonts()
                 }
                 break;
             }
+            case stringdata::item:
+            case stringdata::tech:
+            case stringdata::monster:
             case stringdata::fixed:
             {
                 for(unsigned a=0; a<str.size(); ++a)

@@ -87,7 +87,7 @@ const ctstring insertor::ParseScriptEntry(const ucs4string &input, const stringd
     
     const bool is_dialog = model.type == stringdata::zptr12;
     const bool is_8pix   = model.type == stringdata::zptr8;
-    const bool is_fixed  = model.type == stringdata::fixed;
+    const bool is_fixed  = !is_dialog && !is_8pix;
 
     const Symbols::type &symbols
         = Symbols.GetMap(is_dialog ? 16
@@ -179,12 +179,15 @@ const ctstring insertor::ParseScriptEntry(const ucs4string &input, const stringd
             
             switch(model.type)
             {
-                case stringdata::zptr8:
-                case stringdata::fixed: 
-                    chronoc = getchronochar(c, cset_8pix);
-                    break;
                 case stringdata::zptr12:
                     chronoc = getchronochar(c, cset_12pix);
+                    break;
+                case stringdata::zptr8:
+                case stringdata::fixed:
+                case stringdata::item:
+                case stringdata::tech:
+                case stringdata::monster:
+                    chronoc = getchronochar(c, cset_8pix);
                     break;
             }
             
@@ -384,6 +387,33 @@ void insertor::LoadFile(FILE *fp)
             {
                 model.type = stringdata::zptr8;
                 MessageRSection(header);
+            }
+            else if(header.size() > 1 && header[0] == 'i')
+            {
+                model.type = stringdata::item;
+                model.width = atoi(header.c_str() + 1);
+                if(model.width < 1 || model.width > 65535)
+                    MessageUnknownHeader(header);
+                else
+                    MessageLSection(header);
+            }
+            else if(header.size() > 1 && header[0] == 't')
+            {
+                model.type = stringdata::tech;
+                model.width = atoi(header.c_str() + 1);
+                if(model.width < 1 || model.width > 65535)
+                    MessageUnknownHeader(header);
+                else
+                    MessageLSection(header);
+            }
+            else if(header.size() > 1 && header[0] == 'm')
+            {
+                model.type = stringdata::monster;
+                model.width = atoi(header.c_str() + 1);
+                if(model.width < 1 || model.width > 65535)
+                    MessageUnknownHeader(header);
+                else
+                    MessageLSection(header);
             }
             else if(header.size() > 1 && header[0] == 'l')
             {
@@ -588,7 +618,21 @@ void insertor::LoadFile(FILE *fp)
                 continue;
             }
             
-            // Either 'z' (dialog), 'l' (fixed) or 'r' (8pix)
+            // It was one of these:
+            //   'z' (dialog)
+            //   'r' (8pix)
+            //   'l' (fixed)
+            //   'i' (relocatable item)
+            //   't' (relocatable tech)
+            //   'm' (relocatable monster)
+
+            if(model.type == stringdata::item
+            || model.type == stringdata::tech
+            || model.type == stringdata::monster
+              )
+            {
+                freespace.Add(label >> 16, label & 0xFFFF, model.width);
+            }
             
             model.str = ParseScriptEntry(content, model);
             model.address = label;

@@ -96,6 +96,7 @@ DEPDIRS = utils/
 # VERSION 1.10.1 updated the docs and the conj.code generator
 # VERSION 1.10.2 creates more useful information when dumping
 # VERSION 1.10.3 has technological updates but broken VWF8
+# VERSION 1.11.0 has technological updates and new item list code with VWF8
 
 OPTIM=-O3
 #OPTIM=-O0
@@ -104,7 +105,7 @@ OPTIM=-O3
 
 CXXFLAGS += -I.
 
-VERSION=1.10.3
+VERSION=1.11.0
 ARCHFILES=utils/xray.cc utils/xray.h \
           utils/viewer.c \
           utils/vwftest.cc \
@@ -206,6 +207,7 @@ PROGS=\
 	utils/dumpo65 \
 	utils/o65test \
 	utils/viewer \
+	utils/compile \
 	utils/xray
 
 all: $(PROGS)
@@ -335,12 +337,14 @@ fullzip: \
 		etc/ct.cfg etc/ct.code \
 		README.html README.TXT
 	@rm -rf $(ARCHNAME)
-	- mkdir $(ARCHNAME)
-	for s in $^;do ln "$$s" $(ARCHNAME); done
-	cd $(ARCHNAME); \
-	/bin/ls|while read s;do echo "$$s"|grep -qF . || mv -v "$$s" "$$s".exe;done
-	$(HOST)strip $(ARCHNAME)/*.exe
-	- upx --overlay=strip -9 $(ARCHNAME)/*.exe
+	- mkdir $(ARCHNAME){,/utils,/etc}
+	for s in $^;do ln "$$s" $(ARCHNAME)/"$$s"; done
+	for dir in . utils etc; do (\
+	 cd $(ARCHNAME)/$$dir; \
+	 /bin/ls|while read s;do echo "$$s"|grep -qF . || test -d "$$s" || mv -v "$$s" "$$s".exe;done; \
+	                           ); done
+	$(HOST)strip $(ARCHNAME)/*.exe $(ARCHNAME)/*/*.exe
+	- upx --overlay=strip -9 $(ARCHNAME)/*.exe $(ARCHNAME)/*/*.exe
 	zip -r9 $(ARCHNAME)-win32.zip $(ARCHNAME)
 	rm -rf $(ARCHNAME)
 	mv -f $(ARCHNAME)-win32.zip archives/

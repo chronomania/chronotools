@@ -40,7 +40,7 @@ private:
     void operator= (const O65linker& );
     
     vector<struct Object* > objects;
-    vector<pair<string, unsigned> > defines;
+    vector<pair<string, pair<unsigned, bool> > > defines;
     vector<pair<ReferMethod, pair<string, unsigned> > > referers;
     bool linked;
 };

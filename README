@@ -1063,6 +1063,7 @@ $C2:B04C E2 20       SEP $20                            A:0000 X:344A Y:008B D:0
 $C2:B04E AD 4D 0D    LDA DB:$0D4D         ;$7E:0D4D     A:0000 X:344A Y:008B D:0000 DB:7E PB:C2
 $C2:B051 F0 4C       BEQ $B09F                          A:008B X:344A Y:008B D:0000 DB:7E PB:C2
 
+; Tämä sijainti (B053) patchataan
 $C2:B053 C2 20       REP $20                            A:008B X:344A Y:008B D:0000 DB:7E PB:C2
 ;A on nyt itemin numero.
 $C2:B055 29 FF 00    AND A, $00FF                       A:008B X:344A Y:008B D:0000 DB:7E PB:C2
@@ -1074,6 +1075,8 @@ $C2:B05D A8          TAY                                A:1157 X:344A Y:0116 D:0
 $C2:B05E A9 0B CC    LDA A, $CC0B                       A:1157 X:344A Y:1157 D:0000 DB:7E PB:C2
 
 $C2:B061 20 65 EF    JSR PB:$EF65         ;$C2:EF65     A:CC0B X:344A Y:1157 D:0000 DB:7E PB:C2
+
+;Patch loppuu tähän
 ;Kutsuu piirtorutiinia itemille.
 $C2:B064 A5 7D       LDA [$00:D+$7D]      ;$00:007D     A:0BDC X:3460 Y:1162 D:0000 DB:7E PB:C2
 ;Hakee attribuutin^
