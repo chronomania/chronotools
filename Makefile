@@ -21,8 +21,9 @@ include Makefile.sets
 # VERSION 1.0.21 more translation, some documentation, font palette changes.
 # VERSION 1.0.22 more translation, autowrapping support, conjugation detection code
 # VERSION 1.1.0  did some assembly hacking, support for code patching
+# VERSION 1.1.1  conjugating conjugating conjugating... work goes on
 
-VERSION=1.1.0
+VERSION=1.1.1
 ARCHFILES=xray.c xray.h \
           viewer.c \
           ctcset.cc ctcset.hh \
@@ -37,7 +38,8 @@ ARCHFILES=xray.c xray.h \
           ctdump.cc ctinsert.cc \
           ctinsert.hh writeout.cc \
           makeips.cc unmakeips.cc \
-          taipus.rb progdesc.php \
+          taipus.rb taipus.cc taipus.txt \
+          progdesc.php \
           spacefind.cc base62.cc sramdump.cc \
           binpacker.tcc binpacker.hh \
           README transnotes.txt
@@ -48,7 +50,8 @@ EXTRA_ARCHFILES=\
 ARCHNAME=chronotools-$(VERSION)
 ARCHDIR=archives/
 
-PROGS=xray viewer ctdump ctinsert makeips unmakeips spacefind
+PROGS=xray viewer ctdump ctinsert makeips unmakeips \
+      spacefind base62 sramdump taipus
 
 all: $(PROGS)
 
@@ -64,7 +67,7 @@ ctdump: ctdump.o ctcset.o miscfun.o wstring.o
 ctinsert: \
 		ctinsert.o miscfun.o readin.o \
 		tgaimage.o space.o writeout.o \
-		dictionary.o fonts.o rom.o \
+		dictionary.o fonts.o rom.o snescode.o \
 		conjugate.o symbols.o ctcset.o wstring.o
 	$(CXX) -o $@ $^ $(LDFLAGS) -lm
 
@@ -79,6 +82,8 @@ unmakeips: unmakeips.cc
 sramdump: sramdump.cc wstring.o
 	$(CXX) -g -O -Wall -W -pedantic -o $@ $^
 base62: base62.cc
+	$(CXX) -g -O -Wall -W -pedantic -o $@ $^
+taipus: taipus.cc
 	$(CXX) -g -O -Wall -W -pedantic -o $@ $^
 
 ct_eng.txt: ctdump chrono-dumpee.smc

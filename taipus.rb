@@ -13,7 +13,7 @@
 #
 # Copyright (C) 1992,2003 Bisqwit (http://iki.fi/bisqwit/)
 #
-# Last updated: 22.6.2003
+# Last updated: 29.6.2003
 
 
 # Define some extensions to String class
@@ -64,9 +64,9 @@ class String
     lastchar(1).isvowel?
   end
   
-  # Does the word end with es/us?
+  # Does the word end with es/us/ys?
   def esloppu?
-    self =~ /[aeiouåäöéAEIOUÅÄÖÉ][sS]$/
+    self =~ /[aeiouyåäöéAEIOUYÅÄÖÉ][sS]$/
   end
   
   # Does the word end with hard*2 + vowel?
@@ -100,7 +100,7 @@ def hardstem(s, plural=false)
     #           P,a -> P:tä
     ret << ':'
     last = s.lastchar(1)
-    if last =~ /.*[flmnlrswx479]/i
+    if last =~ /.*[flmnrswx479]/i
       ret << 'ä'
     elsif last =~ /[zZ]/
       ret << 'a'

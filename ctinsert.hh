@@ -1,10 +1,12 @@
 #include <map>
+#include <list>
 #include <string>
 #include <vector>
 
 #include "wstring.hh"
 #include "space.hh"
 #include "fonts.hh"
+#include "snescode.hh"
 
 using namespace std;
 
@@ -35,6 +37,8 @@ class insertor
     typedef map<unsigned, stringdata> stringmap;
     stringmap strings;
     
+    list<SNEScode> codes;
+    
     vector<string> dict;
     unsigned dictaddr, dictsize;
     
@@ -47,6 +51,8 @@ public:
     void LoadFile(FILE *fp);
     void LoadFont8(const string &fn) { Font8.Load(fn); }
     void LoadFont12(const string &fn) { Font12.Load(fn); }
+    
+    void GenerateCode();
 
     void DictionaryCompress();
 
@@ -60,9 +66,9 @@ public:
 private:
     void WriteDictionary(class ROM &ROM);
     void WriteStrings(class ROM &ROM);
-    void Write8pixfont(class ROM &ROM);
-    void Write12pixfont(class ROM &ROM);
-    void WriteCode(class ROM &ROM);
+    void Write8pixfont(class ROM &ROM) const;
+    void Write12pixfont(class ROM &ROM) const;
+    void WriteCode(class ROM &ROM) const;
     
     void ApplyDictionary();
     void RebuildDictionary();

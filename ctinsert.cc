@@ -8,9 +8,9 @@ using namespace std;
 
 namespace
 {
-    const char font8fn[]                = "ct8fnFI.tga";
-    const char font12fn[]               = "ct16fnFI.tga";
-    const char scriptfn[]               = "ct_eng.txt";
+    const char font8fn[]                = "ct8fn.tga";
+    const char font12fn[]               = "ct16fn.tga";
+    const char scriptfn[]               = "ct.txt";
     
     const char patchfile_hdr[]          = "ctpatch-hdr.ips";
     const char patchfile_nohdr[]        = "ctpatch-nohdr.ips";
@@ -246,6 +246,8 @@ int main(void)
     fclose(fp);
     
     ins->DictionaryCompress();
+    
+    ins->GenerateCode();
     
     ins->freespace.Report();
 

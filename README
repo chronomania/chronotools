@@ -65,16 +65,32 @@ $C2:5830 20 4A 58    JSR DB:$584A         ;$00:584A     A:0000 X:07E0 Y:001F D:0
 $C2:584A A5 15       LDA [$00:D+$15]      ;$00:0215     A:0000 X:07E0 Y:001F D:0200 DB:00 PB:C2
 $C2:584C 0A          ASL A                              A:0010 X:07E0 Y:001F D:0200 DB:00 PB:C2
 $C2:584D AA          TAX                                A:0020 X:07E0 Y:001F D:0200 DB:00 PB:C2
-$C2:584E 7C 51 58    JMP [PB:word[PB:$0058+x]] ;$C2:5895 A:0020 X:0020 Y:001F D:0200 DB:00 PB:C
+// x = merkki*2
+// Taulun 5851 sis‰ltˆ (merkeille 0x00..0x20):
+// 0-7   5893 5895 5895 5895  5895 5897 589B 5897
+// 8-F   589B 5897 589B 5897  589B 5895 5895 5895
+// 10-17 5895 5895 5895 5895  5895 5895 5895 5895
+// 18-1F 5895 5895 5895 5895  5895 5895 5895 5895
+// 20    5895
+//   5893 = ei tulosteta
+//   5895 = tulostetaan sellaisenaan
+//   5897 = erikoismerkki
+//   589B = erikoismerkki, lis‰ksi kolme spacea
+
+$C2:584E 7C 51 58    JMP [PB:word[PB:$5851+x]] ;$C2:5895 A:0020 X:0020 Y:001F D:0200 DB:00 PB:C
 $C2:5895 80 19       BRA $58B0                          A:0020 X:0020 Y:001F D:0200 DB:00 PB:C2
 $C2:58B0 18          CLC                                A:0020 X:0020 Y:001F D:0200 DB:00 PB:C2
 $C2:58B1 60          RTS                                A:0020 X:0020 Y:001F D:0200 DB:00 PB:C2
 // Hyppy 58B2:n ohi, jos carry set
 $C2:5833 B0 07       BCS $583C                          A:0020 X:0020 Y:001F D:0200 DB:00 PB:C2
+// $230:sta haetaan ohje!
 $C2:5835 A5 30       LDA [$00:D+$30]      ;$00:0230     A:0020 X:0020 Y:001F D:0200 DB:00 PB:C2
 $C2:5837 0A          ASL A                              A:0000 X:0020 Y:001F D:0200 DB:00 PB:C2
 $C2:5838 AA          TAX                                A:0000 X:0020 Y:001F D:0200 DB:00 PB:C2
-$C2:5839 FC 42 58    JSR [PB:word[PB:$0058+x]] ;$C2:58B2 A:0000 X:0000 Y:001F D:0200 DB:00 PB:C
+// Taulun 5842 sis‰ltˆ:
+//  0-1   58B2 = haetaan merkki
+//        5BF5 = tulostetaan edellinen merkki
+$C2:5839 FC 42 58    JSR [PB:word[PB:$5842+x]] ;$C2:58B2 A:0000 X:0000 Y:001F D:0200 DB:00 PB:C
 // 583C: mit‰ lie?
 $C2:583C A9 00       LDA A, $00                         A:0010 X:0022 Y:02A0 D:0200 DB:00 PB:C2
 $C2:583E EB          XBA                                A:0000 X:0022 Y:02A0 D:0200 DB:00 PB:C2
@@ -83,6 +99,8 @@ $C2:5840 28          PLP                                A:0000 X:0022 Y:02A0 D:0
 $C2:5841 6B          RTL                                A:0000 X:0022 Y:02A0 D:0100 DB:00 PB:C2
 // merkin tulostusrutiini loppuu t‰h‰n.
 
+$C2:5893 38          SEC                                A:0000 X:08B3 Y:0038 D:0000 DB:00 PB:7E S:06FF P:envmxdIZC HC:010 VC:225 02
+$C2:5894 60          RTS                                A:0000 X:08B3 Y:0038 D:0000 DB:00 PB:7E S:06FF P:envmxdIZC HC:010 VC:225 02
 
 // Haetaan merkki pointterin osoittamasta paikasta
 $C2:58B2 A7 31       LDA [long[D+$31]]    ;$F7:531D     A:0000 X:0000 Y:001F D:0200 DB:00 PB:C2
@@ -172,7 +190,7 @@ $C2:58FA 4C F5 5B    JMP [DB:$5BF5]       ;$00:5BF5     A:0001 X:0038 Y:001F D:0
 $C2:58FD A8          TAY                                A:0013 X:0000 Y:001F D:0200 DB:00 PB:C2
 $C2:58FE 0A          ASL A                              A:0013 X:0000 Y:0013 D:0200 DB:00 PB:C2
 $C2:58FF AA          TAX                                A:0026 X:0000 Y:0013 D:0200 DB:00 PB:C2
-$C2:5900 7C 03 59    JMP [PB:word[PB:$0059+x]]  ;$C2:5B15 A:0026 X:0026 Y:0013 D:0200 DB:00 PB:
+$C2:5900 7C 03 59    JMP [PB:word[PB:$5903+x]]  ;$C2:5B15 A:0026 X:0026 Y:0013 D:0200 DB:00 PB:
 
 // y:ss‰ on se kyseinen merkki.
 $C2:5B15 98          TYA                                A:0026 X:0026 Y:0013 D:0200 DB:00 PB:C2
@@ -226,10 +244,13 @@ $C2:5C03 D0 07       BNE $5C0C                          A:00C8 X:0038 Y:001F D:0
 $C2:5C0C C2 20       REP $20                            A:00C8 X:0038 Y:001F D:0200 DB:00 PB:C2
 $C2:5C0E 85 35       STA [$00:D+$35]      ;$00:0235     A:00C8 X:0038 Y:001F D:0200 DB:00 PB:C2
 $C2:5C10 E2 20       SEP $20                            A:00C8 X:0038 Y:001F D:0200 DB:00 PB:C2
-// Alirutiini...
-// joka ainakin hakee fontista merkin, ehk‰ piirt‰‰kin!
+// Piirret‰‰n merkki.
 $C2:5C12 20 C4 5D    JSR [DB:$5DC4]       ;$00:5DC4     A:00C8 X:0038 Y:001F D:0200 DB:00 PB:C2
-// Piirt‰‰ siis merkin joka on $00:0235.
+
+// Piirt‰‰ siis merkin joka on osoitteessa $00:0235.
+// T‰nne p‰‰dyt‰‰n kahdesta osoitteesta:
+//  - C2:5C12 (dictionary/character name)
+//  - C2:58C4 (plain character)
 $C2:5DC4 C2 20       REP $20                            A:00C8 X:0038 Y:001F D:0200 DB:00 PB:C2
 
 //...
@@ -240,13 +261,21 @@ $C2:5C17 C6 3A       DEC [$00:D+$3A]      ;$00:023A     A:0000 X:0028 Y:0050 D:0
 $C2:5C19 F0 02       BEQ $5C1D                          A:0000 X:0028 Y:0050 D:0200 DB:00 PB:C2
 // Ei loppunut.
 $C2:5C1B 09 01       ORA A, $01                         A:0000 X:0028 Y:0050 D:0200 DB:00 PB:C2
-// Mik‰ laskuri t‰m‰ on?
+// Onko merkkej‰ j‰ljell‰ jonossa?
 $C2:5C1D C6 13       DEC [$00:D+$13]      ;$00:0213     A:0001 X:0028 Y:0050 D:0200 DB:00 PB:C2
 $C2:5C1F F0 02       BEQ $5C23                          A:0001 X:0028 Y:0050 D:0200 DB:00 PB:C2
-// Se joka tapauksessa oli 0, ja nyt menn‰‰n jonnekin.
+// Ei ole.
 $C2:5C23 0A          ASL A                              A:0001 X:0028 Y:0050 D:0200 DB:00 PB:C2
 $C2:5C24 AA          TAX                                A:0002 X:0028 Y:0050 D:0200 DB:00 PB:C2
-$C2:5C25 7C 28 5C    JMP [PB:word[PB:$005C+x]]  ;$C2:5C32 A:0002 X:0002 Y:0050 D:0200 DB:00 PB:
+// Taulun 5C28 sis‰ltˆ:
+//   5C30 5C32
+$C2:5C25 7C 28 5C    JMP [PB:word[PB:$5C28+x]]  ;$C2:5C32 A:0002 X:0002 Y:0050 D:0200 DB:00 PB:
+// Merkit‰‰n lippu "seuraava merkki pit‰‰ hakea"
+$C2:5C30 64 30       STZ [$00:D+$30]      ;$00:0230     A:0000 X:0000 Y:00A0 D:0200 DB:00 PB:C2
+// Ja paluuarvoksi "skriptin tulostus jatkuu".
+$C2:5C32 A9 10       LDA A, $10                         A:0000 X:0000 Y:00A0 D:0200 DB:00 PB:C2
+$C2:5C34 85 15       STA [$00:D+$15]      ;$00:0215     A:0010 X:0000 Y:00A0 D:0200 DB:00 PB:C2
+$C2:5C36 60          RTS                                A:0010 X:0000 Y:00A0 D:0200 DB:00 PB:C2
 
 
 

@@ -77,6 +77,17 @@ This one is <a href=\"/ctfin/taipus.rb\">publicly available</a>.
 It conjugates names in Finnish. It's supposed to get translated
 to SNES assembler by somebody.
 
+", '1.1.1. sramdump' => "
+
+Views a sram dump file in a readable format.
+
+", '1.1.1. base62' => "
+
+Converts addresses between hex and base62 formats.
+I.e. \$C2:5D4C -> rRhU and vice versa.<br>
+This development system uses base62 in the script
+dumps to reduce the amount of code written.
+
 ", '1. Technical limitations' => "
 
 ", '1.1. Space' => "
@@ -123,14 +134,6 @@ Japanese version instead. This utility pack bases on the
 English version.<br>
 (Sorry, I can't help you with the Japanese ROM.)
 
-", '1.1. Code' => "
-
-This insertor doesn't generate any SNES assembler code.
-Which means that the game basically works as it has always
-worked. It doesn't conjugate names or draw item names longer
-than they were.<br>
-This might be a significant limitation for some translations.
-
 ", '1. Copying' => "
 
 If you're interested, throw me email.<br>
@@ -148,6 +151,34 @@ very respectful to copyrights.
 A POSIX compatible system (like Linux or FreeBSD)
 with GNU tools (GNU make, GCC etc) is required.<br>
 These programs are archived as C++ source code only.
+
+", '1. Changelog' => "
+
+Copypaste from the Makefile:
+
+<pre class=smallerpre
+># VERSION 1.0.3 was the first working! :D
+# VERSION 1.0.4 handled fixed strings too
+# VERSION 1.0.5 found item descriptions
+# VERSION 1.0.6 compressed better
+# VERSION 1.0.7 compressed more carefully
+# VERSION 1.0.8 documented the script
+# VERSION 1.0.9 fixed \"...\" handling and located the font
+# VERSION 1.0.10 had knowledge of character sets
+# VERSION 1.0.11 had a working font insertor
+# VERSION 1.0.12 had better knowledge of special codes
+# VERSION 1.0.13 used 62-base numbers
+# VERSION 1.0.14 added taipus.cc
+# VERSION 1.0.15 updated FIN/README and ct_fin.txt, but neither are archived
+# VERSION 1.0.16 added taipus.rb, fixed homepage urls and fixed mmap error checking.
+# VERSION 1.0.17 working again; uses space better; little modularized
+# VERSION 1.0.18 more of above
+# VERSION 1.0.19 code organising... improved 'i' in 8x8 font.
+# VERSION 1.0.20 binpacker changes, some translation done too
+# VERSION 1.0.21 more translation, some documentation, font palette changes.
+# VERSION 1.0.22 more translation, autowrapping support, conjugation detection code
+# VERSION 1.1.0  did some assembly hacking, support for code patching
+</pre>
 
 ", '1. See also' => "
 

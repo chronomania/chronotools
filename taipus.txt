@@ -1,0 +1,314 @@
+#
+# This file is derived from taipus.cc, and attempts to describe
+# the algorithm so that it's translatable in asm.
+#
+#
+#  Syntax
+#
+#  :B name
+#     declare function returning boolean, handles character name
+#  :Q name
+#     declare function returning boolean, parameter is byte (assigned to 'c')
+#  :I name
+#     declare function returning byte
+#     FIXME: params
+#  VAR name
+#     local variable
+#  number name
+#     assign number to variable
+#  s name1 name2
+#     assign name1 from name2
+#  + name
+#     name++
+#  - name
+#     name--
+#  { 
+#     loop over character name, character as 'c'
+#  ? characters
+#     If c is in set, process subblock
+#  !
+#     "else" for all above "?" (case default)
+#  > name value
+#     if(name > value), process subblock
+#  = name value
+#     if(name == value), process subblock
+#  TRUE
+#     For boolean funcs, return TRUE
+#  FALSE
+#     For boolean funcs, return FALSE
+#  RET
+#     For boolean funcs, just return
+#  RETURN name
+#     For byte funcs, return value of var
+#  ci name1 name2
+#     Call integer-func name1, return value to name2.
+#  cb name1
+#     Call bool-func name1
+#     Process subblock if true retval
+#  cq name1 name2
+#     Call bool-func name1 with param name2
+#     Process subblock if true retval
+#  cv name1 name2
+#     Call bool-func name1 with param name2
+#     Ignore return value
+#  cf name
+#     Call bool-func name
+#     Ignore return value
+#  OUT name
+#     Outputs character in name
+
+:Q IsVowel
+? aeiouy‰ˆÂÈAEIOUYƒ÷≈…0123456
+  TRUE
+FALSE
+
+:Q IsKPT
+? kKpPtT
+  TRUE
+FALSE
+
+:B IsFront
+VAR Hint1
+VAR Hint2
+VAR Hint3
+0 Hint1
+0 Hint2
+0 Hint3
+{
+? aouAOU02368
+  1 Hint1 
+  1 Hint3
+? ‰ˆyƒ÷Y14579
+  2 Hint1
+  1 Hint3
+? eiÈEI…
+  1 Hint2
+  1 Hint3
+? hkqÂHKQ≈
+  0 Hint3
+}
+> Hint1 0
+  = Hint1 2
+    TRUE
+> Hint2 0
+  TRUE
+= Hint3 1
+  TRUE
+FALSE
+
+:I Length
+VAR Len
+0 Len
+{
++ Len
+}
+RETURN Len
+
+:I LastChar3
+VAR Hint1
+VAR Hint2
+VAR Hint3
+0 Hint1
+0 Hint2
+0 Hint3
+{
+  s Hint3 Hint2
+  s Hint2 Hint1
+  s Hint1 c
+}
+RETURN Hint3
+
+:I LastChar2
+VAR Hint1
+VAR Hint2
+0 Hint1
+0 Hint2
+{
+  s Hint2 Hint1
+  s Hint1 c
+}
+RETURN Hint2
+
+:I LastChar1
+VAR Hint1
+0 Hint1
+{
+  s Hint1 c
+}
+RETURN Hint1
+
+:B IsAbbrev
+VAR Hint1
+VAR Hint2
+VAR Hint3
+{
+  + Hint1
+  ? aeiouy‰ˆÂÈAEIOUYƒ÷≈…
+    1 Hint2
+    1 Hint3
+  ? 0123456789
+    = Hint3 1
+      0 Hint2
+    0 Hint3
+  !
+    0 Hint3
+}
+= Hint1 1
+  TRUE
+= Hint2 0
+  TRUE
+FALSE
+
+:B IsEs
+VAR Hint
+ci LastChar2 Hint
+cq IsVowel Hint
+  ci LastChar1 c
+  ? sS
+    TRUE
+FALSE
+
+:B EndWithVowel
+VAR Hint
+ci LastChar1 Hint
+cq IsVowel Hint
+  TRUE
+FALSE
+
+:B DoubleHard
+VAR Hint2
+VAR Hint3
+cb EndWithVowel
+  ci LastChar2 Hint2
+  ci LastChar3 Hint3
+  = Hint2 Hint3
+    cq IsKPT Hint2
+      TRUE
+FALSE
+
+:B AkiEnd
+VAR Hint
+ci LastChar3 c
+? aA‰ƒ
+  ci LastChar2 Hint
+  cq IsKPT Hint
+    ci LastChar1 c
+    ? iI
+      TRUE
+FALSE
+
+:Q OutWord
+VAR Hint
+s Hint c
+{
+  = Hint 0
+    RET
+  OUT c
+  - Hint
+}
+RET
+
+:B HardStem
+VAR Len
+VAR Hint
+ci Length Len
+cb IsAbbrev
+  cv OutWord Len
+  OUT ':'
+  ci LastChar1 Hint
+  ? flmnrswxFLMNRSWX479
+    OUT '‰'
+  ? zZ
+    OUT 'a'
+  ? 0123568
+    RET
+  !
+    OUT 't'
+  RET
+cb IsEs
+  cv OutWord Len
+  OUT 't'
+  RET
+cb EndWithVowel
+  cb AkiEnd
+    - Len
+    cv OutWord Len
+    OUT 'e'
+    RET
+  cv OutWord Len
+  RET
+cv OutWord Len
+OUT 'i'
+RET
+
+:B SoftStem
+VAR Len
+VAR Hint
+ci Length Len
+cb IsAbbrev
+  cv OutWord Len
+  OUT ':'
+  RET
+cb IsEs
+  - Len
+  cv OutWord Len
+  OUT 'k'
+  OUT 's'
+  OUT 'e'
+  RET
+cb EndWithVowel
+  cb DoubleHard
+    - Len
+    - Len
+    cv OutWord Len
+    ci LastChar1 Hint
+    OUT Hint
+    RET
+  cb AkiEnd
+    - Len
+    - Len
+    cv OutWord Len
+    OUT 'e'
+    RET
+  cv OutWord Len
+  RET
+cv OutWord Len
+OUT 'i'
+RET
+
+:B Out_A
+cb IsFront
+  OUT '‰'
+  RET
+OUT 'a'
+RET
+
+:B Do_N
+cf SoftStem
+OUT 'n'
+RET
+
+:B Do_A
+cf HardStem
+cf Out_A
+RET
+
+:B Do_LLA
+cf SoftStem
+OUT 'l'
+OUT 'l'
+cf Out_A
+RET
+
+:B Do_LLE
+cf SoftStem
+OUT 'l'
+OUT 'l'
+OUT 'e'
+RET
+
+:B Do_STA
+cf SoftStem
+OUT 's'
+OUT 't'
+cf Out_A

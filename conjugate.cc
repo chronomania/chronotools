@@ -113,6 +113,17 @@ void Conjugatemap::Work(string &s, const form &form)
             else
             {
                 unsigned ind = prefixes.size();
+                
+                if(ind >= sizeof(AllowedBytes))
+                {
+                    fprintf(stderr,
+                        "\n"
+                        "Error: Too many different conjugations used.\n"
+                        "Only %u bytes available in the font!\n",
+                            sizeof(AllowedBytes)
+                           );
+                }
+                
                 prefixes[form.type] = prefix = AllowedBytes[ind];
             }
             
@@ -147,3 +158,71 @@ void Conjugatemap::Work(string &s, const string &plaintext)
 }
 
 class Conjugatemap Conjugatemap;
+
+#include "ctinsert.hh"
+
+static const SNEScode GetTestCode()
+{
+    SNEScode code;
+    
+    // C2:5DC4 is referenced from:
+    //      C2:5C12 
+    //      C2:58C4
+    
+#define TRY_DOUBLE 1  // Print two characters instead of one?
+#define MODIFY 0      // Modify the character to a bit?
+
+#if TRY_DOUBLE && MODIFY
+    // save A
+    code.AddCode(0x48);       //pha
+#endif
+
+#if MODIFY
+    // modify the character
+    code.AddCode(0xE2, 0x20); //sep $20
+    code.AddCode(0xA9, 0xA8); //lda a, $A8
+    code.AddCode(0x85, 0x35); //sta [$00:D+$35]
+#endif
+
+#if TRY_DOUBLE
+    // prepare the framework for a farcall to a near routine
+    FarCall call = code.PrepareFarCall();
+    // overwrites a and pushes stuff
+
+    // call back the routine
+    code.AddCode(0xC2, 0x20); //rep $20
+    code.AddCode(0xA5, 0x35); //lda [$00:D+$35]
+    
+    code.ProceedFarCall(call, 0xC25DC8);
+
+#if MODIFY
+    // restore A
+    code.AddCode(0x68);       //pla
+
+    // restore character
+    code.AddCode(0xE2, 0x20); //sep $20
+    code.AddCode(0x85, 0x35); //sta [$00:D+$35]
+#endif
+#endif
+
+    // be ready to return to the routine
+    code.AddCode(0xC2, 0x20); //rep $20
+    code.AddCode(0xA5, 0x35); //lda [$00:D+$35]
+    code.AddCode(0x6B);       //rtl
+    
+    return code;
+}
+
+
+void insertor::GenerateCode()
+{
+#if 0
+    SNEScode code = GetTestCode();
+    
+    unsigned address = freespace.FindFromAnyPage(code.size());
+
+    code.YourAddressIs(address);
+    
+    codes.push_back(code);
+#endif
+}
