@@ -11,13 +11,14 @@ using namespace std;
 
 static vector<unsigned char> ROM;
 static vector<bool> space;
-static vector<string> substrings;
+static vector<wstring> substrings;
 
 static const bool TryFindExtraSpace = false;
 static const unsigned ExtraSpaceMinLen = 128;
 
 static void LoadROM()
 {
+    fprintf(stderr, "Loading ROM...");
     unsigned hdrskip = 0;
     const char *fn = "chrono-uncompressed.smc";
     FILE *fp = fopen(fn, "rb");
@@ -37,8 +38,10 @@ static void LoadROM()
     fseek(fp, hdrskip, SEEK_SET);
     fread(&ROM[0], 1, ROM.size(), fp);
     fclose(fp);
+    fprintf(stderr, " done");
     space.clear();
     space.resize(ROM.size());
+    fprintf(stderr, "\n");
 }
 
 static void markspace(unsigned offs, unsigned size)
@@ -52,17 +55,21 @@ static const vector<string> LoadPStrings(unsigned offset, unsigned count)
 {
     unsigned segment = offset & 0xFF0000;
     vector<string> strings(count);
+#if 0
     const unsigned maxco=10;
     unsigned col=maxco;
+#endif
     for(unsigned a=0; a<count; ++a)
     {
         unsigned stringptr = ROM[offset] + 256*ROM[offset + 1];
         
+#if 0
         if(col==maxco){printf(";ptr%2u ", a);col=0;}
         else if(!col)printf(";%5u ", a);
         if(maxco==10 && col==5)putchar(' ');
         printf(" $%04X", stringptr);
         if(++col == maxco) { printf("\n"); col=0; }
+#endif
         
         stringptr += segment;
         strings[a] = string((const char *)&ROM[stringptr] + 1, ROM[stringptr]);
@@ -76,7 +83,9 @@ static const vector<string> LoadPStrings(unsigned offset, unsigned count)
          || ROM[freebyte] == 0xEF //also space
          ; space[freebyte++]=true);
     }
+#if 0
     if(col)printf("\n");
+#endif
     return strings;
 }
 
@@ -86,9 +95,11 @@ static const vector<string> LoadZStrings(unsigned offset, unsigned count=0)
     const unsigned segment = offset >> 16;
     const unsigned base = segment << 16;
 
-    const unsigned maxco=10;
     vector<string> strings(count);
+#if 0
+    const unsigned maxco=10;
     unsigned col=maxco;
+#endif
     set<unsigned> offsetlist;
     
     unsigned firstoffs = 0x10000, lastoffs = 0, lastlen = 0;
@@ -100,11 +111,13 @@ static const vector<string> LoadZStrings(unsigned offset, unsigned count=0)
             break;
         offsetlist.insert(stringptr);
 
+#if 0
         if(col==maxco){printf(";ptr%2u ", a);col=0;}
         else if(!col)printf(";%5u ", a);
         if(maxco==10 && col==5)putchar(' ');
         printf(" $%04X", stringptr);
         if(++col == maxco) { printf("\n"); col=0; }
+#endif
         
         const string foundstring((const char *)&ROM[stringptr + base]);
         
@@ -129,8 +142,9 @@ static const vector<string> LoadZStrings(unsigned offset, unsigned count=0)
         
         offset += 2;
     }
+#if 0
     if(col)printf("\n");
-    
+#endif
     return strings;
 }
 
@@ -148,6 +162,7 @@ static const vector<string> LoadFStrings(unsigned offset, unsigned len, unsigned
 
 static void FindEndSpaces(void)
 {
+    fprintf(stderr, "Finding free space...");
     unsigned pagecount = (space.size()+0xFFFF) >> 16;
     for(unsigned page=0; page<pagecount; ++page)
     {
@@ -196,71 +211,13 @@ static void FindEndSpaces(void)
             */
         }
     }
+    fprintf(stderr, " done\n");
 }
 
 static wstring Disp16Char(unsigned char k)
 {
-    switch(k)
-    {
-        // 0x01 and 0x02 are doublebyte things.
-        // They eat the next character and use it
-        // as a pointer to somewhere. Seems like
-        // in the English version this has absolutely
-        // no use whatsoever. Very variable width lines
-        // seen using this.
-        
-        // 0x03 is delay
-        
-        // 0x04 seems to do nothing
-        
-        case 0x05: return AscToWstr("[nl]\n");
-        case 0x06: return AscToWstr("[nl]\n   ");
-        case 0x07: return AscToWstr("[pausenl]\n");
-        case 0x08: return AscToWstr("[pausenl]\n   ");
-        case 0x09: return AscToWstr("\n[cls]\n");
-        case 0x0A: return AscToWstr("\n[cls]\n   ");
-        case 0x0B: return AscToWstr("\n[pause]\n");
-        case 0x0C: return AscToWstr("\n[pause]\n   ");
-    
-        case 0x0D: return AscToWstr("[num8]");
-        case 0x0E: return AscToWstr("[num16]");
-        case 0x0F: return AscToWstr("[num32]");
-        
-        // 0x10 seems to do nothing
-        
-        case 0x11: return AscToWstr("[member]");
-        case 0x12: return AscToWstr("[tech]");
-    
-        // 13..19 are the character names
-
-        // 1A is the name Ayla calls Crono?
-        case 0x1A: return AscToWstr("[crononick]");
-    
-        case 0x1B: return AscToWstr("[member1]");
-        case 0x1C: return AscToWstr("[member2]");
-        case 0x1D: return AscToWstr("[member3]");
-    
-        // 1E is Nadia (princess)
-
-        case 0x1F: return AscToWstr("[item]");
-    
-        // 20 is Epoch
-        // 21..9F are substrings.
-        // A0..FF are the character set.
-
-        // The character set contains some special symbols.
-        case 0xEE: return AscToWstr("[musicsymbol]");
-        case 0xF0: return AscToWstr("[heartsymbol]");
-    }
-    
     if(substrings[k].size())
-    {
-        wstring result;
-        const string &s = substrings[k].c_str();
-        for(unsigned a=0; a<s.size(); ++a)
-            result += Disp16Char((unsigned char)s[a]);
-        return result;
-    }
+        return substrings[k];
 
     ucs4 tmp = getucs4(k);
     if(tmp == ilseq)
@@ -338,6 +295,7 @@ static void DumpTable(const vector<string> &tab, wstring (*Disp)(unsigned char))
 
 static void DumpZStrings(const unsigned offs, unsigned len, bool dolf=true)
 {
+    fprintf(stderr, "Dumping strings at %06X...", offs);
     vector<string> strings = LoadZStrings(offs, len);
 
     printf("*z;%u pointerstrings (12pix font)\n", strings.size());
@@ -375,10 +333,12 @@ static void DumpZStrings(const unsigned offs, unsigned len, bool dolf=true)
         puts(line.c_str());
     }
     printf("\n\n");
+    fprintf(stderr, " done\n");
 }
 
 static void DumpStrings(const unsigned offs, unsigned len=0)
 {
+    fprintf(stderr, "Dumping strings at %06X...", offs);
     vector<string> strings = LoadZStrings(offs, len);
 
     printf("*r;%u pointerstrings (8pix font)\n", strings.size());
@@ -407,10 +367,12 @@ static void DumpStrings(const unsigned offs, unsigned len=0)
     }
 
     printf("\n\n");
+    fprintf(stderr, " done\n");
 }
 
 static void DumpFStrings(unsigned offs, unsigned len, unsigned maxcount=0)
 {
+    fprintf(stderr, "Dumping strings at %06X...", offs);
     vector<string> strings = LoadFStrings(offs, len, maxcount);
     printf("*l%u;%u fixed length strings (length: %u bytes)\n",
         len, strings.size(), len);
@@ -439,6 +401,7 @@ static void DumpFStrings(unsigned offs, unsigned len, unsigned maxcount=0)
         puts(line.c_str());
     }
     printf("\n\n");
+    fprintf(stderr, " done\n");
 }
 
 static void LoadDict(unsigned offs, unsigned len)
@@ -465,13 +428,19 @@ static void LoadDict(unsigned offs, unsigned len)
     }
     
     for(unsigned a=0; a<strings.size(); ++a)
-        substrings[a + 0x21] = strings[a];
+    {
+        const string &s = strings[a];
+        wstring tmp;
+        for(unsigned b=0; b<s.size(); ++b)tmp += getucs4(s[b]);
+        substrings[a + 0x21] = tmp;
+    }
 
     printf("\n\n");
 }
 
 static void ListSpaces(void)
 {
+    fprintf(stderr, "Dumping free space list...");
     unsigned pagecount = (space.size()+0xFFFF) >> 16;
     for(unsigned page=0; page<pagecount; ++page)
     {
@@ -500,15 +469,7 @@ static void ListSpaces(void)
         if(freehere)
             printf("\n\n");
     }
-}
-
-/* ASCII to CT character set */
-static const string revtrans(const char *s)
-{
-    string result;
-    while(*s)
-        result += getchronochar(*s++);
-    return result;
+    fprintf(stderr, " done\n");
 }
 
 static void TgaPutB(FILE *fp, unsigned c) { fputc(c, fp); }
@@ -553,6 +514,7 @@ static void OutImage(const string &fntemplate,
 
 static void Dump8x8sprites(unsigned spriteoffs, unsigned count)
 {
+    fprintf(stderr, "Dumping 8pix font...");
     const unsigned xdim = 32;
     const unsigned ydim = (count+xdim-1)/xdim;
     
@@ -584,10 +546,12 @@ static void Dump8x8sprites(unsigned spriteoffs, unsigned count)
     }
 
     OutImage("ct8fn", xpixdim, ypixdim, pixels);
+    fprintf(stderr, " done\n");
 }
 
 static void DumpFont(unsigned spriteoffs, unsigned sizeoffs)
 {
+    fprintf(stderr, "Dumping 12pix font...");
     const unsigned count = 0x100 - 0xA0;
     
     const unsigned xdim = 32;
@@ -642,6 +606,7 @@ static void DumpFont(unsigned spriteoffs, unsigned sizeoffs)
     }
     
     OutImage("ct16fn", xpixdim, ypixdim, pixels);
+    fprintf(stderr, " done\n");
 }
 
 int main(void)
@@ -657,28 +622,61 @@ int main(void)
     printf("; Note: There is a one byte sequence for [nl] and three spaces.\n"
            ";       Don't attempt to save space by removing those spaces,\n"
            ";       you will only make things worse...\n"
-           ";       Similar for [pause]s.\n"
+           ";       Similar for [pause]s, [pausenl]s and [cls]s.\n"
            ";\n"
           );
     
-    // Don't load "..."
+    // 127 instead of 128: Don't load "..." (ellipsis)
     LoadDict(0x1EFA00, 127);
-
-    // We hardcode these because the
-    // ROM was a bit obfuscated here...
-    substrings[0x13] = revtrans("Crono");
-    substrings[0x14] = revtrans("Marle");
-    substrings[0x15] = revtrans("Lucca");
-    substrings[0x16] = revtrans("Robo");
-    substrings[0x17] = revtrans("Frog");
-    substrings[0x18] = revtrans("Ayla");
-    substrings[0x19] = revtrans("Magus");
-
-    substrings[0x1E] = revtrans("Nadia");
-    substrings[0x20] = revtrans("Epoch");
     
-    substrings[0xF1] = revtrans("...");
-
+    // 0x01 and 0x02 are doublebyte things.
+    // They eat the next character and use it
+    // as a pointer to somewhere. Seems like
+    // in the English version this has absolutely
+    // no use whatsoever. Very variable width lines
+    // seen using this.
+    // 0x03 is delay
+    // 0x04 seems to do nothing
+    substrings[0x05] = AscToWstr("[nl]\n");
+    substrings[0x06] = AscToWstr("[nl]\n   ");
+    substrings[0x07] = AscToWstr("[pausenl]\n");
+    substrings[0x08] = AscToWstr("[pausenl]\n   ");
+    substrings[0x09] = AscToWstr("\n[cls]\n");
+    substrings[0x0A] = AscToWstr("\n[cls]\n   ");
+    substrings[0x0B] = AscToWstr("\n[pause]\n");
+    substrings[0x0C] = AscToWstr("\n[pause]\n   ");
+    substrings[0x0D] = AscToWstr("[num8]");
+    substrings[0x0E] = AscToWstr("[num16]");
+    substrings[0x0F] = AscToWstr("[num32]");
+    // 0x10 seems to do nothing
+    substrings[0x11] = AscToWstr("[member]");
+    substrings[0x12] = AscToWstr("[tech]");
+    // These names are hardcoded because the ROM was quite
+    // obfuscated here. Same for Nadia and Epoch later.
+    substrings[0x13] = AscToWstr("Crono");
+    substrings[0x14] = AscToWstr("Marle");
+    substrings[0x15] = AscToWstr("Lucca");
+    substrings[0x16] = AscToWstr("Robo");
+    substrings[0x17] = AscToWstr("Frog");
+    substrings[0x18] = AscToWstr("Ayla");
+    substrings[0x19] = AscToWstr("Magus");
+    // 0x1A is the nick Ayla calls Crono
+    substrings[0x1A] = AscToWstr("[crononick]");
+    substrings[0x1B] = AscToWstr("[member1]");
+    substrings[0x1C] = AscToWstr("[member2]");
+    substrings[0x1D] = AscToWstr("[member3]");
+    substrings[0x1E] = AscToWstr("Nadia");
+    substrings[0x1F] = AscToWstr("[item]");
+    substrings[0x20] = AscToWstr("Epoch");
+    // 21..9F are filled by LoadDict()
+    // A0..FF are the character set
+    substrings[0xEE] = AscToWstr("[musicsymbol]");
+    substrings[0xF0] = AscToWstr("[heartsymbol]");
+    substrings[0xF1] = AscToWstr("...");
+    
+    Dump8x8sprites(0x3F8C60, 256);
+    DumpFont(0x3F2060, 0x26046);
+    
     // 
     puts(";items");
     DumpFStrings(0x0C0B5E, 11, 242);
@@ -803,8 +801,7 @@ int main(void)
     if(TryFindExtraSpace)
         FindEndSpaces();
 
-    Dump8x8sprites(0x3F8C60, 256);
-    DumpFont(0x3F2060, 0x26046);
-
     ListSpaces();
+    
+    fprintf(stderr, "Done\n");
 }

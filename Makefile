@@ -15,7 +15,8 @@ LDFLAGS=-L/usr/lib/graphics
 # VERSION 1.0.11 had a working font insertor
 # VERSION 1.0.12 had better knowledge of special codes
 # VERSION 1.0.13 used 62-base numbers
-VERSION=1.0.13
+# VERSION 1.0.14 added taipus.cc
+VERSION=1.0.14
 ARCHFILES=xray.c xray.h \
           viewer.c \
           ctcset.cc \
@@ -23,6 +24,7 @@ ARCHFILES=xray.c xray.h \
           wstring.cc wstring.hh \
           ctdump.cc ctinsert.cc \
           makeips.cc unmakeips.cc \
+          taipus.cc \
           README
 EXTRA_ARCHFILES=ct_eng.txt \
           dictionary5 \
