@@ -7,6 +7,7 @@
 #include "miscfun.hh"
 #include "romaddr.hh"
 #include "base62.hh"
+#include "ctcset.hh"
 
 typedef unsigned char Byte;
 
@@ -15,10 +16,10 @@ const char* LocationEventNames[0x201] =
 {
 "000) Guardia Throneroom",
 "001) Bangor Dome",
-"002) ",
+"002)",
 "003) Trann Dome",
 "004) Arris Dome",
-"005) ",
+"005)",
 "006) Arris Dome Auxiliary Console",
 "007)",
 "008)",
@@ -1046,36 +1047,36 @@ const char* MapNames[0x200] =
 const char* Emotion[0x1B] =
 {
 "{00} Standing",
-"{01} Walking ",
+"{01} Walking",
 "{02} Sprinting",
-"{03} Battle   ",
-"{04} Unknown  ",
-"{05} Asleep   ",
-"{06} Running  ",
+"{03} Battle",
+"{04} Unknown",
+"{05} Asleep",
+"{06} Running",
 "{07} Fast Running",
 "{08} Defeated",
-"{09} Shocked ",
-"{0A} Victory ",
-"{0B} Unknown ",
+"{09} Shocked",
+"{0A} Victory",
+"{0B} Unknown",
 "{0C} Determined",
-"{0D} Unknown   ",
-"{0E} Jump?     ",
-"{0F} Unknown   ",
-"{10} Shock?    ",
-"{11} Standing? ",
+"{0D} Unknown",
+"{0E} Jump?",
+"{0F} Unknown",
+"{10} Shock?",
+"{11} Standing?",
 "{12} Weak",
 "{13} Beat Chest (Robo)",
 "{14} Unknown",
 "{15} Right Hand Up",
 "{16} Nod",
 "{17} Shake Head",
-"{18} Unknown   ",
-"{19} D'oh!     ",
+"{18} Unknown",
+"{19} D'oh!",
 "{1A} Laugh     "
 };
-const char* ActorNames[0x100] =
+const char* NPCNames[0x100] =
 {
-"{00} Melchior ",
+"{00} Melchior",
 "{01} King Guardia {1000 A.D.}",
 "{02} Johnny",
 "{03} Queen Leene {blue dress}",
@@ -1085,7 +1086,7 @@ const char* ActorNames[0x100] =
 "{07} Chancellor {green} {1000 A.D.}",
 "{08} Dactyl",
 "{09} Schala",
-"{0A} Janus ",
+"{0A} Janus",
 "{0B} Chancellor {brown} {600 A.D.}",
 "{0C} Belthasar",
 "{0D} Middle Ages/Present Age villager - woman",
@@ -1096,8 +1097,8 @@ const char* ActorNames[0x100] =
 "{12} Middle Ages/Present Age villager - old woman",
 "{13} Middle Ages/Present Age villager - little boy",
 "{14} Middle Ages/Present Age villager - little girl",
-"{15} Middle Ages/Present Age villager - waitress   ",
-"{16} Middle Ages/Present Age villager - shopkeeper ",
+"{15} Middle Ages/Present Age villager - waitress",
+"{16} Middle Ages/Present Age villager - shopkeeper",
 "{17} Nun",
 "{18} Knight captain {600 A.D.}",
 "{19} Middle Ages/Present Age villager - man",
@@ -1132,7 +1133,7 @@ const char* ActorNames[0x100] =
 "{36} Young Glenn",
 "{37} King Guardia {600 A.D.}",
 "{38} Strength Test Machine part {Millennial Fair}",
-"{39} Middle Ages/Present Age villager - old man  ",
+"{39} Middle Ages/Present Age villager - old man",
 "{3A} Zeal citizen - researcher with glasses",
 "{3B} Cat",
 "{3C} False prophet Magus",
@@ -1143,12 +1144,12 @@ const char* ActorNames[0x100] =
 "{41} Algetty earthbound one - man",
 "{42} Algetty earthbound one - woman",
 "{43} Algetty earthbound one - old man",
-"{44} Algetty earthbound one - child  ",
+"{44} Algetty earthbound one - child",
 "{45} Queen Leene {green dress}",
 "{46} Guardia Castle chef",
 "{47} Trial judge",
 "{48} Gaspar",
-"{49} Fiona ",
+"{49} Fiona",
 "{4A} Queen Zeal",
 "{4B} Guard {enemy}",
 "{4C} Reptite",
@@ -1158,7 +1159,7 @@ const char* ActorNames[0x100] =
 "{50} Middle Ages/Present Age villager - woman",
 "{51} G.I. Jogger",
 "{52} Millennial Fair visitor - old man",
-"{53} Millennial Fair visitor - woman  ",
+"{53} Millennial Fair visitor - woman",
 "{54} Millennial Fair visitor - little boy",
 "{55} Millennial Fair visitor - little girl",
 "{56} Lightning bolt",
@@ -1170,13 +1171,13 @@ const char* ActorNames[0x100] =
 "{5C} Conveyor machine",
 "{5D} Tombstone",
 "{5E} Giant soup bowl",
-"{5F} Magus statue   ",
-"{60} Dreamstone     ",
-"{61} Gate Key       ",
-"{62} Soda can       ",
-"{63} Pendant        ",
-"{64} Poyozo doll    ",
-"{65} Pink lunch bag ",
+"{5F} Magus statue",
+"{60} Dreamstone",
+"{61} Gate Key",
+"{62} Soda can",
+"{63} Pendant",
+"{64} Poyozo doll",
+"{65} Pink lunch bag",
 "{66} UNUSED",
 "{67} Red knife",
 "{68} Broken Masamune blade",
@@ -1191,7 +1192,7 @@ const char* ActorNames[0x100] =
 "{71} Giant blue star",
 "{72} Red flame",
 "{73} Giant red flame",
-"{74} Explosion ball ",
+"{74} Explosion ball",
 "{75} Giant explosion ball",
 "{76} Smoke trail/NOT USED",
 "{77} Hero's medal",
@@ -1203,16 +1204,16 @@ const char* ActorNames[0x100] =
 "{7D} Leene's bell",
 "{7E} Bat hanging upside down",
 "{7F} Computer screen",
-"{80} Water splash   ",
-"{81} Explosion      ",
+"{80} Water splash",
+"{81} Explosion",
 "{82} Robo power-up sparks",
 "{83} Leaves falling/NOT USED",
 "{84} 3 coins spinning/NOT USED",
 "{85} Hole in the ground",
 "{86} Cooking smoke",
 "{87} 3 small explosion clouds",
-"{88} Wind element spinning   ",
-"{89} Water element/NOT USED  ",
+"{88} Wind element spinning",
+"{89} Water element/NOT USED",
 "{8A} Dirt mound",
 "{8B} Masamune spinning",
 "{8C} Music note/NOT USED",
@@ -1252,8 +1253,8 @@ const char* ActorNames[0x100] =
 "{AE} Flying map Epoch",
 "{AF} Gray cat",
 "{B0} Yellow cat",
-"{B1} Alfador   ",
-"{B2} Time egg  ",
+"{B1} Alfador",
+"{B2} Time egg",
 "{B3} Zeal citizen - man {cast ending}",
 "{B4} Zeal citizen - woman",
 "{B5} Potted plant",
@@ -1273,7 +1274,7 @@ const char* ActorNames[0x100] =
 "{C3} Blue shining star - large",
 "{C4} Multiple balloons",
 "{C5} Dancing woman {Millennial Fair ending}",
-"{C6} Millennial Fair visitor - little girl ",
+"{C6} Millennial Fair visitor - little girl",
 "{C7} Silver Leene's bell",
 "{C8} Figure atop Magus' Castle {ending}",
 "{C9} Serving tray with drinks",
@@ -1281,12 +1282,12 @@ const char* ActorNames[0x100] =
 "{CB} Human Glenn {ending cutscene}",
 "{CC} Queen Zeal {Death Peak cutscene}",
 "{CD} Schala {Death Peak cutscene}",
-"{CE} Lavos {Death Peak cutscene} ",
-"{CF} Crono {Death Peak cutscene} ",
+"{CE} Lavos {Death Peak cutscene}",
+"{CF} Crono {Death Peak cutscene}",
 "{D0} Hironobu Sakaguchi {Programmer's Ending}",
 "{D1} Yuji Horii {Programmer's Ending}",
 "{D2} Akira Toriyama {Programmer's Ending}",
-"{D3} Kazuhiko Aoki {Programmer's Ending} ",
+"{D3} Kazuhiko Aoki {Programmer's Ending}",
 "{D4} Lightning flash",
 "{D5} Lara",
 "{D6} Purple explosion",
@@ -1301,8 +1302,8 @@ const char* ActorNames[0x100] =
 "{DF} UNUSED",
 "{E0} Green balloon/NOT USED",
 "{E1} Yellow balloon/NOT USED",
-"{E2} Blue balloon/NOT USED  ",
-"{E3} Pink balloon/NOT USED  ",
+"{E2} Blue balloon/NOT USED",
+"{E3} Pink balloon/NOT USED",
 "{E4} Brown glowing light/NOT USED",
 "{E5} Yellow glowing light/NOT USED",
 "{E6} Purple glowing light/NOT USED",
@@ -1332,20 +1333,20 @@ const char* ActorNames[0x100] =
 "{FE} UNUSED",
 "{FF} UNUSED",
 };
-const char *SoundEffectNames[0x100] =
+const char* SoundEffectNames[0x100] =
 {
 "{00} Cursor selection",
 "{01} Invalid cursor selection",
 "{02} Falling sprite",
 "{03} Pendant reacting",
-"{04} Received item   ",
+"{04} Received item",
 "{05} Activating portal",
-"{06} HP/MP restored   ",
+"{06} HP/MP restored",
 "{07} End of Time HP/MP restore bucket",
 "{08} Weapon readied",
 "{09} Pendant reacting to Zeal throne room door",
 "{0A} Flying object",
-"{0B} Save point   ",
+"{0B} Save point",
 "{0C} UNUSED",
 "{0D} UNUSED",
 "{0E} UNUSED",
@@ -1379,8 +1380,8 @@ const char *SoundEffectNames[0x100] =
 "{2A} UNUSED",
 "{2B} UNUSED",
 "{2C} UNUSED",
-"{2D} UNUSED    ",
-"{2E} UNUSED   ",
+"{2D} UNUSED",
+"{2E} UNUSED",
 "{2F} UNUSED",
 "{30} UNUSED",
 "{31} UNUSED",
@@ -1393,10 +1394,10 @@ const char *SoundEffectNames[0x100] =
 "{38} UNUSED",
 "{39} UNUSED",
 "{3A} UNUSED",
-"{3B} UNUSED ",
+"{3B} UNUSED",
 "{3C} UNUSED",
 "{3D} UNUSED",
-"{3E} UNUSED  ",
+"{3E} UNUSED",
 "{3F} Nothing?",
 "{40} Curtains",
 "{41} Wind [LOOPS]",
@@ -1415,16 +1416,16 @@ const char *SoundEffectNames[0x100] =
 "{4E} Cat meow",
 "{4F} Long fall",
 "{50} Heavy sirens [LOOPS]",
-"{51} Sealed door opening ",
+"{51} Sealed door opening",
 "{52} Switch pressed",
-"{53} Door opened   ",
+"{53} Door opened",
 "{54} Earthquake/rumbling [LOOPS]",
 "{55} Gold received",
 "{56} Giant doors opened",
 "{57} Metal mug put down",
 "{58} Unknown [LOOPS] - NOT USED IN EVENTS",
-"{59} Metal objects colliding 1 ",
-"{5A} Metal objects colliding 2 ",
+"{59} Metal objects colliding 1",
+"{5A} Metal objects colliding 2",
 "{5B} Magic Urn enemy",
 "{5C} Exhaust",
 "{5D} Unknown [LOOPS] - NOT USED IN EVENTS",
@@ -1433,13 +1434,13 @@ const char *SoundEffectNames[0x100] =
 "{60} Metal gate crashing",
 "{61} Squeak",
 "{62} Running [LOOPS]",
-"{63} Weapon readied ",
+"{63} Weapon readied",
 "{64} Poly rolling [LOOPS]",
 "{65} Treasure chest opened",
 "{66} Unknown",
 "{67} Invalid password entry",
-"{68} Crane password prompt ",
-"{69} Dactyl flying [LOOPS] ",
+"{68} Crane password prompt",
+"{69} Dactyl flying [LOOPS]",
 "{6A} Unknown",
 "{6B} Evil laugh",
 "{6C} Machine malfunction [LOOPS]",
@@ -1450,15 +1451,15 @@ const char *SoundEffectNames[0x100] =
 "{71} Moving machine [LOOPS]",
 "{72} Unknown",
 "{73} Enemy scream 2",
-"{74} Pathway opens ",
+"{74} Pathway opens",
 "{75} Unknown - NOT USED IN EVENTS",
 "{76} Unknown - NOT USED IN EVENTS",
 "{77} Big explosion",
 "{78} Teleport",
-"{79} Unknown ",
+"{79} Unknown",
 "{7A} NPC scream",
 "{7B} Lightning on 2300 A.D. map",
-"{7C} Thunder on 2300 A.D. map  ",
+"{7C} Thunder on 2300 A.D. map",
 "{7D} Ground cracking before Lavos battle",
 "{7E} Unknown",
 "{7F} Unknown",
@@ -1475,10 +1476,10 @@ const char *SoundEffectNames[0x100] =
 "{8A} Unknown - NOT USED IN EVENTS",
 "{8B} Slice",
 "{8C} Crashing metal",
-"{8D} Sprite lands  ",
-"{8E} Collision     ",
-"{8F} Bat squeak    ",
-"{90} Enemy scream  ",
+"{8D} Sprite lands",
+"{8E} Collision",
+"{8F} Bat squeak",
+"{90} Enemy scream",
 "{91} Imp Ace flying",
 "{92} Dragon Tank moving",
 "{93} Ghosts [LOOPS]",
@@ -1491,7 +1492,7 @@ const char *SoundEffectNames[0x100] =
 "{9A} Explosion",
 "{9B} Ringing [LOOPS]",
 "{9C} Enertron",
-"{9D} Unknown ",
+"{9D} Unknown",
 "{9E} Computer display power on",
 "{9F} Computer display power off",
 "{A0} Typing",
@@ -1500,12 +1501,12 @@ const char *SoundEffectNames[0x100] =
 "{A3} Orb enemy blinking",
 "{A4} Enemy scream 3",
 "{A5} Trial audience cheers",
-"{A6} Trial audience boos  ",
+"{A6} Trial audience boos",
 "{A7} Enemy sleeping",
 "{A8} Pop",
 "{A9} Unknown",
 "{AA} Enemy startled",
-"{AB} Water splash  ",
+"{AB} Water splash",
 "{AC} Epoch preparing to warp",
 "{AD} Epoch time warps",
 "{AE} Epoch powering down",
@@ -1521,7 +1522,7 @@ const char *SoundEffectNames[0x100] =
 "{B8} Digging",
 "{B9} Unknown",
 "{BA} Screen wipe",
-"{BB} Machinery  ",
+"{BB} Machinery",
 "{BC} Ozzie's barrier shattering",
 "{BD} Ozzie falling",
 "{BE} Masamune [LOOPS]",
@@ -1541,7 +1542,7 @@ const char *SoundEffectNames[0x100] =
 "{CC} Blackbird cargo door opened",
 "{CD} Unknown",
 "{CE} Epoch firing laser[LOOPS]",
-"{CF} Rapid explosions [LOOPS] ",
+"{CF} Rapid explosions [LOOPS]",
 "{D0} Epoch powering up [LOOPS]",
 "{D1} Wormhole warp [LOOPS]",
 "{D2} Epoch laser damaging Blackbird [LOOPS]",
@@ -1558,9 +1559,9 @@ const char *SoundEffectNames[0x100] =
 "{DD} Octo enemy",
 "{DF} Light beams",
 "{E0} Top of Black Omen [LOOPS]",
-"{E1} Mammon Machine [LOOPS]   ",
-"{E2} Lavos 2nd form [LOOPS]   ",
-"{E3} Lavos 2nd form defeated  ",
+"{E1} Mammon Machine [LOOPS]",
+"{E2} Lavos 2nd form [LOOPS]",
+"{E3} Lavos 2nd form defeated",
 "{E4} Unknown  - NOT USED IN EVENTS",
 "{E5} Explosion engulfing Black Omen",
 "{E6} Lavos eruption explosion",
@@ -1591,9 +1592,9 @@ const char *SoundEffectNames[0x100] =
 "{FF} [END LOOP"
 };
 
-const char *SongNames[0x53] =
+const char* SongNames[0x53] =
 {
-"{00} Silence   ",
+"{00} Silence",
 "{01} 1.05 - Memories of Green",
 "{02} 1.09 - Wind Scene",
 "{03} 3.04 - Corridors of Time",
@@ -1615,9 +1616,9 @@ const char *SongNames[0x53] =
 "{13} 3.10 - Wings that Cross Time",
 "{14} 3.06 - Schala's Theme",
 "{15} 2.14 - Delightful Spekkio",
-"{16} 1.23 - A Shot of Crisis  ",
-"{17} 1.21 - Kingdom Trial     ",
-"{18} 1.02 - Chrono Trigger    ",
+"{16} 1.23 - A Shot of Crisis",
+"{17} 1.21 - Kingdom Trial",
+"{18} 1.02 - Chrono Trigger",
 "{19} Alert",
 "{1A} Tsunami",
 "{1B} 1.20 - Fanfare 1",
@@ -1635,12 +1636,12 @@ const char *SongNames[0x53] =
 "{27} 2.07 - Robo Gang Johnny",
 "{28} 2.24 - Battle with Magus",
 "{29} 1.18 - Boss Battle 1",
-"{2A} 1.19 - Frog's Theme ",
-"{2B} 1.10 - Goodnight    ",
-"{2C} 2.08 - Bike Chase   ",
+"{2A} 1.19 - Frog's Theme",
+"{2B} 1.10 - Goodnight",
+"{2C} 2.08 - Bike Chase",
 "{2D} 2.04 - People who Threw Away the Will to Live",
 "{2E} 2.02 - Mystery of the Past",
-"{2F} 2.16 - Underground Sewer  ",
+"{2F} 2.16 - Underground Sewer",
 "{30} 1.01 - Presentiment",
 "{31} 3.08 - Undersea Palace",
 "{32} 3.14 - Last Battle",
@@ -1650,21 +1651,21 @@ const char *SongNames[0x53] =
 "{36} 2.21 - Burn!  Bobonga!",
 "{37} Wormhole",
 "{38} 2.18 - Primitive Mountain",
-"{39} 3.13 - World Revolution  ",
+"{39} 3.13 - World Revolution",
 "{3A} Lavos Scream",
 "{3B} 3.07 - Sealed Door",
 "{3C} 1.17 - Silent Light",
-"{3D} 2.15 - Fanfare 3         ",
+"{3D} 2.15 - Fanfare 3",
 "{3E} 2.13 - The Brink of Time",
 "{3F} 3.17 - To Far Away Times",
-"{40} 2.23 - Confusing Melody ",
+"{40} 2.23 - Confusing Melody",
 "{41} Hail Magus",
 "{42} 1.07 - Gonzales' Song",
 "{43} Rain",
 "{44} 3.11 - Black Dream",
-"{45} 1.12 - Battle 1   ",
+"{45} 1.12 - Battle 1",
 "{46} 3.02 - Tyran Castle",
-"{47} Fall of Mount Woe  ",
+"{47} Fall of Mount Woe",
 "{48} 2.22 - Magus' Castle",
 "{49} 3.15 - First Festival of Stars",
 "{4A} The Destruction of Zeal",
@@ -1680,23 +1681,23 @@ const char *SongNames[0x53] =
 
 namespace
 {
-    struct paramholder: public std::string
+    struct paramholder: public std::wstring
     {
     private:
         void operator=(unsigned n);
         void operator=(unsigned char n);
         void operator=(char n);
     public:
-        paramholder& operator= (const std::string& s)
-        { std::string::operator=(s); return *this; }
+        paramholder& operator= (const std::wstring& s)
+        { std::wstring::operator=(s); return *this; }
     };
     typedef std::map<std::string, paramholder> parammap;
 
     /* Prints the string using the format, filling in the parameters. */
-    static const std::string FormatString
+    static const std::wstring FormatString
         (const char*const format, const parammap& params)
     {
-        std::string result;
+        std::wstring result;
         const char* fmtptr = format;
         while(*fmtptr)
         {
@@ -1715,97 +1716,181 @@ namespace
                 result += i->second;
                 continue;
             }
-            result += *fmtptr++;
+            result += WcharToAsc(*fmtptr++);
         }
         return result;
     }
 
     /* Formatting functions */
-    static const std::string FormatNumeric(unsigned n, unsigned bits)
+    static const std::wstring FormatNumeric(unsigned n, unsigned bits)
     {
         // Vars starting with Object are related to the actor.
         // Vars starting with Sprite are related to the GFX sprite.
         switch(n)
         {
-            case 0x7E016D: return "{ObjectID}";
-            case 0x7E01BD: return "{NumActors}";
-            case 0x7E011F: return "{ExploreMode}";
-            case 0x7E0154: return "{Unknown54}";
-            case 0x7E016B: return "{Unknown6B}";
-            case 0x7E0197: return "{Member1ObjectNo}";
-            case 0x7E0199: return "{Member2ObjectNo}";
-            case 0x7E019B: return "{Member3ObjectNo}";
-            case 0x7E01F8: return "{RandomCounter}";
-            case 0x7E0520: return "{Sprite520}";
-            case 0x7E0521: return "{Sprite521}";
-            case 0x7E0522: return "{Sprite522}";
-            case 0x7E0523: return "{Sprite523}";
-            case 0x7E0524: return "{Sprite524}";
-            case 0x7E0525: return "{Sprite525}";
-            case 0x7E0526: return "{Sprite526}";
-            case 0x7E0527: return "{Sprite527}";
-            case 0x7E0528: return "{Sprite528}";
-            case 0x7E0F81: return "{ObjectPaletteNumber}";
-            case 0x7E1000: return "{ObjectIdentity}";
-            case 0x7E1180: return "{ObjectCodePointer}";
-            case 0x7E1400: return "{ObjectPalettePointer}";
-            case 0x7E1600: return "{ObjectFacing}";
-            case 0x7E1801: return "{ObjectXCoord}";
-            case 0x7E1881: return "{ObjectYCoord}";
-            case 0x7E1A00: return "{ObjectSpeed}";
-            case 0x7E1A01: return "{ObjectMovementLength}";
-            case 0x7E1A81: return "{ObjectDrawingMode}";
-            case 0x7E1B01: return "{ObjectSolidProps}";
-            case 0x7E1C01: return "{ObjectEventFlag}";
-            case 0x7E1C80: return "{ObjectMoveProps}";
-            case 0x7E2980: return "{Member1ID}";
-            case 0x7E2981: return "{Member2ID}";
-            case 0x7E2982: return "{Member3ID}";
-            case 0x7E2983: return "{Member4ID}";
-            case 0x7E2984: return "{Member5ID}";
-            case 0x7E2985: return "{Member6ID}";
-            case 0x7E2986: return "{Member7ID}";
-            case 0x7E2987: return "{Member8ID}";
-            case 0x7E2988: return "{Member9ID}";
-            case 0x7F0000: return "{StoryLineCounter}";
-            case 0x7F0A80: return "{Result}";
+            case 0x7E016D: return L"{ObjectID}";
+            case 0x7E01BD: return L"{NumActors}";
+            case 0x7E011F: return L"{ExploreMode}";
+            case 0x7E0154: return L"{Unknown54}";
+            case 0x7E016B: return L"{Unknown6B}";
+            case 0x7E0197: return L"{Member1ObjectNo}";
+            case 0x7E0199: return L"{Member2ObjectNo}";
+            case 0x7E019B: return L"{Member3ObjectNo}";
+            case 0x7E01F8: return L"{RandomCounter}";
+            case 0x7E0520: return L"{Sprite520}";
+            case 0x7E0521: return L"{Sprite521}"; // related to palette
+            case 0x7E0522: return L"{Sprite522}";
+            case 0x7E0523: return L"{Sprite523}";
+            case 0x7E0524: return L"{Sprite524}";
+            case 0x7E0525: return L"{Sprite525}";
+            case 0x7E0526: return L"{Sprite526}";
+            case 0x7E0527: return L"{Sprite527}";
+            case 0x7E0528: return L"{Sprite528}";
+            // 7E0F00: ?
+            case 0x7E0F81: return L"{ObjectPaletteNumber}";
+            // 1000: bitmask of unknown purpose (#$80 is a bit, lower bits are value)
+            // 1001: maybe a copy of 1000 (see op 87)
+            case 0x7E1100: return L"{ObjectMemberIdentity}";
+            // 1100: Identity as a party member
+            //         If bit $80 is set, the object is dead
+            //         and its code will not be interpreted.
+            //         #0: member1
+            //         #1: member2
+            //         #2: member3
+            //         #3: out-party PC
+            //         #4: NPC
+            //         #5: monster
+            case 0x7E1101: return L"{ObjectPlayerIdentity}";
+            // 1101: Identity as a player character
+            //         #0: crono
+            //         #1: marle
+            //         and so on
+            case 0x7E1180: return L"{ObjectCodePointer}";
+            // 1180: object's current code pointer
+            // 1301: static animation? (like sleeping)
+            case 0x7E1400: return L"{ObjectPalettePointer}";
+            // 1400: Pointer to palette in ROM (offset only, page E4)
+            // 7E15C0: ?
+            case 0x7E1600: return L"{ObjectFacing}";
+            // 1600: facing
+            // 1601: possibly a L"facing is up to date" flag
+            // 1680: current animation
+            // 1681: possibly a L"animation is up to date" flag
+            // 1780: ?flag
+            // 1781: ?
+            // 1800: ?flag for x-coord
+            case 0x7E1801: return L"{ObjectXCoord}";
+            // 1801: X-coordinate
+            // 1880: ?flag for y-coord
+            case 0x7E1881: return L"{ObjectYCoord}";
+            // 1881: Y-coordinate
+            // 1900: ?
+            // 1980: ?
+            case 0x7E1A00: return L"{ObjectSpeed}";
+            // 1A00: NpcSpeed
+            case 0x7E1A01: return L"{ObjectMovementLength}";
+            // 1A01: Length of movement
+            // 1A80: Appears to be a L"is moving?" flag
+            case 0x7E1A81: return L"{ObjectDrawingMode}";
+            // 1A81: Allocated? Drawing mode? 1=on, 0=off, $80=hide
+            case 0x7E1B01: return L"{ObjectSolidProps}";
+            // 1B01: NpcSolidProps
+            // 1B80: ?flag
+            // 1B81: ?
+            case 0x7E1C00: return L"{ObjectPriorityNumber}";
+            // 1C00: Current Priority number
+            case 0x7E1C01: return L"{ObjectEventFlag}";
+            // 1C01: EventFlag
+            case 0x7E1C80: return L"{ObjectMoveProps}";
+            // 1C80: NpcMoveProps
+            // 1C81: ?
+            //case 0x7F0200: return L"{DialogTextParam0}";
+            //case 0x7F0201: return L"{DialogTextParam1}";
+            //case 0x7F0202: return L"{DialogTextParam2}";
+            //case 0x7F0203: return L"{DialogTextParam3}";
+            //case 0x7F0204: return L"{DialogTextParam4}";
+            //case 0x7F0205: return L"{DialogTextParam5}";
+            // These may be used for dialog params, but
+            // they are also used for various other purposes
+            // as temporary variables.
+            
+            case 0x7F0580: return L"{ObjectPriority0Ptr}";
+            // 7F0580: Priority 0 code pointer (begins as 0)
+            case 0x7F0600: return L"{ObjectPriority1Ptr}";
+            // 7F0600: Priority 1 code pointer (begins as 0)
+            case 0x7F0680: return L"{ObjectPriority2Ptr}";
+            // 7F0680: Priority 2 code pointer (begins as 0)
+            case 0x7F0700: return L"{ObjectPriority3Ptr}";
+            // 7F0700: Priority 3 code pointer (begins as 0)
+            case 0x7F0780: return L"{ObjectPriority4Ptr}";
+            // 7F0780: Priority 4 code pointer (begins as 0)
+            case 0x7F0800: return L"{ObjectPriority5Ptr}";
+            // 7F0800: Priority 5 code pointer (begins as 0)
+            case 0x7F0880: return L"{ObjectPriority6Ptr}";
+            // 7F0880: Priority 6 code pointer (begins as 0)
+            case 0x7F0900: return L"{ObjectPriority7Ptr}";
+            // 7F0900: Priority 7 code pointer (begins as 0)
+            // 7F0980: flag used by opcode $04
+            case 0x7E2980: return L"{Member1ID}";
+            case 0x7E2981: return L"{Member2ID}";
+            case 0x7E2982: return L"{Member3ID}";
+            case 0x7E2983: return L"{Member4ID}";
+            case 0x7E2984: return L"{Member5ID}";
+            case 0x7E2985: return L"{Member6ID}";
+            case 0x7E2986: return L"{Member7ID}";
+            case 0x7E2987: return L"{Member8ID}";
+            case 0x7E2988: return L"{Member9ID}";
+            case 0x7F0000: return L"{StoryLineCounter}";
+            case 0x7F0A80: return L"{Result}";
+            // 7F0A80: "Result" of various tests
+            // 7F0B01: Used by op B7
+            // 7F0B80: Current pose number
         }
-        return format("%0*X", bits/4, n);
+        return wformat(L"%0*X", bits/4, n);
     }
 
-    static const std::string FormatDialogBegin(unsigned n, unsigned& save_begin)
+    static const std::wstring FormatDialogBegin(unsigned n, unsigned& save_begin)
     {
         save_begin = n = ROM2SNESaddr(n);
-        return "$" + EncodeBase62(n, 4);
+        return L"$" + AscToWstr(EncodeBase62(n, 4));
     }
     
-    static const std::string FormatDialogAddr(unsigned n, unsigned saved_begin)
+    static const std::wstring FormatDialogAddr(unsigned n, unsigned saved_begin)
     {
         unsigned DialogAddr = saved_begin + n*2;
-        return "$" + EncodeBase62(DialogAddr, 4);
+        return L"$" + AscToWstr(EncodeBase62(DialogAddr, 4));
     }
 
-    static const std::string FormatGoto(unsigned pointer)
+    static const std::wstring FormatOperator(unsigned char op)
     {
-        return format("{{%04X}}", pointer);
-    }
-    
-    static const std::string FormatOperator(unsigned char op)
-    {
-        static const char* ops[8] = {"==", "!=",
-                                     ">", "<",
-                                     ">=", "<=",
-                                     "&", "|"};
+        static const wchar_t* ops[8] = {L"==", L"!=",
+                                        L">",  L"<",
+                                        L">=", L"<=",
+                                        L"&",  L"|"};
         return ops[op & 7];
     }
     
-    static const std::string FormatBlob(const std::vector<Byte>& data)
+    static const std::wstring FormatBlob(const std::vector<Byte>& data, bool has_text)
     {
-        std::string result;
+        std::wstring result;
         result += '"';
         for(unsigned a=0; a<data.size(); ++a)
         {
-            result += format("[%02X]", data[a]);
+            unsigned int byte = data[a];
+            if(has_text)
+            {
+                if((byte == 1 || byte == 2) && (a+1 < data.size()))
+                {
+                    byte = byte*256 + data[++a];
+                }
+                wchar_t c = getwchar_t((ctchar)byte, cset_8pix);
+                if(c != ilseq)
+                {
+                    result += c;
+                    continue;
+                }
+            }
+            result += wformat(L"[%02X]", byte);
         }
         result += '"';
         return result;
@@ -1819,7 +1904,7 @@ class EvParameterHandler
 public:
     struct labeldata
     {
-        std::string label_name;
+        std::wstring label_name;
         /* Decoding: */
         unsigned    label_value;
         /* Encoding: */
@@ -1833,40 +1918,29 @@ private:
     labeldata label;
     unsigned    dialog_begin;
     
-    struct elemdata
-    {
-        enum { t_byte, t_nibble_hi, t_nibble_lo, t_word, t_long,
-               t_operator, t_goto,
-               t_dialogbegin,
-               t_dialogaddr
-             } type;
-        unsigned bytepos;
-        int sign;   //goto
-        unsigned offset; //goto
-    };
-    
     struct structure
     {
         unsigned size;
-        typedef std::map<std::string, elemdata> elemmap;
+        typedef std::map<std::wstring, elemdata> elemmap;
         elemmap elems;
     } structure;
     
 protected:
     typedef std::map<std::string, paramholder> parammap;
+    
     /* Throws a dummy exception if fails. */
-    static unsigned ScanInt(const std::string& n, long max=0xFFFFFF)
+    static unsigned ScanInt(const std::wstring& n, long max=0xFFFFFF)
     {
         unsigned offset=0;
         int base=16;
-        if(n.substr(0, 2) == "0x") { offset=2; base=16; }
-        else if(n.substr(0, 1) == "$") { offset=1; base=16; }
+        if(n.substr(0, 2) == L"0x") { offset=2; base=16; }
+        else if(n.substr(0, 1) == L"$") { offset=1; base=16; }
         char* endptr;
         long retval = std::strtol(n.c_str()+offset, &endptr, base);
         if(*endptr || retval < 0 || retval > max) throw false;
         return retval;
     }
-    static const std::vector<Byte> ScanData(const std::string& n)
+    static const std::vector<Byte> ScanData(const std::wstring& n)
     {
         std::vector<Byte> result;
         if(n.size() < 2) throw false;
@@ -1887,7 +1961,7 @@ protected:
         }
         return result;
     }
-    const int ScanGoto(const std::string& n, unsigned bytepos, unsigned offset, int sign)
+    const int ScanGoto(const std::wstring& n, unsigned bytepos, unsigned offset, int sign)
     {
         label.label_name     = n;
         label.label_position = bytepos;
@@ -1895,19 +1969,19 @@ protected:
         
         return -offset;
     }
-    static unsigned ScanOperator(const std::string& n)
+    static unsigned ScanOperator(const std::wstring& n)
     {
-        if(n == "==" || n == "=") return 0;
-        if(n == "!=" || n == "<>") return 1;
-        if(n == ">") return 2;
-        if(n == "<") return 3;
-        if(n == ">=") return 4;
-        if(n == "<=") return 5;
-        if(n == "&") return 6;
-        if(n == "|") return 7;
+        if(n == L"==" || n == L"=") return 0;
+        if(n == L"!=" || n == L"<>") return 1;
+        if(n == L">") return 2;
+        if(n == L"<") return 3;
+        if(n == L">=") return 4;
+        if(n == L"<=") return 5;
+        if(n == L"&") return 6;
+        if(n == L"|") return 7;
         throw false;
     }
-    const unsigned ScanDialogBegin(const std::string& n)
+    const unsigned ScanDialogBegin(const std::wstring& n)
     {
         if(n.size() != 5 || n[0] != '$') throw false;
         unsigned result=0;
@@ -1917,7 +1991,7 @@ protected:
         dialog_begin = result;
         return SNES2ROMaddr(result);
     }
-    const unsigned ScanDialogAddr(const std::string& n)
+    const unsigned ScanDialogAddr(const std::wstring& n)
     {
         if(n.size() != 5 || n[0] != '$') throw false;
         unsigned result=0;
@@ -1944,14 +2018,14 @@ public:
     bool ScanParams(const std::string& string, parammap& params) const
     {
         unsigned strpos=0;
-        const char *fmtptr = opformat;
+        const char* fmtptr = opformat;
         while(strpos < string.size())
         {
             if(string[strpos] == ' ') { ++strpos; continue; }
             while(*fmtptr == ' ') ++fmtptr;
             if(*fmtptr == '%')
             {
-                std::string paramname;
+                std::wstring paramname;
                 while(std::isalnum(*++fmtptr)) paramname += *fmtptr;
                 unsigned param_begin = strpos;
                 
@@ -2051,42 +2125,34 @@ private:
             t_trivial,
             t_nibble_hi,
             t_nibble_lo,
-            t_goto,
+            t_orbit,
+            t_andbit,
+            t_else,
+            t_loop,
+            t_if,
             t_operator,
+            t_textblob,
             t_blob,
             t_dialogbegin,
             t_dialogaddr
         };
     
         ElemData(unsigned nb, unsigned mi,unsigned ma,unsigned ad,int sh)
-            : bytepos(0), type(t_trivial), name(NULL),
+            : bytepos(0), type(t_trivial),
               n_bytes(nb),min(mi),max(ma),add(ad),shift(sh),
-              highbit_trick(false), sign(0),offset(0) {}
+              highbit_trick(false) {}
         
-        ElemData(unsigned char b)
-            : bytepos(0), type(t_trivial),name(NULL),
-              n_bytes(1),min(b),max(b),add(0),shift(0),
-              highbit_trick(false), sign(0),offset(0) {}
-
         ElemData& DeclareHighbit()
         {
             highbit_trick = true;
             return *this;            
         }
         
-        ElemData& SetName(const char* n)
-        {
-            name = n;
-            return *this;            
-        }
-        
         ElemData& SetBytePos(unsigned n) { bytepos = n; return *this; }
         
-        ElemData& SetType(typetype t, int sgn=0, unsigned offs=0)
+        ElemData& SetType(typetype t)
         {
             type   = t;
-            sign   = sgn;
-            offset = offs;
             return *this;
         }
         
@@ -2154,16 +2220,7 @@ private:
             return 0xFF;
         }
         
-        const char* GetName() const
-        {
-            //if(!name)
-            //{
-            //    fprintf(stderr, "null name\n");
-            //}
-            return name;
-        }
-        
-        const std::string Format() const
+        const std::wstring Format() const
         {
             if(type != t_trivial)
             {
@@ -2176,10 +2233,14 @@ private:
         
         struct FormatResult
         {
-            std::string text;
+            std::wstring text;
             unsigned maxoffs;
-            std::string label_name;
-            unsigned    label_value;
+            
+            unsigned            goto_target;
+            EventCode::gototype goto_type;
+            
+        public:
+            FormatResult() : maxoffs(0),goto_target(0),goto_type(EventCode::goto_none) { }
         };
             
         FormatResult Format
@@ -2230,7 +2291,7 @@ private:
                         throw false;
                     }
                     /* Adjust for formatting. */
-                    if(shift < 0) value >>= shift; else value <<= shift;
+                    if(shift < 0) value >>= -shift; else value <<= shift;
                     value += add;
                     /* Format. */
                     result.text    = FormatNumeric(value, n_bytes*8);
@@ -2261,21 +2322,50 @@ private:
                     result.maxoffs = bytepos+1;
                     break;
                 }
-                case t_goto:
+                case t_orbit:
                 {
                     if(maxlen < 1)
                     {
                         fprintf(stderr, "maxlen(%u) < n_bytes(%u)\n", maxlen, n_bytes);
                         throw false;
                     }
-                    unsigned value = offs + data[0]*sign + offset;
-                    result.text    = FormatGoto(value);
+                    unsigned value = 1 << (data[0]&7);
+                    result.text    = FormatNumeric(value, 8);
                     result.maxoffs = bytepos+1;
-                    result.label_name  = result.text;
-                    result.label_value = value;
                     break;
                 }
-                case t_operator: //FIXME
+                case t_andbit:
+                {
+                    if(maxlen < 1)
+                    {
+                        fprintf(stderr, "maxlen(%u) < n_bytes(%u)\n", maxlen, n_bytes);
+                        throw false;
+                    }
+                    unsigned value = (1 << (data[0]&7)) ^ 0xFF;
+                    result.text    = FormatNumeric(value, 8);
+                    result.maxoffs = bytepos+1;
+                    break;
+                }
+                case t_else:
+                case t_loop:
+                case t_if:
+                {
+                    if(maxlen < 1)
+                    {
+                        fprintf(stderr, "maxlen(%u) < n_bytes(%u)\n", maxlen, n_bytes);
+                        throw false;
+                    }
+                    
+                    int sign = type==t_loop ? -1 : 1;
+                    
+                    result.maxoffs     = bytepos+1;
+                    result.goto_target = offs + data[0]*sign + bytepos;
+                    result.goto_type   = type==t_loop ? EventCode::goto_backward
+                                       : type==t_else ? EventCode::goto_forward
+                                       : EventCode::goto_if;
+                    break;
+                }
+                case t_operator:
                 {
                     if(maxlen < 1)
                     {
@@ -2287,6 +2377,7 @@ private:
                     result.maxoffs = bytepos+1;
                     break;
                 }
+                case t_textblob:
                 case t_blob:
                 {
                     if(maxlen < 2)
@@ -2304,7 +2395,7 @@ private:
                         throw false;
                     }
                     std::vector<Byte> buf(data, data+length);
-                    result.text    = FormatBlob(buf);
+                    result.text    = FormatBlob(buf, type==t_textblob);
                     result.maxoffs = bytepos+2+length;
                     break;
                 }
@@ -2340,8 +2431,6 @@ private:
         
         typetype type;
         
-        const char* name;
-        
         // byte, word, long, memory, dialog begin, dialog addr:
         unsigned n_bytes; // example: 1
         unsigned min;  // example: 0x00
@@ -2353,9 +2442,7 @@ private:
         
         // nibble:
         
-        // goto:
-        int sign;
-        unsigned offset;
+        // else,loop,if:
         
         // operator:
         
@@ -2371,19 +2458,19 @@ private:
         Command() {}
         explicit Command(const char* fmt) : format(fmt) { }
     
+        void Add(ElemData data, unsigned bytepos, const char* name)
+        {
+            data.SetBytePos(bytepos);
+            pos_data.push_back(std::make_pair(*name?name:NULL, data));
+        }
         void Add(ElemData data, unsigned bytepos)
         {
             data.SetBytePos(bytepos);
-            pos_data.push_back(data);
+            pos_data.push_back(std::make_pair((const char*)NULL, data));
         }
-    
-        void Add(const ElemData& data)
+        void Add(const ElemData& data, const char* name)
         {
-            if(data.GetName() == NULL)
-            {
-                fprintf(stderr, "Adding an 'other data' with null name\n");
-            }
-            other_data.push_back(data);
+            other_data.push_back(std::make_pair(name, data));
         }
         
         void PutInto(OpcodeTree& tree, unsigned bytepos=0)
@@ -2396,7 +2483,7 @@ private:
             bool found=false;
             for(unsigned a=0; a<pos_data.size(); ++a)
             {
-                const ElemData& d = pos_data[a];
+                const ElemData& d = pos_data[a].second;
                 if(d.KnowRange(bytepos))
                 {
                     range<unsigned char> r(d.GetMin(bytepos), d.GetMax(bytepos));
@@ -2429,45 +2516,37 @@ private:
             
             EventCode::DecodeResult result;
             
-            if(data[0] == 0x4E
-            && data[1] == 0x3A
-            && data[2] == 0x20
-            && data[3] == 0x7E)
-            {
-                fprintf(stderr, "Alert\n");
-            }
-            
             unsigned nbytes = 1;
             for(unsigned a=0; a<pos_data.size(); ++a)
             {
                 /* Even if it doesn't have a name, it needs to be decoded
                  * to get the opcode length properly.
                  */
-                const char* name = pos_data[a].GetName();
+                const char* name = pos_data[a].first;
+                const ElemData& elem = pos_data[a].second;
                 
                 ElemData::FormatResult
-                    tmp = pos_data[a].Format(offset, data, length, state);
+                    tmp = elem.Format(offset, data, length, state);
                 
                 if(name)
                 {
                     params[name] = tmp.text;
                 }
-                if(!tmp.label_name.empty())
-                {
-                    result.label_name  = tmp.label_name;
-                    result.label_value = tmp.label_value;
-                }
+                result.goto_type   = tmp.goto_type;
+                result.goto_target = tmp.goto_target;
                 if(tmp.maxoffs > nbytes) nbytes = tmp.maxoffs;
             }
             for(unsigned a=0; a<other_data.size(); ++a)
             {
-                const char* name = other_data[a].GetName();
+                const char* name = other_data[a].first;
+                const ElemData& elem = other_data[a].second;
+                
                 if(!name)
                 {
                     fprintf(stderr, "No name on 'other_data'?\n");
                     throw false;
                 }
-                params[name] = other_data[a].Format();
+                params[name] = elem.Format();
             }
             
             result.code   = FormatString(format, params);
@@ -2477,8 +2556,8 @@ private:
         
     private:
         const char* format;
-        std::vector<ElemData> pos_data;
-        std::vector<ElemData> other_data;
+        std::vector<std::pair<const char*, ElemData> > pos_data;
+        std::vector<std::pair<const char*, ElemData> > other_data;
     };
     
 private:
@@ -2517,6 +2596,44 @@ private:
     class Initialize
     {
     private:
+        struct NamedElem: public std::pair<const char*, ElemData>
+        {
+        public:
+            NamedElem(const char*s, const ElemData& e)
+              : std::pair<const char*,ElemData>(s,e) { }
+        
+            NamedElem& AnnotatePC()
+            {
+               // this->second.Annotate(ElemData::anno_pc);
+                return *this;
+            }
+            NamedElem& AnnotateNPC()
+            {
+               // this->second.Annotate(ElemData::anno_npc);
+                return *this;
+            }
+            NamedElem& AnnotateEnemy()
+            {
+               // this->second.Annotate(ElemData::anno_enemy);
+                return *this;
+            }
+            NamedElem& AnnotateSong()
+            {
+               // this->second.Annotate(ElemData::anno_song);
+                return *this;
+            }
+            NamedElem& AnnotateSFX()
+            {
+               // this->second.Annotate(ElemData::anno_sfx);
+                return *this;
+            }
+            NamedElem& SetHighbit()
+            {
+                this->second.DeclareHighbit();
+                return *this;
+            }
+        };
+    
         /* formatting */
         Initialize& operator<< (const char* format)
         {
@@ -2533,176 +2650,183 @@ private:
         }
         
         /* opcode settings */
+        Initialize& operator>> (const NamedElem& data)
+        {
+            if(cur_command) cur_command->Add(data.second, curpos, data.first);
+            return *this;
+        }
+        /* unnamed elements */
         Initialize& operator>> (const ElemData& data)
         {
             if(cur_command) cur_command->Add(data, curpos);
             return *this;
         }
+        Initialize& operator>> (unsigned char ch)
+        {
+            return *this >> ElemData(1,ch,ch,0,0);
+        }
 
         /* settings */
-        Initialize& operator<< (const ElemData& data)
+        Initialize& operator<< (const NamedElem& data)
         {
-            if(cur_command) cur_command->Add(data);
+            if(cur_command) cur_command->Add(data.second, data.first);
             return *this;
         }
         
         /* opcode settings */
-        static ElemData DeclareByte(const char* name, unsigned min=0x00, unsigned max=0xFF)
+        static NamedElem DeclareByte(const char* name, unsigned min=0x00, unsigned max=0xFF,
+                                     bool highbittrick=false)
         {
-            return ElemData(1,min,max,0,0).SetName(name);
+            ElemData tmp(1,min,max,0,0);
+            if(highbittrick) tmp.DeclareHighbit();
+            return NamedElem(name, tmp);
         }
-        static ElemData DeclareWord(const char* name, unsigned min=0x0000, unsigned max=0xFFFF)
+        static NamedElem DeclareObjectNo(const char* name)
         {
-            return ElemData(2,min,max,0,0).SetName(name);
+            ElemData tmp(1,0x00,0x7E,0,-1);
+            return NamedElem(name, tmp);
         }
-        static ElemData DeclareLong(const char* name, unsigned min=0x000000, unsigned max=0xFFFFFF)
+        static NamedElem DeclareWord(const char* name, unsigned min=0x0000, unsigned max=0xFFFF)
         {
-            return ElemData(3,min,max,0,0).SetName(name);
+            return NamedElem(name, ElemData(2,min,max,0,0));
         }
-        static ElemData DeclareNibbleHi(const char* name)
+        static NamedElem DeclareLong(const char* name, unsigned min=0x000000, unsigned max=0xFFFFFF)
+        {
+            return NamedElem(name, ElemData(3,min,max,0,0));
+        }
+        static NamedElem DeclareNibbleHi(const char* name)
         {
             ElemData result(1, 0x00,0xFF, 0,0);
             result.SetType(ElemData::t_nibble_hi);
-            return result.SetName(name);
+            return NamedElem(name, result);
         }
-        static ElemData DeclareNibbleLo(const char* name)
+        static NamedElem DeclareNibbleLo(const char* name)
         {
             ElemData result(1, 0x00,0xFF, 0,0);
             result.SetType(ElemData::t_nibble_lo);
-            return result.SetName(name);
+            return NamedElem(name, result);
         }
-        static ElemData Declare7E0000_B(const char* name)
-            { return ElemData(1,0x00,0xFF,0x7E0000,0).SetName(name); }
-        static ElemData Declare7E0197_B(const char* name)
-            { return ElemData(1,0x00,0xFF,0x7E0197,0).SetName(name); }
-        static ElemData Declare7E0100_B(const char* name)
-            { return ElemData(1,0x00,0xFF,0x7E0100,0).SetName(name); }
-        static ElemData Declare7F0000_B(const char* name)
-            { return ElemData(1,0x00,0xFF,0x7F0000,0).SetName(name); }
-        static ElemData Declare7F0000_W(const char* name)
-            { return ElemData(2,0x00,0xFFFF,0x7F0000,0).SetName(name); }
-        static ElemData Declare7F0200_2(const char* name)
-            { return ElemData(1,0x00,0xFF,0x7F0200,1).SetName(name); }
-        static ElemData DeclareGoto(const char* name, signed char sign, unsigned offset)
+        static NamedElem DeclareOrBitnum(const char* name)
         {
-            ElemData result(1, 0x00,0xFF, 0,0);
-            result.SetType(ElemData::t_goto, sign, offset);
-            return result.SetName(name);
+            ElemData result(1, 0x00,0x07, 0,0);
+            result.SetType(ElemData::t_orbit);
+            return NamedElem(name, result);
         }
-        static ElemData DeclareOperator(const char* name)
+        static NamedElem DeclareAndBitnum(const char* name)
+        {
+            ElemData result(1, 0x00,0x07, 0,0);
+            result.SetType(ElemData::t_andbit);
+            return NamedElem(name, result);
+        }
+        static NamedElem Declare7E0000_B(const char* name)
+            { return NamedElem(name, ElemData(1,0x00,0xFF,0x7E0000,0)); }
+        static NamedElem Declare7E0197_B(const char* name)
+            { return NamedElem(name, ElemData(1,0x00,0xFF,0x7E0197,0)); }
+        static NamedElem Declare7E0100_B(const char* name)
+            { return NamedElem(name, ElemData(1,0x00,0xFF,0x7E0100,0)); }
+        static NamedElem Declare7F0000_B(const char* name)
+            { return NamedElem(name, ElemData(1,0x00,0xFF,0x7F0000,0)); }
+        static NamedElem Declare7F0000_W(const char* name)
+            { return NamedElem(name, ElemData(2,0x00,0xFFFF,0x7F0000,0)); }
+        static NamedElem Declare7F0200_2(const char* name)
+            { return NamedElem(name, ElemData(1,0x00,0xFF,0x7F0200,1)); }
+        static NamedElem DeclareOperator(const char* name)
         {
             ElemData result(1, 0x00,0x7F, 0,0);
             result.SetType(ElemData::t_operator);
-            return result.SetName(name);
+            return NamedElem(name, result);
         }
-        static ElemData DeclareBlob(const char* name)
+        static NamedElem DeclareBlob(const char* name)
         {
             ElemData result(2, 0x0000,0xFFFF, 0,0);
             result.SetType(ElemData::t_blob);
-            return result.SetName(name);
+            return NamedElem(name, result);
         }
-        static ElemData DeclareDialogBegin(const char* name)
+        static NamedElem DeclareTextBlob(const char* name)
+        {
+            ElemData result(2, 0x0000,0xFFFF, 0,0);
+            result.SetType(ElemData::t_textblob);
+            return NamedElem(name, result);
+        }
+        static NamedElem DeclareDialogBegin(const char* name)
         {
             ElemData result(3, 0x000000,0xFFFFFF, 0,0);
             result.SetType(ElemData::t_dialogbegin);
-            return result.SetName(name);
+            return NamedElem(name, result);
         }
-        static ElemData DeclareDialogAddr(const char* name)
+        static NamedElem DeclareDialogAddr(const char* name)
         {
             ElemData result(1, 0x00,0xFF, 0,0);
             result.SetType(ElemData::t_dialogaddr);
-            return result.SetName(name);
+            return NamedElem(name, result);
         }
         
         /* settings */
-        static ElemData DeclareConst(const char* name, unsigned value)
-        { if(value <= 0xFF) return ElemData(1,value,value,value,0).SetName(name);
-          if(value <= 0xFFFF) return ElemData(2,value,value,value,0).SetName(name);
-          if(value <= 0xFFFFFF) return ElemData(3,value,value,value,0).SetName(name);
-          return ElemData(4,value,value,value,0).SetName(name);
-
-          // 7E016D: current actor (object)
-          // 7E01BD: number of objects in scene
-          // 7E15C0: ?
+        static NamedElem DeclareConst(const char* name, unsigned value)
+        {
+            if(value <= 0xFF)
+                return NamedElem(name, ElemData(1,value,value,value,0));
+            if(value <= 0xFFFF)
+                return NamedElem(name, ElemData(2,value,value,value,0));
+            if(value <= 0xFFFFFF)
+                return NamedElem(name, ElemData(3,value,value,value,0));
+            return NamedElem(name, ElemData(4,value,value,value,0));
         }
 
-        static ElemData DeclareProp(const char* name, unsigned address)
+        static NamedElem DeclareProp(const char* name, unsigned address)
         {
-            // 0F81: Sprite palette number
-            // 1000: ?
-            // 1001: ?
-            // 1100: Identity
-            //         If bit $80 is set, the object is dead
-            //         and its code will not be interpreted.
-            //         #0: member1
-            //         #1: member2
-            //         #2: member3
-            // 1180: object's current code pointer
-            // 1400: Pointer to palette in ROM (offset only, page E4)
-            // 1600: facing
-            // 1601: flag: must update sprite (?)
-            // 1680: current animation
-            // 1681: ?
-            // 1780: ?flag
-            // 1781: ?
-            // 1800: ?flag for x-coord
-            // 1801: X-coordinate
-            // 1880: ?flag for y-coord
-            // 1881: Y-coordinate
-            // 1900: ?
-            // 1980: ?
-            // 1A00: NpcSpeed
-            // 1A01: Length of movement
-            // 1A80: Appears to be a "is moving?" flag
-            // 1A81: Allocated? Drawing mode? 1=on, 0=off, $80=hide
-            // 1B01: NpcSolidProps
-            // 1B80: ?flag
-            // 1B81: ?
-            // 1C00: Current thread number
-            // 1C01: EventFlag
-            // 1C80: NpcMoveProps
-            // 1C81: ?
-            // 7F0580: Thread 0 code pointer (begins as 0)
-            // 7F0600: Thread 1 code pointer (begins as 0)
-            // 7F0680: Thread 2 code pointer (begins as 0)
-            // 7F0700: Thread 3 code pointer (begins as 0)
-            // 7F0780: Thread 4 code pointer (begins as 0)
-            // 7F0800: Thread 5 code pointer (begins as 0)
-            // 7F0880: Thread 6 code pointer (begins as 0)
-            // 7F0900: Thread 7 code pointer (begins as 0)
-            // 7F0980: flag used by opcode $04
-            // 7F0A80: "Result" of various tests
-            // 7F0B01: ?
-            // 7F0B80: ?
-            // 7F0F00: ?
             if(address <=0x0000FF) address += 0x7E0100; // D page.
             if(address < 0x7E0000) address += 0x7E0000;
             return DeclareConst(name, address);
+        }
+        static ElemData DeclareElse()
+        {
+            // forward goto
+            ElemData result(1, 0x00,0xFF, 0,0);
+            return result.SetType(ElemData::t_else);
+        }
+        static ElemData DeclareLoop()
+        {
+            // backward goto
+            ElemData result(1, 0x00,0xFF, 0,0);
+            return result.SetType(ElemData::t_loop);
+        }
+        static ElemData DeclareIf()
+        {
+            // conditional goto
+            ElemData result(1, 0x00,0xFF, 0,0);
+            return result.SetType(ElemData::t_if);
         }
         
         void Init()
         {
         *this
-<< "[Next]"
+<< "[Return]"
     << 0 >> 0x00
     /*
         A = $1C00 of cur obj
         If A == 7
+        {
+          // There are no more threads.
           return and loop
+        }
         X = (A << 7) + (obj number)
-        $7F0580[X] = word(0)
+        $7F0580[X] = word(0) // Mark the current thread as completed
         <begin>
          $1C00 of cur obj += 1
          X += #$80
          A = $7F0580[X]
         <while A==0>
-        Execution continues at A
+        returns X as A (execution position)
         return
+        
+      Returns to the function of lower priority
+      (bigger number)
     */
 
-<< "[Execution02:%1 [function:%2] [for:%0]]"
+<< "[Execute:%2 [priority:%1] [for:%0] [wait:nothing]]"
     << 0 >> 0x02
-    << 1 >> DeclareByte("0") // object number whose execution to alter
+    << 1 >> DeclareObjectNo("0") // object number whose execution to alter
     << 2 >> DeclareNibbleHi("1")
     << 2 >> DeclareNibbleLo("2")
     /*
@@ -2721,8 +2845,6 @@ private:
         }
         If $DF >= $D9
         {
-          // Selecting a thread higher than current
-          
           // Verify that the thread is undefined
           $E1 = ($DF << 7) + param1
           A = $7F0580[$E1]
@@ -2732,7 +2854,7 @@ private:
             return
           }
           // Define it.
-          $E3 = (param1 << 4) + (lo nibble)*2
+          $E3 = (param0 << 4) + (lo nibble)*2
           $7F0580[$E1] = given actor's pointer from $7F2001[$E3]
         }
         else
@@ -2744,22 +2866,53 @@ private:
           $7F0580[$E1] = $1180 for given obj
           
           // Load new position
-          $E3 = (param1 << 4) + (lo nibble)*2
+          $E3 = (param0 << 4) + (lo nibble)*2
           $1180 for given obj = given actor's pointer from $7F2001[$E3]
           $1C00 for given obj = $DF
           $1A80 for given obj = 0 (moving flag)
           $1A01 for given obj = 0 (length of movement)
         }
         return
+        
+        Analysis:
+          This function meddles with ANOTHER object.
+          It does not alter the execution of SELF.
+
+          If the current thread < %1
+            Saves current location to current thread
+            Calls function %2 as thread %1
+          If the current thread >= %1
+            Sets thread %1 exit address from function %2
+            Only if not defined yet.
+          
+          Analysis continued, the thread number
+          may represent "priority".
+
+          When the thread number is smaller than
+          current, the function is called immediately.
+          When the number is bigger, it will be called
+          when the current one finishes.
+
+          There are eight priority levels:
+             0 1 2 3 4 5 6 7
+          The opcode 00 returns to the next priority level,
+          like from 6 to 7. If the current is 7 when
+          opcode 00 is called, it will loop.
+
      */
      // Note: used by op 05.
 
-<< "[Execution03:%1 [function:%2] [for:%0]]"
+<< "[Execute:%2 [priority:%1] [for:%0] [wait:call]]"
     << 0 >> 0x03
-    << 1 >> DeclareByte("0")
+    << 1 >> DeclareObjectNo("0")
     << 2 >> DeclareNibbleHi("1")
     << 2 >> DeclareNibbleLo("2")
-
+    
+    /* Same as op 02, except that if the given
+       object is currently performing a more urgent
+       task, this op will wait until it's completed
+       and then transfer it to the new one.
+    */
     /*
         if ( $1C01 for given obj != #0 )
           return, loop
@@ -2791,198 +2944,230 @@ private:
      */
      // Note: used by op 06.
 
-<< "[Execution04:%1 [function:%2] [for:%0]]"
+<< "[Execute:%2 [priority:%1] [for:%0] [wait:return]]"
     << 0 >> 0x04
-    << 1 >> DeclareByte("0")
+    << 1 >> DeclareObjectNo("0")
     << 2 >> DeclareNibbleHi("1")
     << 2 >> DeclareNibbleLo("2")
+    
     /*
+       Same as op 03, except that it will wait
+       until the target object returns from the
+       function.
+     */
+    /*
+       $DB = param0 // object number
+       
+       $D9 = $1C00 for given obj // Current thread
+       $DD = byte2 (param1 and param2)
+       $DF = param1
+       
        A = $7F0980 for _current_ object
-       If(!zero)
+       If(A != 0)
        {
-         @61A7
-         $DB = param1
-         $DC = 0
-
-         $D9 = $1C00 for given obj // Current thread
-         $DF = hi nibble
-         
          If ( $1100 for given obj & #$80
-         Or   $1000 for given obj & #$80
-         Or   $DF >= $D9 )
+         Or   $1000 for given obj & #$80 )
          {
-           $7F0980 for _current_ obj = 0
+           $7F0980 for _current_ object = 0
            return
          }
-         return, loop
+         
+         If $DF >= $D9:
+           return, loop
+         
+         $7F0980 for _current_ obj = 0
+         return
        }
-       // Rest of this branch is same as in op 03,
-       // except that in the end it sets
-       $7F0980 for _current_ obj = 1.
-       return
+       
+       If ( $1C01 for given obj != 0):
+         return, loop
+       
+       If ( $1100 for given obj & #$80
+       Or   $1000 for given obj & #$80 )
+       {
+         return
+       }
+       
+       If $DF >= $D9:
+         return, loop
+       
+       // Save current code position
+       $E1 = ($D9 << 7) + param0
+       $7F0580[$E1] = $1180 for given obj
+       
+       // Load new position
+       $E3 = (param0 << 4) + (param2)*2
+       $1180 for given obj = given actor's pointer from $7F2001[$E3]
+       $1C00 for given obj = $DF
+       $1A80 for given obj = 0 (moving flag)
+       $1A01 for given obj = 0 (length of movement)
+
+       $7F0980 for _current_ obj = 1
+       return, loop
     */
      // Note: used by op 07.
 
-<< "[Execution02:%1 [function:%2] [for:%0]]"
+<< "[Execute:%2 [priority:%1] [for:%0] [wait:nothing]]"
     << 0 >> 0x05
     << 1 >> Declare7E0197_B("0")//target obj
     << 2 >> DeclareNibbleHi("1")
     << 2 >> DeclareNibbleLo("2")
         // Same as 0x02, but uses object number from table.
 
-<< "[Execution03:%1 [function:%2] [for:%0]]"
+<< "[Execute:%2 [priority:%1] [for:%0] [wait:call]]"
     << 0 >> 0x06
     << 1 >> Declare7E0197_B("0")//target obj
     << 2 >> DeclareNibbleHi("1")
     << 2 >> DeclareNibbleLo("2")
     // Same as 0x03, but uses object number from table.
 
-<< "[Execution04:%1 [function:%2] [for:%0]]"
+<< "[Execute:%2 [priority:%1] [for:%0] [wait:return]]"
     << 0 >> 0x07
     << 1 >> Declare7E0197_B("0")//target obj
     << 2 >> DeclareNibbleHi("1")
     << 2 >> DeclareNibbleLo("2")
     // Same as 0x04, but uses object number from table.
 
-<< "[ObjectLetB:%0:%1 [for:current]]"
+<< "[ObjectLetB:%0:%1]"
     << 0 >> 0x08
     << DeclareProp("0", 0x1C01)
     << DeclareConst("1", 1)
 
-<< "[ObjectLetB:%0:%1 [for:current]]"
+<< "[ObjectLetB:%0:%1]"
     << 0 >> 0x09
     << DeclareProp("0", 0x1C01)
     << DeclareConst("1", 0)
 
 << "[ObjectRemove [for:%0]]"
     << 0 >> 0x0A
-    << 1 >> DeclareByte("0")
+    << 1 >> DeclareObjectNo("0")
     // For given obj,
     //   Sets 1100=$80 (code execution: dead)
     //   And  1A81=$00 (drawing mode: none)
 
 << "[ObjectOrB:%0:%1 [for:%2]]"
     << 0 >> 0x0B
-    << 1 >> DeclareByte("2")
+    << 1 >> DeclareObjectNo("2")
     << DeclareProp("0", 0x1000)
     << DeclareConst("1", 0x80)
 
 << "[ObjectAndB:%0:%1 [for:%2]]"
     << 0 >> 0x0C
-    << 1 >> DeclareByte("2")
+    << 1 >> DeclareObjectNo("2")
     << DeclareProp("0", 0x1000)
     << DeclareConst("1", 0x7F)
 
-<< "[ObjectLetB:%0:%1 [for:current]]"
+<< "[ObjectLetB:%0:%1]"
     << 0 >> 0x0D
     << 1 >> DeclareByte("1")
     << DeclareProp("0", 0x1C80)
 
-<< "[ObjectLetB:%0:%1 [for:current]]"
+<< "[ObjectLetB:%0:%1]"
     << 0 >> 0x0E
     << 1 >> DeclareByte("1")
     << DeclareProp("0", 0x1C81)
 
-<< "[ObjectFacing:%0 [for:current]]"
+<< "[ObjectSetFacing:%0]"
     << 0 >> 0x0F
     << DeclareConst("0", 0) //up
     // puts 1600=0, 1601=0
 
-<< "[Goto:%label]"
+<< ""
     << 0 >> 0x10
-    << 1 >> DeclareGoto("label", +1, 1)
+    << 1 >> DeclareElse()
 
-<< "[Goto:%label]"
+<< ""
     << 0 >> 0x11
-    << 1 >> DeclareGoto("label", -1, 1)
+    << 1 >> DeclareLoop()
 
-<< "[Goto:%label [UnlessB:%addr %op %value]]"
+<< "B:%addr %op %value"
     << 0 >> 0x12
     << 1 >> Declare7F0200_2("addr")
     << 2 >> DeclareByte("value")
     << 3 >> DeclareOperator("op")
-    << 4 >> DeclareGoto("label", +1, 4)
+    << 4 >> DeclareIf()
 
-<< "[Goto:%label [UnlessW:%addr %op %value]]"
+<< "W:%addr %op %value"
     << 0 >> 0x13
     << 1 >> Declare7F0200_2("addr")
     << 2 >> DeclareWord("value")
     << 4 >> DeclareOperator("op")
-    << 5 >> DeclareGoto("label", +1, 5)
+    << 5 >> DeclareIf()
 
-<< "[Goto:%label [UnlessB:%addr1 %op %addr2]]"
+<< "B:%addr1 %op %addr2"
     << 0 >> 0x14
     << 1 >> Declare7F0200_2("addr1")
     << 2 >> Declare7F0200_2("addr2")
     << 3 >> DeclareOperator("op")
-    << 4 >> DeclareGoto("label", +1, 4)
+    << 4 >> DeclareIf()
 
-<< "[Goto:%label [UnlessW:%addr1 %op %addr2]]"
+<< "W:%addr1 %op %addr2"
     << 0 >> 0x15
     << 1 >> Declare7F0200_2("addr1")
     << 2 >> Declare7F0200_2("addr2")
     << 3 >> DeclareOperator("op")
-    << 4 >> DeclareGoto("label", +1, 4)
+    << 4 >> DeclareIf()
 
-<< "[Goto:%label [UnlessB:%addr %op %value]]"
+<< "B:%addr %op %value"
     << 0 >> 0x16
     << 1 >> Declare7E0000_B("addr")
     << 2 >> DeclareByte("value")
     << 3 >> DeclareOperator("op")
-    << 4 >> DeclareGoto("label", +1, 4)
+    << 4 >> DeclareIf()
 
-<< "[Goto:%label [UnlessB:%addr %op %value]]"
+<< "B:%addr %op %value"
     << 0 >> 0x16
     << 1 >> Declare7E0100_B("addr")
     << 2 >> DeclareByte("value")
-    << 3 >> DeclareOperator("op").DeclareHighbit()
-    << 4 >> DeclareGoto("label", +1, 4)
+    << 3 >> DeclareOperator("op").SetHighbit()
+    << 4 >> DeclareIf()
 
-<< "[ObjectFacing:%0 [for:current]]"
+<< "[ObjectSetFacing:%0]"
     << 0 >> 0x17
     << DeclareConst("0", 1) //down
     // puts 1600=1, 1601=0
 
-<< "[Goto:%label [IfStorylinePoint:%0]]"
+<< "B:%addr < %0"
     << 0 >> 0x18
     << 1 >> DeclareByte("0")
-    << 2 >> DeclareGoto("label", +1, 2)
+    << 2 >> DeclareIf()
+    << DeclareConst("addr", 0x7F0000)
 
-<< "[ObjectLetB:%0:%1 [for:current]]"
+<< "[ObjectLetB:%0:%1]"
     << 0 >> 0x19
     << 1 >> Declare7F0200_2("1")
     << DeclareProp("0", 0x7F0A80)
 
-<< "[Goto:%label [UnlessObjectB:%0 == %1 [for:current]]]"
+<< "ObjectB:%0 == %1"
     << 0 >> 0x1A
     << 1 >> DeclareByte("1")
-    << 2 >> DeclareGoto("label", +1, 2)
+    << 2 >> DeclareIf()
     << DeclareProp("0", 0x7F0A80)
 
-<< "[ObjectFacing:%0 [for:current]]"
+<< "[ObjectSetFacing:%0]"
     << 0 >> 0x1B
     << DeclareConst("0", 2) //left
     // puts 1600=2, 1601=0
 
-<< "[ObjectLetB:%0:%1 [for:current]]"
+<< "[ObjectLetB:%0:%1]"
     << 0 >> 0x1C
     << 1 >> Declare7F0000_B("1")
     << DeclareProp("0", 0x7F0A80)
 
-<< "[ObjectFacing:%0 [for:current]]"
+<< "[ObjectSetFacing:%0]"
     << 0 >> 0x1D
     << DeclareConst("0", 3) //right
     // puts 1600=3, 1601=0
 
-<< "[ObjectFacing:%0 [for:%1]]"
+<< "[ObjectSetFacing:%0 [for:%1]]"
     << 0 >> 0x1E
-    << 1 >> DeclareByte("1")
+    << 1 >> DeclareObjectNo("1")
     << DeclareConst("0", 0) //up
     // puts 1600=0, 1601=0
 
-<< "[ObjectFacing:%0 [for:%1]]"
+<< "[ObjectSetFacing:%0 [for:%1]]"
     << 0 >> 0x1F
-    << 1 >> DeclareByte("1")
+    << 1 >> DeclareObjectNo("1")
     << DeclareConst("0", 1) //down
     // puts 1600=1, 1601=0
 
@@ -2991,51 +3176,60 @@ private:
     << 1 >> Declare7F0200_2("0")
     << DeclareConst("1", 0x7E2980) // member1
 
-<< "[Unknown21:%0:%1:%2]"
+<< "[ObjectGetPosition:%1:%2 [for:%0]]"
     << 0 >> 0x21
-    << 1 >> DeclareByte("0")
-    << 2 >> DeclareByte("1")
-    << 3 >> DeclareByte("2")
+    << 1 >> DeclareObjectNo("0")
+    << 2 >> Declare7F0200_2("1")
+    << 3 >> Declare7F0200_2("2")
+    /*
+       param1 = $1801 for given obj (xcoord)
+       param2 = $1881 for given obj (ycoord)
+     */
 
-<< "[Unknown22:%0:%1:%2]"
+<< "[ObjectGetPosition:%1:%2 [for:%0]]"
     << 0 >> 0x22
-    << 1 >> DeclareByte("0")
-    << 2 >> DeclareByte("1")
-    << 3 >> DeclareByte("2")
+    << 1 >> Declare7E0197_B("0")
+    << 2 >> Declare7F0200_2("1")
+    << 3 >> Declare7F0200_2("2")
+    /* Same as op 21, but gets object from $97 instead. */
 
-<< "[Unknown23:%addr:%byte]"
+<< "[ObjectGetFacing:%1 [for:%0]]"
     << 0 >> 0x23
-    << 1 >> DeclareByte("byte")
-    << 2 >> Declare7F0200_2("addr")
+    << 1 >> DeclareObjectNo("0")
+    << 2 >> Declare7F0200_2("1")
+    /*
+       assigns $1600 of given obj to param1.
+    */
 
-<< "[Unknown24:%addr:%byte]"
+<< "[ObjectGetFacing:%1 [for:%0]]"
     << 0 >> 0x24
-    << 1 >> DeclareByte("byte")
-    << 2 >> Declare7F0200_2("addr")
+    << 1 >> Declare7E0197_B("0")
+    << 2 >> Declare7F0200_2("1")
+    /* Same as op 23, but gets object from $97 instead. */
 
-<< "[ObjectFacing:%0 [for:%1]]"
+<< "[ObjectSetFacing:%0 [for:%1]]"
     << 0 >> 0x25
-    << 1 >> DeclareByte("1")
+    << 1 >> DeclareObjectNo("1")
     << DeclareConst("0", 2) //left
     // puts 1600=2, 1601=0
 
-<< "[ObjectFacing:%0 [for:%1]]"
+<< "[ObjectSetFacing:%0 [for:%1]]"
     << 0 >> 0x26
-    << 1 >> DeclareByte("1")
+    << 1 >> DeclareObjectNo("1")
     << DeclareConst("0", 3) //right
     // puts 1600=3, 1601=0
 
-<< "[Goto:%label [UnlessObjectB:%0 == %1 [for:%2]]]"
+<< "ObjectB:%0 == %1 [for:%2]"
     << 0 >> 0x27
-    << 1 >> DeclareByte("2")
-    << 2 >> DeclareGoto("label", +1, 2)
+    << 1 >> DeclareObjectNo("2")
+    << 2 >> DeclareIf()
     << DeclareConst("1", 0)
-    << DeclareProp("0", 0x7F0F00)
+    << DeclareProp("0", 0x0F00)
 
-<< "[Goto:%label [IfObjectNearUnknown [for:%0]]]"
+<< "ObjectNearUnknown [for:%0]"
     << 0 >> 0x28
-    << 1 >> DeclareByte("0")
-    << 2 >> DeclareGoto("label", +1, 2)
+    << 1 >> DeclareObjectNo("0")
+    << 2 >> DeclareIf()
     /*
         $DB = $1D0A >> 1
         $DD = $1D0E >> 1
@@ -3048,9 +3242,12 @@ private:
           goto.
         }
         return
+        
+        <evilpeer> Seems to be related to the moving
+        Turrents on the Blackbird's Left Wing.
      */
 
-<< "[ReptiteEndingText:%0]"
+<< "[EndingText:%0]"
     << 0 >> 0x29
     << 1 >> DeclareByte("0")
 
@@ -3077,9 +3274,9 @@ private:
       purpose unknown
     */
 
-<< "[Goto:%label [UnlessW:%0 <> 00]]"
+<< "W:%0 <> 00"
     << 0 >> 0x2D
-    << 1 >> DeclareGoto("label", +1, 1)
+    << 1 >> DeclareIf()
     << DeclareConst("0", 0x7E01F8)
 
 << "[PaletteSet:%2:%3 [palette:%1]]"
@@ -3089,7 +3286,7 @@ private:
     << 2 >> DeclareNibbleLo("2") // starting colour
     << 3 >> DeclareBlob("3")
     // writes to 7E2200-> and 7E2000->
-    //      
+    //
     //      7E2200 is the 512-byte buffer of palettes.
     //      DMA 7 writes it to PPU port 2122 (CGRAM) all the time.
 
@@ -3124,6 +3321,9 @@ private:
             Y += #$0C
           :loop while Y<60
           return carry-set
+        
+          I guess this function allocates a new sprite
+          slot for the particular object.
 
      */
 
@@ -3132,15 +3332,15 @@ private:
     << 1 >> DeclareWord("1")
     << DeclareConst("0", 0x0BE3)
 
-<< "[Goto:%label [UnlessB:%0 & %1]]"
+<< "B:%0 & %1"
     << 0 >> 0x30
-    << 1 >> DeclareGoto("label", +1, 1)
+    << 1 >> DeclareIf()
     << DeclareConst("0", 0x7E01F8)
     << DeclareConst("1", 0x02)
 
-<< "[Goto:%label [UnlessB:%0 & %1]]"
+<< "B:%0 & %1"
     << 0 >> 0x31
-    << 1 >> DeclareGoto("label", +1, 1)
+    << 1 >> DeclareIf()
     << DeclareConst("0", 0x7E01F8)
     << DeclareConst("1", 0x80)
 
@@ -3149,51 +3349,51 @@ private:
     << DeclareConst("0", 0x7E0154)
     << DeclareConst("1", 0x10)
 
-<< "[ObjectChangePalette:%0 [for:current]]"
+<< "[ObjectChangePalette:%0]"
     << 0 >> 0x33
     << 1 >> DeclareByte("0")
 
-<< "[Goto:%0 [UnlessButtonStatus:A]]"
-    << 0 >> 0x34l
-    << 1 >> DeclareGoto("0", +1, 1)
+<< "ButtonStatus:A"
+    << 0 >> 0x34
+    << 1 >> DeclareIf()
     // accesses $F2
     // Checks for current status of button?
     // mask $80
 
-<< "[Goto:%0 [UnlessButtonStatus:B]]"
+<< "ButtonStatus:B"
     << 0 >> 0x35
-    << 1 >> DeclareGoto("0", +1, 1)
+    << 1 >> DeclareIf()
     // mask $08
 
-<< "[Goto:%0 [UnlessButtonStatus:X]]"
+<< "ButtonStatus:X"
     << 0 >> 0x36
-    << 1 >> DeclareGoto("0", +1, 1)
+    << 1 >> DeclareIf()
     // mask $40
 
-<< "[Goto:%0 [UnlessButtonStatus:Y]]"
+<< "ButtonStatus:Y"
     << 0 >> 0x37
-    << 1 >> DeclareGoto("0", +1, 1)
+    << 1 >> DeclareIf()
     // mask $04
 
-<< "[Goto:%0 [UnlessButtonStatus:L]]"
+<< "ButtonStatus:L"
     << 0 >> 0x38
-    << 1 >> DeclareGoto("0", +1, 1)
+    << 1 >> DeclareIf()
     // mask $20
 
-<< "[Goto:%0 [UnlessButtonStatus:R]]"
+<< "ButtonStatus:R"
     << 0 >> 0x39
-    << 1 >> DeclareGoto("0", +1, 1)
+    << 1 >> DeclareIf()
     // accesses $F2
     // mask $10
 
-<< "[Goto:%0 [UnusedUnknown3B]]"
+<< "Unknown3B"
     << 0 >> 0x3B
-    << 1 >> DeclareGoto("0", +1, 1)
+    << 1 >> DeclareIf()
     // does something for $50, tests for bit #$02
 
-<< "[Goto:%0 [UnusedUnknown3C]]"
+<< "Unknown3C"
     << 0 >> 0x3C
-    << 1 >> DeclareGoto("0", +1, 1)
+    << 1 >> DeclareIf()
     // does something for $50, tests for bit #$80
 
 
@@ -3204,36 +3404,36 @@ private:
 //      01=start, 02=select, 04=y, 08=b
 //      10=r,     20=l,      40=x, 80=a
 
-<< "[Goto:%0 [UnlessButtonPressed:A]]"
+<< "ButtonPressed:A"
     << 0 >> 0x3F
-    << 1 >> DeclareGoto("0", +1, 1)
+    << 1 >> DeclareIf()
     // accesses $51
     // Checks if the button has been pressed?
     // mask $80 
 
-<< "[Goto:%0 [UnlessButtonPressed:B]]"
+<< "ButtonPressed:B"
     << 0 >> 0x40
-    << 1 >> DeclareGoto("0", +1, 1)
+    << 1 >> DeclareIf()
     // mask $08
 
-<< "[Goto:%0 [UnlessButtonPressed:X]]"
+<< "ButtonPressed:X"
     << 0 >> 0x41
-    << 1 >> DeclareGoto("0", +1, 1)
+    << 1 >> DeclareIf()
     // mask $40
 
-<< "[Goto:%0 [UnlessButtonPressed:Y]]"
+<< "ButtonPressed:Y"
     << 0 >> 0x42
-    << 1 >> DeclareGoto("0", +1, 1)
+    << 1 >> DeclareIf()
     // mask $04
 
-<< "[Goto:%0 [UnlessButtonPressed:L]]"
+<< "ButtonPressed:L"
     << 0 >> 0x43
-    << 1 >> DeclareGoto("0", +1, 1)
+    << 1 >> DeclareIf()
     // mask $20
 
-<< "[Goto:%0 [UnlessButtonPressed:R]]"
+<< "ButtonPressed:R"
     << 0 >> 0x44
-    << 1 >> DeclareGoto("0", +1, 1)
+    << 1 >> DeclareIf()
     // accesses $F1
     // mask $10
 
@@ -3271,6 +3471,11 @@ private:
     << 0 >> 0x4D
     << 1 >> DeclareLong("long")
     << 4 >> Declare7F0200_2("addr")
+
+<< "[StringStore:%long:%data]"
+    << 0 >> 0x4E
+    << 1 >> DeclareLong("long", 0x7E2C23) // show the character name table in plaintext.
+    << 4 >> DeclareTextBlob("data")
 
 << "[StringStore:%long:%data]"
     << 0 >> 0x4E
@@ -3318,9 +3523,9 @@ private:
     << 1 >> DeclareByte("byte")
     << 2 >> Declare7F0000_W("addr")
 
-<< "[ObjectLoadPC:%0 [for:current]]"
+<< "[ObjectLoadPC:%0 [IfInParty]]"
     << 0 >> 0x57
-    << DeclareConst("0", 0) // crono
+    << DeclareConst("0", 0).AnnotatePC() // crono
     // firsts checks for a party member.
     // if not a party member:
     //  puts $1100,X <- #$80 object is now dead
@@ -3356,9 +3561,13 @@ private:
     << 1 >> DeclareByte("byte")
     << 2 >> Declare7F0200_2("addr")
 
-<< "[ObjectLoadPC:%0 [for:current]]"
+<< "[ObjectLoadPC:%0 [IfInParty]]"
     << 0 >> 0x5C
-    << DeclareConst("0", 1) // marle
+    << DeclareConst("0", 1).AnnotatePC() // marle
+    // @41EC
+    //     $8E <- objno
+    //     A   <- 1
+    //     goto 421A
 
 << "[AddB:%1:%0]"
     << 0 >> 0x5D
@@ -3385,42 +3594,48 @@ private:
     << 1 >> Declare7F0200_2("0")
     << 2 >> Declare7F0200_2("1")
 
-<< "[ObjectLoadPC:%0 [for:current]]"
+<< "[ObjectLoadPC:%0 [IfInParty]]"
     << 0 >> 0x62
-    << DeclareConst("0", 2) // lucca
+    << DeclareConst("0", 2).AnnotatePC() // lucca
 
-<< "[SetBit:%addr:%byte]"
+<< "[OrB:%addr:%bit]"
     << 0 >> 0x63
-    << 1 >> DeclareByte("byte")
+    << 1 >> DeclareOrBitnum("bit")
     << 2 >> Declare7F0200_2("addr")
     // addr |= $FF20[byte]
 
-<< "[ClearBit:%addr:%byte]"
+<< "[OrB:%addr:%bit]"
+    << 0 >> 0x63
+    << 1 >> DeclareOrBitnum("bit")
+    << 2 >> Declare7F0200_2("addr")
+    // addr |= $FF20[byte]
+
+<< "[AndB:%addr:%bit]"
     << 0 >> 0x64
-    << 1 >> DeclareByte("byte")
+    << 1 >> DeclareAndBitnum("bit")
     << 2 >> Declare7F0200_2("addr")
     // addr &= $FF28[byte]
 
-<< "[SetBit:%addr:%byte]"
+<< "[OrB:%addr:%bit]"
     << 0 >> 0x65
-    << 1 >> DeclareByte("byte", 0x00, 0x7F)
+    << 1 >> DeclareOrBitnum("bit")
     << 2 >> Declare7E0000_B("addr")
     // addr_value |= (byte & 0x80) << 1
     // addr |= $FF20[byte & 0x0F]
     
-<< "[SetBit:%addr:%byte]"
+<< "[OrB:%addr:%bit]"
     << 0 >> 0x65
-    << 1 >> DeclareByte("byte", 0x00, 0x7F).DeclareHighbit()
+    << 1 >> DeclareOrBitnum("bit").SetHighbit()
     << 2 >> Declare7E0100_B("addr")
 
-<< "[ClearBit:%addr:%byte]"
+<< "[AndB:%addr:%bit]"
     << 0 >> 0x66
-    << 1 >> DeclareByte("byte", 0x00, 0x7F)
+    << 1 >> DeclareAndBitnum("bit")
     << 2 >> Declare7E0000_B("addr")
 
-<< "[ClearBit:%addr:%byte]"
+<< "[AndB:%addr:%bit]"
     << 0 >> 0x66
-    << 1 >> DeclareByte("byte", 0x00, 0x7F).DeclareHighbit()
+    << 1 >> DeclareAndBitnum("bit").SetHighbit()
     << 2 >> Declare7E0100_B("addr")
 
 << "[AndB:%addr:%byte]"
@@ -3428,31 +3643,31 @@ private:
     << 1 >> DeclareByte("byte")
     << 2 >> Declare7F0200_2("addr")
 
-<< "[ObjectLoadPC:%0 [for:current]]"
+<< "[ObjectLoadPC:%0 [IfInParty]]"
     << 0 >> 0x68
-    << DeclareConst("0", 3) // frog
+    << DeclareConst("0", 3).AnnotatePC() // frog
 
 << "[OrB:%addr:%byte]"
     << 0 >> 0x69
     << 1 >> DeclareByte("byte")
     << 2 >> Declare7F0200_2("addr")
 
-<< "[ObjectLoadPC:%0 [for:current]]"
+<< "[ObjectLoadPC:%0 [IfInParty]]"
     << 0 >> 0x6A
-    << DeclareConst("0", 4) // robo
+    << DeclareConst("0", 4).AnnotatePC() // robo
 
 << "[XorB:%addr:%byte]"
     << 0 >> 0x6B
     << 1 >> DeclareByte("byte")
     << 2 >> Declare7F0200_2("addr")
 
-<< "[ObjectLoadPC:%0 [for:current]]"
+<< "[ObjectLoadPC:%0 [IfInParty]]"
     << 0 >> 0x6C
-    << DeclareConst("0", 5) // ayla
+    << DeclareConst("0", 5).AnnotatePC() // ayla
 
-<< "[ObjectLoadPC:%0 [for:current]]"
+<< "[ObjectLoadPC:%0 [IfInParty]]"
     << 0 >> 0x6D
-    << DeclareConst("0", 6) // magus
+    << DeclareConst("0", 6).AnnotatePC() // magus
 
 << "[ShrB:%addr:%byte]"
     << 0 >> 0x6F
@@ -3483,14 +3698,14 @@ private:
     << 0 >> 0x77
     << 1 >> Declare7F0200_2("0")
 
-<< "[ObjectJump:%0:%1:%2 [for:current]]"
+<< "[ObjectJump:%0:%1:%2]"
     << 0 >> 0x7A
     << 1 >> DeclareByte("0") //x
     << 2 >> DeclareByte("1") //y
     << 3 >> DeclareByte("2") //height
     // geometrically "jump"
 
-<< "[ObjectPerformMovement:%0:%1:%2:%3 [for:current]]"
+<< "[ObjectPerformMovement:%0:%1:%2:%3]"
     << 0 >> 0x7B
     << 1 >> DeclareByte("0") // $1900 ?
     << 2 >> DeclareByte("1") // $1980 ?
@@ -3498,21 +3713,21 @@ private:
     << 4 >> DeclareByte("3") // $1A01 length of movement
     /* Waits until 1A01 becomes zero again. */
 
-<< "[ObjectLetB:%2:%3 [for:%0]"
+<< "[ObjectLetB:%2:%3 [for:%0]]"
     << 0 >> 0x7C
-    << 1 >> DeclareByte("0")
+    << 1 >> DeclareObjectNo("0")
     << DeclareProp("2", 0x1A81)
     << DeclareConst("3", 1)
     // Sets drawing "on" */
 
-<< "[ObjectLetB:%2:%3 [for:%0]"
+<< "[ObjectLetB:%2:%3 [for:%0]]"
     << 0 >> 0x7D
-    << 1 >> DeclareByte("0")
+    << 1 >> DeclareObjectNo("0")
     << DeclareProp("2", 0x1A81)
     << DeclareConst("3", 0)
     // Sets drawing "off" */
 
-<< "[ObjectLetB:%2:%3 [for:current]"
+<< "[ObjectLetB:%2:%3]"
     << 0 >> 0x7E
     << DeclareProp("2", 0x1A81)
     << DeclareConst("3", 0x80)
@@ -3525,45 +3740,59 @@ private:
     //  A  = ++$7E01F8
     //  %0 = $FE00[A & 0xFF]
 
-<< "[ObjectLoadPC:%0 [for:current [IfInParty?]]]"
+<< "[ObjectLoadPC:%0 [IfInParty]]"
     << 0 >> 0x80
-    << 1 >> DeclareByte("0")
+    << 1 >> DeclareByte("0").AnnotatePC()
+    // @421E
     // if not a party member:
     //  puts $1100,X <- #$80   (marks object dead)
     //  puts $1101,X <- param
     //  returns
     // if the given value is 0..6,
     //  sets $8D+param = current object number
-    // does lots of complicated things. ...
+    // Then follows with the actual thing.
+    // This function is called by opcodes
+    // 57,5C,62,68,6A,6C and 6D.
+    // 
 
-<< "[ObjectLoadPC:%0 [for:current]]"
+<< "[ObjectLoadPC:%0 [As NPC]]"
     << 0 >> 0x81
-    << 1 >> DeclareByte("0")
+    << 1 >> DeclareByte("0").AnnotatePC()
+    // @4476
+    //    Somehow differs from op 80.
+    /*
+           $1100 for cur obj <- 3 (object identifier)
+           $1B01 for cur obj <- 1
+           $1101 for cur obj <- param0
+           $BF = param0 * 5
+           $A = $E4F001[$BF]
+           and so on.
+    */
 
-<< "[ObjectLoadNPC:%0 [for:current]]"
+<< "[ObjectLoadNPC:%0]"
     << 0 >> 0x82
-    << 1 >> DeclareByte("0")
+    << 1 >> DeclareByte("0").AnnotateNPC()
 
-<< "[ObjectLoadEnemy:%0:%1 [for:current]]"
+<< "[ObjectLoadEnemy:%m:%1]"
     << 0 >> 0x83
-    << 1 >> DeclareByte("0")
+    << 1 >> DeclareByte("m").AnnotateEnemy()
     << 2 >> DeclareByte("1")
     // the meaning of the second param is unknown
 
-<< "[ObjectLetB:%0:%1 [for:current]]"
+<< "[ObjectLetB:%0:%1]"
     << 0 >> 0x84
     << 1 >> DeclareByte("1")
     << DeclareProp("0", 0x1B01)
     // "npc solid props"
 
-<< "[ObjectSet1000Bits:%0 [for:current]]"
+<< "[ObjectSet1000:%0]"
     << 0 >> 0x87
     << 1 >> DeclareByte("0")
     // $1000,X  &=  #$80
     // $1000,X  |=  (param+1)
     // $1001,X  = $1000,X
 
-<< "[ObjectPaletteReset [for:current]]"
+<< "[ObjectPaletteReset]"
     << 0 >> 0x88
     << 1 >> 0x00
     /* 
@@ -3584,7 +3813,7 @@ private:
           
      */
 
-<< "[ObjectGFXSetup:%0:%1:%2:%3 [for:current]]"
+<< "[ObjectGFXSetup:%0:%1:%2:%3]"
     << 0 >> 0x88
     << 1 >> DeclareByte("0", 0x20, 0x20) // this value matters
     << 2 >> DeclareByte("1")
@@ -3607,7 +3836,7 @@ private:
           
      */
 
-<< "[ObjectGFXSetup:%0:%1:%2:%3 [for:current]]"
+<< "[ObjectGFXSetup:%0:%1:%2:%3]"
     << 0 >> 0x88
     << 1 >> DeclareByte("0", 0x30, 0x30) // this value matters
     << 2 >> DeclareByte("1")
@@ -3615,7 +3844,7 @@ private:
     << 3 >> DeclareNibbleHi("3")
     // same as 88 20
 
-<< "[ObjectGFXSetup:%0:%1:%2:%3:%4 [for:current]]"
+<< "[ObjectGFXSetup:%0:%1:%2:%3:%4]"
     << 0 >> 0x88
     << 1 >> DeclareByte("0", 0x40, 0x5F) // this value matters
     << 2 >> DeclareNibbleLo("1")
@@ -3643,7 +3872,7 @@ private:
           
      */
 
-<< "[ObjectPaletteSet:%0:%1 [for:current]]"
+<< "[ObjectPaletteSet:%0:%1]"
     << 0 >> 0x88
     << 1 >> DeclareByte("", 0x80, 0x8F) // actual value matters
     << 1 >> DeclareNibbleLo("0") // starting colour
@@ -3659,40 +3888,47 @@ private:
           DMA 7 writes it to PPU port 2122 (CGRAM) all the time.
      */
 
-<< "[ObjectLetB:%0:%1 [for:current]]"
+<< "[ObjectLetB:%0:%1]"
     << 0 >> 0x89
     << 1 >> DeclareByte("1")
     << DeclareProp("0", 0x1A00)
     // "npc speed"
 
-<< "[ObjectLetB:%0:%1 [for:current]]"
+<< "[ObjectLetB:%0:%1]"
     << 0 >> 0x8A
     << 1 >> Declare7F0200_2("1")
     << DeclareProp("0", 0x1A00)
     // "npc speed"
 
-<< "[ObjectSetCoord:%0:%1 [for:current]]"
+<< "[ObjectSetCoord:%0:%1]"
     << 0 >> 0x8B
     << 1 >> DeclareByte("0")
     << 2 >> DeclareByte("1")
     // $1800,X = 80xx where xx=%0
     // $1880,X = FFxx where xx=%1
 
-<< "[ObjectSetCoord:%0:%1 [for:current]]"
+<< "[ObjectSetCoord:%0:%1]"
     << 0 >> 0x8C
     << 1 >> Declare7F0200_2("0")
     << 2 >> Declare7F0200_2("1")
 
-<< "[SetObjectCoord2:%0:%1 [for:current]]"
+<< "[SetObjectCoord2:%0:%1]"
     << 0 >> 0x8D
     << 1 >> DeclareWord("0")
     << 3 >> DeclareWord("1")
 
-<< "[ObjectHide:%0 [for:current]]"
+<< "[ObjectHide:%0]"
     << 0 >> 0x8E
     << 1 >> DeclareByte("0")
+    /*
+    > 03 - bottom half
+    > 0C - ???
+    > 30 - top half
+    > 40 - ???
+    > 80 - determines mode
+    */
 
-<< "[ObjectMoveTowards [for:current:%0] [facing:rotate]]"
+<< "[ObjectMoveTowards:%0 [facing:rotate]]"
     << 0 >> 0x8F
     << 1 >> Declare7E0197_B("0")//target obj
     /*
@@ -3735,29 +3971,31 @@ private:
        .....
        
        
+       "rotate" is probably incorrect, but it's used
+       when the code contains a #$30 added to the angle.
       
      */
 
-<< "[ObjectLetB:%2:%3 [for:current]"
+<< "[ObjectLetB:%2:%3]"
     << 0 >> 0x90
     << DeclareProp("2", 0x1A81)
     << DeclareConst("3", 1)
     // Sets drawing "on" */
 
-<< "[ObjectLetB:%2:%3 [for:current]"
+<< "[ObjectLetB:%2:%3]"
     << 0 >> 0x91
     << DeclareProp("2", 0x1A81)
     << DeclareConst("3", 0)
     // Sets drawing "off" */
 
-<< "[ObjectMoveAngle:%0:%1 [for:current] [facing:change]]"
+<< "[ObjectMoveAngle:%0:%1 [facing:change]]"
     << 0 >> 0x92
     << 1 >> DeclareByte("0") //angle     ($40 = 90 degrees)
-    << 2 >> DeclareByte("1") //pixels/2
+    << 2 >> DeclareByte("1") //magnitude
 
-<< "[ObjectMoveTowards [for:current:%0] [facing:change]]"
+<< "[ObjectMoveTowards:%0 [facing:change]]"
     << 0 >> 0x94
-    << 1 >> DeclareByte("0") //target obj
+    << 1 >> DeclareObjectNo("0") //target obj
     // included by op B5
     /*
        if ( $1A01 for current object  <> 0 )
@@ -3799,7 +4037,7 @@ private:
        return
     */
     
-<< "[ObjectMoveTowards [for:current:%0] [facing:change]]"
+<< "[ObjectMoveTowards:%0 [facing:change]]"
     << 0 >> 0x95
     << 1 >> Declare7E0197_B("0")//target obj
     // included by op B6
@@ -3819,20 +4057,20 @@ private:
     */
     /* Execution continues (maybe) when the goal has been reached. */
 
-<< "[ObjectMoveTowards:%0:%1 [for:current] [facing:change]]"
+<< "[ObjectMoveTowards:%0:%1 [facing:change]]"
     << 0 >> 0x96
     << 1 >> DeclareByte("0") //xcoord
     << 2 >> DeclareByte("1") //ycoord
 
-<< "[ObjectMoveTowards:%0:%1 [for:current] [facing:change]]"
+<< "[ObjectMoveTowards:%0:%1 [facing:change]]"
     << 0 >> 0x97
     << 1 >> Declare7F0200_2("0") //xcoord from-var
     << 2 >> Declare7F0200_2("1") //ycoord from-var
     /* Same as $96 but coordinates are loaded from vars. */
 
-<< "[ObjectMoveTowardsBy:%1 [for:current:%0] [facing:change]]"
+<< "[ObjectMoveTowardsBy:%0:%1 [facing:change]]"
     << 0 >> 0x98
-    << 1 >> DeclareByte("0") // the target obj.
+    << 1 >> DeclareObjectNo("0") // the target obj.
     << 2 >> DeclareByte("1") // length of movement
     /* The same as 0x94, except that 1A80
      * plays some important part here. */
@@ -3883,89 +4121,158 @@ private:
        return
     */
 
-<< "[ObjectMoveTowardsBy:%1 [for:current:%0] [facing:change]]"
+<< "[ObjectMoveTowardsBy:%0:%1 [facing:change]]"
     << 0 >> 0x99
     << 1 >> Declare7E0197_B("0") // the target obj.
     << 2 >> DeclareByte("1")     // length of movement
 
-<< "[ObjectMoveTowardsBy:%0:%1:%2 [for:current] [facing:change]]"
+<< "[ObjectMoveTowardsBy:%0:%1:%2 [facing:change]]"
     << 0 >> 0x9A
     << 1 >> DeclareByte("0") // xcoord
     << 2 >> DeclareByte("1") // ycoord
     << 3 >> DeclareByte("2") // length of movement
 
-<< "[ObjectMoveAngle:%0:%1 [for:current] [facing:keep]]"
+<< "[ObjectMoveAngle:%0:%1 [facing:keep]]"
     << 0 >> 0x9C
     << 1 >> DeclareByte("0") // angle ($40 = 90 degrees)
     << 2 >> DeclareByte("1") // length of movement
     // Same as op 92, but without changing facing
 
-<< "[ObjectMoveAngle:%0:%1 [for:current] [facing:keep]]"
+<< "[ObjectMoveAngle:%0:%1 [facing:keep]]"
     << 0 >> 0x9D
     << 1 >> Declare7F0200_2("0")
     << 2 >> Declare7F0200_2("1")
     // Same as op 9C, but from vars
 
-<< "[ObjectMoveTowards [for:current:%0] [facing:keep]]"
+<< "[ObjectMoveTowards:%0 [facing:keep]]"
     << 0 >> 0x9E
-    << 1 >> DeclareByte("0") // target obj
-    // same as op 9D, but without changing facing
+    << 1 >> DeclareObjectNo("0") // target obj
+    // same as op 94, but without changing facing
 
-<< "[ObjectMoveTowards [for:current:%0] [facing:keep]]"
+<< "[ObjectMoveTowards:%0 [facing:keep]]"
     << 0 >> 0x9F
     << 1 >> Declare7E0197_B("0") // target obj
     // same as op 9E, but from var (such as party member)
 
-<< "[ObjectMoveTowards:%0:%1 [for:current] [facing:rotate]]"
+<< "[ObjectMoveTowards:%0:%1 [facing:rotate]]"
     << 0 >> 0xA0
     << 1 >> DeclareByte("0") //xcoord
     << 2 >> DeclareByte("1") //ycoord
+    /*
+       "rotate" is probably incorrect, but it's used
+       when the code contains a #$30 added to the angle.
+    */
 
-<< "[ObjectMoveTowards:%0:%1 [for:current] [facing:rotate]]"
+<< "[ObjectMoveTowards:%0:%1 [facing:rotate]]"
     << 0 >> 0xA1
     << 1 >> Declare7F0200_2("0") //xcoord from
     << 2 >> Declare7F0200_2("1") //ycoord from
     /* Used for Robo's following of party members at End of time */
+    /*
+       "rotate" is probably incorrect, but it's used
+       when the code contains a #$30 added to the angle.
+    */
 
-<< "[ObjectSetFacing:%0 [for:current]]"
+<< "[ObjectSetFacing:%0]"
     << 0 >> 0xA6
     << 1 >> DeclareByte("0")
 
-<< "[ObjectSetFacing:%0 [for:current]]"
+<< "[ObjectSetFacing:%0]"
     << 0 >> 0xA7
     << 1 >> Declare7F0200_2("0")
 
-<< "[ObjectSetFacingTowards [for:current:%0]]"
+<< "[ObjectSetFacingTowards:%0]"
     << 0 >> 0xA8
-    << 1 >> DeclareByte("0")
+    << 1 >> DeclareObjectNo("0")
 
-<< "[ObjectSetFacingTowards [for:current:%0]]"
+<< "[ObjectSetFacingTowards:%0]"
     << 0 >> 0xA9
     << 1 >> Declare7F0200_2("0")
 
-<< "[ObjectAnimation1:%0 [for:current]]"
+<< "[ObjectAnimation:%0 [mode:1]]"
     << 0 >> 0xAA
     << 1 >> DeclareByte("0")
+    /*
+         $1680 for cur obj = byte1
+         $1780 for cur obj = 1
+         $1601 for cur obj = 0
+         $1681 for cur obj = 0
+       $7F0B01 for cur obj = 0
+       
+     op B3 is the same with byte1=0
+     op B4 is the same with byte1=1
+       
+     */
 
-<< "[ObjectAnimation2:%0 [for:current] [may wait]]"
+<< "[ObjectAnimation:%0 [mode:2]]"
     << 0 >> 0xAB
     << 1 >> DeclareByte("0")
+    /*
+        A = $7F0B01 of cur obj
+        If(A > 0)
+        {
+          --A
+          If(A == 0)
+          {
+            // end loop.
+            $7F0B01 of cur obj = 0
+            $1601 of cur obj = 0
+            $1681 of cur obj = 0
+            if($1680 of cur obj == #$FF)
+            {
+                $1680 of cur obj = #0
+                $1780 of cur obj = 0
+            }
+            else
+            {
+                $1780 of cur obj = 1
+            }
+            return // end loop.
+          }
+          // wait until the animation frame has changed.
+          if(byte1 == $1781 of cur obj)
+          {
+            return, loop
+          }
+        }
+        $1781 of cur obj = byte1
+        $1681 of cur obj = 0
+        $1601 of cur obj = 0
+        if($1780 of cur obj == 0)
+        {
+          $1680 of cur obj = #$FF
+        }
+        $1780 of cur obj = 2
+        $7F0B01 of cur obj = 2
+        return, loop
+    */
 
-<< "[ObjectAnimation3:%0 [for:current]]"
+<< "[ObjectAnimation:%0 [mode:3]]"
     << 0 >> 0xAC
     << 1 >> DeclareByte("0")
+    /*
+         $1301 for cur obj = byte1
+         $1601 for cur obj = 0
+         $1681 for cur obj = 0
+         if($1780 for cur obj <> 0)
+         {
+           $1680 for cur obj = #$FF
+         }
+         $1780 for cur obj = 3
+         return
+     */
 
-<< "[Pause:%0 [for:current]]"
+<< "[Pause:%0]"
     << 0 >> 0xAD
     << 1 >> DeclareByte("0")
 
-<< "[ObjectAnimationReset [for:current]]"
+<< "[ObjectAnimationReset]"
     << 0 >> 0xAE
 
-<< "[PartyAction [for:current] [once]]"
+<< "[PartyAction [once]]"
     << 0 >> 0xAF
 
-<< "[PartyAction [for:current] [forever]]"
+<< "[PartyAction [forever]]"
     << 0 >> 0xB0
     /*
         // referred by op B0
@@ -4001,152 +4308,129 @@ private:
         sure for this...
     */
 
-<< "[Wait]"
+<< "[Yield]"
     << 0 >> 0xB1
-    /* Isn't this command a little pointless? */
-
-<< "[Idle [forever]]"
-    << 0 >> 0xB2
-    /* This command is used to terminate the object's
-     * execution without destroying the actual object.
-     * It waits until an outside interference affects
-     * this object's path of execution.
+    /* This command tells the task manager that this object
+     * wants now other objects to execute one cycle of
+     * whatever they are doing.
+     * It is usually issued in loops, before rerunning the loop.
      */
 
-<< "[ObjectAnimation1:%0 [for:current]]"
+<< "[Yield [forever]]"
+    << 0 >> 0xB2
+    /* This function is used when the current function
+     * has nothing to do, but for some reason it doesn't
+     * want to [Return] to the lower priority routine.
+     *
+     * It simply will [Yield] forever, without altering
+     * the object's state.
+     */
+
+<< "[ObjectAnimation:%0 [mode:1]]"
     << 0 >> 0xB3
     << DeclareConst("0", 0)
+    // Same as op AA, but with value 0
 
-<< "[ObjectAnimation1:%0 [for:current]]"
+<< "[ObjectAnimation:%0 [mode:1]]"
     << 0 >> 0xB4
     << DeclareConst("0", 1)
+    // Same as op AA, but with value 1
 
-<< "[ObjectMoveTowards [for:current:%0] [facing:change] [forever]]"
+<< "[ObjectMoveTowards:%0 [facing:change] [forever]]"
     << 0 >> 0xB5
-    << 1 >> DeclareByte("0")
+    << 1 >> DeclareObjectNo("0")
     // loops op 94 forever
 
-<< "[ObjectMoveTowards [for:current:%0] [facing:change] [forever]]"
+<< "[ObjectMoveTowards:%0 [facing:change] [forever]]"
     << 0 >> 0xB6
     << 1 >> Declare7E0197_B("0")
     // loops op 95 forever
 
-<< "[ObjectAnimation1Loop:%0:%1 [for:current]]"
+<< "[ObjectAnimation:%0:%1 [mode:2]]"
     << 0 >> 0xB7
-    << 1 >> DeclareByte("0")
-    << 2 >> DeclareByte("1")
-            /*
-                X = $6D
-                A = $7F0B01,X
-                If(A != 0)
-                {
-                    @2F09
-                    --A
-                    if(== #0)
-                    {
-                        @2F1B
-                        A = #0
-                        $7F0B01+X = A
-                        $1601+X = A
-                        $1681+X = 0
-                        A = $1600+X
-                        if(== #$FF)
-                        {
-                            @2F32
-                            $1680+X = #0
-                            A = 0
-                        }
-                        else
-                        {
-                            @2F2E
-                            A = 1
-                        }
-                        @2F37
-                        $1780+X = A
-                        X = Y+3       //opcode + 2 params
-                        RETURN
-                    }
-                    @2F0C
-                    X = Y + #1
-                    A = $7F2001+X //byte
-                    X = $6D
-                    If(== $1781+X)
-                    {
-                        @2F6E->
-                    }
-                    @2F48->
-                }
-                else
-                {
-                    @2F40
-                    X = Y + #1
-                    A = $7F2001+X //byte
-                    X = $6D
-                    @2F48 ->
-                }
-                @2F48
-                $1781+X = A
-                $1681+X = 0
-                $1601+X = 0
-                A = $1780+X
-                if(Zero)
-                {
-                    @2F56
-                    $1680+X = #$FF
-                }
-                @2F5B
-                $1780+X = #2
-                X = Y+2
-                A = $7F2001+X //byte
-                A++
-                X = $6D
-                $7F0B01+X = A
-                @2F6E
-                X = Y        //loop
-                RETURN
-            */
+    << 1 >> DeclareByte("0") // animation index, possibly
+    << 2 >> DeclareByte("1") // duration, possibly
+    /*
+        A = $7F0B01 of cur obj
+        If(A > 0)
+        {
+          --A
+          If(A == 0)
+          {
+            // end loop.
+            $7F0B01 of cur obj = 0
+            $1601 of cur obj = 0
+            $1681 of cur obj = 0
+            if($1600 of cur obj == #$FF)
+            {
+                $1680 of cur obj = #0
+                $1780 of cur obj = 0
+            }
+            else
+            {
+                $1780 of cur obj = 1
+            }
+            return // end loop.
+          }
+          // wait until the animation frame has changed.
+          if(byte1 == $1781 of cur obj)
+          {
+            return, loop
+          }
+        }
+        $1781 of cur obj = byte1
+        $1681 of cur obj = 0
+        $1601 of cur obj = 0
+        if($1780 of cur obj == 0)
+        {
+          $1680 of cur obj = #$FF
+        }
+        $1780 of cur obj = #2
+        $7F0B01 of cur obj = byte2 + 1
+        return, loop
+    */
 
 << "[DialogSetTable:%0]"
     << 0 >> 0xB8
     << 1 >> DeclareDialogBegin("0")
 
-<< "[Pause:250ms [for:current]]"
+<< "[Pause:250ms]"
     << 0 >> 0xB9
 
-<< "[Pause:500ms [for:current]]"
+<< "[Pause:500ms]"
     << 0 >> 0xBA
 
-<< "[DialogDisplay:%0 [for:current] [pos:auto]]"
+<< "[DialogDisplay:%0 [pos:auto]]"
     << 0 >> 0xBB
     << 1 >> DeclareDialogAddr("0")
 
-<< "[Pause:1000ms [for:current]]"
+<< "[Pause:1000ms]"
     << 0 >> 0xBC
 
-<< "[Pause:2000ms [for:current]]"
+<< "[Pause:2000ms]"
     << 0 >> 0xBD
 
-<< "[DialogAsk:%0:%1:%2 [for:current] [pos:auto]]"
+<< "[DialogAsk:%0:%1:%2 [pos:auto]]"
     << 0 >> 0xC0
     << 1 >> DeclareDialogAddr("0")
     << 2 >> DeclareByte("2")
     << DeclareProp("1", 0x7F0A80)
 
-<< "[DialogDisplay:%0 [for:current] [pos:top]]"
+<< "[DialogDisplay:%0 [pos:top]]"
     << 0 >> 0xC1
     << 1 >> DeclareDialogAddr("0")
 
-<< "[DialogDisplay:%0 [for:current] [pos:bottom]]"
+<< "[DialogDisplay:%0 [pos:bottom]]"
     << 0 >> 0xC2
     << 1 >> DeclareDialogAddr("0")
 
-<< "[DialogAsk:%0:%1:%2 [for:current] [pos:top]]"
+<< "[DialogAsk:%0:%1:%2 [pos:top]]"
     << 0 >> 0xC3
     << 1 >> DeclareDialogAddr("0")
     << 2 >> DeclareByte("2")
     << DeclareProp("1", 0x7F0A80)
 
-<< "[DialogAsk:%0:%1:%2 [for:current] [pos:bottom]]"
+<< "[DialogAsk:%0:%1:%2 [pos:bottom]]"
     << 0 >> 0xC4
     << 1 >> DeclareDialogAddr("0")
     << 2 >> DeclareByte("2")
@@ -4162,10 +4446,10 @@ private:
     << 1 >> DeclareByte("0")
     // shops, name entries and such.
 
-<< "[Goto:%label [UnlessHasItem:%0]]"
+<< "HasItem:%0"
     << 0 >> 0xC9
     << 1 >> DeclareByte("0")
-    << 2 >> DeclareGoto("label", +1, 2)
+    << 2 >> DeclareIf()
 
 << "[ItemGive:%0]"
     << 0 >> 0xCA
@@ -4175,10 +4459,10 @@ private:
     << 0 >> 0xCB
     << 1 >> DeclareByte("0")
 
-<< "[Goto:%label [UnlessHasGold:%0]]"
+<< "HasGold:%0"
     << 0 >> 0xCC
     << 1 >> DeclareWord("0")
-    << 3 >> DeclareGoto("label", +1, 3)
+    << 3 >> DeclareIf()
 
 << "[GoldGive:%0]"
     << 0 >> 0xCD
@@ -4188,10 +4472,10 @@ private:
     << 0 >> 0xCE
     << 1 >> DeclareWord("0")
 
-<< "[Goto:%label [UnlessHasMember:%0]]"
+<< "HasMember:%0"
     << 0 >> 0xCF
     << 1 >> DeclareByte("0")
-    << 2 >> DeclareGoto("label", +1, 2)
+    << 2 >> DeclareIf()
 
 << "[GiveMember:%0]"
     << 0 >> 0xD0
@@ -4201,10 +4485,10 @@ private:
     << 0 >> 0xD1
     << 1 >> DeclareByte("0")
 
-<< "[Goto:%label [UnlessHasActiveMember:%0]"
+<< "HasActiveMember:%0"
     << 0 >> 0xD2
     << 1 >> DeclareByte("0")
-    << 2 >> DeclareGoto("label", +1, 2)
+    << 2 >> DeclareIf()
 
 << "[GiveActiveMember:%0]"
     << 0 >> 0xD3
@@ -4248,10 +4532,12 @@ private:
     /* causes members 2 and 3 to follow member 1 again. */
     // writes to 1180
 
-<< "[PartyTeleportDC:%0:%1]"
+<< "[PartyTeleportDC:%0:%1:%2:%3]"
     << 0 >> 0xDC
-    << 1 >> DeclareWord("0")
-    << 3 >> DeclareWord("1")
+    << 1 >> DeclareByte("0")
+    << 2 >> DeclareByte("1")
+    << 3 >> DeclareByte("2")
+    << 4 >> DeclareByte("3")
     /*
         %1: 7654321076543210: stored to $0C. (x and y?)
         %0: 7654321076543210
@@ -4259,10 +4545,12 @@ private:
             ^  ^^^^         : stored to $0E. (b000zzzz)
      */
 
-<< "[PartyTeleportDD:%0:%1]"
+<< "[PartyTeleportDD:%0:%1:%2:%3]"
     << 0 >> 0xDD
-    << 1 >> DeclareWord("0")
-    << 3 >> DeclareWord("1")
+    << 1 >> DeclareByte("0")
+    << 2 >> DeclareByte("1")
+    << 3 >> DeclareByte("2")
+    << 4 >> DeclareByte("3")
     /*
         %1: 7654321076543210: stored to $02. (x and y?)
         %0: 7654321076543210
@@ -4270,22 +4558,28 @@ private:
             ^  ^^^^         : stored to $04. (b000zzzz)
     */
 
-<< "[PartyTeleportDD:%0:%1 [with 1E=1]]"
+<< "[PartyTeleportDD:%0:%1:%2:%3 [with 1E=1]]"
     << 0 >> 0xDE
-    << 1 >> DeclareWord("0")
-    << 3 >> DeclareWord("1")
+    << 1 >> DeclareByte("0")
+    << 2 >> DeclareByte("1")
+    << 3 >> DeclareByte("2")
+    << 4 >> DeclareByte("3")
     // Same as DD, but puts $1E = 1 */
 
-<< "[PartyTeleportE1:%0:%1 [with 1E=1]]"
+<< "[PartyTeleportE1:%0:%1:%2:%3 [with 1E=1]]"
     << 0 >> 0xDF
-    << 1 >> DeclareWord("0")
-    << 3 >> DeclareWord("1")
+    << 1 >> DeclareByte("0")
+    << 2 >> DeclareByte("1")
+    << 3 >> DeclareByte("2")
+    << 4 >> DeclareByte("3")
     // Same as E1, but puts $1E = 1 */
 
-<< "[PartyTeleportE0:%0:%1]"
+<< "[PartyTeleportE0:%0:%1:%2:%3]"
     << 0 >> 0xE0
-    << 1 >> DeclareWord("0")
-    << 3 >> DeclareWord("1")
+    << 1 >> DeclareByte("0")
+    << 2 >> DeclareByte("1")
+    << 3 >> DeclareByte("2")
+    << 4 >> DeclareByte("3")
     /*
        Waits until [$17] & 0x80 = 0.
 
@@ -4297,10 +4591,12 @@ private:
         Stores $19 = 0x0F
      */
 
-<< "[PartyTeleportE1:%0:%1]"
+<< "[PartyTeleportE1:%0:%1:%2:%3]"
     << 0 >> 0xE1
-    << 1 >> DeclareWord("0")
-    << 3 >> DeclareWord("1")
+    << 1 >> DeclareByte("0")
+    << 2 >> DeclareByte("1")
+    << 3 >> DeclareByte("2")
+    << 4 >> DeclareByte("3")
     /*
         %1: 7654321076543210: stored to $14. (x and y?)
         %0: 7654321076543210
@@ -4318,7 +4614,7 @@ private:
      */
     
 
-<< "[UnknownE2:%0:%1:%2:%3]"
+<< "[PartyTeleportE0:%0:%1:%2:%3]"
     << 0 >> 0xE2
     << 1 >> Declare7F0200_2("0")
     << 2 >> Declare7F0200_2("1")
@@ -4361,9 +4657,9 @@ private:
 
 << "[ScrollLayers:%0:%1:%2]"
     << 0 >> 0xE6
-    << 1 >> DeclareWord("0") //bitmask
-    << 3 >> DeclareByte("1") //x
-    << 4 >> DeclareByte("2") //y
+    << 1 >> DeclareWord("0")
+    << 3 >> DeclareByte("1")
+    << 4 >> DeclareByte("2")
 
 << "[ScrollScreen:%0:%1]"
     << 0 >> 0xE7
@@ -4378,9 +4674,9 @@ private:
      *  and calls a sound function
      */
 
-<< "[SongPlay:%0]"
+<< "[SongPlay:%a]"
     << 0 >> 0xEA
-    << 1 >> DeclareByte("0")
+    << 1 >> DeclareByte("a").AnnotateSong()
     /* Command EA pokes $1E00..$1E01 as 10:a
      * and stores a into $7E29AE
      *  and calls a sound function
@@ -4403,19 +4699,19 @@ private:
 << "[SongPlay:%a [generic]]"
     << 0 >> 0xEC
     << 1 >> 0x11
-    << 2 >> DeclareByte("a")
+    << 2 >> DeclareByte("a").AnnotateSong()
     << 3 >> 0x00
 
 << "[SongPlay:%a [keep pos]]"
     << 0 >> 0xEC
     << 1 >> 0x14
-    << 2 >> DeclareByte("a")
+    << 2 >> DeclareByte("a").AnnotateSong()
     << 3 >> 0x00
 
 << "[PlaySound:%a [pan=%p]]"
     << 0 >> 0xEC
     << 1 >> DeclareByte("", 0x18, 0x19)
-    << 2 >> DeclareByte("a")
+    << 2 >> DeclareByte("a").AnnotateSFX()
     << 3 >> DeclareByte("p")
 
 << "[SongFade:%volume [duration=%duration]]"
@@ -4548,7 +4844,7 @@ private:
        But why such pointless math with constant values? No idea.
        If you want to test it, see Lucca's wondershot scene. She
        invokes this event there.
-       
+
        Here is C++ code that simulates this opcode:
 
         unsigned char divider = Stream[0];
@@ -4558,10 +4854,8 @@ private:
             signed short A = Stream[pos++] << 8; 
             A = (A-B) / divider; 
             printf("%d %d\n", F0, A);
-       }
-      
-      Btw, does this really relate to graphics? Maybe it's related
-      to sound instead.
+        }
+       
 
     */
 
@@ -4718,7 +5012,6 @@ public:
             }
             catch(bool)
             {
-                fprintf(stderr, "Cough\n");
             }
         }
         fprintf(stderr, "No choices for %02X\n", data[0]);
@@ -4751,7 +5044,7 @@ EventCode::DecodeBytes(unsigned offset, const unsigned char* data, unsigned maxl
     catch(bool)
     {
         DecodeResult result;
-        result.code   = format("[ERROR: No match [offs:%04X] [max:%04X]]", offset, maxlength);
+        result.code   = wformat(L"[ERROR: No match [offs:%04X] [max:%04X]]", offset, maxlength);
         result.nbytes = 1;
         return result;
     }

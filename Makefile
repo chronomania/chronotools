@@ -133,6 +133,7 @@ DEPDIRS = utils/
 # VERSION 1.15.0.0 preliminary support for location events.
 # VERSION 1.15.0.1 improved compression. Configuration file changes.
 # VERSION 1.15.0.2 improved support for location events.
+# VERSION 1.15.0.3 improved location event decompiler.
 
 #OPTIM=-Os
 # -fshort-enums
@@ -148,7 +149,7 @@ CFLAGS += -I/usr/include/slang
 LDFLAGS += -L/usr/lib/slang
 
 
-VERSION=1.15.0.2
+VERSION=1.15.0.3
 ARCHFILES=utils/xray.cc utils/xray.h \
           utils/viewer.c \
           utils/vwftest.cc \

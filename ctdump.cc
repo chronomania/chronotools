@@ -499,7 +499,7 @@ namespace
         for(unsigned a=0; a<=0x200; ++a)
         {
             /* TESTING - ignore everything but millenial fair */
-            if(a != 0x1B && a != 0x1C) continue;
+            if(a != 0x1B && a != 0x1C && a != 0x17) continue;
             
             /* Ignore non-existing events */
             if(a >= 0x66 && a <= 0x6E) continue;
