@@ -27,7 +27,7 @@
 
 
 .depend: ${ARCHFILES}
-	@echo "(Re-)checking dependencies..."
+	@echo "Checking dependencies..."
 	@rm -f $@.tmp && for s in *.c *.cc *.cpp;do if echo "$$s"|grep -vq '^\*';then ${CPP} ${CPPFLAGS} -MM -MG $$s;fi;done >$@.tmp && rm -f $@ && cp -p $@.tmp $@ && sed 's/\.o:/.lo:/' <$@.tmp >>$@ && rm -f $@.tmp
 depend dep: .depend
 

@@ -1,11 +1,12 @@
 CC=g++
 CXX=g++
-CPPFLAGS=-Wall -W -pedantic -g
+CPPFLAGS=-Wall -W -pedantic -g -DVERSION=\"$(VERSION)\"
 LDFLAGS=-L/usr/lib/graphics
 
 # VERSION 1.0.3 was the first working! :D
 # VERSION 1.0.4 handled fixed strings too
-VERSION=1.0.4
+# VERSION 1.0.5 found item descriptions
+VERSION=1.0.5
 ARCHFILES=xray.c xray.h \
           viewer.c \
           ctcset.cc \

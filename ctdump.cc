@@ -13,6 +13,9 @@ static vector<unsigned char> ROM;
 static vector<bool> space;
 static vector<string> substrings;
 
+static const bool TryFindExtraSpace = false;
+static const unsigned ExtraSpaceMinLen = 128;
+
 static void LoadROM()
 {
     unsigned hdrskip = 0;
@@ -136,10 +139,11 @@ static const vector<string> LoadZStrings(unsigned offset, unsigned count=0)
 }
 
 // Load an array of fixed length strings
-static const vector<string> LoadFStrings(unsigned offset, unsigned len)
+static const vector<string> LoadFStrings(unsigned offset, unsigned len, unsigned maxcount=0)
 {
     string str((const char *)&ROM[offset]);
     unsigned count = str.size() / len + 1;
+    if(maxcount && count > maxcount)count = maxcount;
     vector<string> result(count);
     for(unsigned a=0; a<count; ++a)
         result[a] = str.substr(a*len, len);
@@ -282,9 +286,9 @@ static void DumpStrings(unsigned offs, unsigned len=0)
     printf("\n\n");
 }
 
-static void DumpFStrings(unsigned offs, unsigned len)
+static void DumpFStrings(unsigned offs, unsigned len, unsigned maxcount=0)
 {
-    vector<string> strings = LoadFStrings(offs, len);
+    vector<string> strings = LoadFStrings(offs, len, maxcount);
     printf("*%02X:%04X:L%u ;%u fixed length strings (length: %u bytes)\n",
         offs>>16, offs&0xFFFF, len, strings.size(), len);
     DumpTable(strings, DispFChar);
@@ -320,23 +324,22 @@ static void FindEndSpaces(void)
         //const char *endptr   = (const char *)&ROM[pageend];
         unsigned size = pagesize;
         
-        static const char blanks[3] = {0x00, (char)0xEF, (char)0xFF};
+        static const char blanks[] = {0x00, (char)0xEF, (char)0xFF};
         
-        for(unsigned blank=0; blank<3; ++blank)
+        for(unsigned blank=0; blank < sizeof(blanks); ++blank)
         {
             unsigned blanklen=0;
             for(unsigned blapos=pagebegin; blapos<pageend; ++blapos)
             {
                 if(ROM[blapos] == blanks[blank])
                 {
-                	static const unsigned minlen = 128;
                     ++blanklen;
-                    if(blanklen == minlen)
+                    if(blanklen == ExtraSpaceMinLen)
                     {
-                        for(unsigned a=0; a<minlen; ++a)
-                            space[blapos-(minlen-1)+a] = true;
+                        for(unsigned a=0; a<ExtraSpaceMinLen; ++a)
+                            space[blapos-(ExtraSpaceMinLen-1)+a] = true;
                     }
-                    if(blanklen >= minlen)
+                    if(blanklen >= ExtraSpaceMinLen)
                         space[blapos] = true;
                 }
                 else
@@ -407,6 +410,10 @@ static const string revtrans(const char *s)
 
 int main(void)
 {
+	fprintf(stderr,
+		"Chrono Trigger script dumper version "VERSION"\n"
+		"Copyright (C) 1992,2002 Bisqwit (http://bisqwit.iki.fi/)\n");
+	
     LoadROM();
     substrings.resize(256);
     
@@ -432,7 +439,14 @@ int main(void)
     substrings[0x20] = revtrans("Epoch");
 
     // 
-    DumpFStrings(0x0C0B5E, 11); // items
+    DumpFStrings(0x0C0B5E, 11, 242);   // items
+    DumpZStrings(0x0C2EB1, 242, false);// item descs
+    
+    DumpFStrings(0x0C15C4, 11);        // techs
+    DumpZStrings(0x0C3A09, 117, false);// tech descs
+
+    DumpZStrings(0x0C3AF3, 4, false);  // tech related
+    
     DumpFStrings(0x0C6500, 11); // monsters
 
     // Weapon Helmet Armor Accessory
@@ -441,8 +455,6 @@ int main(void)
     // Location titles
     DumpZStrings(0x06F400, 112, false);
     
-    // Techniques descriptions
-    DumpZStrings(0x0C3A09, 121, false);
     
     // Battle messages
     DumpZStrings(0x0CCBC9, 227, false);
@@ -511,6 +523,7 @@ int main(void)
     // Episode list
     DumpStrings(0x3FD03E);
     
-    FindEndSpaces();
+    if(TryFindExtraSpace)
+        FindEndSpaces();
     ListSpaces();
 }

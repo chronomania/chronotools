@@ -16,7 +16,8 @@ using namespace std;
 #include "ctcset.hh"
 #include "miscfun.hh"
 
-static const bool rebuild_dict = false;
+static const bool rebuild_dict    = false;
+static const bool sort_dictionary = false;
 
 class insertor
 {
@@ -62,7 +63,7 @@ public:
         freespaceset &spaceset = mapi->second;
         freespaceset::const_iterator reci;
 
-        unsigned biggest = 0;
+        unsigned bestscore = 0;
         freespaceset::const_iterator best = spaceset.end();
         
         for(reci = spaceset.begin(); reci != spaceset.end(); ++reci)
@@ -77,24 +78,26 @@ public:
             if(reci->second < length)
                 continue;
             
-            if(reci->second > biggest)
+            const unsigned score = 0x7FFFFFF-reci->second;
+            if(score > bestscore)
             {
-                biggest = reci->second;
+                bestscore = score;
                 best = reci;
                 //break;
             }
         }
-        if(biggest < length)
+        if(!bestscore)
         {
             fprintf(stderr,
-                "Can't find %u bytes of free space in page %02X - biggest continuous space is only %u bytes!\n",
-                length, page, biggest);
+                "Can't find %u bytes of free space in page %02X!\n",
+                length, page);
             return 0x10000;
         }
-        unsigned bestpos = best->first;
-        freespacerec tmp(bestpos + length, biggest - length);
+        const unsigned bestpos = best->first;
+        freespacerec tmp(best->first + length, best->second - length);
         spaceset.erase(best);
-        spaceset.insert(tmp);
+        if(tmp.second)
+            spaceset.insert(tmp);
         return bestpos;
     }
     
@@ -405,6 +408,10 @@ void insertor::MakeDictionary()
     {
         dict.clear();
         time_t begin = time(NULL);
+        fprintf(stderr,
+        	"Rebuilding the dictionary. This will take probably a long time!\n"
+        	"You should take a lunch break or something now.\n"
+        );
         for(unsigned substrcount=0; substrcount<dictsize; ++substrcount)
         {
             //map<unsigned, unsigned> substringtable;
@@ -513,7 +520,8 @@ void insertor::MakeDictionary()
     }
     else
     {
-        //sort(dict.begin(), dict.end(), dictsorter);
+        if(sort_dictionary)
+            sort(dict.begin(), dict.end(), dictsorter);
         unsigned col=0;
         vector<string>::iterator d;
         for(d=dict.begin(); d!=dict.end(); ++d)
@@ -831,6 +839,10 @@ void insertor::LoadFile(FILE *fp)
 
 int main(void)
 {
+	fprintf(stderr,
+		"Chrono Trigger script insertor version "VERSION"\n"
+		"Copyright (C) 1992,2002 Bisqwit (http://bisqwit.iki.fi/)\n");
+	
     insertor ins;
     
     ins.LoadCharSet();
