@@ -11,9 +11,9 @@
 ;   CHAR_OUTPUT_FUNC - The address of the vwf12 character drawing function
 ;
 
-#define MEMBER_TABLE            $7E2980 ; Table of member numbers
+#define MEMBER_TABLE            $7E2980 ; Table of current member numbers
+#define EPOCH_NAME_ADDRESS      $7E2C4D ; Where Epoch name is
 #define CHAR_NAME_ADDRESS_TABLE $C25FD8 ; Table of character name addresses
-#define EPOCH_NAME_ADDRESS      $2C4D   ; Where Epoch name is
 
 #define RTL_ADDR_C2             $5841   ; Where RTL can be found in page $C2
 
@@ -72,11 +72,11 @@ Conjugator:
 
       + ; If it was none of the choices, call the original function.
         jsr Outc
-        
+        bra ConjEnd
+
+DidConj:inc $31 ; skip next byte = prevent the game displaying the name.
 ConjEnd:SET_8_BIT_A()
         rtl
-DidConj:inc $31
-        bra ConjEnd
 
 ;;;; OUTPUT A CHARACTER
 
@@ -99,6 +99,7 @@ OutcHelper:
          ; Does not modify X.
          ; May modify Y.
          ; May modify A.
+         ; Expected to return with A,X = 16-bit
          SET_16_BIT_AX()
          phx
           sta $35    ; Param to the fuction
@@ -112,28 +113,44 @@ LoopHelper:
     .(
         ; Fetches the X'th letter of the character's name in question.
         ; Does not modify X.
-        ; Does modify Y.
+        ; Uses Y.
         ; Returns the letter in A.
+        ; Expected to return with A=8-bit, X=anything, AH=0
         
         SET_16_BIT_AX()
         phx
          ldy #0
          SET_8_BIT_A()
          
+         lda #$7E
+         sta $0239 ; Save segment now for later use
+         
          ; Id of the name
          lda [$31]
          
          cmp #$20
-         beq Epoch  ; Is it Epoch?
+         beq Epoch  ; Is it Epoch? ( = 20 )
          
          ; Not Epoch.
          cmp #$1B
-         bcs Member ; If member?
+         bcs Member ; If member? ( >= 1B )
 
-         ; Not a member, just a character name
+         ; Not a member, just a character name.
+         ; Character names are:
+         ;  13=Crono
+         ;  14=Marle
+         ;  15=Lucca
+         ;  16=Robo
+         ;  17=Frog
+         ;  18=Ayla
+         ;  19=Magus
+         
+         ;  1A=[crononick] is not handled here.
+         
          sec: sbc #$13
 
 GetCharName:
+         ;8bit here
          asl
          tax
          
@@ -142,33 +159,32 @@ GetCharName:
          lda @CHAR_NAME_ADDRESS_TABLE,x
 
 GotCharPointer:
+         ;16bit here
          sta $0237 ; Save offset
-         
-         SET_8_BIT_A()
-         lda #$7E
-         sta $0239 ; Save segment
-         
-         SET_16_BIT_AX()
         plx
         txy
-        ; Get char from the name
+        ; Get y'th char from the name
         lda [$37],y
         and #$00FF
+        ;Letters in character name are always 8-bit.
+        ;Character names are 0-terminated.
+        SET_8_BIT_A()
         rts
 
 Member:  ; Yes, member1(1B), member2(1C) or member3(1D)
+         ; 8bit when entry here
          .as
-         sec
-         sbc #$1B
+         sec: sbc #$1B
          tax
          ; Get member number
          lda @MEMBER_TABLE,x
          bra GetCharName
 
 Epoch:   ; Yes, Epoch.
+         ; 8bit when entry here
          SET_16_BIT_A()
          ; Load Epoch address
-         lda #EPOCH_NAME_ADDRESS
+         lda #!EPOCH_NAME_ADDRESS
          ; Continue with character name handling
          bra GotCharPointer
    .)

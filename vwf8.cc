@@ -57,58 +57,8 @@ void insertor::GenerateVWF8code()
     DrawS_4bit = vwf8_code.GetSymAddress(WstrToAsc(GetConf("vwf8", "b4_draws")));
 #endif
 
-    const ConfParser::ElemVec& elems = GetConf("vwf8", "add_call_of").Fields();
-    for(unsigned a=0; a<elems.size(); a += 4)
-    {
-        const ucs4string& funcname = elems[a];
-        unsigned address           = elems[a+1];
-        unsigned nopcount          = elems[a+2];
-        bool add_rts               = elems[a+3];
-        
-        SNEScode tmpcode;
-        tmpcode.AddCallFrom(address);
-        tmpcode.YourAddressIs(vwf8_code.GetSymAddress(WstrToAsc(funcname)));
-        codes.push_back(tmpcode);
-        
-        address += 4;
-        if(add_rts)
-        {
-            PlaceByte(0x60, address++);
-            if(nopcount > 0)
-            {
-                freespace.Add((address >> 16) & 0x3F,
-                              address & 0xFFFF,
-                              nopcount);
-                
-                // Don't initialize, or it will overwrite whatever
-                // uses that space!
-                //while(skipbytes-- > 0) { PlaceByte(0, address++); --nopcount; }
-                nopcount = 0;
-            }
-        }
-        else
-        {
-            while(nopcount > 2)
-            {
-                nopcount -= 2;
-                unsigned skipbytes = nopcount;
-                if(skipbytes > 127) skipbytes = 127;
-                PlaceByte(0x80,      address++); // BRA over the space.
-                PlaceByte(skipbytes, address++);
-                
-                freespace.Add((address >> 16) & 0x3F,
-                              address & 0xFFFF,
-                              skipbytes);
-                
-                // Don't initialize, or it will overwrite whatever
-                // uses that space!
-                //while(skipbytes-- > 0) { PlaceByte(0, address++); --nopcount; }
-                nopcount -= skipbytes;
-            }
-            while(nopcount > 0) { PlaceByte(0xEA, address++); --nopcount; }
-        }
-    }
-    
+	LinkCalls("vwf8", vwf8_code);
+
     vwf8_code.Verify();
     
     PlaceData(widths,              WidthTab_Address);

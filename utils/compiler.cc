@@ -12,6 +12,22 @@ using namespace std;
 
 #define SIMPLE_OUT_FORMAT 0
 
+/*
+    Optimizations TODO:
+
+        - thread jumps:
+           if bcc/bcs/beq/bne/bra to label that only does bra,
+           modify the label directly to the result
+        - tail optimization:
+           If "jsr" comes immediately before "rts",
+           replace jsr with bra. Ignore "Ret"-label.
+           It doesn't matter.
+           - DONE
+        - rep/sep optimization:
+           keep track of possible bitnesses
+           when entering a label.
+*/
+
 namespace
 {
     FILE *OutFile;
@@ -38,8 +54,13 @@ namespace
         bool started;       // Code begun?
         unsigned LoopCount; // How many loops active
         
-        bool end_defined;
-        bool end_needed;
+        struct labeldata
+        {
+            bool defined, needed;
+            labeldata(): defined(false), needed(false) { }
+        };
+        
+        map<string, labeldata> labelstatus;
         
         typedef list<pair<unsigned, const char *> > branchlist_t;
         branchlist_t openbranches;
@@ -80,6 +101,8 @@ namespace
         
         regstate ALstate, AHstate;
         
+        ucs4string PendingCall;
+        
         void Invalidate_A()
         {
             ALstate.Invalidate();
@@ -99,6 +122,7 @@ namespace
             {
                 if(!X_is_8bit() || varcount > 4)
                 {
+                    if(varcount >= 2 && !X_is_16bit() && !A_is_known()) Emit_M(16);
                     while(varcount >= 2)
                     {
                         Emit_X(16);
@@ -107,6 +131,9 @@ namespace
                     }
                 }
             }
+            // If we're going to do a rep/sep anyway,
+            // set A to a known state (8-bit) now. It's free.
+            if(varcount >= 1 && !X_is_8bit() && !A_is_known()) Emit_M(8);
             while(varcount >= 1)
             {
                 Emit_X(8);
@@ -194,6 +221,29 @@ namespace
         }
         void CheckCodeStart()
         {
+            if(!PendingCall.empty())
+            {
+                // X needs to be saved if we're in a loop.
+                if(LoopCount)
+                {
+                    Emit_X(16);
+                    Emit("phx");
+                }
+                EmitCall(PendingCall);
+                LoadFlagsFromFunc(PendingCall);
+                if(LoopCount)
+                {
+                    Emit_X(16);
+                    Emit("plx");
+                }
+                if(PendingCall == OutcHelperName)
+                {
+                    AssumeM(16);
+                    AssumeX(16);
+                }
+                PendingCall.clear();
+                Invalidate_A();
+            }
             if(started) return;
             
             FRAME_BEGIN();
@@ -223,13 +273,13 @@ namespace
         void EmitStack(const char* op, unsigned index)
         {
             char Buf[64];
-            sprintf(Buf, "%.5s $%u,s", op, index);;
+            sprintf(Buf, "%.32s $%u,s", op, index);;
             Emit(Buf);
         }
         void EmitImmed(const char* op, int value)
         {
             char Buf[64];
-            sprintf(Buf, "%.5s #$%X", op, value);
+            sprintf(Buf, "%.32s #$%X", op, value);
             Emit(Buf);
         }
         void EmitParam(const char* op, const char* param)
@@ -256,14 +306,17 @@ namespace
             EmitAnyBits();
         }
 
-        enum { StateUnknown, State16, State8, StateAnything }
+        typedef enum { StateUnknown, State16, State8, StateAnything } FlagStateType;
+        FlagStateType
             StateX, StateM,
             WantedX, WantedM;
 #if !SIMPLE_OUT_FORMAT
         bool newline;
-        unsigned indent;
+        unsigned asmindent;
 #endif
 
+        map<ucs4string, FlagStateType> FuncRetX, FuncRetM;
+        
         void Flushbits()
         {
             unsigned rep = 0;
@@ -286,6 +339,8 @@ namespace
             if(sep)EmitImmed("sep", sep);
             if(rep)EmitImmed("rep", rep);
         }
+        bool A_is_known() const { return A_is_8bit() || A_is_16bit(); }
+        bool x_is_known() const { return X_is_8bit() || X_is_16bit(); }
         bool A_is_8bit() const { return StateM == State8; }
         bool X_is_8bit() const { return StateX == State8; }
         bool A_is_16bit() const { return StateM == State16; }
@@ -308,6 +363,18 @@ namespace
         {
             StateX = StateM = StateUnknown;
         }
+        void AssumeM(unsigned bitness)
+        {
+            EmitNoNewline();
+            StateM = bitness==8 ? State8 : State16;
+            Emit(StateM == State8 ? ".as" : ".al");
+        }
+        void AssumeX(unsigned bitness)
+        {
+            EmitNoNewline();
+            StateX = bitness==8 ? State8 : State16;
+            Emit(StateX == State8 ? ".xs" : ".xl");
+        }
         void EmitLabel(const char* name)
         {
             string tmp = name;
@@ -321,13 +388,13 @@ namespace
             Flushbits();
             
 #if !SIMPLE_OUT_FORMAT
-            if(!strcmp(code, ".)")) if(indent > 0) --indent;
+            if(!strcmp(code, ".)")) if(asmindent > 0) --asmindent;
 
             if(newline) fputc('\n', OutFile);
             else fprintf(OutFile, " : ");
             if(*code != '+' && newline)
             {
-                for(unsigned a=0; a<indent; ++a)
+                for(unsigned a=0; a<asmindent; ++a)
                     fputc('\t', OutFile);
             }
 #endif
@@ -338,7 +405,7 @@ namespace
             if(*code == 'c' && code[1] == 'm') newline = false;
             if(strchr(code, ';')) newline = true;
 
-            if(!strcmp(code, ".(")) ++indent;
+            if(!strcmp(code, ".(")) ++asmindent;
 #else
             fputc('\n', OutFile);
 #endif
@@ -354,11 +421,17 @@ namespace
 
         void AddBranch(const char* name, unsigned ind)
         {
-            ++indent;
+            // Remember that when entering this level,
+            // must cancel this label.
             openbranches.push_back(make_pair(ind, name));
+            
+            // Deepen
+            ++asmindent;
         }
         
-        void GenerateComparison(const char* notjump, const char* jump, bool SHORT=true)
+        void GenerateComparison
+            (unsigned indent,
+             const char* notjump, const char* jump, bool SHORT=true)
         {
             if(SHORT)
             {
@@ -377,6 +450,27 @@ namespace
                 EmitLabel(shortlabel);
                 //EmitAnyBits();
                 AddBranch(elselabel, indent);
+            }
+        }
+
+        void LoadFlagsFromFunc(const ucs4string& name)
+        {
+            map<ucs4string, FlagStateType>::const_iterator i;
+            i = FuncRetX.find(name); if(i != FuncRetX.end()) StateX = i->second;
+            i = FuncRetM.find(name); if(i != FuncRetM.end()) StateM = i->second;
+        }
+
+        void DefineInternalLabel(const char* name)
+        {
+            if(!labelstatus[name].defined)
+            {
+                string str;
+                for(unsigned n=0; n<LoopCount; ++n)
+                    str += '&';
+                str += name;
+                
+                EmitLabel(str.c_str());
+                labelstatus[name].defined = true;
             }
         }
     public:
@@ -400,23 +494,31 @@ namespace
             LoopCount=0;
 #if !SIMPLE_OUT_FORMAT
             newline = true;
-            indent = 0;
+            asmindent = 0;
 #endif
         }
         
         void BRANCH_LEVEL(unsigned level)
         {
+            //EmitImmed(";INDENT", level);
+            
             // Go the label list in REVERSE order; First-in, last-out
             for(branchlist_t::reverse_iterator
                 a = openbranches.rbegin();
                 a != openbranches.rend();
                 ++a)
             {
+                //string s = ";LABEL "; s += a->second;
+                //EmitImmed(s.c_str(), a->first);
+                
                 if(a->first != 999 && level <= a->first)
                 {
+                    CheckCodeStart();
+                    
                     Invalidate_A();
 
-                    --indent;
+                    --asmindent; // reduce the indentation of the generated source.
+                    
                     EmitLabel(a->second);
                     //Emit(".)");
                     a->first = 999; // prevent being reassigned
@@ -437,8 +539,7 @@ namespace
             
             Invalidate_A();
             
-            end_needed  = false;
-            end_defined = false;
+            labelstatus.clear();
         }
         void END_FUNCTION()
         {
@@ -451,6 +552,8 @@ namespace
 #if !SIMPLE_OUT_FORMAT
                 Emit("\n");
 #endif
+                FuncRetX[CurSubName] = StateX;
+                FuncRetM[CurSubName] = StateM;
             }
         }
         void DECLARE_VAR(const ucs4string &name)
@@ -477,25 +580,64 @@ namespace
         }
         void VOID_RETURN()
         {
+            if(!PendingCall.empty())
+            {
+                if(IsPlainRTS())
+                {
+                    EmitAnyBits();
+                    EmitParam("bra", WstrToAsc(PendingCall).c_str());
+                    PendingCall.clear();
+                    return;
+                }
+                //if(PendingCall == OutcHelperName)
+                {
+                    string labelname = "End_" + WstrToAsc(PendingCall);
+                    if(labelstatus[labelname].defined)
+                    {
+                        labelstatus[labelname].needed = true;
+                        EmitParam("brl", labelname.c_str());
+                        PendingCall.clear();
+                        return;
+                    }
+                    DefineInternalLabel(labelname.c_str());
+                    DeallocateVars();
+                    EmitParam("bra", WstrToAsc(PendingCall).c_str());
+                    PendingCall.clear();
+                    return;
+                }
+            }
             CheckCodeStart();
             
             bool inline_end = IsPlainRTS();
-            if(!end_defined) inline_end = true;
+            if(!labelstatus["End"].defined) inline_end = true;
             
             if(inline_end)
             {
-                if(!end_defined)
+                if(!IsPlainRTS())
                 {
-                    EmitLabel("End");
-                    end_defined = true;
+                    DefineInternalLabel("End");
                 }
 
                 DeallocateVars();
                 Emit("rts");
+                
+                if(FuncRetX.find(CurSubName) == FuncRetX.end()
+                || ((StateX==State8 || StateX==State16)
+                  && FuncRetX[CurSubName] == StateX))
+                    FuncRetX[CurSubName] = StateX;
+                else
+                    FuncRetX[CurSubName] = StateUnknown;
+
+                if(FuncRetM.find(CurSubName) == FuncRetM.end()
+                || ((StateM==State8 || StateM==State16)
+                  && FuncRetM[CurSubName] == StateM))
+                    FuncRetM[CurSubName] = StateM;
+                else
+                    FuncRetM[CurSubName] = StateUnknown;
             }
             else
             {
-                end_needed = true;
+                labelstatus["End"].needed = true;
                 EmitParam("bra", "End");
             }
         }
@@ -504,9 +646,38 @@ namespace
             CheckCodeStart();
             // emit flag, then return
             
-            // CLC (nonset) = false, SEC (set) = true
-            Emit(value ? "sec" : "clc");
-            VOID_RETURN();
+            // Never inline "sec;<rtscode>" unless necessary.
+            // bra is 2 bytes: always shorter or equal length.
+            if(value)
+            {
+                // sec = true
+                if(!labelstatus["SEnd"].defined)
+                {
+                    DefineInternalLabel("SEnd");
+                    Emit("sec");
+                    VOID_RETURN();
+                }
+                else
+                {
+                    labelstatus["SEnd"].needed = true;
+                    EmitParam("bra", "SEnd");
+                }
+            }
+            else
+            {
+                // clc = false
+                if(!labelstatus["CEnd"].defined)
+                {
+                    DefineInternalLabel("CEnd");
+                    Emit("clc");
+                    VOID_RETURN();
+                }
+                else
+                {
+                    labelstatus["CEnd"].needed = true;
+                    EmitParam("bra", "CEnd");
+                }
+            }
         }
         
         bool IsCached(const ucs4string &name) const
@@ -618,12 +789,13 @@ namespace
         }
         void STORE_VAR(const ucs4string &name)
         {
+            CheckCodeStart();
+            
             if(ALstate.Var.Is(name)) return;
 
             if(vars.find(name) == vars.end()
             || !vars.find(name)->second.is_regvar)
             {
-                CheckCodeStart();
                 // store A to var
                 Emit_M(8);
                 unsigned stackpos = GetStackOffset(name);
@@ -668,23 +840,31 @@ namespace
 #if !SIMPLE_OUT_FORMAT
             newline = true;
 #endif
-            // X needs to be saved if we're in a loop.
-            if(LoopCount)
-            {
-                Emit_X(16);
-                Emit("phx");
-            }
+            bool optimize = LoopCount == 0;
             
             // leave A unmodified and issue call to function
-            EmitCall(name);
-            
-            if(LoopCount)
+            if(optimize)
             {
-                Emit_X(16);
-                Emit("plx");
+                // Delay the call for possible tail optimization.
+                PendingCall = name;
             }
-
-            Invalidate_A();
+            else
+            {
+                // X needs to be saved if we're in a loop.
+                if(LoopCount)
+                {
+                    Emit_X(16);
+                    Emit("phx");
+                }
+                
+                EmitCall(name);
+                LoadFlagsFromFunc(name);
+                if(LoopCount)
+                {
+                    Emit_X(16);
+                    Emit("plx");
+                }
+            }
         }
         void COMPARE_BOOL(unsigned indent)
         {
@@ -692,7 +872,7 @@ namespace
             
             // process subblock if boolean set
             
-            GenerateComparison("bcc", "bcs");
+            GenerateComparison(indent, "bcc", "bcs");
         }
         void COMPARE_EQUAL(const ucs4string &name, unsigned indent)
         {
@@ -728,7 +908,7 @@ namespace
                 EmitImmed("cmp", val);
             }
             
-            GenerateComparison("bne", "beq");
+            GenerateComparison(indent, "bne", "beq");
         }
         void COMPARE_ZERO(const ucs4string &name, unsigned indent)
         {
@@ -740,7 +920,7 @@ namespace
 
             // Note: we're not checking ALstate here, would be mostly useless check
 
-            GenerateComparison("bne", "beq");
+            GenerateComparison(indent, "bne", "beq");
         }
         void COMPARE_GREATER(const ucs4string &name, unsigned indent)
         {
@@ -819,7 +999,7 @@ namespace
                     {
                         EmitImmed("cmp", c1); EmitParam("bne", elselabel);
                     }
-                    else if(c1+1 == c2)
+                    else if(c1+1 == c2 && c2 < 0xFF)
                     {
                         used_next = true;
                         EmitImmed("cmp", c1); EmitParam("beq", shortlabel);
@@ -841,12 +1021,12 @@ namespace
                         used_next = true;
                         EmitImmed("cmp", c1); EmitParam("beq", shortlabel);
                     }
-                    else if(c1+1 == c2)
+                    /*else if(c1+1 == c2) - faster without!
                     {
                         used_next = true;
                         EmitImmed("cmp", c1); EmitParam("beq", shortlabel);
                         EmitImmed("cmp", c2); EmitParam("beq", shortlabel);
-                    }
+                    }*/
                     else
                     {
                         EmitImmed("cmp", c1);   EmitParam("bcc", elselabel);
@@ -879,6 +1059,7 @@ namespace
             Emit("ldx #0");
             EmitLabel("LoopBegin");
             EmitCall(LoopHelperName);
+            AssumeM(8);
             Emit("; If zero, break the loop");
             EmitParam("beq", "LoopEnd");
 
@@ -905,12 +1086,8 @@ namespace
         }
         void OUT_CHARACTER()
         {
-            CheckCodeStart();
             // outputs character in A
-            
-            EmitCall(OutcHelperName);
-
-            Invalidate_A();
+            CALL_FUNC(OutcHelperName);
         }
     };
 }
@@ -972,8 +1149,6 @@ void Compile(FILE *fp)
             continue;
         }
         
-        Asm.BRANCH_LEVEL(indent);
-        
         if(words[0][0] == '#')
         {
 #if !SIMPLE_OUT_FORMAT
@@ -983,6 +1158,8 @@ void Compile(FILE *fp)
 #endif
             continue;
         }
+        
+        Asm.BRANCH_LEVEL(indent);
         
         const string firstword = WstrToAsc(words[0]);
         
@@ -1019,6 +1196,11 @@ void Compile(FILE *fp)
         }
         else if(firstword == "CALL_GET")
         {
+            if(words.size() > 3)
+            {
+                Asm.LOAD_VAR(words[3]);
+                Asm.EmitNoNewline();
+            }
             Asm.CALL_FUNC(words[1]);
             Asm.EmitNoNewline();
             Asm.STORE_VAR(words[2]);

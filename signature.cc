@@ -72,15 +72,5 @@ void insertor::GenerateSignatureCode()
     tmp.YourAddressIs(code_addr);
     codes.push_back(tmp);
     
-    const ConfParser::ElemVec& elems = GetConf("signature", "add_call_of").Fields();
-    for(unsigned a=0; a<elems.size(); a += 2)
-    {
-        const ucs4string& funcname = elems[a];
-        unsigned address           = elems[a+1];
-        
-        SNEScode tmpcode;
-        tmpcode.AddCallFrom(address);
-        tmpcode.YourAddressIs(sig_code.GetSymAddress(WstrToAsc(funcname)));
-        codes.push_back(tmpcode);
-    }
+    LinkCalls("signature", sig_code);
 }

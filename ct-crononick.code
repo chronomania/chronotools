@@ -1,0 +1,89 @@
+# Does Crononick.
+
+# Returns true if the parameter is a vowel.
+FUNCTION IsVowel
+REG c
+? c aeiouyäöåéAEIOUYÄÖÅÉ0123456
+  TRUE
+FALSE
+
+FUNCTION IsConso
+REG c
+? c bcdfghjklmnpqrstvwxzBCDFGHJKLMNPQRSTVWXZ
+  TRUE
+FALSE
+
+
+# Outputs the character name, but only given number of characters.
+FUNCTION OutWord
+VAR left c
+LET left c
+{
+  = left 0
+    RETURN
+  OUT c
+  DEC left
+}
+RETURN
+
+# Returns the given'th character of the name. Count from 1.
+FUNCTION CharNumber
+VAR num limit c
+LET limit c
+LET num 0
+{
+  INC num
+  = num limit
+    RETURN c
+}
+RETURN 0
+
+# Calculate the length of the character name
+FUNCTION Length
+VAR Len
+REG c
+LET Len 0
+{
+  INC Len
+}
+RETURN Len
+
+FUNCTION Do_Crononick
+VAR c1 c2 c3 c4 c5 Len
+CALL_GET Length Len
+= Len 5
+  CALL_GET CharNumber c1 1
+  CALL_GET CharNumber c2 2
+  CALL_GET CharNumber c3 3
+  CALL_GET CharNumber c4 4
+  CALL_GET CharNumber c5 5
+  # If starts with two consonants
+  IF IsConso c1
+    IF IsConso c2
+      # Fixme: Make c2 upcase!
+      OUT c2
+      OUT c3
+      OUT c4
+      OUT c5
+      RETURN
+  IF IsVowel c5
+    = c3 c4
+      IF IsConso c4
+        # Jos päättyy kahteen konsonanttiin ja yhteen vokaaliin
+        IF IsVowel c2
+          CALL OutWord 3
+          # Toka merkki oli vokaali.
+          # Tällöin malli on: Mikko -> Miko
+          OUT c5
+          RETURN
+        CALL OutWord 1
+        # Ei, toka merkki on konsonantti.
+        # Tällöin malli on: Ilkka -> Ikka
+        OUT c3
+        OUT c4
+        OUT c5
+        RETURN
+# Something wasn't ok.
+# Default choice: unmodified name.
+CALL OutWord Len
+RETURN

@@ -189,7 +189,6 @@ void Conjugatemap::Work(ctstring &s)
 
 void insertor::GenerateConjugatorCode()
 {
-    ucs4string ConjFuncName  = GetConf("conjugator", "funcname");
     const string codefile = WstrToAsc(GetConf("conjugator", "file").SField());
 
     FILE *fp = fopen(codefile.c_str(), "rb");
@@ -228,16 +227,11 @@ void insertor::GenerateConjugatorCode()
     
     conj_code.LinkSym("CHAR_OUTPUT_FUNC", 0xC00000 | GetConst(DIALOG_DRAW_FUNC_ADDR));
     
-    SNEScode tmpcode;
-    tmpcode.AddCallFrom(ConjugatePatchAddress | 0xC00000);
-    tmpcode.YourAddressIs(conj_code.GetSymAddress(WstrToAsc(ConjFuncName)));
-    codes.push_back(tmpcode);
-
+    LinkCalls("conjugator", conj_code);
+    
     // Do not remove Verify() here!
     // Otherwise you won't know what conjugations do you need!
     conj_code.Verify();
-    PlaceData(conj_code.GetCode(), Code_Address);
 
-    // SEP+JSR takes 5 bytes. We overwrote it with 4 bytes.
-    PlaceByte(0xEA, ConjugatePatchAddress + 4); // NOP
+    PlaceData(conj_code.GetCode(), Code_Address);
 }

@@ -54,7 +54,7 @@
 #     Calls the bool-func name1.
 #     If value given, will be passed as param.
 #     Process subblock if true retval.
-#  CALL_GET name1 name2
+#  CALL_GET name1 name2 [param]
 #     Calls the integer-func name1, return value to name2.
 #  CALL name1 [value]
 #     Calls a function, ignores the return value.
@@ -503,7 +503,7 @@ OUT 's'
 OUT 'i'
 RETURN
 
-# Outputs the character name conjugatedf in essive (as).
+# Outputs the character name conjugated in essive (as).
 # It needs its own stem function.
 # Example: "What would you do as Lucca?" -> "Mitä tekisit Luccana?"
 FUNCTION Do_NA

@@ -82,6 +82,7 @@ private:
     void WriteCode(class ROM &ROM) const;
 
     void GenerateConjugatorCode();
+    void GenerateCrononickCode();
     void GenerateVWF12code();
     void GenerateVWF8code();
     void GenerateSignatureCode();
@@ -106,6 +107,13 @@ private:
 #if 0    
     void LinkAndLocate(class FunctionList& functions);
 #endif
+    
+    /**
+     *  LinkCalls - Parse add_call_of -commands from config file
+     *     @section: The configuration file section
+     *     @code: The code to be linked
+     */
+    void LinkCalls(const string& section, const class O65& code);
 };
 
 #endif

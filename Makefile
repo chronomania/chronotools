@@ -86,6 +86,7 @@ DEPDIRS = utils/
 # VERSION 1.7.0  some error checking; windows build of the assembler
 # VERSION 1.8.0  is GPL
 # VERSION 1.8.1  requires separate snescom (not bundled anymore)
+# VERSION 1.9.0  unified some configuration parts; added crononick-code support
 
 OPTIM=-O3
 #OPTIM=-O0
@@ -94,7 +95,7 @@ OPTIM=-O3
 
 CXXFLAGS += -I.
 
-VERSION=1.8.1
+VERSION=1.9.0
 ARCHFILES=utils/xray.cc utils/xray.h \
           utils/viewer.c \
           utils/vwftest.cc \
@@ -124,24 +125,27 @@ ARCHFILES=utils/xray.cc utils/xray.h \
           o65.cc o65.hh \
           o65linker.cc o65linker.hh \
           logfiles.cc logfiles.hh \
-          conjugate.cc conjugate.hh \
           stringoffs.cc stringoffs.hh \
           symbols.cc symbols.hh \
           tgaimage.cc tgaimage.hh \
           ctdump.cc ctdump.hh \
           ctinsert.cc ctinsert.hh \
           signature.cc \
-          vwf8.cc \
-          ct-vwf8.a65 \
-          ct-conj.a65 \
+          vwf8.cc ct-vwf8.a65 \
           config.cc config.hh \
           confparser.cc confparser.hh \
           extras.cc extras.hh \
           typefaces.cc typefaces.hh \
-          taipus.rb ct.code \
+          taipus.rb \
           progdesc.php \
           binpacker.tcc binpacker.hh \
           tristate \
+          \
+          conjugate.cc conjugate.hh \
+          ct-conj.code ct-conj.a65 \
+          \
+          crononick.cc \
+          ct-crononick.code \
           \
           utils/compiler2.cc utils/compiler2-parser.inc utils/ct.code2 \
           utils/o65test.cc utils/dumpo65.cc \
@@ -188,7 +192,7 @@ ctinsert: \
 		tgaimage.o space.o writeout.o stringoffs.o \
 		dictionary.o images.o compress.o \
 		fonts.o typefaces.o extras.o \
-		rom.o snescode.o signature.o \
+		rom.o snescode.o signature.o crononick.o \
 		conjugate.o vwf8.o o65.o o65linker.o \
 		symbols.o logfiles.o settings.o \
 		config.o confparser.o ctcset.o wstring.o
@@ -197,13 +201,22 @@ ctinsert: \
 %.o65: %.a65
 	snescom -J -Wall -o $@ $< 
 
-ct-conj1.a65: ct.code utils/compile
+ct-conj1.a65: ct-conj.code utils/compile
 	utils/compile $< $@
 
 # ct-conj.o65 is build in a strange way.
 ct-conj.o65: ct-conj1.a65 ct-conj.a65
 	sed 's/#\([^a-z]\)/§\1/g;s/;.*//' < ct-conj1.a65 > .tmptmp
 	sed 's§<CONJUGATER>§#include ".tmptmp"§' < ct-conj.a65 | \
+		snescom -E - | sed 's/§/#/g' > .tmptmp2
+	snescom -J -Wall -o $@ .tmptmp2
+	rm -f .tmptmp .tmptmp2
+
+ct-crononick1.a65: ct-crononick.code utils/compile
+	utils/compile $< $@
+ct-crononick.o65: ct-crononick1.a65 ct-crononick.a65
+	sed 's/#\([^a-z]\)/§\1/g;s/;.*//' < ct-crononick1.a65 > .tmptmp
+	sed 's§<CONJUGATER>§#include ".tmptmp"§' < ct-crononick.a65 | \
 		snescom -E - | sed 's/§/#/g' > .tmptmp2
 	snescom -J -Wall -o $@ .tmptmp2
 	rm -f .tmptmp .tmptmp2

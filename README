@@ -112,7 +112,7 @@ $C2:5841 6B          RTL                                A:0000 X:0022 Y:02A0 D:0
 $C2:5893 38          SEC                                A:0000 X:08B3 Y:0038 D:0000 DB:00 PB:7E S:06FF P:envmxdIZC HC:010 VC:225 02
 $C2:5894 60          RTS                                A:0000 X:08B3 Y:0038 D:0000 DB:00 PB:7E S:06FF P:envmxdIZC HC:010 VC:225 02
 
-// Haetaan merkki pointterin osoittamasta paikasta
+// Haetaan merkki pointterin $31 osoittamasta paikasta
 // Tämä koodi on japaniversiossa osoitteessa $C2:58BB
 $C2:58B2 A7 31       LDA [long[D+$31]]    ;$F7:531D     A:0000 X:0000 Y:001F D:0200 DB:00 PB:C2
 // Kasvatetaan merkkijonopointteria
@@ -168,6 +168,7 @@ $C0:21E0 60          RTS                                A:0081 X:FFFF Y:0000 D:0
 
 
 // Tänne saavutaan, jos merkki oli alle 0xA0. Jos se on alle 0x21 myös...
+;Japaniversiossa osoite on C2:58D9
 $C2:58D0 C9 21       CMP A, $21                         A:003D X:0000 Y:001F D:0200 DB:00 PB:C2
 $C2:58D2 90 29       BCC $58FD                          A:003D X:0000 Y:001F D:0200 DB:00 PB:C2
 // Ei ollut, joten tallennetaan se temppipaikkaan
@@ -203,6 +204,7 @@ $C2:58FA 4C F5 5B    JMP [DB:$5BF5]       ;$00:5BF5     A:0001 X:0038 Y:001F D:0
 $C2:58FD A8          TAY                                A:0013 X:0000 Y:001F D:0200 DB:00 PB:C2
 $C2:58FE 0A          ASL A                              A:0013 X:0000 Y:0013 D:0200 DB:00 PB:C2
 $C2:58FF AA          TAX                                A:0026 X:0000 Y:0013 D:0200 DB:00 PB:C2
+;Japaniversiossa osoite on 5909, taulu 590C
 $C2:5900 7C 03 59    JMP [PB:word[PB:$5903+x]]  ;$C2:5B15 A:0026 X:0026 Y:0013 D:0200 DB:00 PB:
 // Taulun C2:5903 sisältö:
 //  0-7:     594F 5B06 5B06 5945  594F 594F 594F 594F 
@@ -210,7 +212,7 @@ $C2:5900 7C 03 59    JMP [PB:word[PB:$5903+x]]  ;$C2:5B15 A:0026 X:0026 Y:0013 D
 // 10-17:    5B14 5A26 5A4C 5B15  5B15 5B15 5B15 5B15
 // 18-1F:    5B15 5B15 5B3B 5B70  5B70 5B70 5B56 5B9B
 // 20:       5BD6
-//  * 5B06: 1/2      (fonttilaajennus??)
+//  * 5B06: 1/2      (fonttilaajennus)
 //    5945: delay
 //    594F: nl/pausenl/cls/pause/nul
 //    5953: num8
@@ -225,20 +227,214 @@ $C2:5900 7C 03 59    JMP [PB:word[PB:$5903+x]]  ;$C2:5B15 A:0026 X:0026 Y:0013 D
 //    5B56: Nadia
 //  * 5B9B: item
 //  * 5BD6: Epoch
+// jap:
+//  0-7:     5958 5ADA 5ADA 594E  5958 5958 5958 5958
+//  8-F:     5958 5958 5958 5958  5958 595C 598E 59D1
+// 10-17:    5AE8 5A2F 5A55 5AE9  5AE9 5AE9 5AE9 5AE9
+// 18-1F:    5AE9 5AE9 5B0F 5B51  5B51 5B51 5B30 5B7C
+// 20:       5BAB
+
+
+// 01/02 -KÄSITTELIJÄ 5B06-5B13
+;Tekee tämän:
+;   tya, xba (edellinen merkki AH:ksi)
+;   Hakee skriptistä seuraavan merkin AL:ksi (.as, lda ($31), inc $31, .al)
+;   Hyppy $58BE (normaali merkin käsittely)
+
+// 10 -KÄSITTELIJÄ 5B14-5B14
+;Tekee tämän:
+;   Pelkkä RTS.
+
+// [monster]-KÄSITTELIJÄ 5AD0-5B05
+;Tekee tämän:
+;   Haetaan monsterin numero (lda [long[$00:D+$3D]])
+;   Päivitetään pointteria: inc [$00:D+$3D]
+;   $0237[long] <- pointteri monsterin nimeen
+;   $023A[byte] <- monsterin nimen pituus
+;   $0230[byte] <- $01
+;   Hyppy $5BF5
+
+// [tech]-KÄSITTELIJÄ 5A8E-5ACF
+;Tekee tämän:
+;   Haetaan techin numero (lda [long[$00:D+$3D]])
+;   Päivitetään pointteria: inc [$00:D+$3D]
+;   $0237[long] <- pointteri techin nimeen (jos eka merkki on tähti ($2F), se pois)
+;   $023A[byte] <- techin nimen pituus
+;   $0230[byte] <- $01
+;   Hyppy $5BF5
+
+// [item]-KÄSITTELIJÄ 5B9B-5BD5
+;Tekee tämän:
+;   Haetaan itemin numero (lda $7F:$0200)
+;   $0237[long] <- pointteri itemin nimeen (skipataan eka merkki)
+;   $023A[byte] <- itemin nimen pituus
+;   $0230[byte] <- $01
+;   Hyppy $5BF5
+
+// [member]-KÄSITTELIJÄ 5A26-5A4B:
+;Tekee tämän:
+;   Haetaan hahmon numero (lda [long[$00:D+$3D]])
+;   Päivitetään pointteria: inc [$00:D+$3D]
+;   $0237[long] <- pointteri hahmon nimeen (taulusta $C2:5FD8); segmentti $7E
+;   $023A[byte] <- hahmon nimen pituus
+;   $0230[byte] <- $01
+;   Hyppy $5BF5
+
+//  player-KÄSITTELIJÄ 5B15-5B3A
+;Tekee tämän:
+;   Haetaan hahmon numero (Y-$13)
+;   $0237[long] <- pointteri hahmon nimeen (taulusta $C2:5FD8); segmentti $7E
+;   $023A[byte] <- hahmon nimen pituus
+;   $0230[byte] <- $01 (merkintä "merkkejä jäljellä")
+;   Hyppy $5BF5
+
+//   CRONONICK-KÄSITTELIJÄ 5B3B-5B55
+;Tekee tämän:
+;   $0237[long] <- pointteri Cronon nimeen: $7E:$2C23
+;   $023A[byte] <- hahmon nimen pituus
+;   $0230[byte] <- $01 (merkintä "merkkejä jäljellä")
+;   Hyppy $5BF5
+
+//   CRONONICK-KÄSITTELIJÄ 5B0F-5B2F  JAP-VERSIOSSA
+; Tekee tämän:
+;   $0237[long] <- pointteri Cronon nimeen: $7E:$2C23
+;   $023A[byte] <- pituus, mutta max. 2
+;   $0230[byte] <- $01 (merkintä "merkkejä jäljellä")
+;   Hyppy $5BCA (jap-versiossa 5BCA)
+
+
+//   EPOCH-KÄSITTELIJÄ 5BD6-5BF4
+;Tekee tämän:
+;   $0237[long] <- pointteri Epochin nimeen: $7E:$2C4D
+;   $023A[byte] <- hahmon nimen pituus
+;   $0230[byte] <- $01 (merkintä "merkkejä jäljellä")
+;   Hyppy $5BF5
+
+//  [member #]-KÄSITTELIJÄ 5B70-5B9A
+;Tekee tämän:
+;   Haetaan jäsenen numero (Y-$1B)
+;   Haetaan hahmon numero [$7E:$2980 + jäsen]
+;   $0237[long] <- pointteri hahmon nimeen (taulusta $C2:5FD8); segmentti $7E
+;   $023A[byte] <- hahmon nimen pituus
+;   $0230[byte] <- $01 (merkintä "merkkejä jäljellä")
+;   Hyppy $5BF5
 
 // NUM16-käsittelijä:
-$C2:5985 C2 20       REP $20                            A:001C X:001C Y:000E D:0200 DB:7E PB:C2 S:06C4 P:envMxdizc HC:014 VC:076 00
-$C2:5987 A7 3D       LDA [long[$00:D+$3D]] ;$00:0201    A:001C X:001C Y:000E D:0200 DB:7E PB:C2 S:06C4 P:envmxdizc HC:032 VC:076 00
-;Hakee sen kyseisen luvun (16-bit).
-$C2:5989 85 68       STA [$00:D+$68]      ;$00:0268     A:003C X:001C Y:000E D:0200 DB:7E PB:C2 S:06C4 P:envmxdizc HC:084 VC:076 00
-;Muuttaa pointteria osoittamaan seuraavaan lukuun.
-$C2:598B E6 3D       INC [$00:D+$3D]      ;$00:023D     A:003C X:001C Y:000E D:0200 DB:7E PB:C2 S:06C4 P:envmxdizc HC:112 VC:076 00
-$C2:598D E6 3D       INC [$00:D+$3D]      ;$00:023D     A:003C X:001C Y:000E D:0200 DB:7E PB:C2 S:06C4 P:envmxdizc HC:162 VC:076 00
-$C2:598F A9 00 00    LDA A, $0000                       A:003C X:001C Y:000E D:0200 DB:7E PB:C2 S:06C4 P:envmxdizc HC:212 VC:076 00
-$C2:5992 E2 20       SEP $20                            A:0000 X:001C Y:000E D:0200 DB:7E PB:C2 S:06C4 P:envmxdiZc HC:230 VC:076 00
-$C2:5994 A5 A1       LDA [$00:D+$A1]      ;$00:02A1     A:0000 X:001C Y:000E D:0200 DB:7E PB:C2 S:06C4 P:envMxdiZc HC:248 VC:076 00
-$C2:5996 D0 15       BNE $59AD                          A:0000 X:001C Y:000E D:0200 DB:7E PB:C2 S:06C4 P:envMxdiZc HC:268 VC:076 00
-;jne....
+$C2:5985 C2 20       REP #$20
+;Hakee kyseisen luvun (16-bit).
+$C2:5987 A7 3D       LDA [$3D]   [$000201]
+$C2:5989 85 68       STA $68     [$000268]
+;Ja muuttaa pointterin osoittamaan seuraavaan lukuun.
+$C2:598B E6 3D       INC $3D     [$00023D]
+$C2:598D E6 3D       INC $3D     [$00023D]
+$C2:598F A9 00 00    LDA #$0000
+$C2:5992 E2 20       SEP #$20
+$C2:5994 A5 A1       LDA $A1     [$0002A1] 
+$C2:5996 D0 15       BNE $59AD   [+21]
+;Jos 2A1=0
+$C2:5998 20 80 61    JSR $6180   [$C26180]
+$C2:599B A6 60       LDX $60     [$000260]
+$C2:599D 86 40       STX $40     [$000240]
+$C2:599F A6 62       LDX $62     [$000262]
+$C2:59A1 86 42       STX $42     [$000242]
+$C2:59A3 A5 64       LDA $64     [$000264]
+$C2:59A5 85 44       STA $44     [$000244]
+$C2:59A7 20 91 5D    JSR $5D91   [$C25D91] ? paluuarvo: A=pituus
+$C2:59AA 4C FC 59    JMP $59FC   [$C259FC] ?
+;Jos 2A1 <> 0
+$C2:59AD C2 20       REP #$20
+$C2:59AF 64 6A       STZ $6A     [$00026A]
+$C2:59B1 A5 68       LDA $68     [$000268]
+$C2:59B3 EB          XBA                  
+$C2:59B4 85 60       STA $60     [$000260]
+$C2:59B6 20 C0 5C    JSR $5CC0   [$005CC0] ?
+$C2:59B9 A5 68       LDA $68     [$000268]
+$C2:59BB 85 60       STA $60     [$000260]
+$C2:59BD 20 C0 5C    JSR $5CC0   [$C25CC0] ?
+$C2:59C0 A9 04 00    LDA #$0004           
+$C2:59C3 E2 20       SEP #$20             
+$C2:59C5 4C 11 5A    JMP $5A11   [$C25A11] ?
+;
+$C2:59FC 85 3A       STA $3A     [$00023A] ;pituus
+$C2:59FE A2 40 02    LDX #$0240           
+$C2:5A01 86 37       STX $37     [$000237] ;offset
+$C2:5A03 A9 00       LDA #$00             
+$C2:5A05 85 39       STA $39     [$000239] ;segment
+$C2:5A07 A9 02       LDA #$02             
+$C2:5A09 85 30       STA $30     [$000230] ;ohje $02 ??
+$C2:5A0B A9 00       LDA #$00             
+$C2:5A0D EB          XBA                  
+$C2:5A0E 4C 3E 5C    JMP $5C3E   [$C25C3E] ?
+;
+$C2:5A11 85 3A       STA $3A     [$00023A] ;pituus
+$C2:5A13 A2 40 02    LDX #$0240           
+$C2:5A16 86 37       STX $37     [$000237] ;offset
+$C2:5A18 A9 00       LDA #$00             
+$C2:5A1A 85 39       STA $39     [$000239] ;segment
+$C2:5A1C A9 03       LDA #$03             
+$C2:5A1E 85 30       STA $30     [$000230] ;ohje $03 ??
+$C2:5A20 A9 00       LDA #$00             
+$C2:5A22 EB          XBA                  
+$C2:5A23 4C 77 5C    JMP $5C77   [$C25C77] ;?
+;
+$C2:5C3E A7 37       LDA [$37]   [$000240]
+$C2:5C40 18          CLC                  
+$C2:5C41 69 D4       ADC #$D4              ; '0'
+$C2:5C43 C2 20       REP #$20             
+$C2:5C45 85 35       STA $35     [$000235]
+$C2:5C47 E6 37       INC $37     [$000237]
+$C2:5C49 E2 20       SEP #$20             
+$C2:5C4B 20 C4 5D    JSR $5DC4   [$005DC4] ;piirtää yhden merkin.
+$C2:5C4E A9 00       LDA #$00             
+$C2:5C50 C6 3A       DEC $3A     [$00023A] 
+$C2:5C52 F0 02       BEQ $5C56   [+2]     
+$C2:5C54 09 01       ORA #$01             
+$C2:5C56 C6 13       DEC $13     [$000213]
+$C2:5C58 F0 02       BEQ $5C5C   [+2]     
+$C2:5C5A 09 02       ORA #$02             
+$C2:5C5C 0A          ASL A                
+$C2:5C5D AA          TAX                  
+$C2:5C5E 7C 61 5C    JMP ($5C61,x)        
+                     ; 5C69 5C6B 5C70 5C75
+$C2:5C69 64 30       STZ $30     [$000230]  ;tapaus 0
+$C2:5C6B A9 10       LDA #$10               ;tapaus 1
+$C2:5C6D 85 15       STA $15     [$000215]
+$C2:5C6F 60          RTS                  
+;
+$C2:5C70 64 30       STZ $30     [$000030]  ;tapaus 2
+$C2:5C72 4C B2 58    JMP $58B2   [$C258B2]  ;hakemaan seuraava merkki (?)
+$C2:5C75 80 C7       BRA $5C3E   [-57]      ;tapaus 3
+;
+$C2:5C77 A7 37       LDA [$37]   [$000240]
+$C2:5C79 C2 20       REP #$20             
+$C2:5C7B E6 37       INC $37     [$000237]
+$C2:5C7D E2 20       SEP #$20             
+$C2:5C7F C9 01       CMP #$01             
+$C2:5C81 F0 04       BEQ $5C87   [+4]     
+$C2:5C83 C9 02       CMP #$02             
+$C2:5C85 D0 07       BNE $5C8E   [+7]     
+$C2:5C87 EB          XBA                    ;tapaus >= $100          
+$C2:5C88 A7 37       LDA [$37]   [$000240]
+$C2:5C8A C2 20       REP #$20             
+$C2:5C8C E6 37       INC $37     [$000237]
+$C2:5C8E C2 20       REP #$20               ;jatkuu
+$C2:5C90 85 35       STA $35     [$000235]
+$C2:5C92 E2 20       SEP #$20             
+$C2:5C94 20 C4 5D    JSR $5DC4   [$C25DC4] ;piirtämään merkki.
+$C2:5C97 A9 00       LDA #$00             
+$C2:5C99 C6 3A       DEC $3A     [$00023A]
+$C2:5C9B F0 02       BEQ $5C9F   [+2]     
+$C2:5C9D 09 01       ORA #$01             
+$C2:5C9F C6 13       DEC $13     [$000213]
+$C2:5CA1 F0 02       BEQ $5CA5   [+2]     
+$C2:5CA3 09 02       ORA #$02             
+$C2:5CA5 0A          ASL A                
+$C2:5CA6 AA          TAX                  
+$C2:5CA7 7C AA 5C    JMP ($5CAA,x)
+
+
+
+
 
 // [tech]/[monster]-KÄSITTELIJÄ.
 ;Hakee seuraavan tavun.
@@ -277,97 +473,19 @@ $C2:5A7E A9 01       LDA A, $01
 $C2:5A80 85 30       STA [$00:D+$30]      ;$00:0230 
 $C2:5A82 4C F5 5B    JMP DB:$5BF5         ;$7E:5BF5 
 
-
 ; [tech] jälkeen tuli < 8
 $C2:5A85 0A          ASL A                              A:0001 X:0024 Y:0012 D:0200 DB:7E PB:C2
 $C2:5A86 AA          TAX                                A:0002 X:0024 Y:0012 D:0200 DB:7E PB:C2
 $C2:5A87 7C 8A 5A    JMP [PB:word[PB:$5A8A+x]] ;$C2:5AD0 A:0002 X:0002 Y:0012 D:0200 DB:7E PB:C
+
 // Taulun sisältö:
-//      5A8E 5AD0
-
-// 01/02 -KÄSITTELIJÄ.
-// Lataa skriptistä seuraavan merkin ja tulostaa sen sellaisenaan.
-$C2:5B06 98          TYA                            
-$C2:5B07 EB          XBA                            
-$C2:5B08 A7 31       LDA [long[$00:D+$31]] ;$CC:3C14
-$C2:5B0A C2 20       REP $20                        
-$C2:5B0C EE 31 02    INC DB:$0231         ;$7E:0231 
-$C2:5B0F E2 20       SEP $20                        
-;Hyppy normaalin merkin käsittelijään
-$C2:5B11 4C BE 58    JMP DB:$58BE         ;$7E:58BE 
-
-;Tähän päädytään, jos merkki oli $10 kohdassa $C2:5900
-$C2:5B14 60          RTS
-
-// [monster]-KÄSITTELIJÄ 5AD0-5B05
-;Sisältö:
-;   Haetaan monsterin numero (lda [long[$00:D+$3D]])
-;   Päivitetään pointteria: inc [$00:D+$3D]
-;   $0237[long] <- pointteri monsterin nimeen
-;   $023A[byte] <- monsterin nimen pituus
-;   $0230[byte] <- $01
-;   Hyppy $5BF5
-
-// [tech]-KÄSITTELIJÄ 5A8E-5ACF
-;Sisältö:
-;   Haetaan techin numero (lda [long[$00:D+$3D]])
-;   Päivitetään pointteria: inc [$00:D+$3D]
-;   $0237[long] <- pointteri techin nimeen (jos eka merkki on tähti ($2F), se pois)
-;   $023A[byte] <- techin nimen pituus
-;   $0230[byte] <- $01
-;   Hyppy $5BF5
-
-// [item]-KÄSITTELIJÄ 5B9B-5BD5
-;Sisältö:
-;   Haetaan itemin numero (lda $7F:$0200)
-;   $0237[long] <- pointteri itemin nimeen (skipataan eka merkki)
-;   $023A[byte] <- itemin nimen pituus
-;   $0230[byte] <- $01
-;   Hyppy $5BF5
-
-// [member]-KÄSITTELIJÄ 5A26-5A4B:
-;Sisältö:
-;   Haetaan hahmon numero (lda [long[$00:D+$3D]])
-;   Päivitetään pointteria: inc [$00:D+$3D]
-;   $0237[long] <- pointteri hahmon nimeen (taulusta $C2:5FD8); segmentti $7E
-;   $023A[byte] <- hahmon nimen pituus
-;   $0230[byte] <- $01
-;   Hyppy $5BF5
-
-//  player-KÄSITTELIJÄ 5B15-5B3A
-;Sisältö:
-;   Haetaan hahmon numero (Y-$13)
-;   $0237[long] <- pointteri hahmon nimeen (taulusta $C2:5FD8); segmentti $7E
-;   $023A[byte] <- hahmon nimen pituus
-;   $0230[byte] <- $01 (merkintä "merkkejä jäljellä")
-;   Hyppy $5BF5
-
-//   CRONONICK-KÄSITTELIJÄ 5B3B-5B55
-;Sisältö:
-;   $0237[long] <- pointteri Cronon nimeen: $7E:$2C23
-;   $023A[byte] <- hahmon nimen pituus
-;   $0230[byte] <- $01 (merkintä "merkkejä jäljellä")
-;   Hyppy $5BF5
-
-//   EPOCH-KÄSITTELIJÄ 5BD6-5BF4
-;Sisältö:
-;   $0237[long] <- pointteri Epochin nimeen: $7E:$2C4D
-;   $023A[byte] <- hahmon nimen pituus
-;   $0230[byte] <- $01 (merkintä "merkkejä jäljellä")
-;   Hyppy $5BF5
-
-//  [member #]-KÄSITTELIJÄ 5B70-5B9A
-;Sisältö:
-;   Haetaan jäsenen numero (Y-$1B)
-;   Haetaan hahmon numero [$7E:$2980 + jäsen]
-;   $0237[long] <- pointteri hahmon nimeen (taulusta $C2:5FD8); segmentti $7E
-;   $023A[byte] <- hahmon nimen pituus
-;   $0230[byte] <- $01 (merkintä "merkkejä jäljellä")
-;   Hyppy $5BF5
+//      5A8E ([tech], ks ylempänä)
+//      5AD0 ([monster], ks ylempänä)
 
 
 
-// Tänne päädytään, kun on jokin 12pix-merkki, joka selvästi voidaan tulostaa.
+
+// Tänne päädytään, kun ollaan käsittelemässä ALIMERKKIJONOA.
 // Syöte:
 //   $0237[long] = pointteri merkkijonoon
 //   $023A[byte] = merkkijonon pituus MERKKEINÄ (ei tavuina)
@@ -379,6 +497,7 @@ $C2:5B14 60          RTS
 //   $0230[byte] = 0 jos skripti loppui, muuten ei muuteta
 
 // Haetaan merkki.
+; Jap-versiossa osoite 5BCA
 $C2:5BF5 A7 37       LDA [long[D+37]]     ;$DE:FB4C     A:0001 X:0038 Y:001F D:0200 DB:00 PB:C2
 // Kasvatetaan pointteria
 $C2:5BF7 C2 20       REP $20                            A:00C8 X:0038 Y:001F D:0200 DB:00 PB:C2

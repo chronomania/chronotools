@@ -242,6 +242,7 @@ void insertor::GenerateCode()
     PlaceData(Font8.GetTiles(), GetConst(TILETAB_8_ADDRESS));
     
     GenerateConjugatorCode();
+    GenerateCrononickCode();
     GenerateSignatureCode();
 
     /* Ensure all code has addresses */

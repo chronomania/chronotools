@@ -152,6 +152,7 @@ Copypaste from the Makefile:
 # VERSION 1.7.0  some error checking; windows build of the assembler
 # VERSION 1.8.0  is GPL
 # VERSION 1.8.1  requires separate snescom (not bundled anymore)
+# VERSION 1.9.0  unified some configuration parts; added crononick-code support
 </pre>
 
 ", '1. Program list' => "
