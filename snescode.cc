@@ -138,12 +138,12 @@ struct Image
         }
     }
     
-    void MakeData(unsigned segment)
+    void MakeData()
     {
         vector<unsigned char> uncompressed;
         LoadImageData(image, uncompressed);
         OriginalSize = uncompressed.size();
-        ImgData = Compress(&uncompressed[0], uncompressed.size(), segment);
+        ImgData = Compress(&uncompressed[0], uncompressed.size());
     }
 };
 
@@ -198,13 +198,12 @@ void insertor::WriteUserCode()
     if(true) /* load images */
     {
         const ConfParser::ElemVec& elems = GetConf("linker", "add_image").Fields();
-        for(unsigned a=0; a<elems.size(); a += 5)
+        for(unsigned a=0; a<elems.size(); a += 4)
         {
             const wstring& imagefn     = elems[a];
-            const unsigned segment        = elems[a+1];
-            const wstring& tab_sym     = elems[a+2];
-            const wstring& pal_sym     = elems[a+3];
-            const wstring& palsize_sym = elems[a+4];
+            const wstring& tab_sym     = elems[a+1];
+            const wstring& pal_sym     = elems[a+2];
+            const wstring& palsize_sym = elems[a+3];
         
             const string filename = WstrToAsc(imagefn);
 
@@ -214,7 +213,7 @@ void insertor::WriteUserCode()
                 continue;
             }
             
-            img.MakeData(segment);
+            img.MakeData();
             img.MakePalette();
             
             objects.DefineSymbol(WstrToAsc(img.palsize_sym), img.Palette.size());

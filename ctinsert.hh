@@ -55,7 +55,7 @@ private:
         {
             zptr8, zptr12, fixed,
             item, tech, monster,
-            compressed7E, compressed7F,
+            compressed,
             locationevent
         } strtype;
         strtype type;

@@ -92,14 +92,13 @@ void insertor::WriteImages()
     if(true) /* Load packed images */
     {
         const ConfParser::ElemVec& elems = GetConf("images", "packedimage").Fields();
-        for(unsigned a=0; a<elems.size(); a += 6)
+        for(unsigned a=0; a<elems.size(); a += 5)
         {
-            unsigned ptr_ofs_address   = elems[a];
+            unsigned ptr_ofs_address   = elems[a+0];
             unsigned ptr_seg_address   = elems[a+1];
             unsigned space_address     = elems[a+2];
             unsigned orig_size         = elems[a+3];
-            unsigned segment           = elems[a+4];
-            const wstring& filename = elems[a+5];
+            const wstring& filename    = elems[a+4];
             
             /* The addresses must be ROM-based. */
             
@@ -115,7 +114,7 @@ void insertor::WriteImages()
             
             MessageLoadingItem(fn);
 
-            data = Compress(&data[0], data.size(), segment);
+            data = Compress(&data[0], data.size());
             
             //fprintf(stderr, " (%u bytes)\n", data.size());
             

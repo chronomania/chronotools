@@ -16,6 +16,7 @@ using namespace std;
 #include "dumpfont.hh"
 #include "dumpgfx.hh"
 #include "msgdump.hh"
+#include "miscfun.hh"
 
 static const char scriptoutfile[] = "ctdump.out";
 

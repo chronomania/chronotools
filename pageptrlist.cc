@@ -4,6 +4,7 @@
 #include "scriptfile.hh"
 #include "pageptrlist.hh"
 #include "msginsert.hh"
+#include "miscfun.hh"
 #include "ctinsert.hh"
 
 using namespace std;

@@ -463,10 +463,10 @@ namespace
           functiondata(),
           PendingCall(),
           ALstate(), AHstate(),
-          LoopStack(),
           LoopHelperName(GetConf("compiler", "loophelpername")),
           OutcHelperName(GetConf("compiler", "outchelpername")),
-          MagicVarName(GetConf("compiler", "magicvarname"))
+          MagicVarName(GetConf("compiler", "magicvarname")),
+          LoopStack()
         {
             Assume(UnknownXY, UnknownA);
             Assume(CarryUnknown);

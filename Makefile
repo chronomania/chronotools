@@ -131,22 +131,23 @@ DEPDIRS = utils/
 # VERSION 1.14.2 fixes a bug related to Lucca's SightScope with long monster names.
 # VERSION 1.14.3 supports changing the character names! Do a redump with ctdump and see.
 # VERSION 1.15.0.0 preliminary support for location events.
+# VERSION 1.15.0.1 improved compression.
 
 #OPTIM=-Os
 # -fshort-enums
 # -fpack-struct
-OPTIM=-O0
+#OPTIM=-O0
 #OPTIM=-O1 -pg
 #OPTIM=-O3 -pg
 #LDFLAGS += -pg
-#OPTIM=-O3
+OPTIM=-O3
 
 CXXFLAGS += -I.
 CFLAGS += -I/usr/include/slang
 LDFLAGS += -L/usr/lib/slang
 
 
-VERSION=1.15.0.0
+VERSION=1.15.0.1
 ARCHFILES=utils/xray.cc utils/xray.h \
           utils/viewer.c \
           utils/vwftest.cc \

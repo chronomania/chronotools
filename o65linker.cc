@@ -10,7 +10,7 @@ using std::list;
 using std::map;
 
 #include "hash.hh"
-#include "wstring.hh"
+#include "miscfun.hh"
 
 class O65linker::Object
 {

@@ -231,8 +231,7 @@ const ctstring insertor::ParseScriptEntry(const wstring &input, const stringdata
                 case stringdata::item:
                 case stringdata::tech:
                 case stringdata::monster:
-                case stringdata::compressed7E:
-                case stringdata::compressed7F:
+                case stringdata::compressed:
                     chronoc = getctchar(c, cset_8pix);
                     break;
                 case stringdata::locationevent:
@@ -359,8 +358,7 @@ const ctstring insertor::ParseScriptEntry(const wstring &input, const stringdata
         {
             result += (ctchar)atoi(code.c_str()+1, 16);
             
-            if(model.type != stringdata::compressed7E
-            && model.type != stringdata::compressed7F)
+            if(model.type != stringdata::compressed)
             {
                 /* raw codes are only allowed in compressed data. */
                 /* for others, remember the warning. */
@@ -536,7 +534,7 @@ void insertor::LoadFile(FILE *fp)
             }
             else if(header.size() >= 1 && header[0] == 'c')
             {
-                model.type = stringdata::compressed7E;
+                model.type = stringdata::compressed;
                 MessageC8Section(header);
             }
             else if(header.size() >= 5 && header[0] == 'e')
@@ -1038,23 +1036,13 @@ void insertor::WriteCompressedStrings()
     for(stringlist::const_iterator i=strings.begin(); i!=strings.end(); ++i)
     {
         MessageWorking();
-        if(i->type == stringdata::compressed7E)
+        if(i->type == stringdata::compressed)
         {
             const string s = GetString(i->str);
             const unsigned char* ptr = (const unsigned char*)s.data();
-            vector<unsigned char> data = Compress(ptr, s.size(), 0x7E);
+            vector<unsigned char> data = Compress(ptr, s.size());
             
-            std::string name = format("compr_data7E_%u", counter);
-            objects.AddLump(data, name, name);
-            objects.AddReference(name, LongPtrFrom(i->address));
-        }
-        else if(i->type == stringdata::compressed7F)
-        {
-            const string s = GetString(i->str);
-            const unsigned char* ptr = (const unsigned char*)s.data();
-            vector<unsigned char> data = Compress(ptr, s.size(), 0x7F);
-            
-            std::string name = format("compr_data7F_%u", counter);
+            std::string name = format("compr_data_%u", counter);
             objects.AddLump(data, name, name);
             objects.AddReference(name, LongPtrFrom(i->address));
         }

@@ -48,9 +48,6 @@ static byte font[256][8];
 #include "compress.hh"
 #include "xray.h"
 
-//dummy, used by compress.o
-void MessageWorking() { fprintf(stderr, "."); }
-
 static unsigned SwapPosition
    (unsigned swapwidth,
     unsigned swapheight,

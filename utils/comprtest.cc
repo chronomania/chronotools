@@ -60,10 +60,10 @@ static unsigned Decompress(unsigned addr)
 }
 
 static void Try(const vector<unsigned char>& Orig, unsigned n,
-                unsigned seg, unsigned bits)
+                unsigned bits)
 {
-    fprintf(stderr, "Segment %X, bits %u:\n", seg, bits);
-    vector<unsigned char> result = Compress(&Orig[0], n, seg, bits);
+    fprintf(stderr, "Bits %u:\n", bits);
+    vector<unsigned char> result = Compress(&Orig[0], n, bits);
     unsigned comsize = result.size();
 
     fprintf(stderr, "Generated %u bytes of compressed data.\n", comsize);
@@ -107,26 +107,19 @@ static void RecompressTests(unsigned n)
 {
     vector<unsigned char> Orig = Data;
     
-    Try(Orig, n, 0x7F, 11);
+    Try(Orig, n, 11);
 
-    Try(Orig, n, 0x7F, 12);
-
-    Try(Orig, n, 0x7E, 11);
-
-    Try(Orig, n, 0x7E, 12);
+    Try(Orig, n, 12);
 }
 
-static const vector<unsigned char> Compress(unsigned char seg, unsigned n)
+static const vector<unsigned char> Compress(unsigned n)
 {
-    vector<unsigned char> result1 = Compress(&Data[0], n, seg, 11);
-    vector<unsigned char> result2 = Compress(&Data[0], n, seg, 12);
-    
-    return result1.size() < result2.size() ? result1 : result2;
+    return Compress(&Data[0], n);
 }
 
-static void PerformanceTest(unsigned char seg, unsigned n)
+static void PerformanceTest(unsigned n)
 {
-    vector<unsigned char> result = Compress(seg, n);
+    vector<unsigned char> result = Compress(n);
     fprintf(stderr, "Recompressed as %u bytes (from %u bytes)", result.size(), n);
 
     vector<unsigned char> data;
@@ -186,46 +179,50 @@ int main(void)
     
     unsigned addr, n;
 
-#if 0
+#if 1
+    addr = 0xDB0000; // Settings
+    n = Decompress(addr);
+    PerformanceTest(n);
+    
     addr = 0xFE6002; // Title screen stuff
     n = Decompress(addr);
-    PerformanceTest(0x7F, n);
+    PerformanceTest(n);
     
     addr = 0xC40EB8; // more map gfx
     n = Decompress(addr);
-    PerformanceTest(0x7F, n);
+    PerformanceTest(n);
     
     addr = 0xC59A56; // players on map
     n = Decompress(addr);
-    PerformanceTest(0x7E, n);
+    PerformanceTest(n);
     
     addr = 0xC40000; // map gfx, perhaps
     n = Decompress(addr);
-    PerformanceTest(0x7E, n);
+    PerformanceTest(n);
     
     addr = 0xC6FB00; // tile indices in time gauge ?
     n = Decompress(addr);
-    PerformanceTest(0x7F, n);
+    PerformanceTest(n);
     
     addr = 0xC62000; // no idea about this one
     n = Decompress(addr);
-    PerformanceTest(0x7F, n);
+    PerformanceTest(n);
     
     addr = 0xC5D80B; // "?" time label
     n = Decompress(addr);
-    PerformanceTest(0x7F, n);
+    PerformanceTest(n);
     
     addr = 0xC5DA88; // Time label boxes and "PONTPO"
     n = Decompress(addr);
-    PerformanceTest(0x7F, n);
+    PerformanceTest(n);
     
     addr = 0xFD0000; // It's a font
     n = Decompress(addr);
-    PerformanceTest(0x7E, n);
+    PerformanceTest(n);
     
     addr = 0xC38000; // time gauge gfx titles
     n = Decompress(addr);
-    PerformanceTest(0x7F, n);
+    PerformanceTest(n);
 #endif
     
 #if 0
