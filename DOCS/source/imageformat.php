@@ -7,7 +7,9 @@ $progname = 'chronotools';
 $text = Array(
    '1. Introduction' => "
    
-All files handled by Chronotools are TARGA (.tga) files.<br>
+All files handled by
+<a href=\"http://bisqwit.iki.fi/source/chronotools.html\">Chronotools</a>
+are TARGA (.tga) files.<br>
 There are the following requirements:
 <ul>
  <li>The files must be saved NON-COMPRESSED (not RLE encoded)</li>

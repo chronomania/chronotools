@@ -23,23 +23,31 @@ SMALL    {font-size:70%}
   <h1>Chronotools - signature feature</h1>
   <h2 class=level2> 0. Contents </h2>
   
-  This is the documentation of chronotools-1.15.3.
+  This is the documentation of chronotools-1.15.3.2.
 <div class=toc><table cellspacing=0 cellpadding=0 class=toc><tr><td width="50%" valign=middle align=left nowrap class=toc>&nbsp;&nbsp;&nbsp;1. <a href="#h0">Introduction</a><br></td>
 <td width="50%" valign=middle align=left nowrap class=toc>&nbsp;&nbsp;&nbsp;2. <a href="#h1">How to</a><br>&nbsp;&nbsp;&nbsp;3. <a href="#download">Downloading</a><br></td>
 </tr></table></div><H2 id="h0" class="level2"><a name="h0"></a>1. Introduction</H2><div class="level2" id="divh0">
    
-Chronotools allows you to insert arbitrary SNES code to your translation.
+<a href="http://bisqwit.iki.fi/source/chronotools.html">Chronotools</a>
+allows you to insert arbitrary SNES code to your translation.
 This includes a "signature" feature.
-<p>
+  <p>
 Signature is a logo, displayed on the startup screen of the game,
 as shown below for example:<br>
-<img src="http://bisqbot.stc.cx/img/ct/ctfin-screen2.png" alt="Chronofin logo">
+<img src="http://bisqwit.iki.fi/ctfin/dev/ctfin-screen2.png" alt="Chronofin logo">
+  <p>
+  &nbsp;
+  <p>
+ATTENTION: This feature is provided for making your publication
+identified - preventing people claiming it as their own. Do not
+use it for bragging. I recommend that you will ignore this feature
+until your translation is ready for test releases.
 
 </div><H2 id="h1" class="level2"><a name="h1"></a>2. How to</H2><div class="level2" id="divh1">
 
 If you want to add a signature, the easiest way is as follows:
-<p>
-Add the following lines to your <code>ct.cfg</code>
+  <p>
+Add the following lines to your <tt>ct.cfg</tt>
 in the <code>[linker]</code> section:
 
 <pre>
@@ -49,13 +57,13 @@ add_call_of "show_moglogo"   $FDE62F 0 false
 add_image   "moglogo.tga"    "TILEDATA_ADDR"  "PALETTE_ADDR" "PALETTE_SIZE"
 </pre>
 
-This tells the insertor that it must include code from <code>ct-moglogo.o65</code>
+This tells the insertor that it must include code from <tt>ct-moglogo.o65</tt>
 and insert a call of the routine <code>show_moglogo</code> at $FDE62F in the ROM,
-and that it should read and insert the image <code>moglogo.tga</code>, compress
+and that it should read and insert the image <tt>moglogo.tga</tt>, compress
 it and assign several constants for referring to it.
-<p>
-You can create <code>ct-moglogo.o65</code> by compiling the
-included <code>ct-moglogo.a65</code> file with
+  <p>
+You can create <tt>ct-moglogo.o65</tt> by compiling the
+included <tt>ct-moglogo.a65</tt> file with
 <a href="http://bisqwit.iki.fi/source/snescom.html">snescom</a>,
 a SNES assembler, or asking me to send it to you.
 
@@ -64,9 +72,9 @@ a SNES assembler, or asking me to send it to you.
    is at <a href="http://iki.fi/bisqwit/source/chronotools.html">http://iki.fi/bisqwit/source/chronotools.html</a>.<br>
    Check there for new versions.
 </div> <p align=right><small>Generated from
-       <tt>source/signature.php</tt> (last updated: Sat, 22 Jan 2005 17:31:30 +0200)<br>
+       <tt>source/signature.php</tt> (last updated: Fri, 18 Feb 2005 15:08:45 +0200)<br>
   with <tt>docmaker.php</tt> (last updated: Sat, 22 Jan 2005 05:01:19 +0200)<br>
-  at Mon, 31 Jan 2005 12:16:01 +0200</small>
+  at Fri, 18 Feb 2005 15:08:50 +0200</small>
  </p>
 </body>
 </html>

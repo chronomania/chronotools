@@ -483,6 +483,7 @@ namespace
         BlockComment(L";configuration screen strings\n");
         DumpZStrings(0x3FD3FE, L"cfg", 50, false);
         
+/*
         BlockComment(L";This block initializes some of the game RAM.\n"
                      L";It is compressed as whole, and thus requires the whole\n"
                      L";data... The important bit you may want to edit is the\n"
@@ -493,6 +494,7 @@ namespace
                      L";   Magus[0]      ->  Ma[0][0][0][0]\n"
                     );
         DumpC8String(0x3CFA35, L"statusram");
+*/
 
         PutAscii(L";\n\n\n\n"
                  L";-----------------\n"

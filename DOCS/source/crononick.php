@@ -27,7 +27,7 @@ only displays the first two syllables of it.
 In the English version you don't see this happening because the
 localizers weren't able to invent an algorithm to simplify the name.<br>
 However, the skeleton for that is still present in CT ROM,
-and for this reason Chronotools supports it.
+and for this reason <a href=\"http://bisqwit.iki.fi/source/chronotools.html\">Chronotools</a> supports it.
 <p>
 If you happen to invent a way to convert any 1-5 letter name
 into a nickname using the rules of your native language, you

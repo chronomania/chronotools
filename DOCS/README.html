@@ -23,7 +23,7 @@ SMALL    {font-size:70%}
   <h1>Chrono Trigger translation development system</h1>
   <h2 class=level2> 0. Contents </h2>
   
-  This is the documentation of chronotools-1.15.3.1.
+  This is the documentation of chronotools-1.15.3.2.
 <div class=toc><table cellspacing=0 cellpadding=0 class=toc><tr><td width="33%" valign=middle align=left nowrap class=toc>&nbsp;&nbsp;&nbsp;1. <a href="#what">Purpose</a><br>&nbsp;&nbsp;&nbsp;2. <a href="#how">How to begin?</a><br>&nbsp;&nbsp;&nbsp;3. <a href="#status">Current status</a><br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;3.1. <a href="#changes">Version history</a><br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;3.1.1. <a href="#h0">Release notes</a><br>&nbsp;&nbsp;&nbsp;4. <a href="#h1">Program list</a><br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;4.1. <a href="#ctdump">ctdump</a><br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;4.2. <a href="#ctinsert">ctinsert</a><br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;4.3. <a href="#h2">other</a><br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;4.3.1. <a href="#h3">makeips</a><br></td>
 <td width="33%" valign=middle align=left nowrap class=toc>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;4.3.2. <a href="#h4">unmakeips</a><br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;4.3.3. <a href="#h5">xray</a><br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;4.3.4. <a href="#h6">viewer</a><br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;4.3.5. <a href="#h7">sramdump</a><br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;4.3.6. <a href="#h8">base62</a><br>&nbsp;&nbsp;&nbsp;5. <a href="#h9">Useful features</a><br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;5.1. <a href="#conj">Player name inflection</a><br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;5.2. <a href="#skew">Font/dictionary skew</a><br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;5.3. <a href="#wrap">Automatic paragraph wrapping</a><br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;5.4. <a href="#vwf8">Variable width 8pix font</a><br></td>
 <td width="34%" valign=middle align=left nowrap class=toc>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;5.5. <a href="#expand">Expansion to 48 Mbit or 64 Mbit</a><br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;5.6. <a href="#h10">Location event support</a><br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;5.7. <a href="#h11">Very configurable</a><br>&nbsp;&nbsp;&nbsp;6. <a href="#h12">Summary of extra features</a><br>&nbsp;&nbsp;&nbsp;7. <a href="#req">Requirements</a><br>&nbsp;&nbsp;&nbsp;8. <a href="#copying">Copying</a><br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;8.1. <a href="#parts">If you only are interested in some features/parts</a><br>&nbsp;&nbsp;&nbsp;9. <a href="#docs">Documentation</a><br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;9.1. <a href="#undocs">Undocumented things</a><br>&nbsp;&nbsp;&nbsp;10. <a href="#helpneeded">See also</a><br>&nbsp;&nbsp;&nbsp;11. <a href="#download">Downloading</a><br></td>
@@ -57,23 +57,11 @@ So here's what you do if you want to translate Chrono Trigger.
 
 <ul>
  <li><a href="#download">Download</a> Chronotools.
-     (Source code on this site.
-      Windows binaries may be available upon request.)</li>
+     (Source code on this site. Windows binaries also
+      available, but not always up-to-date.)</li>
  <li>You need the Chrono Trigger English ROM. (You won't get it from me.)</li>
- <li>You dump the script and images from the ROM using
-     <a href="#ctdump">ctdump</a>, included in Chronotools.</li>
- <li>You redesign the font using an image manipulation
-     program such as <a href="http://www.gimp.org">GIMP</a>,
-     editing <tt>ct16fn.tga</tt> and <tt>ct8fn.tga</tt>,
-     and update the configuration to match the new character set
-     in your font and script files.</li>
- <li>You translate the script, once in a while testing it
-     by creating patches with <a href="#ctinsert">ctinsert</a>.</li>
- <li>You ask me how to do this and that what you don't know. :)<br>
-     For example, what to do if ctinsert reports errors,
-     or if you want features like
-     <a href="#conj">player name inflection</a> or
-     <a href="#vwf8">variable width 8pix font</a>.</li>
+ <li>Read <a href="http://bisqwit.iki.fi/ctfin/dev/quickstart.html"
+      >the quick start guide</a>.</li>
 </ul>
 
 Feel free to <a href="#copying">contact me</a> in questions
@@ -85,7 +73,7 @@ you might have about translating/hacking Chrono Trigger.<br>
 Chronotools is under active development.
 Here's the current situation.<br>
 Last updated:
-2005-01-31
+2005-02-18
 
 <p>
 <table>
@@ -236,6 +224,7 @@ Copypaste from the Makefile:
 # VERSION 1.15.2.1 conjugator supports now [member].
 # VERSION 1.15.3 conjugator now supports definition by a table.
 # VERSION 1.15.3.1 minor changes in conjugator for severe grammars.
+# VERSION 1.15.3.2 a bugfix in ctdump (deleting the *c block). Added more documentation!
 </pre>
 
 To use the character name changing feature, do a redump with ctdump
@@ -273,19 +262,21 @@ Produces the script file, the font files and a couple
 of other image files.
 <p>
 Sample of produced script:<pre class=smallerpre
->;1000ad (Lucca's home)
-*z;106 pointerstrings (12pix font)
+>*z;dialog
+;-----------------
+;1000ad (Lucca's home)
+;2300ad (factory)
+;1000ad (rainbow shell trial)
+;-----------------
 $F1IO:
 [nl]
             You got 1 [item]!
 $F1IQ:
 LARA: Oh, hi Crono.[nl]
-   Lucca's off at Leene Square with[nl]
-   her father, Taban, unveiling her new[nl] 
-   invention.
+   Lucca's off at Leene Square with her
+   father, Taban, unveiling her new invention.
 $F1IS:
-LARA: Lucca and Taban only care[nl]
-   about their silly toys!</pre>
+LARA: Lucca and Taban only care about their silly toys!</pre>
 (Dumped from the English ROM)
 <p>
 Usage example:
@@ -294,15 +285,21 @@ Usage example:
 </td><td valign=top align=right>
 
 <table><tr><td align=center>
-<img src="/src/chronotools-esp.png"
-     alt="sample" style="padding-right:10px" >
-<br>
-<small> Example screenshot in Spanish </small>
+<img src="/src/chronotools-fin.png"
+     alt="sample" style="padding-right:10px" ><br>
+<small> Example screenshot in Finnish </small><br>
+<p>
+<img src="/src/chronotools-pol.png"
+     alt="sample" style="padding-right:10px" ><br>
+<small> Example screenshot in Polish </small><br>
 </td></tr></table>
 
 </td></tr></table>
 
 </div><H3 id="ctinsert" class="level3"><a name="ctinsert"></a>4.2. ctinsert</H3><div class="level3" id="divctinsert">
+
+<table cellspacing=0 cellpadding=0 width="100%">
+<tr><td valign=top>
 
 Reinserts the (edited) script and (edited) fonts to a ROM.<br>
 Requires the files referenced by <tt>ct.cfg</tt>
@@ -310,6 +307,16 @@ Requires the files referenced by <tt>ct.cfg</tt>
 elemental images and optional extra fonts and code files).<br>
 Produces <tt>ctpatch-hdr.ips</tt> and <tt>ctpatch-nohdr.ips</tt>.<br>
 Curiously, it doesn't require the ROM.
+
+</td><td valign=top align=right>
+
+<table><tr><td align=center>
+<img src="/src/chronotools-cro.png"
+     alt="sample" style="padding-right:10px" ><br>
+<small> Example screenshot in Croatian </small><br>
+</td></tr></table>
+
+</td></tr></table>
 
 </div><H3 id="h2" class="level3"><a name="h2"></a>4.3. other</H3><div class="level3" id="divh2">
 
@@ -553,8 +560,8 @@ and is distributed under the terms of the
  If you have questions or just want to talk about
  Chrono Trigger hacking, throw me email.
 <p>
- My email address:<span id=eml31><b id=eml17 class=nonmail>qo.W1xo</b><span id=eml18 class=ismail>Joel</span><span id=eml19 class=nonmail><b>u27e</b></span><span id=eml20 class=ismail> Yli</span><b id=eml21 class=nonmail>uknp@zez</b><span id=eml22 class=ismail>luom</span><span id=eml23 class=nonmail><b>1u10@9f@e</b></span><span id=eml24 class=ismail>a &lt;bi</span><b id=eml25 class=nonmail>/hqveok@6b</b><span id=eml26 class=ismail>sqwi</span><span id=eml27 class=nonmail><b>4ql</b></span><span id=eml28 class=ismail>t@ik</span><b id=eml29 class=nonmail>yzz6pbb/</b><span id=eml30 class=ismail>i.fi&gt;</span></span><script type="text/javascript"><!--
-s='';for(i=17;i<31;){document.getElementById('eml'+i++).innerHTML='';s+=document.getElementById('eml'+i++).innerHTML;}document.getElementById('eml'+i).innerHTML='<'+'a href="mailto:'+s+'">'+s+'<'+'/a>';
+ My email address:<span id=eml32><b id=eml18 class=nonmail>t4mdrg</b><span id=eml19 class=ismail>Joel</span><span id=eml20 class=nonmail><b>e@</b></span><span id=eml21 class=ismail> Yli</span><b id=eml22 class=nonmail>b@6e</b><span id=eml23 class=ismail>luom</span><span id=eml24 class=nonmail><b>fee</b></span><span id=eml25 class=ismail>a &lt;bi</span><b id=eml26 class=nonmail>ekef</b><span id=eml27 class=ismail>sqwi</span><span id=eml28 class=nonmail><b>4mzd2</b></span><span id=eml29 class=ismail>t@ik</span><b id=eml30 class=nonmail>vhr20</b><span id=eml31 class=ismail>i.fi&gt;</span></span><script type="text/javascript"><!--
+s='';for(i=18;i<32;){document.getElementById('eml'+i++).innerHTML='';s+=document.getElementById('eml'+i++).innerHTML;}document.getElementById('eml'+i).innerHTML='<'+'a href="mailto:'+s+'">'+s+'<'+'/a>';
 --></script><br>
  If you send me e-mail, please ensure I can reply to you.
 <p>
@@ -572,17 +579,15 @@ If you're uncertain, <a href="#copying">send me email and explain your situation
 
 </div><H2 id="docs" class="level2"><a name="docs"></a>9. Documentation</H2><div class="level2" id="divdocs">
 
-If this is a local copy of README.html instead of the public web
-page, you can use the following links to access the documentation
-files.
-
 <ul>
- <li><a href="compression.html">Compression</a> (script compression explained)</li>
- <li><a href="conjugation.html">Conjugation</a> (inflecting character names according to grammar rules)</li>
- <li><a href="crononick.html">Crononick</a> (Ayla's special version of Crono's name)</li>
- <li><a href="imageformat.html">Image format</a> (the <tt>.tga</tt> files must obey these rules)</li>
- <li><a href="signature.html">Startup screen logo</a></li>
- <li><a href="VWF8.html">Item length expansion</a> (the small variable width font)</li>
+ <li><a href="http://bisqwit.iki.fi/ctfin/dev/quickstart.html">Quick start guide</a></li>
+ <li><a href="http://bisqwit.iki.fi/ctfin/dev/fonts.html">Fonts and character sets guide</a></li>
+ <li><a href="http://bisqwit.iki.fi/ctfin/dev/imageformat.html">Image format</a> (the <tt>.tga</tt> files must obey these rules)</li>
+ <li><a href="http://bisqwit.iki.fi/ctfin/dev/signature.html">Startup screen logo</a></li>
+ <li><a href="http://bisqwit.iki.fi/ctfin/dev/VWF8.html">Item length expansion</a> (the small variable width font)</li>
+ <li><a href="http://bisqwit.iki.fi/ctfin/dev/compression.html">Compression</a> (script compression explained)</li>
+ <li><a href="http://bisqwit.iki.fi/ctfin/dev/conjugation.html">Conjugation</a> (inflecting character names according to grammar rules)</li>
+ <li><a href="http://bisqwit.iki.fi/ctfin/dev/crononick.html">Crononick</a> (Ayla's special version of Crono's name)</li>
 </ul>
 
 </div><H3 id="undocs" class="level3"><a name="undocs"></a>9.1. Undocumented things</H3><div class="level3" id="divundocs">
@@ -640,9 +645,9 @@ The latest Windows version is 1.14.3.
    is at <a href="http://iki.fi/bisqwit/source/chronotools.html">http://iki.fi/bisqwit/source/chronotools.html</a>.<br>
    Check there for new versions.
 </div> <p align=right><small>Generated from
-       <tt>../progdesc.php</tt> (last updated: Tue,  1 Feb 2005 05:40:42 +0200)<br>
+       <tt>../progdesc.php</tt> (last updated: Fri, 18 Feb 2005 15:05:01 +0200)<br>
   with <tt>docmaker.php</tt> (last updated: Sat, 22 Jan 2005 05:01:19 +0200)<br>
-  at Tue,  1 Feb 2005 05:40:45 +0200</small>
+  at Fri, 18 Feb 2005 15:05:02 +0200</small>
  </p>
 </body>
 </html>

@@ -714,9 +714,7 @@ EquipLeftHelper2:
         rtl
 
 EquipLeftItemFunc:
-        ; FIXME: ADD SOME KIND OF PREVENTION AGAINST THE GAME'S BUSYREFRESHLOOP
-        ;        (NECESSARY IN SHOP)
-        
+.(
         ; In - A=item number
         ;      Y=item position in list
         
@@ -775,8 +773,10 @@ EquipLeftItemFunc:
         pla
         jsr DrawS_2bit
         bra DisplayFuncCommonEnd
+.)
 
 EquipRightItemFunc:        ;also used in shop
+.(
         ; FIXME: ADD SOME KIND OF PREVENTION AGAINST THE GAME'S BUSYREFRESHLOOP
         ;        (NECESSARY IN SHOP, EQUIP FRONT)
         
@@ -824,8 +824,10 @@ EquipRightItemFunc:        ;also used in shop
          sta W_VRAMADDR
         pla
         bra DisplayFuncCommon_4bit
+.)
 
 IgnoreItemListVWF8:
+.(
         .al
         .xl
         pla
@@ -833,8 +835,10 @@ IgnoreItemListVWF8:
         stx W_TILENUM : lda #10*2: clc: adc W_TILENUM : tax
         lda #$00DC: trb $7E
         rtl
+.)
         
 ItemListFunc:
+.(
         ; In - A=item number
         
         ; $000054 (byte) = list scrolling position
@@ -870,8 +874,10 @@ ItemListFunc:
          sta W_TILENUM
         pla
         bra DisplayFuncCommon_4bit
+.)
 
 TechListFunc:
+.(
         ; In:
         ;    Al     = tech number
         ;    $61    = screen address
@@ -919,7 +925,7 @@ GotAttr:  stx $7E       ;save attr.
         pla
 
         ldx $61       ;Load screen address (target)
-
+.)
         ;passthru
 DisplayFuncCommon_4bit:
         jsr DrawS_4bit
@@ -934,6 +940,7 @@ DisplayFuncCommonEnd:
         rtl
 
 BattleItemFunc:
+.(
         ; Code here
         ;In:
         ;    A = item number
@@ -1009,6 +1016,7 @@ BattleItemFunc:
         
         ; Must leave with A=8bit, X=16bit
         rtl
+.)
 
 BattleTechHelper:
 	.as
@@ -1017,6 +1025,7 @@ BattleTechHelper:
 	rtl
 
 BattleTechFunc:
+.(
         .al
         .xl
         ; Code here
@@ -1085,9 +1094,10 @@ BattleTechFunc:
         
         ; Must leave with A=8bit, X=16bit
         rtl
-
+.)
 
 BattleMonsterFunc:
+.(
         .al
         .xl
         ; Code here
@@ -1138,7 +1148,7 @@ BattleMonsterFunc:
         ; Must leave with A=8bit, X=16bit, Ah=0
         tdc
         rtl
-
+.)
 
 BattleWrite:
         SET_8_BIT_A()
@@ -1152,6 +1162,7 @@ BattleWrite:
         rts
 
 BattleWriteEnd:
+.(
         SET_16_BIT_A()
         
         ; Space-fill the buffer to end
@@ -1192,7 +1203,7 @@ BattleWriteEnd:
          bne -
         pld
       + rts
-
+.)
 
 DoTilenumber_8line:
          .al
@@ -1267,7 +1278,7 @@ TileNumberList:
 
 TileNumberListInBattle:
         ; 3 lines here
-        .word $0150, $018A, $0195
+        .word $0150, $0188, $0193
 
 
 CalculateClockDifference:

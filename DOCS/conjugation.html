@@ -23,12 +23,13 @@ SMALL    {font-size:70%}
   <h1>Chronotools - conjugator</h1>
   <h2 class=level2> 0. Contents </h2>
   
-  This is the documentation of chronotools-1.15.3.
+  This is the documentation of chronotools-1.15.3.2.
 <div class=toc><table cellspacing=0 cellpadding=0 class=toc><tr><td width="50%" valign=middle align=left nowrap class=toc>&nbsp;&nbsp;&nbsp;1. <a href="#h0">Introduction</a><br>&nbsp;&nbsp;&nbsp;2. <a href="#plan">Planning</a><br>&nbsp;&nbsp;&nbsp;3. <a href="#cfg">Configuration</a><br></td>
 <td width="50%" valign=middle align=left nowrap class=toc>&nbsp;&nbsp;&nbsp;4. <a href="#code">Creating the conjugator code</a><br>&nbsp;&nbsp;&nbsp;5. <a href="#bind">Binding the code to ROM</a><br>&nbsp;&nbsp;&nbsp;6. <a href="#download">Downloading</a><br></td>
 </tr></table></div><H2 id="h0" class="level2"><a name="h0"></a>1. Introduction</H2><div class="level2" id="divh0">
    
-Chronotools supports conjugation - inflecting the character names depending on context.
+<a href="http://bisqwit.iki.fi/source/chronotools.html">Chronotools</a>
+supports conjugation - inflecting the character names depending on context.
  <p>
 Here I'll explain how it was done for Finnish.
  <p>
@@ -43,6 +44,7 @@ This consists of the following sections:
 </div><H2 id="plan" class="level2"><a name="plan"></a>2. Planning</H2><div class="level2" id="divplan">
 
 First you need to find out which conjugations you're using.<br>
+You need to be a expert in the grammar of your language to do it properly.<br>
 For Finnish, they were the following:
 
 <pre>
@@ -121,7 +123,7 @@ that the conjugation could append to the character name.
 
 This is the hardest part for average people.<br
 You have to write your own conjugator!<br>
-Have a look at <code>DOCS/ct-conj.code</code> (the Finnish conjugator
+Have a look at <tt>DOCS/ct-conj.code</tt> (the Finnish conjugator
 as an example) and try to grasp it.<br>
 Sorry, I can't help you more than this.
 <p>
@@ -129,11 +131,11 @@ Anyway, when you are done with your code file, you just compile
 it with utils/compile, combine it with ct-conj.a65 and assemble
 it with <a href="http://bisqwit.iki.fi/source/snescom.html">snescom</a>.
 Basically, once you have snescom installed, you can just do
-<code>make ct-conj.o65</code> and that should do it.
+<tt>make ct-conj.o65</tt> and that should do it.
 
 </div><H2 id="bind" class="level2"><a name="bind"></a>5. Binding the code to ROM</H2><div class="level2" id="divbind">
 
-Add the following lines to your <code>ct.cfg</code>
+Add the following lines to your <tt>ct.cfg</tt>
 in the <code>[linker]</code> section:
 
 <pre>
@@ -142,11 +144,11 @@ load_code "ct-conj.o65"
 add_call_of "Conjugator"         $C258C2 1 false
 </pre>
 
-This tells the insertor that it must include code from <code>ct-conj.o65</code>
+This tells the insertor that it must include code from <tt>ct-conj.o65</tt>
 and that the Conjugator routine will be called from the ROM address <code>$C258C2</code>.
-<p>
+  <p>
 I hope I didn't forget anything.
-<p>
+  <p>
 Ask me for help if you didn't get it :)
 
 </div><H2 id="download" class="level2"><a name="download"></a>6. Downloading</H2><div class="level2" id="divdownload">
@@ -154,9 +156,9 @@ Ask me for help if you didn't get it :)
    is at <a href="http://iki.fi/bisqwit/source/chronotools.html">http://iki.fi/bisqwit/source/chronotools.html</a>.<br>
    Check there for new versions.
 </div> <p align=right><small>Generated from
-       <tt>source/conjugation.php</tt> (last updated: Sat, 25 Sep 2004 03:22:51 +0300)<br>
+       <tt>source/conjugation.php</tt> (last updated: Fri, 18 Feb 2005 15:08:45 +0200)<br>
   with <tt>docmaker.php</tt> (last updated: Sat, 22 Jan 2005 05:01:19 +0200)<br>
-  at Mon, 31 Jan 2005 12:16:00 +0200</small>
+  at Fri, 18 Feb 2005 15:08:50 +0200</small>
  </p>
 </body>
 </html>

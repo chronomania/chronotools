@@ -37,23 +37,11 @@ So here's what you do if you want to translate Chrono Trigger.
 
 <ul>
  <li><a href=\"#download\">Download</a> Chronotools.
-     (Source code on this site.
-      Windows binaries may be available upon request.)</li>
+     (Source code on this site. Windows binaries also
+      available, but not always up-to-date.)</li>
  <li>You need the Chrono Trigger English ROM. (You won't get it from me.)</li>
- <li>You dump the script and images from the ROM using
-     <a href=\"#ctdump\">ctdump</a>, included in Chronotools.</li>
- <li>You redesign the font using an image manipulation
-     program such as <a href=\"http://www.gimp.org\">GIMP</a>,
-     editing <tt>ct16fn.tga</tt> and <tt>ct8fn.tga</tt>,
-     and update the configuration to match the new character set
-     in your font and script files.</li>
- <li>You translate the script, once in a while testing it
-     by creating patches with <a href=\"#ctinsert\">ctinsert</a>.</li>
- <li>You ask me how to do this and that what you don't know. :)<br>
-     For example, what to do if ctinsert reports errors,
-     or if you want features like
-     <a href=\"#conj\">player name inflection</a> or
-     <a href=\"#vwf8\">variable width 8pix font</a>.</li>
+ <li>Read <a href=\"http://bisqwit.iki.fi/ctfin/dev/quickstart.html\"
+      >the quick start guide</a>.</li>
 </ul>
 
 Feel free to <a href=\"#copying\">contact me</a> in questions
@@ -216,6 +204,7 @@ Copypaste from the Makefile:
 # VERSION 1.15.2.1 conjugator supports now [member].
 # VERSION 1.15.3 conjugator now supports definition by a table.
 # VERSION 1.15.3.1 minor changes in conjugator for severe grammars.
+# VERSION 1.15.3.2 a bugfix in ctdump (deleting the *c block). Added more documentation!
 </pre>
 
 To use the character name changing feature, do a redump with ctdump
@@ -253,19 +242,21 @@ Produces the script file, the font files and a couple
 of other image files.
 <p>
 Sample of produced script:<pre class=smallerpre
->;1000ad (Lucca's home)
-*z;106 pointerstrings (12pix font)
+>*z;dialog
+;-----------------
+;1000ad (Lucca's home)
+;2300ad (factory)
+;1000ad (rainbow shell trial)
+;-----------------
 \$F1IO:
 [nl]
             You got 1 [item]!
 \$F1IQ:
 LARA: Oh, hi Crono.[nl]
-   Lucca's off at Leene Square with[nl]
-   her father, Taban, unveiling her new[nl] 
-   invention.
+   Lucca's off at Leene Square with her
+   father, Taban, unveiling her new invention.
 \$F1IS:
-LARA: Lucca and Taban only care[nl]
-   about their silly toys!</pre>
+LARA: Lucca and Taban only care about their silly toys!</pre>
 (Dumped from the English ROM)
 <p>
 Usage example:
@@ -274,15 +265,21 @@ Usage example:
 </td><td valign=top align=right>
 
 <table><tr><td align=center>
-<img src=\"/src/chronotools-esp.png\"
-     alt=\"sample\" style=\"padding-right:10px\" >
-<br>
-<small> Example screenshot in Spanish </small>
+<img src=\"/src/chronotools-fin.png\"
+     alt=\"sample\" style=\"padding-right:10px\" ><br>
+<small> Example screenshot in Finnish </small><br>
+<p>
+<img src=\"/src/chronotools-pol.png\"
+     alt=\"sample\" style=\"padding-right:10px\" ><br>
+<small> Example screenshot in Polish </small><br>
 </td></tr></table>
 
 </td></tr></table>
 
 ", 'ctinsert:1.1. ctinsert' => "
+
+<table cellspacing=0 cellpadding=0 width=\"100%\">
+<tr><td valign=top>
 
 Reinserts the (edited) script and (edited) fonts to a ROM.<br>
 Requires the files referenced by <tt>ct.cfg</tt>
@@ -290,6 +287,16 @@ Requires the files referenced by <tt>ct.cfg</tt>
 elemental images and optional extra fonts and code files).<br>
 Produces <tt>ctpatch-hdr.ips</tt> and <tt>ctpatch-nohdr.ips</tt>.<br>
 Curiously, it doesn't require the ROM.
+
+</td><td valign=top align=right>
+
+<table><tr><td align=center>
+<img src=\"/src/chronotools-cro.png\"
+     alt=\"sample\" style=\"padding-right:10px\" ><br>
+<small> Example screenshot in Croatian </small><br>
+</td></tr></table>
+
+</td></tr></table>
 
 ", '1.1. other' => "
 
@@ -550,17 +557,15 @@ If you're uncertain, <a href=\"#copying\">send me email and explain your situati
 
 ", 'docs:1. Documentation' => "
 
-If this is a local copy of README.html instead of the public web
-page, you can use the following links to access the documentation
-files.
-
 <ul>
- <li><a href=\"compression.html\">Compression</a> (script compression explained)</li>
- <li><a href=\"conjugation.html\">Conjugation</a> (inflecting character names according to grammar rules)</li>
- <li><a href=\"crononick.html\">Crononick</a> (Ayla's special version of Crono's name)</li>
- <li><a href=\"imageformat.html\">Image format</a> (the <tt>.tga</tt> files must obey these rules)</li>
- <li><a href=\"signature.html\">Startup screen logo</a></li>
- <li><a href=\"VWF8.html\">Item length expansion</a> (the small variable width font)</li>
+ <li><a href=\"http://bisqwit.iki.fi/ctfin/dev/quickstart.html\">Quick start guide</a></li>
+ <li><a href=\"http://bisqwit.iki.fi/ctfin/dev/fonts.html\">Fonts and character sets guide</a></li>
+ <li><a href=\"http://bisqwit.iki.fi/ctfin/dev/imageformat.html\">Image format</a> (the <tt>.tga</tt> files must obey these rules)</li>
+ <li><a href=\"http://bisqwit.iki.fi/ctfin/dev/signature.html\">Startup screen logo</a></li>
+ <li><a href=\"http://bisqwit.iki.fi/ctfin/dev/VWF8.html\">Item length expansion</a> (the small variable width font)</li>
+ <li><a href=\"http://bisqwit.iki.fi/ctfin/dev/compression.html\">Compression</a> (script compression explained)</li>
+ <li><a href=\"http://bisqwit.iki.fi/ctfin/dev/conjugation.html\">Conjugation</a> (inflecting character names according to grammar rules)</li>
+ <li><a href=\"http://bisqwit.iki.fi/ctfin/dev/crononick.html\">Crononick</a> (Ayla's special version of Crono's name)</li>
 </ul>
 
 ", 'undocs:1.1. Undocumented things' => "

@@ -3,7 +3,7 @@
 
 /* xa65 object file loader and linker for C++
  * For loading and linking 65816 object files
- * Copyright (C) 1992,2003 Bisqwit (http://iki.fi/bisqwit/)
+ * Copyright (C) 1992,2005 Bisqwit (http://iki.fi/bisqwit/)
  *
  * Version 1.9.0 - Aug 18 2003, Sep 4 2003, Jan 23 2004,
  *                 Jan 31 2004

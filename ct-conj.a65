@@ -178,18 +178,43 @@ GetPlayerNo:
 LoopHelper:
    .(
         ; Fetches the X'th letter of the character's name in question.
-        ; Does not modify X.
+        ; Does not modify X (only if X is positive).
         ; Uses Y.
         ; Returns the letter in A.
         ; Expected to return with A=8-bit, X=16-bit, AH=0
         ; Input is X=16-bit
         
+        txy
+        bpl FromBegin
+   FromEnd:
+        SET_16_BIT_A()
+        tya
+        and #$7FFF
+        pha
+         ldy #0
+       - lda [NAME_ADDRESS],y
+         beq +
+         iny
+         bra -
+       + tya
+         dec
+         sec:sbc $01,s
+         bmi BeyondBeginning
+        ply
+        tay
+   FromBegin:
         SET_8_BIT_A()
-        tdc : xba : txy
-        ; Get x'th char from the name
-        lda [NAME_ADDRESS],y
+        tdc : xba ; zero high bits (assumes D < $100)
+        ; Get y'th char from the name
         ;Letters in character name are always 8-bit.
         ;Character names are 0-terminated.
+        lda [NAME_ADDRESS],y
+        rts
+   BeyondBeginning:
+        ply
+        .al
+        lda #0
+        SET_8_BIT_A()
         rts
    .)
 

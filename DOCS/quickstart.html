@@ -1,0 +1,196 @@
+<html><head><meta http-equiv="Content-type" content="text/html; charset=iso-8859-1">
+ <title>Chronotools - quickstart guide</title>
+ <style type="text/css"><!--
+TABLE.toc {border:0px}
+A:link,A:visited{text-decoration:none;color:#2A3B83}
+A:hover{text-decoration:underline;color:#002040}
+A:active{text-decoration:underline;color:#004060;background:#CCD8FF}
+TD.toc   {font-size:80%; font-family:Tahoma; text-align:left}
+H1       {font-size:250%; font-weight:bold} .level1 {text-align:center}
+H2       {font-size:200%; font-weight:bold} .level2 {margin-left:1%}
+H3       {font-size:160%; font-weight:bold} .level3 {margin-left:2%}
+H4       {font-size:145%; font-weight:bold} .level4 {margin-left:3%}
+H5       {font-size:130%; font-weight:bold} .level5 {margin-left:4%}
+H6       {font-size:110%; font-weight:bold} .level5 {margin-left:5%}
+BODY{background:white;color:black}
+CODE{font-family:lucida console,courier new,courier;color:#105000}
+PRE.smallerpre{font-family:lucida console,courier new,courier;font-size:80%;color:#500010;margin-left:30px}
+SMALL    {font-size:70%}
+.nonmail { visibility:hidden;position:absolute; top:0px;left:0px }
+.ismail  { font-weight:normal }
+--></style></head>
+ <body>
+  <h1>Chronotools - quickstart guide</h1>
+  <h2 class=level2> 0. Contents </h2>
+  
+  This is the documentation of chronotools-1.15.3.2.
+<div class=toc><table cellspacing=0 cellpadding=0 class=toc><tr><td width="50%" valign=middle align=left nowrap class=toc>&nbsp;&nbsp;&nbsp;1. <a href="#h0">Introduction</a><br>&nbsp;&nbsp;&nbsp;2. <a href="#h1">Quickstart guide</a><br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;2.1. <a href="#h2">Decompress and compile</a><br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;2.2. <a href="#h3">Import your ROM</a><br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;2.3. <a href="#h4">Import the example configuration file</a><br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;2.4. <a href="#h5">Dump the ROM contents</a><br></td>
+<td width="50%" valign=middle align=left nowrap class=toc>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;2.5. <a href="#h6">Customize your script and the configuration file</a><br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;2.6. <a href="#h7">Reinsert the resources</a><br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;2.7. <a href="#h8">Fixing the checksum of the patch (OPTIONAL)</a><br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;2.8. <a href="#h9">Patching the ROM</a><br>&nbsp;&nbsp;&nbsp;3. <a href="#h10">Translating the game</a><br>&nbsp;&nbsp;&nbsp;4. <a href="#download">Downloading</a><br></td>
+</tr></table></div><H2 id="h0" class="level2"><a name="h0"></a>1. Introduction</H2><div class="level2" id="divh0">
+   
+Here's a quickstart guide on how to use
+<a href="http://bisqwit.iki.fi/source/chronotools.html">Chronotools</a>.
+
+</div><H2 id="h1" class="level2"><a name="h1"></a>2. Quickstart guide</H2><div class="level2" id="divh1">
+
+</div><H3 id="h2" class="level3"><a name="h2"></a>2.1. Decompress and compile</H3><div class="level3" id="divh2">
+
+Decompress and compile Chronotools.<br>
+Compilation is not needed if you are running a Windows
+system or your Chronotools package came precompiled.<br>
+In the command line examples of this page, $ represents
+the command prompt.
+  <p>
+<pre
+>$ tar xfj ../archives/chronotools-1.15.3.1.tar.bz2
+$ mv chronotools-1.15.3.1 ct
+$ make -C ct</pre>
+
+You only need to do this once.
+
+</div><H3 id="h3" class="level3"><a name="h3"></a>2.2. Import your ROM</H3><div class="level3" id="divh3">
+
+Copy or link the Chrono Trigger ROM to your working directory.<br>
+You can use <tt>md5sum</tt> (standard unix utility)
+to test whether your ROM is the right one. The output
+below is the expected one.
+
+<pre
+>$ ln -s ../FIN/chrono-uncompressed.smc chrono.smc
+$ md5sum chrono.smc
+395bf4d0a75717b03c0c2131495faf7a  chrono.smc</pre>
+
+You only need to do this once.
+
+</div><H3 id="h4" class="level3"><a name="h4"></a>2.3. Import the example configuration file</H3><div class="level3" id="divh4">
+
+<pre
+>$ cp ct/etc/ct.cfg .</pre>
+
+That is, copy the <tt>ct.cfg</tt> from
+Chronotools's<tt>etc</tt> to your working directory.
+
+</div><H3 id="h5" class="level3"><a name="h5"></a>2.4. Dump the ROM contents</H3><div class="level3" id="divh5">
+
+<pre
+>$ ct/ctdump chrono.smc
+$ cp ctdump.out ct.txt</pre>
+
+You only need to do this once.
+
+</div><H3 id="h6" class="level3"><a name="h6"></a>2.5. Customize your script and the configuration file</H3><div class="level3" id="divh6">
+
+... by editing your <tt>ct.txt</tt> and <tt>ct.cfg</tt>
+files. Not necessary if you don't want to change anything.
+
+</div><H3 id="h7" class="level3"><a name="h7"></a>2.6. Reinsert the resources</H3><div class="level3" id="divh7">
+
+<pre
+>$ ct/ctinsert</pre>
+  <p>
+<tt>ctinsert</tt> will say lots of things.
+Here's a sample run:
+  <p>
+<pre
+>Reading ct.cfg... done
+Chrono Trigger script insertor version 1.15.3.1
+Copyright (C) 1992,2005 Bisqwit (http://iki.fi/bisqwit/)
+> ct.cfg: Missing "typeface" in [font]
+Loading 'ct8fn.tga'...
+Loading 'ct8fnV.tga'...
+> ct8fnV.tga doesn't exist, ignoring
+Loading 'ct16fn.tga'...
+> ct.cfg: Missing "setup" in [conjugator]
+> Conjugator has nothing to do. Not using.
+Loading dialog... done.                     
+Analyzing character usage... Loading 'ct16fn.tga'...
+Loading 'ct8fn.tga'...
+Loading 'ct8fnV.tga'...
+> ct8fnV.tga doesn't exist, ignoring
+done.
+Calculating script size... done.
+Applying dictionary... done.
+Calculating script size... done.
+> Original script size: 241642 bytes; new script size: 178785 bytes
+> Saved: 62857 bytes (26.0% off); dictionary size: 509 bytes
+Free space: 02:96/1 06:854/1 0C:7981/11 0E:180/1 18:11459/2 1B:219/1 1E:14784/7
+36:9747/2 37:60211/2 38:24084/2 39:18174/1 3C:15536/2 3F:28965/12 - total: 192290 bytes
+--
+Loading images... done.        
+Writing strings... done.               
+> ct.cfg: Missing "load_code" in [linker]
+> ct.cfg: Missing "add_image" in [linker]
+Writing dictionary... done.
+Linking 5838 modules... done.
+O65 linker: Warning: Symbol "RELOCATED_STRING_SIGNATURE" was defined but never used.
+O65 linker: Warning: Symbol "VWF8_DISPLAY_EQ_COUNT" was defined but never used.
+O65 linker: Warning: Symbol "DECOMPRESS_FUNC_ADDR" was defined but never used.
+O65 linker: Warning: Symbol "CHAR_OUTPUT_FUNC" was defined but never used.
+--
+Creating a virtual ROM...
+Inhabitating the ROM image...
+--
+Free space: 01:30/1 02:8/1 03:40/1 06:45/1 0C:262/4 0E:1/1 18:50/1 1B:7/1
+1E:42/2 36:45/1 37:600/1 38:161/1 39:141/1 3C:18/1 3E:25/1 3F:6183/3 - total: 7658 bytes
+--
+Unallocating insertor data...
+Creating ctpatch-nohdr.ips
+Creating ctpatch-hdr.ips</pre>
+
+</div><H3 id="h8" class="level3"><a name="h8"></a>2.7. Fixing the checksum of the patch (OPTIONAL)</H3><div class="level3" id="divh8">
+
+ctinsert has been designed to work without requiring the ROM,
+and therefore if you to fix the checksum of your patch, you
+need to use the <tt>fixchecksum</tt> program.
+<p>
+<pre
+>$ ct/utils/fixchecksum ctpatch-hdr.ips chrono.smc ctpatch-hdr.ips</pre>
+
+</div><H3 id="h9" class="level3"><a name="h9"></a>2.8. Patching the ROM</H3><div class="level3" id="divh9">
+
+You can use your favourite method of patching the ROM
+now that the IPS file is ready. You can also use the
+<tt>unmakeips</tt> program that comes with Chronotools:
+ <p>
+<pre
+>$ ct/utils/unmakeips ctpatch-hdr.ips chrono.smc chrono-patched.smc</pre>
+
+After this step, you can test your patch,
+and then resume editing and repeat earlier steps.
+
+</div><H2 id="h10" class="level2"><a name="h10"></a>3. Translating the game</H2><div class="level2" id="divh10">
+
+Besides editing the script, there are a myriad of tasks to do:
+
+<ul>
+ <li>
+   Redesign the font using an image manipulation
+   program such as <a href="http://www.gimp.org">GIMP</a>,
+   editing <tt>ct16fn.tga</tt> and <tt>ct8fn.tga</tt>,
+   and update the configuration to match the new character set
+   in your font and script files.<br>
+   See <a href="fonts.html">the fonts and character sets guide</a>.
+  </li>
+ <li>
+   Redesign the images, such as the elementals.
+   See <a href="imageformat.html">image format requirements</a>.
+  </li>
+ <li>
+   <a href="conjugation.html">Conjugation</a>, which is a quite
+   complex thing and requires knowledge of your language's grammar.<br>
+   It's needed in a few languages, where the names of player characters
+   may be written differently depending on grammatical context.
+  </li>
+</ul>
+
+</div><H2 id="download" class="level2"><a name="download"></a>4. Downloading</H2><div class="level2" id="divdownload">
+   The official home page of chronotools
+   is at <a href="http://iki.fi/bisqwit/source/chronotools.html">http://iki.fi/bisqwit/source/chronotools.html</a>.<br>
+   Check there for new versions.
+</div> <p align=right><small>Generated from
+       <tt>source/quickstart.php</tt> (last updated: Fri, 18 Feb 2005 15:08:46 +0200)<br>
+  with <tt>docmaker.php</tt> (last updated: Sat, 22 Jan 2005 05:01:19 +0200)<br>
+  at Fri, 18 Feb 2005 15:08:51 +0200</small>
+ </p>
+</body>
+</html>

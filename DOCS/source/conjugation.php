@@ -8,7 +8,8 @@ $progname = 'chronotools';
 $text = Array(
    '1. Introduction' => "
    
-Chronotools supports conjugation - inflecting the character names depending on context.
+<a href=\"http://bisqwit.iki.fi/source/chronotools.html\">Chronotools</a>
+supports conjugation - inflecting the character names depending on context.
  <p>
 Here I'll explain how it was done for Finnish.
  <p>
@@ -23,6 +24,7 @@ This consists of the following sections:
 ", 'plan:1. Planning' => "
 
 First you need to find out which conjugations you're using.<br>
+You need to be a expert in the grammar of your language to do it properly.<br>
 For Finnish, they were the following:
 
 <pre>
@@ -101,7 +103,7 @@ that the conjugation could append to the character name.
 
 This is the hardest part for average people.<br
 You have to write your own conjugator!<br>
-Have a look at <code>DOCS/ct-conj.code</code> (the Finnish conjugator
+Have a look at <tt>DOCS/ct-conj.code</tt> (the Finnish conjugator
 as an example) and try to grasp it.<br>
 Sorry, I can't help you more than this.
 <p>
@@ -109,11 +111,11 @@ Anyway, when you are done with your code file, you just compile
 it with utils/compile, combine it with ct-conj.a65 and assemble
 it with <a href=\"http://bisqwit.iki.fi/source/snescom.html\">snescom</a>.
 Basically, once you have snescom installed, you can just do
-<code>make ct-conj.o65</code> and that should do it.
+<tt>make ct-conj.o65</tt> and that should do it.
 
 ", 'bind:1. Binding the code to ROM' => "
 
-Add the following lines to your <code>ct.cfg</code>
+Add the following lines to your <tt>ct.cfg</tt>
 in the <code>[linker]</code> section:
 
 <pre>
@@ -122,11 +124,11 @@ load_code \"ct-conj.o65\"
 add_call_of \"Conjugator\"         \$C258C2 1 false
 </pre>
 
-This tells the insertor that it must include code from <code>ct-conj.o65</code>
+This tells the insertor that it must include code from <tt>ct-conj.o65</tt>
 and that the Conjugator routine will be called from the ROM address <code>\$C258C2</code>.
-<p>
+  <p>
 I hope I didn't forget anything.
-<p>
+  <p>
 Ask me for help if you didn't get it :)
 
 ");

@@ -23,17 +23,18 @@ SMALL    {font-size:70%}
   <h1>Chronotools - variable width 8pix font</h1>
   <h2 class=level2> 0. Contents </h2>
   
-  This is the documentation of chronotools-1.15.3.
-<div class=toc><table cellspacing=0 cellpadding=0 class=toc><tr><td width="50%" valign=middle align=left nowrap class=toc>&nbsp;&nbsp;&nbsp;1. <a href="#h0">Introduction</a><br>&nbsp;&nbsp;&nbsp;2. <a href="#font">VWF8 font</a><br>&nbsp;&nbsp;&nbsp;3. <a href="#code">VWF8 code</a><br></td>
-<td width="50%" valign=middle align=left nowrap class=toc>&nbsp;&nbsp;&nbsp;4. <a href="#convert">Conversion of the tables in script</a><br>&nbsp;&nbsp;&nbsp;5. <a href="#bugs">Known problems</a><br>&nbsp;&nbsp;&nbsp;6. <a href="#download">Downloading</a><br></td>
+  This is the documentation of chronotools-1.15.3.2.
+<div class=toc><table cellspacing=0 cellpadding=0 class=toc><tr><td width="50%" valign=middle align=left nowrap class=toc>&nbsp;&nbsp;&nbsp;1. <a href="#h0">Introduction</a><br>&nbsp;&nbsp;&nbsp;2. <a href="#font">VWF8 font</a><br></td>
+<td width="50%" valign=middle align=left nowrap class=toc>&nbsp;&nbsp;&nbsp;3. <a href="#code">VWF8 code</a><br>&nbsp;&nbsp;&nbsp;4. <a href="#convert">Conversion of the tables in script</a><br>&nbsp;&nbsp;&nbsp;5. <a href="#download">Downloading</a><br></td>
 </tr></table></div><H2 id="h0" class="level2"><a name="h0"></a>1. Introduction</H2><div class="level2" id="divh0">
    
 If you find the standard item name length limit (10 characters plus symbol)
 or the standard tech name length limit (10 characters plus symbol)
 too restricting, forcing you to make ridiculous abbreviations,
 you can install a support for variable width 8pix font.
-<p>
-This consists of the following components:
+  <p>
+In <a href="http://bisqwit.iki.fi/source/chronotools.html">Chronotools</a>,
+this consists of the following components:
 
 <ul>
  <li><a href="#font">VWF8 font</a></li>
@@ -44,71 +45,73 @@ This consists of the following components:
 
 </div><H2 id="font" class="level2"><a name="font"></a>2. VWF8 font</H2><div class="level2" id="divfont">
 
-You need a font. Take one from <code>DOCS/ct8fnV.tga</code> and
+You need a font. Take one from <tt>DOCS/ct8fnV.tga</tt> and
 edit it to match your character set.
-<p>
+ <p>
 Edit the <code>font8vfn</code> setting in the <code>[font]</code>
 section of your configuration file so that the insertor knows the font.
+ <p>
+Please read <a href="fonts.html">the fonts and character sets</a>
+guide regarding the character mapping of this (and other) fonts.
 
 </div><H2 id="code" class="level2"><a name="code"></a>3. VWF8 code</H2><div class="level2" id="divcode">
 
-Add the following lines to your <code>ct.cfg</code>
+Add the following lines to your <tt>ct.cfg</tt>
 in the <code>[linker]</code> section:
 
 <pre>
 # VWF8
 load_code "ct-vwf8.o65"
+# VWF for items: If your item list begins with *i11 (not *l11):
 add_call_of "EquipLeftItemFunc"  $C2A5AA 4  false
 add_call_of "EquipRightItemFunc" $C2F2DC 1  true
 add_call_of "ItemListFunc"       $C2B053 13 false
-add_call_of "EquipLeftHelper"    $C2A57D 14  false
-add_call_of "EquipLeftHelper2"   $C2A5B6 2   false
+add_call_of "EquipLeftHelper"    $C2A57D 14 false
+add_call_of "EquipLeftHelper2"   $C2A5B6 2  false
 add_call_of "BattleItemFunc"     $C109C1 32 false
 add_call_of "DialogItemCall"     $C25BA1 36 false
 
-# VWF for techs: Have your tech list in *t format and use:
+# VWF for techs: If your tech list begins with *t11 (not *l11):
 add_call_of "BattleTechFunc"     $C10B5B 32 false
 add_call_of "BattleTechHelper"   $C10A99 0 false
-add_call_of "DialogTechCall"     $C25A90 55 false 
+add_call_of "DialogTechCall"     $C25A90 55 false
 add_call_of ""                   $C10ABE 16 false
 add_call_of "TechListFunc"       $C2BDB2 52 true
+
+# For monsters: If your monster list begins with *m11 (not *l11):
+add_call_of "BattleMonsterFunc"  $CCED13 60 false
+add_call_of "DialogMonsterCall"  $C25AD2 35 false
 </pre>
 
-This tells the insertor that it must include code from <code>ct-vwf8.o65</code>
+This tells the insertor that it must include code from <tt>ct-vwf8.o65</tt>
 and insert calls of several routines to your ROM.<br>
 By selecting the right <code>add_call_of</code> lines you select
 which features of the ROM you want to patch.
-<p>
-You can create <code>ct-vwf8.o65</code> by compiling the
-included <code>ct-vwf8.a65</code> file with
-<a href="http://bisqwit.iki.fi/source/snescom.html">snescom</a>,
-a SNES assembler, or asking me to send it to you.
+  <p>
+You can create a new <tt>ct-vwf8.o65</tt> file by
+compiling the included <tt>ct-vwf8.a65</tt> file with
+<a href="http://bisqwit.iki.fi/source/snescom.html">snescom</a>.
 
 </div><H2 id="convert" class="level2"><a name="convert"></a>4. Conversion of the tables in script</H2><div class="level2" id="divconvert">
 
-Normally the items, techs and monsters are inserted as constant-width
+Normally the items, techs and monsters are inserted as fixed-width
 tables in the ROM, denoted by the label <code>*l11</code> in your script.
-<p>
+ <p>
 When you are ready to get rid of the item length limit, replace the
 <code>*l11</code> in the script with <code>i11</code>.<br>
-Same goes for techs: <code>*l11</code> is changed to <code>t11</code>,
+Same goes for techs: <code>*l11</code> is changed to <code>t11</code>,<br>
 and for monsters <code>*l11</code> is changed to <code>m11</code>.
-<p>
-Note: Monster name conversion does not work yet.
+ <p>
+Note: Monster names are not displayed in VWF8, but their lon.
 
-</div><H2 id="bugs" class="level2"><a name="bugs"></a>5. Known problems</H2><div class="level2" id="divbugs">
-
-If you use the VWF8 patch for items, the equipment screen will be slowed
-down and is a big sluggish to use. This problem is currently unsolved.
-
-</div><H2 id="download" class="level2"><a name="download"></a>6. Downloading</H2><div class="level2" id="divdownload">
+</div><H2 id="download" class="level2"><a name="download"></a>5. Downloading</H2><div class="level2" id="divdownload">
    The official home page of chronotools
    is at <a href="http://iki.fi/bisqwit/source/chronotools.html">http://iki.fi/bisqwit/source/chronotools.html</a>.<br>
    Check there for new versions.
 </div> <p align=right><small>Generated from
-       <tt>source/VWF8.php</tt> (last updated: Sat,  5 Jun 2004 22:17:30 +0300)<br>
+       <tt>source/VWF8.php</tt> (last updated: Fri, 18 Feb 2005 15:08:46 +0200)<br>
   with <tt>docmaker.php</tt> (last updated: Sat, 22 Jan 2005 05:01:19 +0200)<br>
-  at Mon, 31 Jan 2005 12:15:59 +0200</small>
+  at Fri, 18 Feb 2005 15:08:49 +0200</small>
  </p>
 </body>
 </html>
