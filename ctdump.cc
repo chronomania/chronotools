@@ -77,7 +77,7 @@ static void markspace(unsigned offs, unsigned size)
 static const vector<string> LoadPStrings(unsigned offset, unsigned count)
 {
     unsigned segment = offset & 0xFF0000;
-    vector<string> strings(count);
+    vector<string> result(count);
 #if LOADP_DEBUG
     const unsigned maxco=10;
     unsigned col=maxco;
@@ -95,13 +95,13 @@ static const vector<string> LoadPStrings(unsigned offset, unsigned count)
 #endif
         
         stringptr += segment;
-        strings[a] = string((const char *)&ROM[stringptr] + 1, ROM[stringptr]);
+        result[a] = string((const char *)&ROM[stringptr] + 1, ROM[stringptr]);
         offset += 2;
         
-        markspace(stringptr, strings[a].size()+1);
+        markspace(stringptr, result[a].size()+1);
 
 #ifdef LOADP_EXTRASPACE
-        for(unsigned freebyte = stringptr + strings[a].size()+1;
+        for(unsigned freebyte = stringptr + result[a].size()+1;
             ROM[freebyte] == 0x00 //zero
          || ROM[freebyte] == 0xFF //space
          || ROM[freebyte] == 0xEF //also space
@@ -111,7 +111,7 @@ static const vector<string> LoadPStrings(unsigned offset, unsigned count)
 #if LOADP_DEBUG
     if(col)printf("\n");
 #endif
-    return strings;
+    return result;
 }
 
 // Load an array of C style strings
@@ -120,7 +120,7 @@ static const vector<string> LoadZStrings(unsigned offset, unsigned count=0)
     const unsigned segment = offset >> 16;
     const unsigned base = segment << 16;
 
-    vector<string> strings(count);
+    vector<string> result(count);
 #if 0
     const unsigned maxco=10;
     unsigned col=maxco;
@@ -162,16 +162,16 @@ static const vector<string> LoadZStrings(unsigned offset, unsigned count=0)
          ; space[freebyte++]=true);
 #endif
         if(count)
-            strings[a] = foundstring;
+            result[a] = foundstring;
         else
-            strings.push_back(foundstring);
+            result.push_back(foundstring);
         
         offset += 2;
     }
 #if 0
     if(col)printf("\n");
 #endif
-    return strings;
+    return result;
 }
 
 // Load an array of fixed length strings

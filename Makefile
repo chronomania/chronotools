@@ -24,8 +24,9 @@ CXXFLAGS=-O2
 # VERSION 1.0.17 working again; uses space better; little modularized
 # VERSION 1.0.18 more of above
 # VERSION 1.0.19 code organising... improved 'i' in 8x8 font.
+# VERSION 1.0.20 binpacker changes, some translation done too
 
-VERSION=1.0.19
+VERSION=1.0.20
 ARCHFILES=xray.c xray.h \
           viewer.c \
           ctcset.cc ctcset.hh \
@@ -39,6 +40,7 @@ ARCHFILES=xray.c xray.h \
           makeips.cc unmakeips.cc \
           taipus.rb progdesc.php \
           spacefind.cc \
+          binpacker.tcc binpacker.hh \
           README
 EXTRA_ARCHFILES=\
           ct_eng.txt \
@@ -63,10 +65,10 @@ ctdump: ctdump.o ctcset.o miscfun.o wstring.o
 ctinsert: \
 		ctinsert.o ctcset.o miscfun.o wstring.o \
 		tgaimage.o readin.o space.o writeout.o \
-		organizer.o dictionary.o
+		dictionary.o
 	$(CXX) -o $@ $^ $(LDFLAGS) -lm
 
-spacefind: spacefind.o organizer.o
+spacefind: spacefind.o
 	$(CXX) -o $@ $^ $(LDFLAGS) -lm
 
 makeips: makeips.cc

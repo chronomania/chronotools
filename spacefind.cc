@@ -8,7 +8,7 @@ using namespace std;
 
 #define NOWHERE ((unsigned)-1)
 
-#include "organizer.hh"
+#include "binpacker.hh"
 
 const vector<unsigned> ArrayToVector(unsigned n, ...)
 {
@@ -39,22 +39,19 @@ static bool Tester()
     random_shuffle(holes.begin(), holes.end());
     random_shuffle(items.begin(), items.end());
     
-    map<unsigned, unsigned> result;
-    Organizer(holes, items, result);
+    const vector<unsigned> result = PackBins(holes, items);
     
     unsigned errors = 0;
     
+    if(result.size() != items.size())
+    {
+        cerr << "ERROR: Eeek\n";
+        ++errors;
+    }
+    
     for(unsigned a=0; a<items.size(); ++a)
     {
-        map<unsigned, unsigned>::const_iterator i;
-        i = result.find(a);
-        if(i == result.end())
-        {
-            cerr << "ERROR: Item " << a << " nowhere!\n";
-            ++errors;
-            continue;
-        }
-        unsigned hole = i->second;
+        unsigned hole = result[a];
         if(holes[hole] < items[a])
         {
             cerr << "ERROR: Hole " << hole << " has no space!\n";
@@ -85,9 +82,7 @@ int main(void)
     cerr << Holes.size() << " holes, "
          << Items.size() << " items\n";
     
-    map<unsigned, unsigned> result;
-    
-    Organizer(Holes, Items, result);
+    PackBins(Holes, Items);
     
     return 0;
 }

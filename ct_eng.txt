@@ -1583,9 +1583,9 @@ CYRUS: Niin kauan kuin näissä luissa[nl]
 ;  By your leave...  = ?
    Ennen kuin lähdet...
 $6p1k:
-SOLDIER: Herra Cyrus!!
+Sotilas: Herra Cyrus!!
 $6p1m:
-SOLDIER: Me, Neliskulkaisen Pöydän[nl]
+Sotilas: Me, Neliskulkaisen Pöydän[nl]
    Ritarit, toivotamme sinulle[nl]
    turvallista matkaa!
 $6p1o:
@@ -1614,66 +1614,66 @@ KRAAAAK...![nl]
 Kuinka kehtaatkin kiusata[nl]
 avutonta sammakkoeläintä!
 [pause]
-Törkyinen mitali![nl]
+Typerä mitali![nl]
 Minä en unohda tätä!
 $6p24:
-KID: Olen tuuli![nl]
+Poika: Olen tuuli![nl]
    Whoosh!
 $6p26:
-KID: Seis!
+Poika: Seis!
 $6p28:
-KID: Oletteko täällä Masamunen takia?[nl]
+Poika: Oletteko täällä Masamunen takia?[nl]
       Olemme[nl]
       Emme
 $6p2A:
-KID: Ette?[nl]
-   Siinä tapauksessa teidän pitäisi[nl]
-   lähteä pian.
+Poika: Ette?[nl]
+   Siinä tapauksessa teidän olisi[nl]
+   paras lähteä.
 $6p2C:
-KID: Thought so...[nl]
+Poika: Thought so...[nl]
    Wait a second, okay?
 $6p2E:
 ;Big brother.
-KID: Veeeliiii...[nl]
+Poika: Veeeliiii...[nl]
    Where are you, Masa?!
 $6p2G:
-MASA: Mitä nyt, Mune?
+Masa: Mitä nyt, Mune?
 $6p2I:
-MASA: Taasko!?
+Masa: Taasko!?
 $6p2K:
-MASA: No niin! Tekö haluatte tulla[nl]
+Masa: No niin! Tekö haluatte tulla[nl]
    tunnetuiksi Masamunen saajina?[nl]
    Mitä pellejä!
 $6p2M:
-MUNE: Ihmiset ovat niin... hölmöjä![nl]
+Mune: Ihmiset ovat niin... hölmöjä![nl]
    Ratkaisevaa on se, MITEN miekkaa[nl]
    käytetään... ei se, kuka sen omistaa!
 $6p2O:
-MASA: Ette ymmärrä edes noin[nl]
+Masa: Ette ymmärrä edes noin[nl]
    yksinkertaista asiaa. Siksi[nl]
    te olette ihmisiä.
 $6p2Q:
-MUNE: Mitäs tehdään?
+Mune: Mitäs tehdään?
 $6p2S:
-MASA: Se tavanomainen...[nl]
+Masa: Se tavanomainen...[nl]
    testataan heidät.[nl]
    Voitte viihdyttää meitä hetkisen.
 $6p2U:
-MUNE: Selvä on![nl]
+Mune: Selvä on![nl]
    Aloitetaan!!![nl]
    Whooosh!
 $6p2W:
-MUNE: Hei, hehän ovat aika[nl]
+Mune: Hei, hehän ovat aika[nl]
    kovia.
 $6p2Y:
-MASA: Vain Cyrus on päässyt[nl]
+Masa: Vain Cyrus on päässyt[nl]
    tähän asti.
 $6p2a:
-MASA: Noh, nyt taistellaan[nl]
+Masa: Noh, nyt taistellaan[nl]
    oikeasti.
 $6p2c:
-MUNE: No niin, tästä se alkaa...[nl]
-MASA: Joo.[nl]
+Mune: No niin, tästä se alkaa...[nl]
+Masa: Joo.[nl]
    Nyt me olemme tosissamme!
 $6p2e:
 Masan rohkeudella ja...
@@ -1682,19 +1682,19 @@ $6p2g:
 $6p2i:
 Kahdesta tulee yksi!!
 $6p2k:
-MUNE: Ne voitti meidät, isoveli...
+Mune: Ne voitti meidät, isoveli...
 $6p2m:
-MASA: Se oli hauskaa!
+Masa: Se oli hauskaa!
 $6p2o:
-MUNE: Korjaavatko he meidät?
+Mune: Korjaavatko he meidät?
 [pause]
    Löytävätkö he meille omistajan?
 $6p2q:
-MASA: Eiköhän se järjesty.
+Masa: Eiköhän se järjesty.
 $6p2s:
-MUNE: Onnea teille.
+Mune: Onnea teille.
 $6p2u:
-MASA: Antakaas minun! Ratsastamme[nl]
+Masa: Antakaas minun! Ratsastamme[nl]
    tuulella vuoren juurelle!
 $6p2w:
 Lucca: Eli tämä on siis Masamune...
@@ -2770,9 +2770,9 @@ Lucca: Marle!
 [pause]
    Let's go!
 $8SGE:
-OLD MAN: ......
+Vanhus: ......
 $8SGG:
-OLD MAN: NO!
+Vanhus: NO!
 [pause]
    You MUST NOT climb Death Peak!
 [pause]
@@ -2781,19 +2781,19 @@ OLD MAN: NO!
    ...and...THEY...have to show you the[nl]
    way!
 $8SGI:
-OLD MAN: Schala...I've missed you so...
+Vanhus: Schala...I've missed you so...
 $8SGK:
-OLD MAN: Say!
+Vanhus: Say!
 [pause]
    Did you see my masterpieces?[nl]
    The Ocean Palace and the Blackbird?[nl]
    I designed and built them both.
 $8SGM:
-STRANGE CREATURE: I am pleased you[nl]
+OUTO OTUS: I am pleased you[nl]
    think me worthy, O wise one![nl]
    I await your final program code!
 [pause]
-OLD MAN: Now, don't go getting all[nl]
+Vanhus: Now, don't go getting all[nl]
    emotional on me, critter![nl]
    Back to work, now!
 $8SGO:
@@ -2879,7 +2879,7 @@ Some unknown power keeps it sealed.
 $8SGm:
 The pendant shimmers...!
 $8SGo:
-STRANGE CREATURE: The professor's[nl]
+OUTO OTUS: The professor's[nl]
    programming was, in a sense, his[nl]
    own eulogy.
 [pause]
@@ -2899,55 +2899,55 @@ STRANGE CREATURE: The professor's[nl]
    Program error...[nl]
    ...my memory banks have failed...
 $8SGq:
-STRANGE CREATURE: Please, do not[nl]
+OUTO OTUS: Please, do not[nl]
    disturb my slumber.
 $8SGs:
-STRANGE CREATURE: Caution.[nl]
-   The Time Axis is out of order.
+OUTO OTUS: Varokaa.[nl]
+   Aika-akseli on epäkunnossa.
 $8SGu:
-STRANGE CREATURE: Scared you, didn't I?
+OUTO OTUS: Säikäytin teidät, enkö vain?
 [pause]
-   It's me......BELTHASAR
+   Minä se olen......BELTHASAR
 [pause]
-   I copied my memory into this thing.[nl]
-   What do you think?
+   Kopioin muistini tähän otukseen.[nl]
+   Aika jännä, eikö vain?
 [pause]
-   Anyway, there's something I need to[nl]
-   explain.
+   No kuitenkin, minun pitää[nl]
+   selittää teille yksi asia.
 [pause]
-   Namely, how to transcend time!
+   Nimittäin, miten voittaa aika!
 [pause]
-   Press the Y Button for the time[nl]
-   gauge.
+   Paina Y nappia hallitaksesi[nl]
+   aikamittaria.
 [pause]
-   Then use the L&R Buttons to select[nl]
-   an era.
+   Sitten käytä L- ja R -nappeja[nl]
+   valitaksesi aikakausi.
 $8SGw:
-BELTHASAR: Oh, yeah![nl]
-   Before you go, why don't you...
+BELTHASAR: Ai niin![nl]
+   Ennen kuin menette, miksette...
 $8SGy:
-BELTHASAR: ...name my time machine!
+BELTHASAR: ...antaisi aikakoneelleni
+   nimen!
 $8SH0:
-BELTHASAR: Hop aboard!
+BELTHASAR: Hypätkää kyytiin!
 $8SH2:
 No dozing off, now![delay 00]
 $8SH4:
-STRANGE CREATURE: Instructions for the[nl]
-   time machine are as follows.
+OUTO OTUS: Ohjeet aikakoneen[nl]
+   käyttöön ovat seuraavanlaiset.
 [pause]
-   The Y Button displays the time gauge.
+   Y-nappi näyttää aikamittarin.
 [pause]
-   Use the L & R Buttons and Control[nl]
-   Pad to select a destination in time.
+   Käytä L & R nappeja ja ohjainta[nl]
+   kohteen valintaan.
 [pause]
-   Press the A Button to board and get[nl]
-   off the device, and to warp through[nl]
-   time.
+   A-napilla kuljette laitteeseen ja[nl]
+   pois siitä, sekä matkaatte ajan halki.
 [pause]
-   End Professor's message.
+   Professorin viestin loppu. 
 $8SH6:
-STRANGE CREATURE: Enter name of time[nl]
-   machine.
+OUTO OTUS: Kirjoita aikakoneen[nl]
+   nimi.
 $8SH8:
 GUARD: Bandits![nl]
    Must report to Sir Krawlie!
@@ -3157,21 +3157,21 @@ slightest noise.
 I'd rather have my gums scraped than[nl]
 have to fight these fiends.
 $8SJ0:
-STRANGE CREATURE: Mumble, mumble?[nl]
-      Take off.[nl]
-      Get off.
+OUTO OTUS: Ömmömmm?[nl]
+      Matkaan.[nl]
+      Pois.
 $8SJ2:
-Marle: We're outta here!
+Marle: Häivytään täältä!
 $8SJ4:
-Lucca: Let's go, Epoch!
+Lucca: Lähdetään, Epoch!
 $8SJ6:
-Robo: Forward, Epoch!
+Robo: Liikkeelle, Epoch!
 $8SJ8:
-Frog: Hi ho, Epoch!!
+Frog: Hei hoo, Epoch!!
 $8SJA:
-Ayla: Epoch, GO!
+Ayla: Epoch, LIIKU!
 $8SJC:
-Magus: We're off.
+Magus: Lähdemme.
 $8SJE:
 [nl]
              Found 1 [item]!
@@ -3179,8 +3179,8 @@ $8SJG:
 [nl]
                Got 1 [item]!
 $8SJI:
-STRANGE CREATURE: I will now deliver a[nl]
-   message from the professor.
+OUTO OTUS: Toimitan teille viestin[nl]
+   professorilta.
 $8SJK:
 BELTHASAR: On «Death Peak» you will[nl]
    find the power to restore life.
@@ -3217,7 +3217,7 @@ BELTHASAR: Need a Clone?[nl]
    festival, and there, too, you shall find[nl]
    Bekkler!
 $8SJS:
-Executing program!
+Suoritetaan ohjelma!
 $8SJU:
 BELTHASAR: The 3 entities you saw will[nl]
    help you climb «Death Peak.»
@@ -3231,12 +3231,11 @@ BELTHASAR: The 3 entities you saw will[nl]
    Please let him sleep.[nl]
    The switch is on his stomach.
 $8SJW:
-Switch the creature off?[nl]
-      Yes.[nl]
-      No.
+Sammutatko otuksen?[nl]
+      Kyllä.[nl]
+      Ei.
 $8SJY:
-This creature sleeps beyond the flow[nl]
-of time.
+Tämä olento nukkuu ajan tuolla puolen.
 $8SJa:
 3 of you! And in a place like THIS![nl]
 You've got a long journey ahead of you[nl]
@@ -3475,7 +3474,7 @@ Mä hävisin[musicsymbol] Sä voitit[musicsymbol][nl]
 Tässä 15 hopeapistettä[musicsymbol][nl]
 eikös ollutkin kivaa?[musicsymbol]
 $8UaQ:
-SOLDIER: There they are![nl]
+Sotilas: There they are![nl]
    Don't lose 'em!!
 $8UaS:
 Marle: Looks like a dead end!
@@ -3490,19 +3489,19 @@ $8Uaa:
 Marle: Who cares?![nl]
    This place stinks, anyway!
 $8Uac:
-CHANCELLOR: Princess Nadia!
+Kansleri: Princess Nadia!
 $8Uae:
 Lucca: This is completely irrational.
 $8Uag:
 Marle: Hurry, Crono!
 $8Uai:
-CHANCELLOR: They...disappeared!!
+Kansleri: They...disappeared!!
 $8Uak:
-SOLDIER: There's no escape!
+Sotilas: There's no escape!
 $8Uam:
-SOLDIER: Silence!
+Sotilas: Silence!
 $8Uao:
-CHANCELLOR: Princess, move away from[nl]
+Kansleri: Princess, move away from[nl]
    that hoodlum!
 $8Uaq:
 20G in advance...[nl]
@@ -3924,7 +3923,7 @@ $8Uek:
 Magus: Who's going to carry this for[nl]
    us?
 $8Uem:
-SOLDIER: It's heavy...[nl]
+Sotilas: It's heavy...[nl]
    But we'll manage!
 $8Ueo:
 KNIGHT CAPTAIN: Okay, everyone![nl]
@@ -4172,19 +4171,19 @@ Crane control code:[nl]
 Code 00... ...X A[nl]
 Code 01... ...B B
 $F1KU:
-CHANCELLOR: Had any of you heard of[nl]
+Kansleri: Had any of you heard of[nl]
    the «Rainbow Shell?»
 [pause]
    I too, had no idea until I found this...
 $F1KW:
-CHANCELLOR: It's an ancestral will.[nl]
+Kansleri: It's an ancestral will.[nl]
    It says, «Unveil the Rainbow Shell to[nl]
    the people at the Millienal Fair.»
 $F1KY:
-KING: What are you talking about?![nl]
+Kuningas: What are you talking about?![nl]
    We have no family heirlooms here!
 $F1Ka:
-CHANCELLOR: So this is a forgery?
+Kansleri: So this is a forgery?
 [pause]
    Why does the defendant deny the[nl]
    people a glimpse of the «Rainbow[nl]
@@ -4194,35 +4193,36 @@ CHANCELLOR: So this is a forgery?
    He sold the heirloom for cash![nl]
    Witness, please!
 $F1Kc:
-CHANCELLOR: Wh, what is it, Nadia?[nl]
+Kansleri: Wh, what is it, Nadia?[nl]
    We are conducting a trial here.
 [pause]
 Marle: Father!
 $F1Ke:
-KING: Nadia![nl]
-   The Chancellor is trying to frame me!
+Kuningas: Nadia![nl]
+   Kansleri yrittää lavastaa minua[nl]
+   syylliseksi!
 $F1Kg:
-CHANCELLOR: He hurls insults![nl]
+Kansleri: He hurls insults![nl]
    Confirm your innocence with proof!
 [pause]
 Marle: Proof?
 [pause]
-CHANCELLOR: Yes. If he hasn't sold the[nl]
+Kansleri: Yes. If he hasn't sold the[nl]
    heirloom, it should be in the castle.
 [pause]
    Show me the «Rainbow Shell,» and I'll[nl]
    accept his innocence, heh, heh...
 $F1Ki:
-KING: Chancellor![nl]
-   What kind of trickery is this?!
+Kuningas: Kansleri![nl]
+   Mitä ihmeen pelleilyä tämä on?!
 $F1Kk:
-CHANCELLOR: Remove them!
+Kansleri: Remove them!
 $F1Km:
 MERCHANT: I confess.[nl]
    I bought it from the king.[nl]
    He said he needed the cash.
 [pause]
-KING: Liar!![nl]
+Kuningas: Liar!![nl]
    I've never even seen you before!
 $F1Ko:
 JUDGE: Order in the court!
@@ -4230,7 +4230,7 @@ $F1Kq:
 MERCHANT: Heh heh.[nl]
    Was I convincing?
 [pause]
-CHANCELLOR: Perfect!
+Kansleri: Perfect!
 $F1Ks:
 JUDGE: Members of the jury...[nl]
    If he is guilty, stand to the left.[nl]
@@ -4243,7 +4243,7 @@ $F1Ky:
 JUDGE: The verdict is in![nl]
    Guilty!!!
 $F1L0:
-CHANCELLOR: The Guardia line ends[nl]
+Kansleri: The Guardia line ends[nl]
    here.[nl]
    This domain shall be mine!
 [pause]
@@ -4251,48 +4251,48 @@ CHANCELLOR: The Guardia line ends[nl]
 $F1L2:
 Wait!!!
 $F1L4:
-CHANCELLOR: Who is it?!
+Kansleri: Who is it?!
 $F1L6:
 Marle: FATHER!!!
 $F1L8:
-KING: Nadia!
+Kuningas: Nadia!
 $F1LA:
-CHANCELLOR: Princess![nl]
+Kansleri: Princess![nl]
    Control yourself!
 $F1LC:
-CHANCELLOR: You're too late![nl]
+Kansleri: You're too late![nl]
    The King has been found guilty.[nl]
    Even kings are subject to our laws.
 $F1LE:
 Marle: No, this was a set up!
 $F1LG:
-CHANCELLOR: Nonsense![nl]
+Kansleri: Nonsense![nl]
    The King's a crook!
 [pause]
 Marle: But the treasure is right[nl]
    here!
 $F1LI:
-CHANCELLOR: IMPOSSIBLE!!
+Kansleri: IMPOSSIBLE!!
 $F1LK:
-Marle: Your little scheme is over,[nl]
-   Chancellor!
+Marle: Pikku näytöksesi on ohi,[nl]
+   Kansleri!
 $F1LM:
-CHANCELLOR: Grrr...I mean...uh...
+Kansleri: Grrr...I mean...uh...
 $F1LO:
 Marle: Huh?
 $F1LQ:
-CHANCELLOR: Hee hee hee!
+Kansleri: Hee hee hee!
 [pause]
    It's not the plot you think![nl]
    I'm here to avenge my ancestors!
 $F1LS:
-CHANCELLOR: Super, ultra, presto...[nl]
+Kansleri: Super, ultra, presto...[nl]
    TRANSFORM-O!!!!!!
 $F1LU:
 Marle: Father...[nl]
    I...
 $F1LW:
-KING: No, don't say it.[nl]
+Kuningas: No, don't say it.[nl]
    I was wrong to be so stubborn.
 $F1LY:
 Marle: No, I didn't even think about[nl]
@@ -4302,7 +4302,7 @@ Marle: No, I didn't even think about[nl]
    I know it in my heart, but the words[nl]
    just come out wrong.
 $F1La:
-KING: I too, have that problem.[nl]
+Kuningas: I too, have that problem.[nl]
    I thought you left me, but realized[nl]
    that it was I, who abandoned you.
 $F1Lc:
@@ -4311,7 +4311,7 @@ Marle: But I'm here now.[nl]
    happened.[nl]
    About Crono, and mother, and...
 $F1Le:
-KING: Your mother...[nl]
+Kuningas: Your mother...[nl]
    How sad! It has taken me so long to[nl]
    understand what Aliza meant with[nl]
    her last words.
@@ -4326,7 +4326,7 @@ KING: Your mother...[nl]
 $F1Lg:
 Marle: You...heard her last words?
 [pause]
-KING: Of course![nl]
+Kuningas: Of course![nl]
    You were so young!
 [pause]
    You ran around saying «Daddy, it's[nl]
@@ -4339,11 +4339,11 @@ KING: Of course![nl]
 $F1Li:
 Marle: So that's how it was...
 [pause]
-KING: Yes, why?
+Kuningas: Yes, why?
 $F1Lk:
 Marle: I used to call you «Daddy?»
 [pause]
-KING: You did.
+Kuningas: You did.
 $F1Lm:
 Marle: I'm sorry...Daddy.[nl]
    I'm really sorry for doubting you.
@@ -4399,7 +4399,7 @@ $F2Vy:
 ELDER: They dropped this![nl]
    ...[delay 04] ...Oh well...
 $F2W0:
-KING: We've been looking for you,[nl]
+Kuningas: We've been looking for you,[nl]
    Crono.[nl]
    Where did you take my daughter?
 $F2W2:
@@ -4411,21 +4411,21 @@ $F2W6:
 Marle: Crono hasn't done a[nl]
    thing!
 $F2W8:
-KING: She says Crono has been a[nl]
+Kuningas: She says Crono has been a[nl]
    perfect gentleman, but...
 $F2WA:
-KING: What do you think, Chancellor?
+Kuningas: Mitä arvelet, Kansleri?
 [pause]
-CHANCELLOR: Crono's deeds have[nl]
+Kansleri: Crono's deeds have[nl]
    had an enormous impact on the[nl]
    kingdom!
 $F2WC:
-KING: Pierre, what do you think?
+Kuningas: Pierre, what do you think?
 [pause]
 PIERRE: I think Crono's been[nl]
    keeping himself...rather busy!
 $F2WE:
-Marle: Chancellor, how could you?!
+Marle: Kansleri, miten kehtaat?!
 $F2WG:
 Marle: And just WHAT are you[nl]
    saying, Pierre!
@@ -4434,14 +4434,14 @@ Marle: Please![nl]
    Just listen to me![nl]
    We had to...
 $F2WK:
-KING: ...save the future, right?
+Kuningas: ...save the future, right?
 $F2WM:
 Marle: Huh??
 $F2WO:
-DOAN: You saved the future, and gave[nl]
+Doan: You saved the future, and gave[nl]
    us hope.
 $F2WQ:
-KING GUARDIA: You fought Magus's[nl]
+Kuningas GUARDIA: You fought Magus's[nl]
    troops, and brought peace to the[nl]
    kingdom in the year 600.
 $F2WS:
@@ -4452,47 +4452,47 @@ $F2WW:
 Marle: Lucca![nl]
    You brought them here, didn't you?
 $F2WY:
-KING GUARDIA: Our kinsmen told me all[nl]
+Kuningas GUARDIA: Our kinsmen told me all[nl]
    about your incredible mission.
 $F2Wa:
 Marle: Kinsmen?![nl]
    You mean these're MY ancestors...and[nl]
    descendants?
 $F2Wc:
-KING: Here I was fussing about my[nl]
+Kuningas: Here I was fussing about my[nl]
    kingdom, and my daughter, and you[nl]
    were saving past, present and[nl]
    future!
 $F2We:
-KING: Now, for a true victory parade![nl]
+Kuningas: Now, for a true victory parade![nl]
    Tonight we celebrate...you!
 $F2Wg:
-CHANCELLOR: B, but your majesty, what[nl]
+Kansleri: B, but your majesty, what[nl]
    victory?[nl]
    We have never fought anyone!
 $F2Wi:
-KING GUARDIA: Do you have any[nl]
-   children, Chancellor?
+Kuningas GUARDIA: Onko sinulla[nl]
+   lapsia, Kansleri?
 $F2Wk:
-CHANCELLOR: Y, yes, of course.
+Kansleri: Y, yes, of course.
 [pause]
-KING GUARDIA: Then our victory is their[nl]
+Kuningas GUARDIA: Then our victory is their[nl]
    freedom![nl]
    Your children, and theirs as well, now[nl]
    live in a world that knows hope.
 $F2Wm:
-CHANCELLOR: Ow, oww!
+Kansleri: Ow, oww!
 $F2Wo:
-KING GUARDIA XXI: Yes, he's real.
+Kuningas GUARDIA XXI: Yes, he's real.
 $F2Wq:
-KING GUARDIA: Now Marle, go out[nl]
+Kuningas GUARDIA: Now Marle, go out[nl]
    and enjoy the last night of the fair!
 $F2Ws:
 Marle: Father![nl]
    What's wrong with the[nl]
    townspeople!?
 [pause]
-KING: Where have you been, Nadia?[nl]
+Kuningas: Where have you been, Nadia?[nl]
    First, calm down.[nl]
    And why those clothes?
 $F2Wu:
@@ -4500,10 +4500,10 @@ Marle: Everybody keeps saying[nl]
    that![nl]
    What do you mean?
 $F2Ww:
-KING: What ARE you babbling about?[nl]
+Kuningas: What ARE you babbling about?[nl]
    You needn't keep dressing that way!
 $F2Wy:
-KING: You're just in time![nl]
+Kuningas: You're just in time![nl]
    We found this 400 year old wedding[nl]
    album in the treasury.
 $F2X0:
@@ -4566,7 +4566,7 @@ $F2XY:
    It's a real problem when the person[nl]
    who's in charge of the cat is gone!
 $F2Xa:
-MELCHIOR: Not much business in[nl]
+Melchior: Not much business in[nl]
    weapons anymore.[nl]
    But I like it that way.
 $F2Xc:
@@ -4674,7 +4674,7 @@ Robo: Caution![nl]
 $F2YS:
 Marle: I guess this wraps things up.
 $F2YU:
-SOLDIER: Oh, Princess, the King asks for[nl]
+Sotilas: Oh, Princess, the King asks for[nl]
    your presence.
 $F2YW:
 Marle: Time travel...how[nl]
@@ -4816,20 +4816,20 @@ Lucca: Hey Frog![nl]
    Why didn't you tell us you were a[nl]
    dish?
 $F2Zk:
-KING: I have a gift for you,[nl]
+Kuningas: I have a gift for you,[nl]
    to commemorate this day,[nl]
    Princess Nadia.
 $F2Zm:
 Marle: It's...
 [pause]
-KING: It's Nadia's Bell, which will[nl]
+Kuningas: It's Nadia's Bell, which will[nl]
    replace the 400 year old Leene Bell.[nl]
    Henceforth, Nadia's Bell will[nl]
    proudly ring for lasting peace.
 $F2Zo:
 Marle: It's beautiful!
 $F2Zq:
-KING: Now, you can do the honors.
+Kuningas: Now, you can do the honors.
 $F2Zs:
 Marle: Done!
 $F2Zu:
@@ -4843,10 +4843,10 @@ TABAN: Phew![nl]
    Made it just in time![nl]
    Shall I fire one off?[delay 0A]
 [cls]
-KING: Uh, no Taban.[nl]
+Kuningas: Uh, no Taban.[nl]
    Actually, I could really use your help...[delay 06][delay 00]
 $F2a0:
-KING: I'm so happy![nl]
+Kuningas: I'm so happy![nl]
    Now there's no reason for you to go[nl]
    away anymore.
 $F2a2:
@@ -4854,10 +4854,10 @@ Marle: Daddy...[nl]
    I hate to say this but...[delay 02][nl]
    I can't sit around doing nothing!
 $F2a4:
-KING: This is Nadia's Bell.[nl]
+Kuningas: This is Nadia's Bell.[nl]
    It will ring out across the land.
 $F2a6:
-KING: Marle...where did you go?[nl]
+Kuningas: Marle...where did you go?[nl]
    Could someone please lend me a[nl]
    hand?
 
@@ -5171,13 +5171,13 @@ We've been having too many.[nl]
 Something's wrong...[nl]
 Hope the «Big One» isn't coming!
 $F7jQ:
-The soldiers say the Chancellor's been[nl]
-acting funny.
+Kuulin sotilailta, että Kansleri[nl]
+on ollut vähän outo viime aikoina.
 $F7jS:
-Thanks![nl]
-I'll play you a song.
+Kiitos![nl]
+Soitan sinulle laulun.
 $F7jU:
-See ya around.
+Nähdään.
 $F7jW:
 Come on in![nl]
 Take your bloody time...![nl]
@@ -5698,10 +5698,10 @@ Crono![delay 0A]
 [cls]
 Crono!!![delay 09][delay 00]
 $F7ni:
-SOLDIER: It's time to rise and shine![nl]
+Sotilas: It's time to rise and shine![nl]
    We have a little surprise for you![delay 0B][delay 00]
 $F7nk:
-SOLDIER: Your stay of execution has[nl]
+Sotilas: Your stay of execution has[nl]
    been cancelled.[nl]
    We must now carry out your[nl]
    sentence.[delay 11][delay 00]
@@ -6548,24 +6548,26 @@ $FCYE:
 $FCYG:
 The pendant begins to glow...!
 $FCYI:
-Marle: Eeeek!
+Marle: Iiiik!
 $FCYK:
-Lucca: Yeoouch...!
+Lucca: Uaaah...!
 $FCYM:
-Marle: There's no way the[nl]
-   Chancellor can reach us here.
+Marle: Kansleri ei kyllä[nl]
+   mitenkään voi päästä tänne.
 $FCYO:
-Marle: But, where are we...?
+Marle: Missä oikeastaan olemme..?
 $FCYQ:
-Lucca: The civilization here seems[nl]
-   so...advanced...
+Lucca: Sivilisaatio täällä vaikuttaa[nl]
+   niin... kehittyneeltä...
 $FCYS:
-Marle: Like we're in another world.
+Marle: Kuin olisimme ihan toisessa[nl]
+   maailmassa.
 $FCYU:
-A strange crest is engraved here.[nl]
-It's sealed by some kind of power.
+Outo vaakuna on kaiverrettuna[nl]
+tässä. Se on sinetöity jollain[nl]
+voimakentällä.
 $FCYW:
-If you're looking for food, you lose!
+Jos etsitte ruokaa, häipykää!
 $FCYY:
 You light up my life...no, really!
 $FCYa:
@@ -6573,13 +6575,13 @@ Truce Dome?[nl]
 Never heard of it.[nl]
 This is Trann Dome.
 $FCYc:
-What's this?
+Mikäs tämä..?
 [pause]
-A plant?[nl]
- What's that?
+Kasvi?[nl]
+Mikä se on?
 $FCYe:
-Kingdom...?[nl]
-Whaddaya talking about...?
+Kuningaskunta..?[nl]
+Mitä te höpötätte?
 $FCYg:
 Never seen anything like this...
 $FCYi:
@@ -6614,27 +6616,27 @@ $FCYu:
                HP/MP restored!
 $FCYw:
 [nl]
-           But you're still hungry.
+          Mutta nälkä on tallella.
 $FCYy:
-OLD MAN: You there, where're you[nl]
+Vanhus: You there, where're you[nl]
    from?...
 $FCZ0:
 Lucca: We came from the[nl]
    laboratories to the west.
 $FCZ2:
-OLD MAN: W, what?!
+Vanhus: W, what?!
 $FCZ4:
-OLD MAN: Hey, we've got people who[nl]
+Vanhus: Hey, we've got people who[nl]
    crossed the ruins!
 $FCZ6:
 Say again!?
 $FCZ8:
 You're joking!?
 $FCZA:
-OLD MAN: So there ARE people who can[nl]
+Vanhus: So there ARE people who can[nl]
    beat up those freaky mutants...
 $FCZC:
-OLD MAN: Pardon me.  I'm Doan.[nl]
+Vanhus: Pardon me.  I'm Doan.[nl]
    I'm the descendant of the Director of[nl]
    this Info center.
 [pause]
@@ -6646,24 +6648,24 @@ OLD MAN: Pardon me.  I'm Doan.[nl]
    the robot guards.[nl]
    It's a pity.
 $FCZE:
-DOAN: Are you going down below?
+Doan: Are you going down below?
 $FCZG:
 Marle: Of course!
 $FCZI:
-DOAN: But no one's ever returned from[nl]
+Doan: But no one's ever returned from[nl]
    there.
 $FCZK:
 Lucca: Gotta try, right?
 $FCZM:
-DOAN: ......
+Doan: ......
 [pause]
    It's nice to see such spirited young[nl]
    people for a change.
 $FCZO:
-DOAN: Careful, now.[nl]
+Doan: Careful, now.[nl]
    And come back alive.
 $FCZQ:
-DOAN: Hey fellas![nl]
+Doan: Hey fellas![nl]
    Look![nl]
    The seed's sprouted!
 $FCZS:
@@ -6808,20 +6810,20 @@ Lucca: Let's take a second and do[nl]
 $FCaq:
 Lucca: Next stop, Proto Dome!
 $FCas:
-DOAN: You're back!
+Doan: You're back!
 $FCau:
-DOAN: Well?[nl]
+Doan: Well?[nl]
    What did you discover?
 $FCaw:
 Marle: This is...our future!
 $FCay:
-DOAN: ???
+Doan: ???
 $FCb0:
 MAN: Who cares, where's the food?!
 $FCb2:
 Marle: This is all we could get...
 $FCb4:
-DOAN: Seeds...?
+Doan: Seeds...?
 $FCb6:
 Lucca: You don't know how long the[nl]
    Enertron'll hold out.[nl]
@@ -6830,7 +6832,7 @@ $FCb8:
 Marle: You have to stay alive![nl]
    And so do we!
 $FCbA:
-DOAN: Huh...
+Doan: Huh...
 [pause]
    You're strange...[nl]
    You're different from us...
@@ -6838,26 +6840,26 @@ $FCbC:
 Marle: I think it's because we're[nl]
    healthy!
 $FCbE:
-DOAN: Heal-thy?[nl]
+Doan: Heal-thy?[nl]
    Got a nice ring to it!
 [pause]
    We'll try growing the seeds...
 $FCbG:
-KID: What're those?
+Poika: What're those?
 $FCbI:
-DOAN: They just might be our future...
+Doan: They just might be our future...
 $FCbK:
-DOAN: Heading for Proto Dome?[nl]
+Doan: Heading for Proto Dome?[nl]
    Go by way of Laboratory 32, and[nl]
    take this with ya.
 $FCbM:
-DOAN: It's a key to the Jet Bike in lab[nl]
+Doan: It's a key to the Jet Bike in lab[nl]
    32.
 [pause]
    I used to ride it when I was young.[nl]
    Hope it still works...
 $FCbO:
-DOAN: They've got more powerful[nl]
+Doan: They've got more powerful[nl]
    robots over there.[nl]
    Take care, and stay...healthy!
 $FCbQ:
@@ -6870,113 +6872,113 @@ Daddy's sure taking his time.
 $FCbU:
 Robo: Where are we?
 $FCbW:
-OLD MAN: Ah, more guests...!
+Vanhus: Aa, lisää vieraita...!
 $FCbY:
-Marle: Say...where are we?
+Marle: Tuota... missä me olemme?
 $FCba:
-Lucca: What do you mean,[nl]
-   «guest»...?[nl]
-   And, WHERE are we?
+Lucca: «vieraita»?[nl]
+   Missä me olemme?
 $FCbc:
-OLD MAN: Why,[nl]
-   this is «The End of Time,» of course!
+Vanhus: Outo kysymys.[nl]
+   Tämä on tietenkin «Ajan loppu»!
 [pause]
-   All lost travelers in time wind up[nl]
-   here![nl]
-   Now, where are you from?
+   Kaikki ajassa eksyneet matkustajat[nl]
+   päätyvät tänne![nl]
+   Mistä te muuten olette?
 $FCbe:
-Lucca: We're from[nl]
-   Guardia Kingdom, circa 1000 A.D.
+Lucca: Tulemme Guardian[nl]
+   kuningaskunnasta, vuoden[nl]
+   1000 A.D. tienoilta.[nl]
 $FCbg:
-Robo: I come from 2300 A.D...
+Robo: Minä tulen vuodesta 2300 A.D...
 $FCbi:
-OLD MAN: When 4 or more beings step[nl]
-   into a time warp, the Conservation[nl]
-   of Time theorem states that they[nl]
-   will turn up...
+Vanhus: Kun neljä tai useampi olento[nl]
+   astuu aikaporttiin, Ajan säilymislain[nl]
+   mukaan he päätyvät...
 [pause]
-   ...at the space-time coordinates of[nl]
-   least resistance.[nl]
-   Here.
+   ...aika-avaruuden koordinaatteihin,[nl]
+   jossa on vähiten asutusta.[nl]
+   Eli tänne.
 [pause]
-   Disturbances in the space-time[nl]
-   continuum have increased recently.[nl]
-   Far too many folks are just popping[nl]
-   in here...
+   Häiriöt aika-avaruudessa ovat[nl]
+   hiljan yleistyneet. Liikaa väkeä[nl]
+   hyppii tänne...
 [pause]
-   I fear something is having a[nl]
-   powerful effect on the very fabric[nl]
-   of time...
+   Pelkään, että jokin jossain[nl]
+   vaikuttaa hyvin vahvasti ajan[nl]
+   rakenteeseen...
 $FCbk:
-Lucca: Which means one of us has[nl]
-   to remain here.
+Lucca: Eli yhden meistä pitää[nl]
+   jäädä tänne.
 $FCbm:
-Marle: Stay HERE?[nl]
-   ALONE?
+Marle: Jäädä TÄNNE?[nl]
+   YKSIN?
 $FCbo:
-OLD MAN: It is pretty bleak here...
+Vanhus: Täällä ei ole kovin piristävää...
 [pause]
-   But not to worry.[nl]
-   All time periods connect here...
+   Mutta ei se mitään.[nl]
+   Kaikki ajanjaksot yhdistyvät täällä...
 [pause]
-   You can visit your friends whenever[nl]
-   you wish! But you can never travel in[nl]
-   groups greater than 3...
+   Voitte nähdä ystäviänne milloin[nl]
+   haluatte! Mutta ette voi matkustaa[nl]
+   kolmea isommissa ryhmissä...
 $FCbq:
-Robo: So, one of us must stay.
+Robo: Täten yhden meistä on jäätävä.
 $FCbs:
-Lucca: Who'll it be, Crono?
+Lucca: Kenet valitset, Crono?
 $FCbu:
-Marle: Decide, Crono!
+Marle: Päätä sinä, Crono!
 $FCbw:
-Lucca: Now don't you go getting[nl]
-   any ideas, mister!
+Lucca: Älä nyt vaan saa mitään[nl]
+   ideoita päähäsi, ukko!
 $FCby:
-Robo: Please come for me[nl]
-   whenever you need me.
+Robo: Olen täällä, milloin[nl]
+   tahansa tarvitsettekaan apuani.
 $FCc0:
-OLD MAN: You can instantly bring any[nl]
-   person here into your party, should[nl]
-   the need arise.
+Vanhus: Voitte vaihtaa joukkonne[nl]
+   jäseniä tarvittaessa milloin[nl]
+   tahansa.
 $FCc2:
-OLD MAN: ...So there you have it.
+Vanhus: ...eli näin.
 [pause]
-   Don't forget.  Press the Y Button to[nl]
-   switch party members.
+   Älä unohda.  Y-napilla[nl]
+   vaihdat joukon jäseniä.
 $FCc4:
-Marle: How do we get back to our[nl]
-   time?
+Marle: Mutta miten pääsemme[nl]
+   takaisin omaan aikaamme?
 $FCc6:
-OLD MAN: You see those lovely pillars of[nl]
-   light? Those hook you up to different[nl]
-   eras.
+Vanhus: Huomasitteko nuo kauniit[nl]
+   valopilarit tuolla? Ne kytkevät[nl]
+   tämän paikan eri aikakausiin.
 [pause]
-   Once you've been through a Gate,[nl]
-   you can always use it to come here.
+   Kun olette kerran käyttäneet[nl]
+   jotain Porttia, pääsette aina[nl]
+   sitä kautta tänne.
 [pause]
-   To use a Gate from here, step into[nl]
-   the light and press the A Button.[nl]
-   But beware the Gate which leads[nl]
-   from that bucket...
+   Käyttääksenne Porttia täällä,[nl]
+   astukaa valoon ja painakaa A-nappia.[nl]
+   Mutta varokaa tuota ämpärissä[nl]
+   olevaa Porttia...
 $FCc8:
-OLD MAN: That Gate leads to 1999 A.D...[nl]
-   It leads to the «Day of Lavos»...
+Vanhus: Se Portti vie vuoteen[nl]
+   1999 A.D...[nl]
+   «Lavoksen päivään»...
 [pause]
-   Go there only if you're looking to[nl]
-   achieve a shorter life span...
+   Menkää sinne jos haluatte[nl]
+   elämästänne lyhyen...
 [pause]
-   Lavos will help you leave this mortal[nl]
-   coil.
+   Lavos auttaa pääsemään eroon[nl]
+   kuolevaisesta ruumiista.
 $FCcA:
-OLD MAN: Hey.
+Vanhus: Hei.
 $FCcC:
-OLD MAN: Don't be in such a rush![nl]
-   Before you go, take a peek inside the[nl]
-   room behind me!
+Vanhus: Teillä ei ole kiire minnekään![nl]
+   Käykää ensin tuolla takanani[nl]
+   olevassa huoneessa!
 $FCcE:
-It's locked shut...
+Se on lukittu...
 $FCcG:
-OLD MAN: Well, well![nl]
+Vanhus: Well, well![nl]
    People who lived long ago ALL[nl]
    enjoyed such powers...
 [pause]
@@ -6993,7 +6995,7 @@ OLD MAN: Well, well![nl]
    Stop by whenever you're in the[nl]
    area!
 $FCcI:
-OLD MAN: Come see me anytime.[nl]
+Vanhus: Come see me anytime.[nl]
    Think of me as your guide.
 $FCcK:
 Will you take Crono?[nl]
@@ -7158,10 +7160,10 @@ Save money, it'll do you good.
 It's what that guy who walked to the[nl]
 other dome used to say.
 $FCdo:
-OLD MAN: Hey, where's that healthy kid[nl]
+Vanhus: Hey, where's that healthy kid[nl]
    with the radical haircut?
 $FCdq:
-OLD MAN: ...
+Vanhus: ...
 [pause]
    This is terrible news...
 [pause]
@@ -7172,7 +7174,7 @@ OLD MAN: ...
    [nl]
          «Memories of Crono»
 $FCds:
-OLD MAN: I wish I could lend a hand...
+Vanhus: I wish I could lend a hand...
 $FCdu:
 Marle: We're looking for the Guru[nl]
    of Time...
@@ -7186,15 +7188,15 @@ $FCe0:
 Robo: We are looking for the Guru[nl]
    of Time...
 $FCe2:
-OLD MAN: Hey, where have you been?
+Vanhus: Hey, where have you been?
 $FCe4:
-OLD MAN: So that's your story...[nl]
+Vanhus: So that's your story...[nl]
    And just LOOK at you now...[nl]
    You've become quite formidable!
 $FCe6:
 Magus: Heh?...
 $FCe8:
-OLD MAN: The Guru of Time, eh...?
+Vanhus: The Guru of Time, eh...?
 [pause]
    Heard of him, of course, but what do[nl]
    you want with him?
@@ -7212,7 +7214,7 @@ $FCeG:
 Lucca: We believe he knows how to[nl]
    bring Crono back to life.
 $FCeI:
-OLD MAN: To bring back lost loved[nl]
+Vanhus: To bring back lost loved[nl]
    ones...[nl]
    It's what everyone wants...
 [pause]
@@ -7220,7 +7222,7 @@ OLD MAN: To bring back lost loved[nl]
 [pause]
    ...to have friends like you...
 $FCeK:
-OLD MAN: Here.[nl]
+Vanhus: Here.[nl]
    Take this with you.
 $FCeM:
 Ayla: Egg![nl]
@@ -7235,7 +7237,7 @@ $FCeS:
 Lucca: An egg?[nl]
    Is it hardboiled or 3-minute?
 $FCeU:
-OLD MAN: Let us call that the Chrono[nl]
+Vanhus: Let us call that the Chrono[nl]
    Trigger. It is pure potential.
 [pause]
    By unleashing a specific course of[nl]
@@ -7284,7 +7286,7 @@ Frog: Wh...what?
    Thee art Gaspar, the Guru of[nl]
    Time!
 $FCeg:
-OLD MAN: Um...well...
+Vanhus: Um...well...
 [pause]
    ...I believe that's what they used to[nl]
    call me...
@@ -7344,7 +7346,7 @@ Magus: ...
 [pause]
    You got whacked, 'cuz you're weak.
 $FCf8:
-OLD MAN: So![nl]
+Vanhus: So![nl]
    Looks like you were successful!
 [pause]
    No, don't thank me. I didn't do a[nl]
@@ -7359,7 +7361,7 @@ OLD MAN: So![nl]
    It seems to have a heart and mind of[nl]
    it's own...
 $FCfA:
-OLD MAN: You wish to fight Lavos,[nl]
+Vanhus: You wish to fight Lavos,[nl]
    correct?
 [pause]
    Many paths lay open to you.[nl]
@@ -7405,7 +7407,7 @@ $FCfM:
 There's an object in the Middle Ages[nl]
 that sparkles like a rainbow...
 $FCfO:
-OLD MAN: One of you is close to[nl]
+Vanhus: One of you is close to[nl]
    someone who needs help...[nl]
    Find this person...fast.
 [pause]
@@ -7420,7 +7422,7 @@ OLD MAN: One of you is close to[nl]
    witness the coming spectacle from[nl]
    my vantage point here...
 $FCfQ:
-OLD MAN: That poor woman can finally[nl]
+Vanhus: That poor woman can finally[nl]
    rest, now that the Black Omen is[nl]
    gone.[nl]
    She's reverted back to a human...
@@ -7434,7 +7436,7 @@ OLD MAN: That poor woman can finally[nl]
    This is a battle between Lavos and[nl]
    the entire world!
 $FCfS:
-OLD MAN: Aha![nl]
+Vanhus: Aha![nl]
    So you've been to the Land of Magic...
 [pause]
    Now that the pillar of light is sealed,[nl]
@@ -7450,7 +7452,7 @@ OLD MAN: Aha![nl]
    spending so much of his time doing[nl]
    research.
 $FCfU:
-OLD MAN: Interesting. So he actually[nl]
+Vanhus: Interesting. So he actually[nl]
    finished the Wings of Time.
 [pause]
    In fact, gave his life for it!
@@ -7458,7 +7460,7 @@ OLD MAN: Interesting. So he actually[nl]
    Why not put that device to good use?[nl]
    Take it to the ancient Land of Magic!
 $FCfW:
-OLD MAN: Dreamstone?...
+Vanhus: Dreamstone?...
 [pause]
    I've heard of it, of course.[nl]
    It's a prehistoric mineral...
@@ -7466,7 +7468,7 @@ OLD MAN: Dreamstone?...
    You might find it way back in the[nl]
    prehistoric era.
 $FCfY:
-OLD MAN: You found a Dreamstone![nl]
+Vanhus: You found a Dreamstone![nl]
    I'd forgotten how beautiful they are.
 [pause]
    You'll need to find someone that can[nl]
@@ -7474,13 +7476,13 @@ OLD MAN: You found a Dreamstone![nl]
    find him in Medina, a village near the[nl]
    Mystic Mountains.
 $FCfa:
-OLD MAN: What luster![nl]
+Vanhus: What luster![nl]
    The Masa...Mune, correct?
 [pause]
    A...person in the Middle Ages wants to[nl]
    take down Magus with that.
 $FCfc:
-OLD MAN: What a strange new guest![nl]
+Vanhus: What a strange new guest![nl]
    Are YOU from the Middle Ages?
 $FCfe:
 GURU GASPAR: Th, this is...
@@ -8721,7 +8723,7 @@ fly, huh?
 $FCrm:
 Everything okay with the Blackbird?
 $FCro:
-SOLDIER: Everything's A-okay, Sir[nl]
+Sotilas: Everything's A-okay, Sir[nl]
    Dalton!
 $FCrq:
 DALTON: Of course it is, you idiot!
@@ -9198,33 +9200,33 @@ $FCxU:
 [nl]
                Got 1 [item]!
 $FCxW:
-SOLDIER: Halt![nl]
+Sotilas: Halt![nl]
    Who goes there!
 $FCxY:
-SOLDIER: Check out that hair![nl]
+Sotilas: Check out that hair![nl]
    Where're you from, son?[nl]
    Are you one of Magus's troopers?
 [pause]
-SOLDIER: Hardly! This kid never would[nl]
+Sotilas: Hardly! This kid never would[nl]
    have made the cut![nl]
    Show us your stamp collection, son!
 [pause]
-SOLDIER: Har, har![nl]
+Sotilas: Har, har![nl]
    Now beat it, shrimp!
 [pause]
 Stop that at once!
 $FCxa:
-SOLDIER: Queen Leene!
+Sotilas: Queen Leene!
 $FCxc:
 QUEEN: Show your manners![nl]
    This is a friend of mine!
 $FCxe:
-SOLDIER: But there's something odd[nl]
+Sotilas: But there's something odd[nl]
    about him!
 $FCxg:
 QUEEN: You refuse to obey my orders?!
 $FCxi:
-SOLDIER: Forgive me, my lady![nl]
+Sotilas: Forgive me, my lady![nl]
    Please enter, Sir!
 $FCxk:
 QUEEN: Giggle...
@@ -9240,7 +9242,7 @@ room.
 $FCxs:
 Mind your manners!
 $FCxu:
-KING: Sir![nl]
+Kuningas: Sir![nl]
    I understand that you are the one[nl]
    who saved my dear wife, the Queen!
 [pause]
@@ -9256,13 +9258,13 @@ KING: Sir![nl]
    Please rest in the Knights quarters,[nl]
    downstairs, to the left.
 $FCxw:
-CHANCELLOR: Hmmm...
+Kansleri: Hmmm...
 $FCxy:
-CHANCELLOR: She escaped?![nl]
+Kansleri: She escaped?![nl]
    But how?[nl]
    She was in a secured room!
 $FCy0:
-CHANCELLOR: What do you want?[nl]
+Kansleri: What do you want?[nl]
    Get out of my face!
 $FCy2:
 The King's room is upstairs.[nl]
@@ -9373,7 +9375,7 @@ I'm hungry...
 $FCz8:
 MAID: Here's your food!
 $FCzA:
-SOLDIER: All right!
+Sotilas: All right!
 $FCzC:
 This is great!
 $FCzE:
@@ -9524,7 +9526,7 @@ $FD0W:
 Lucca: Hurry![nl]
    We have to find the real Queen!
 $FD0Y:
-KING GUARDIA: You had me worried,[nl]
+Kuningas GUARDIA: You had me worried,[nl]
    Leene.
 $FD0a:
 Frog: I failed to protect[nl]
@@ -9600,7 +9602,7 @@ $FD18:
 Marle: The real Queen's safe, right?[nl]
    So let's go home, Crono!
 $FD1A:
-CHANCELLOR: That no good Yakra![nl]
+Kansleri: That no good Yakra![nl]
    Impersonating me and kidnapping[nl]
    the Queen!
 [pause]
@@ -9657,7 +9659,7 @@ Lucca: ...
    Froggy, you weren't such a bad guy[nl]
    either.
 $FD1e:
-KING: Hello![nl]
+Kuningas: Hello![nl]
    You're always welcome here.[nl]
    What can I do for you?
 $FD1g:
@@ -9672,14 +9674,14 @@ Frog: We asketh a favor...
 $FD1o:
 Ayla: Ayla have favor.
 $FD1q:
-KING: I get it. You want me to keep[nl]
+Kuningas: I get it. You want me to keep[nl]
    that huge shell safe here until the[nl]
    next century, right?
 $FD1s:
 LEENE: I ask for the sake of [member1].[nl]
    Please carry out their request.
 $FD1u:
-KING: Done![nl]
+Kuningas: Done![nl]
    I shall obtain the shell and store it in[nl]
    the castle, as a national treasure.
 $FD1w:
@@ -9687,7 +9689,7 @@ Knight Captain!
 $FD1y:
 KNIGHT CAPTAIN: Yes, Majesty!
 $FD20:
-KING: Go and obtain the Rainbow Shell,[nl]
+Kuningas: Go and obtain the Rainbow Shell,[nl]
    and bring it back in one piece!
 $FD22:
 KNIGHT CAPTAIN: At once, Sire!
@@ -9706,7 +9708,7 @@ Ayla: You, good man![nl]
    Strong![nl]
    Ayla like!
 $FD2E:
-SOLDIER: Oh, it's you again.
+Sotilas: Oh, it's you again.
 $FD2G:
 Magus's troops had us cornered[nl]
 but the appearance of the Hero, saved[nl]
@@ -10062,27 +10064,27 @@ $FD5M:
 [nl]
                Got 1 [item]!
 $FD5O:
-SOLDIER: Who's there!
+Sotilas: Who's there!
 $FD5Q:
-SOLDIER: Can't let you through.[nl]
+Sotilas: Can't let you through.[nl]
    Go check out the festival!
 $FD5S:
 Princess Nadia!
 $FD5U:
-CHANCELLOR: Are you all right?[nl]
+Kansleri: Are you all right?[nl]
    Where have you been?!
 [pause]
    I heard you were abducted![nl]
    We had soldiers searching for you!
 $FD5W:
-CHANCELLOR: Scoundrel![nl]
+Kansleri: Scoundrel![nl]
    You're the one, huh?[nl]
    Kidnapping Princess Nadia!
 $FD5Y:
 Marle: No![nl]
    Crono's...
 $FD5a:
-CHANCELLOR: Admit it![nl]
+Kansleri: Admit it![nl]
    You confused her and tried to take[nl]
    over the throne![nl]
    Terrorist!!
@@ -10091,12 +10093,12 @@ Marle: S, stop it!
 $FD5e:
 Marle: Stop this at once!!
 $FD5g:
-CHANCELLOR: What are you doing!
+Kansleri: What are you doing!
 $FD5i:
-SOLDIER: But Princess Nadia said[nl]
+Sotilas: But Princess Nadia said[nl]
    to...
 $FD5k:
-CHANCELLOR: Idiots![nl]
+Kansleri: Idiots![nl]
    Detain him!!
 $FD5m:
 Marle: Crono!!
@@ -10110,25 +10112,25 @@ Lucca: We have no choice but to[nl]
 $FD5u:
 Stop!
 $FD5w:
-SOLDIER: Princess Nadia!
+Sotilas: Princess Nadia!
 $FD5y:
 Marle: This is my friend![nl]
    Show him your respect!
 $FD60:
-SOLDIER: B, but...
+Sotilas: B, but...
 $FD62:
 Marle: Can't you take orders?
 $FD64:
-SOLDIER: Of course!
+Sotilas: Of course!
 $FD66:
 Hold it right there!
 $FD68:
-CHANCELLOR: Do as King Guardia XXXIII[nl]
+Kansleri: Do as King Guardia XXXIII[nl]
    says!
 $FD6A:
 Marle: Father...
 $FD6C:
-KING: Silence, Princess Nadia!
+Kuningas: Silence, Princess Nadia!
 [pause]
    The throne comes before your[nl]
    personal wishes!
@@ -10137,25 +10139,25 @@ Marle: What!?[nl]
    Just because I have a title doesn't[nl]
    mean I'm not a person!
 $FD6G:
-KING: You pick up strange ideas[nl]
+Kuningas: You pick up strange ideas[nl]
    venturing outside!
 $FD6I:
 Marle: I didn't «pick up» anything![nl]
    It's called «common sense!»
 $FD6K:
-KING: Princess Nadia!
+Kuningas: Princess Nadia!
 $FD6M:
 Marle: I despise you![nl]
    I'm leaving!
 $FD6O:
-CHANCELLOR: Princess Nadia!
+Kansleri: Princess Nadia!
 $FD6Q:
 Marle: Come on, Crono!!
 $FD6S:
-CHANCELLOR: Don't just stand there![nl]
+Kansleri: Don't just stand there![nl]
    After them!
 $FD6U:
-KING: Princess Nadia...
+Kuningas: Princess Nadia...
 $FD6W:
 You're not going anywhere!
 $FD6Y:
@@ -10165,7 +10167,7 @@ Marle: Come on, Crono![nl]
    I don't wanna see that bullheaded[nl]
    fool!
 $FD6c:
-SOLDIER: !!
+Sotilas: !!
 [pause]
    T, Terrorists!!
 $FD6e:
@@ -10176,7 +10178,7 @@ $FD6i:
 Frog: Who, what?[nl]
    Terrorists?!
 $FD6k:
-CHANCELLOR: I've been worried,[nl]
+Kansleri: I've been worried,[nl]
    Princess!
 [pause]
    I understand your pain.[nl]
@@ -10190,12 +10192,12 @@ $FD6m:
 Marle: No one could do that![nl]
    It's inhuman!
 $FD6o:
-CHANCELLOR: Oh, child, it's ancient[nl]
+Kansleri: Oh, child, it's ancient[nl]
    history now...
 $FD6q:
 Marle: Tell me more!
 $FD6s:
-CHANCELLOR: This may be difficult...
+Kansleri: This may be difficult...
 [pause]
    Well, Queen Aliza's condition suddenly[nl]
    changed for the worst.
@@ -10204,14 +10206,14 @@ CHANCELLOR: This may be difficult...
    king one last time, but he couldn't[nl]
    find the time to drop by...
 $FD6u:
-CHANCELLOR: Said he had some work to[nl]
+Kansleri: Said he had some work to[nl]
    do...
 [pause]
    But knowing nothing about death,[nl]
    you waited faithfully by your[nl]
    mother's side...
 $FD6w:
-CHANCELLOR: Aliza passed away in[nl]
+Kansleri: Aliza passed away in[nl]
    sorrow...
 [pause]
    It's as if the king indirectly killed[nl]
@@ -10222,23 +10224,23 @@ Marle: WHAT...!!
    Father KILLED?[nl]
    ...MY MOTHER...?!!
 $FD70:
-CHANCELLOR: But what do I know![nl]
+Kansleri: But what do I know![nl]
    There are reasons for everything,[nl]
    right dear?
 $FD72:
-CHANCELLOR: Now...so glad to see you[nl]
+Kansleri: Now...so glad to see you[nl]
    back again.[nl]
    Please go and visit the king.
 $FD74:
-KING: Oh![nl]
+Kuningas: Oh![nl]
    Nadia...
 $FD76:
-KING: W, what do you want![nl]
+Kuningas: W, what do you want![nl]
    I'm not giving in to your demands!
 $FD78:
 Marle: ......
 $FD7A:
-KING: It's your fault for leaving the[nl]
+Kuningas: It's your fault for leaving the[nl]
    castle!
 [pause]
    And letting these...hoodlums in here.
@@ -10249,28 +10251,28 @@ $FD7C:
 Marle: Stop it![nl]
    They're my friends!
 $FD7E:
-KING: They're a disgrace to this family!
+Kuningas: They're a disgrace to this family!
 $FD7G:
 Marle: Father, you, you...
 $FD7I:
 Marle: You care more about your[nl]
    country than me...or mother!!
 $FD7K:
-KING: What...?
+Kuningas: What...?
 $FD7M:
 Marle: You, ...you killed mother!
 $FD7O:
-KING: !!
+Kuningas: !!
 $FD7Q:
-KING: Get... OUT OF HERE this instant!!![nl]
+Kuningas: Get... OUT OF HERE this instant!!![nl]
    I never want to see your face again!
 $FD7S:
 Marle: Good riddance!
 $FD7U:
-KING: We're no longer family![nl]
+Kuningas: We're no longer family![nl]
    Do as you wish!!
 $FD7W:
-CHANCELLOR: ......
+Kansleri: ......
 $FD7Y:
 Marle: C'mon, let's check out the[nl]
    fair!
@@ -10383,33 +10385,33 @@ $FD8W:
 [pause]
 I've got nothing to say!
 $FD8Y:
-KING: W, what's that?
+Kuningas: W, what's that?
 $FD8a:
 Marle: Your... favorite.
 $FD8c:
-KING: ......
+Kuningas: ......
 [pause]
    For me?
 $FD8e:
-KING: Let's see...
+Kuningas: Let's see...
 $FD8g:
 SERVANT: What is it, sir?!
 $FD8i:
-KING: What...!!
+Kuningas: What...!!
 $FD8k:
-KING: How dare you...?!
+Kuningas: How dare you...?!
 [pause]
    Giving me something this rich when[nl]
    you KNOW I have high cholesterol...!
 $FD8m:
 Marle: But...it's your favorite!
 $FD8o:
-KING: This is the last straw![nl]
+Kuningas: This is the last straw![nl]
    Now I know how you REALLY feel!
 $FD8q:
 Marle: Father, NO...!
 $FD8s:
-KING: Leave![nl]
+Kuningas: Leave![nl]
    NOW!!!![nl]
    Never show your face here again!!
 $FD8u:
@@ -10479,14 +10481,14 @@ leave.
 $FD9U:
 It's locked.
 $FD9W:
-CHANCELLOR: Phew, finally![nl]
+Kansleri: Phew, finally![nl]
    That beast, keepin' me locked up in[nl]
    here...!
 $FD9Y:
-CHANCELLOR: Princess Nadia![nl]
+Kansleri: Princess Nadia![nl]
    Your friends, I presume?
 $FD9a:
-CHANCELLOR: Wait, I don't have time for[nl]
+Kansleri: Wait, I don't have time for[nl]
    this.[nl]
    I must prepare for the Moonlight[nl]
    Parade!
@@ -10575,7 +10577,7 @@ $FDAU:
 [nl]
              HP/MP recovered!
 $FDAW:
-KING: I'll let you exit the castle, BUT!
+Kuningas: I'll let you exit the castle, BUT!
 [pause]
    ...you be careful, now.[nl]
    Take care of her!
@@ -10601,7 +10603,7 @@ Frog: Melchior!
 $FDAq:
 Ayla: Melchior!
 $FDAs:
-MELCHIOR: Can't let you run the whole[nl]
+Melchior: Can't let you run the whole[nl]
    show. Let me make some weapons[nl]
    from the Rainbow Shell!
 [pause]
@@ -10639,17 +10641,17 @@ $FTQA:
 [nl]
        And finally, the day arrived...[delay 0A][delay 00]
 $FTQC:
-CHANCELLOR: This terrorist has tried to[nl]
+Kansleri: This terrorist has tried to[nl]
    overthrow our kingdom!
 $FTQE:
-CHANCELLOR: He has been found guilty,[nl]
+Kansleri: He has been found guilty,[nl]
    and you must now carry out his[nl]
    sentence.
 $FTQG:
 SUPERVISOR: So THIS is the monster who[nl]
    kidnapped the princess!
 $FTQI:
-CHANCELLOR: The execution is 3 days[nl]
+Kansleri: The execution is 3 days[nl]
    away.[nl]
    Do NOT let him out of your sight!
 $FTQK:
@@ -10659,7 +10661,7 @@ SUPERVISOR: Execution?![nl]
    Strange, but I don't seem to recall[nl]
    hearing anything about an execution.
 $FTQO:
-CHANCELLOR: WHAT!!![nl]
+Kansleri: WHAT!!![nl]
    How DARE you question ME![nl]
    The paperwork's probably just been[nl]
    held up in the system!
@@ -10747,14 +10749,14 @@ Lucca: This is what happens to[nl]
 $FTRO:
 Lucca: What was that?
 $FTRQ:
-CHANCELLOR: Forward, Dragon Tank![nl]
+Kansleri: Forward, Dragon Tank![nl]
    Crush those rebels!
 $FTRS:
-CHANCELLOR: They got the Dragon Tank!![nl]
+Kansleri: They got the Dragon Tank!![nl]
    Fix it![nl]
    Quickly!
 $FTRU:
-CHANCELLOR: Don't fool yourselves into[nl]
+Kansleri: Don't fool yourselves into[nl]
    thinking you've gotten away with[nl]
    this!
 $FTRW:
@@ -10989,27 +10991,27 @@ GLENN: I don't know...[nl]
    I think I'd really lose it if I had to[nl]
    hurt someone.
 $FTTS:
-MELCHIOR: Ah, hello![nl]
+Melchior: Ah, hello![nl]
    Could I interest you in a weapon?[nl]
       Yes, I'd like to buy one.[nl]
       No, I'm not interested.
 $FTTU:
-MELCHIOR: Weapons...[nl]
+Melchior: Weapons...[nl]
    If there weren't evil in this world,[nl]
    there would be no need for[nl]
    weapons.
 [pause]
    What a sad state of affairs...
 $FTTW:
-MELCHIOR: Really?[nl]
+Melchior: Really?[nl]
    Well, you know where to find me[nl]
    should the need arise.
 $FTTY:
-MELCHIOR: That sword is an invention[nl]
+Melchior: That sword is an invention[nl]
    of mine.[nl]
    It's lightweight and handles superbly.
 $FTTa:
-MELCHIOR: Should you desire to return[nl]
+Melchior: Should you desire to return[nl]
    to Truce village, use the shortcut[nl]
    through the cave in the mountains to[nl]
    the north.
@@ -11036,10 +11038,10 @@ $FTTo:
 Marle: He's gone when we need him[nl]
    the most!
 $FTTq:
-MELCHIOR: You're back again?[nl]
+Melchior: You're back again?[nl]
    Come to see my collection?
 $FTTs:
-MELCHIOR: Th, this sword...it's the[nl]
+Melchior: Th, this sword...it's the[nl]
    Masamune![nl]
    How did you get it?
 $FTTu:
@@ -11049,11 +11051,11 @@ $FTTw:
 Lucca: Why would your name be[nl]
    engraved on the sword?
 $FTTy:
-MELCHIOR: ...
+Melchior: ...
 [pause]
    It's a...long story.
 $FTU0:
-MELCHIOR: You do want to hear this[nl]
+Melchior: You do want to hear this[nl]
    story, right?
 $FTU2:
 Marle: Yes![nl]
@@ -11066,7 +11068,7 @@ Marle: Can you fix it somehow?
 $FTU8:
 Lucca: Is it possible to reforge it?
 $FTUA:
-MELCHIOR: Hmmmm...[nl]
+Melchior: Hmmmm...[nl]
    It might be possible if we could get[nl]
    our hands on some Dreamstone,[nl]
    which the sword is made of.
@@ -11078,14 +11080,14 @@ Robo: Dreamstone...?[nl]
     No data in my memory banks of[nl]
    such a rock.
 $FTUG:
-MELCHIOR: You can't find it anymore.[nl]
+Melchior: You can't find it anymore.[nl]
    It was a red stone that was once[nl]
    used as money.
 [pause]
    Unfortunately, it hasn't been[nl]
    available for a very long time.
 $FTUI:
-MELCHIOR: I doubt that you'll ever find[nl]
+Melchior: I doubt that you'll ever find[nl]
    the red stone, but if you bring some[nl]
    to me, I will fix the Masamune. Keep[nl]
    the sword with you until then.
@@ -11094,15 +11096,15 @@ MELCHIOR: I doubt that you'll ever find[nl]
       Yes.[nl]
       No.
 $FTUK:
-MELCHIOR: You found some[nl]
+Melchior: You found some[nl]
    Dreamstone?![nl]
    Then I'll repair the Masamune!
 $FTUM:
-MELCHIOR: HOW on earth did you get the[nl]
+Melchior: HOW on earth did you get the[nl]
    Masamune...[nl]
    ...and the Dreamstone?
 $FTUO:
-MELCHIOR: No, don't tell me.[nl]
+Melchior: No, don't tell me.[nl]
    I don't think my heart could take it.[nl]
    It'll take a little while to fix this...
 $FTUQ:
@@ -11110,7 +11112,7 @@ Lucca: I'll lend a hand!!
 $FTUS:
 Robo: I shall help also.
 $FTUU:
-MELCHIOR: Take a good look![nl]
+Melchior: Take a good look![nl]
    THIS is the Masamune!
 $FTUW:
 Marle: Awesome![nl]
@@ -11121,7 +11123,7 @@ Robo: How strange.[nl]
    energy emanating from the[nl]
    Masamune.
 $FTUa:
-MELCHIOR: This weapon represents[nl]
+Melchior: This weapon represents[nl]
    considerable power...[nl]
    Your actions may either save or[nl]
    destroy life.
@@ -11143,19 +11145,19 @@ $FTUg:
 Robo: Mr. Crono, the Masamune[nl]
    has not been fully repaired.
 $FTUi:
-MELCHIOR: All right, then!
+Melchior: All right, then!
 $FTUk:
 Lucca: How are you gonna fix it?
 $FTUm:
 Robo: These repairs seem quite[nl]
    difficult.
 $FTUo:
-MELCHIOR: Don't interrupt me while I'm[nl]
+Melchior: Don't interrupt me while I'm[nl]
    conducting research!
 $FTUq:
-MELCHIOR: At any rate, leave this to me!
+Melchior: At any rate, leave this to me!
 $FTUs:
-MELCHIOR: To repair the Masamune, we[nl]
+Melchior: To repair the Masamune, we[nl]
    must process the Dreamstone, and[nl]
    activate the sword.
 [pause]
@@ -11180,24 +11182,24 @@ Robo: Without the proper facilities,[nl]
    refining the Dreamstone could take[nl]
    some time.
 $FTV6:
-MELCHIOR: To energize this sword, we[nl]
+Melchior: To energize this sword, we[nl]
    must first rejuvenate the broken[nl]
    sword...
 $FTV8:
-MELCHIOR: The spell to energize the[nl]
+Melchior: The spell to energize the[nl]
    sword takes immense concentration.[nl]
    Could you leave us alone for awhile?
 $FTVA:
-MELCHIOR: All right, it's done![nl]
+Melchior: All right, it's done![nl]
    Now, bring me the Dreamstone.
 $FTVC:
 Lucca: I'm done here too.
 $FTVE:
-MELCHIOR: All right, let's get started.
+Melchior: All right, let's get started.
 $FTVG:
-MELCHIOR: Sorry to keep you waiting.
+Melchior: Sorry to keep you waiting.
 $FTVI:
-MELCHIOR: Well, I think that's[nl]
+Melchior: Well, I think that's[nl]
    everything.
 $FTVK:
 Marle: Ok Crono, let's take the[nl]
@@ -11492,7 +11494,7 @@ $FTXy:
 [nl]
                 Got 1 [item]!
 $FTY0:
-MELCHIOR: The Black Omen which floats[nl]
+Melchior: The Black Omen which floats[nl]
    in the sky.[nl]
    ...made by neither the Mystics nor[nl]
    humans...
@@ -11616,15 +11618,15 @@ Ayla bad luck!
 $FTZI:
 You disobey, so Reptites mad!
 $FTZK:
-OLD MAN: Ayla...This your fault![nl]
+Vanhus: Ayla...This your fault![nl]
    Look at mess...
 $FTZM:
-OLD MAN: Reptites followed you![nl]
+Vanhus: Reptites followed you![nl]
    So village now ruined!
 $FTZO:
 Ayla: ... Ayla feel bad.
 $FTZQ:
-OLD MAN: Reptites strong![nl]
+Vanhus: Reptites strong![nl]
    They live long time before us, they[nl]
    smart so we hide.
 [pause]
@@ -11638,7 +11640,7 @@ Ayla: Ayla fight while alive![nl]
 [pause]
    Old man breathe, but dead on inside.
 $FTZU:
-OLD MAN: Ayla, you strong, can[nl]
+Vanhus: Ayla, you strong, can[nl]
    make big talk.[nl]
    We no have power...
 $FTZW:
@@ -11647,9 +11649,9 @@ Ayla: No! Have power![nl]
    Ayla help you, but need Dactyl.[nl]
    Give Dactyl.
 $FTZY:
-OLD MAN: Need Dactyl?
+Vanhus: Need Dactyl?
 $FTZa:
-OLD MAN: Go to Tyrano lair?![nl]
+Vanhus: Go to Tyrano lair?![nl]
    That Reptite's place.[nl]
    Dangerous![nl]
    Ayla want die?
@@ -11658,7 +11660,7 @@ Ayla: Want to live, so go there![nl]
    Ayla be OK.[nl]
    Give Dactyl!
 $FTZe:
-OLD MAN: ...OK.[nl]
+Vanhus: ...OK.[nl]
    Go to Dactyl's nest and keeper will[nl]
    help.[nl]
    Careful, Ayla!
@@ -11680,10 +11682,10 @@ $FTZq:
 You strong.[nl]
 I strong now too.
 $FTZs:
-OLD MAN: You![nl]
+Vanhus: You![nl]
    Take care Ayla.
 $FTZu:
-OLD MAN: Reptites gone.[nl]
+Vanhus: Reptites gone.[nl]
    Thank Ayla...
 $FTZw:
 Reptites take Kino![nl]
@@ -11747,7 +11749,7 @@ She locked the Guru of Life up on the[nl]
 Mountain of Woe for opposing her.[nl]
 The situation's hopeless.
 $FTaQ:
-OLD MAN: The Guru of Life said that Sir[nl]
+Vanhus: The Guru of Life said that Sir[nl]
    Janus has stronger powers than[nl]
    even Miss Schala!
 [pause]
@@ -11805,40 +11807,40 @@ Frog: Old man Melchior!?
 $FTb4:
 Ayla: Melchior?
 $FTb6:
-MELCHIOR: Indeed, I am Melchior.[nl]
+Melchior: Indeed, I am Melchior.[nl]
    Have we...met before?
 [pause]
    More importantly, can you tell me[nl]
    anything about the Ocean Palace?
 $FTb8:
-MELCHIOR: I see...the Queen has[nl]
+Melchior: I see...the Queen has[nl]
    degenerated to that degree...
 $FTbA:
-MELCHIOR: The more energy the[nl]
+Melchior: The more energy the[nl]
    Mammon Machine absorbs, the[nl]
    further the Queen degenerates.
 [pause]
    Her spirit has been stolen by the[nl]
    infamous immortal, Lavos.
 $FTbC:
-MELCHIOR: We must flee![nl]
+Melchior: We must flee![nl]
    The seal has been broken![nl]
    The mountain will collapse!
 $FTbE:
-MELCHIOR: Lavos sleeps deep[nl]
+Melchior: Lavos sleeps deep[nl]
    underground, while consuming the[nl]
    energy of this planet.
 [pause]
    If the Mammon Machine is brought[nl]
    closer to him, he may awaken!
 $FTbG:
-MELCHIOR: We must hurry before it's[nl]
+Melchior: We must hurry before it's[nl]
    too late!
 $FTbI:
 Elder![nl]
 Schala is here!
 $FTbK:
-MELCHIOR: What?[nl]
+Melchior: What?[nl]
    Schala's here?
 $FTbM:
 Why don't we keep it right there...
@@ -11859,13 +11861,13 @@ SCHALA: Melchior...[nl]
    After the Mountain of Woe fell, I[nl]
    thought I would find you here!
 [pause]
-MELCHIOR: Is it safe for you to leave[nl]
+Melchior: Is it safe for you to leave[nl]
    the palace?
 $FTbW:
 SCHALA: That no longer matters![nl]
    The Ocean Palace is now operational!
 $FTbY:
-MELCHIOR: Then all is lost!
+Melchior: Then all is lost!
 $FTba:
 SCHALA: But without me, the Mammon[nl]
    Machine won't work.[nl]
@@ -11881,7 +11883,7 @@ SCHALA: Dalton!
 DALTON: Tisk, tisk my dear.[nl]
    Your presence is required elsewhere!
 $FTbg:
-MELCHIOR: Dalton![nl]
+Melchior: Dalton![nl]
    Leave her alone!
 $FTbi:
 DALTON: Ah![nl]
@@ -11889,7 +11891,7 @@ DALTON: Ah![nl]
 $FTbk:
 DALTON: Silence, old man!
 $FTbm:
-MELCHIOR: Argh!
+Melchior: Argh!
 $FTbo:
 DALTON: You'll come to the Ocean Palace[nl]
    with me.[nl]
@@ -11921,23 +11923,23 @@ $FTc6:
 Ayla: Old man.[nl]
    Okay?!
 $FTc8:
-MELCHIOR: I'm all right.
+Melchior: I'm all right.
 $FTcA:
-MELCHIOR: But we must save Schala, or[nl]
+Melchior: But we must save Schala, or[nl]
    else...
 $FTcC:
-OLD MAN: Impossible![nl]
+Vanhus: Impossible![nl]
    Even though it's coming from YOU,[nl]
    Melchior...
 $FTcE:
-MELCHIOR: If the Queen is allowed to[nl]
+Melchior: If the Queen is allowed to[nl]
    fulfill her scheme, all life as we[nl]
    know it, is doomed!
 $FTcG:
-MELCHIOR: You're willing to challenge[nl]
+Melchior: You're willing to challenge[nl]
    the Queen?
 $FTcI:
-MELCHIOR: You've done so much for us...[nl]
+Melchior: You've done so much for us...[nl]
    ...and I don't even know your names!
 $FTcK:
 Marle: You'll find out soon enough!
@@ -11956,7 +11958,7 @@ Ayla: Gramps use red stone.[nl]
    Help [crononick].[nl]
    Now, Ayla help you.
 $FTcU:
-MELCHIOR: What ARE you talking about?
+Melchior: What ARE you talking about?
 $FTcW:
 Marle: Crono![nl]
    Let's get going!
@@ -11971,9 +11973,9 @@ $FTce:
 Ayla: [crononick]![nl]
    We go now.
 $FTcg:
-MELCHIOR: Wait, take this with you.
+Melchior: Wait, take this with you.
 $FTci:
-MELCHIOR: It's made from the same red[nl]
+Melchior: It's made from the same red[nl]
    stone as the Mammon Machine.[nl]
    With it, you can destroy the Machine!
 $FTck:
@@ -12438,20 +12440,20 @@ Heh heh
 [pause]
 That's it!
 $FThe:
-MUNE: That was special!
+Mune: That was special!
 [pause]
-MASA: Quite. I guess it means that a[nl]
+Masa: Quite. I guess it means that a[nl]
    Hero's power comes from within.
 [pause]
-MUNE: Mucho metaphysical, man.
+Mune: Mucho metaphysical, man.
 [pause]
-MASA: Like, MIND over matter, Mune!
+Masa: Like, MIND over matter, Mune!
 $FThg:
 Frog: My... mind?
 $FThi:
-MUNE: Now for a yummy, full-on test!
+Mune: Now for a yummy, full-on test!
 $FThk:
-MASA: It's thrashin' time!
+Masa: It's thrashin' time!
 $FThm:
 Frog: Ahh![nl]
    'Tis the true identity of the[nl]
@@ -13027,7 +13029,7 @@ You know what you're doing!
 $FrWW:
 Prepare yourself, Queen Leene.
 $FrWY:
-CHANCELLOR: YOU![nl]
+Kansleri: YOU![nl]
    How did you get in here?
 $FrWa:
 LEENE: Frog!
@@ -13037,14 +13039,14 @@ Frog: Majesty, stand back and[nl]
 $FrWe:
 LEENE: Be careful!
 $FrWg:
-CHANCELLOR: Gyah, ha, ha...[nl]
+Kansleri: Gyah, ha, ha...[nl]
    It's useless to fight![nl]
    No one will leave here alive!
 $FrWi:
-CHANCELLOR: Stupid frog! It's time you[nl]
+Kansleri: Stupid frog! It's time you[nl]
    jumped off this mortal coil!
 $FrWk:
-CHANCELLOR: True-form...CHANGE!
+Kansleri: True-form...CHANGE!
 $FrWm:
 Reverts to Yakra!!
 $FrWo:
@@ -13062,13 +13064,13 @@ LEENE: Yes, thank you so much.[nl]
 $FrWw:
 LEENE: Let's return to the castle!
 $FrWy:
-REAL CHANCELLOR: W, wait!![nl]
+REAL Kansleri: W, wait!![nl]
    What about me?
 $FrX0:
-REAL CHANCELLOR: Phew, thank you![nl]
+REAL Kansleri: Phew, thank you![nl]
    That monster stuffed me in there.
 $FrX2:
-REAL CHANCELLOR: Oh![nl]
+REAL Kansleri: Oh![nl]
    Your Highness![nl]
    As you can see, I am undamaged!
 $FrX4:
@@ -14168,7 +14170,7 @@ DALTON: N...nooooo![nl]
    I'm going to be immortal![nl]
    I CAN'T be beaten now!
 $Frfq:
-MUNE: The black energy grows...[nl]
+Mune: The black energy grows...[nl]
    Something scary is waking up!
 $Frfs:
 QUEEN: Schala, raise the power of the[nl]
@@ -14259,9 +14261,9 @@ $Frgo:
 Ayla: [crononick]![nl]
    Use Red Knife!!
 $Frgq:
-MASA: Here we go Mune!
+Masa: Here we go Mune!
 $Frgs:
-MUNE: Ready, big brother!
+Mune: Ready, big brother!
 $Frgu:
 Frog: T, 'tis...[nl]
    ...the Masamune?!
@@ -14543,7 +14545,7 @@ GASPAR: Hmm...![nl]
 BELTHASAR: This power is beyond[nl]
    human control!
 $FrjY:
-MELCHIOR: No...![nl]
+Melchior: No...![nl]
    We'll be dragged into the warp!
 $Frja:
 SCHALA!!
@@ -14553,7 +14555,7 @@ SCHALA: No Janus!![nl]
 $Frje:
 JANUS: B, but!?
 $Frjg:
-MELCHIOR: It, it's a...!!
+Melchior: It, it's a...!!
 $Frji:
 GASPAR: A Timegate!?
 $Frjk:
@@ -14677,7 +14679,7 @@ selling her pendant?[nl]
       I'll try.[nl]
       No.
 $GhKu:
-MELCHIOR: I live on the continent to the[nl]
+Melchior: I live on the continent to the[nl]
    east.[nl]
    Come see me sometime...
 $GhKw:
@@ -15042,13 +15044,13 @@ I'm the lawyer, Pierre.
 $GhOG:
 I'm the Chancellor, the prosecutor!
 $GhOI:
-CHANCELLOR: Members of the court.
+Kansleri: Members of the court.
 [pause]
    We now bring forth the defendant,[nl]
    Crono, who is charged with[nl]
    abducting Princess Nadia.
 $GhOK:
-CHANCELLOR: What shall we do with[nl]
+Kansleri: What shall we do with[nl]
    him?[nl]
    Fire, perhaps?
 [pause]
@@ -15057,7 +15059,7 @@ CHANCELLOR: What shall we do with[nl]
 [pause]
    Or...shall we employ the guillotine?
 $GhOM:
-CHANCELLOR: You, the jury, shall decide[nl]
+Kansleri: You, the jury, shall decide[nl]
    his fate.[nl]
    Now, let us begin.
 $GhOO:
@@ -15076,21 +15078,21 @@ PIERRE: The two met completely by[nl]
    accident. In fact, the Princess ASKED[nl]
    Crono if SHE could join HIM!
 $GhOU:
-CHANCELLOR: Is this true? Who actually[nl]
+Kansleri: Is this true? Who actually[nl]
    started this whole mess?[nl]
       I did.[nl]
       Marle did.
 $GhOW:
-CHANCELLOR: Just as I suspected![nl]
+Kansleri: Just as I suspected![nl]
    The defendant deliberately tried to[nl]
    get near the Princess!
 $GhOY:
-CHANCELLOR: Are you sure?[nl]
+Kansleri: Are you sure?[nl]
    We have witnesses who'll say YOU[nl]
    were the one that bumped into the[nl]
    princess.
 $GhOa:
-CHANCELLOR: The Princess then[nl]
+Kansleri: The Princess then[nl]
    innocently followed you to[nl]
    Lucca's little sideshow.
 [pause]
@@ -15098,7 +15100,7 @@ CHANCELLOR: The Princess then[nl]
    If that wasn't criminal abduction, I[nl]
    don't know WHAT is!
 $GhOc:
-CHANCELLOR: And I have facts that[nl]
+Kansleri: And I have facts that[nl]
    throw the defendant's character into[nl]
    question!
 $GhOe:
@@ -15109,7 +15111,7 @@ PIERRE: Objection!
 $GhOg:
 JUDGE: Care to respond, Chancellor?
 $GhOi:
-CHANCELLOR: Crono's character is at[nl]
+Kansleri: Crono's character is at[nl]
    the very core of this case!
 [pause]
 PIERRE: We have nothing to hide.
@@ -15130,39 +15132,39 @@ $GhOs:
 PIERRE: Whew...[nl]
    Looks like they're buying it.
 $GhOu:
-CHANCELLOR: The defendant's cruelty is[nl]
+Kansleri: The defendant's cruelty is[nl]
    quite evident.
 $GhOw:
-CHANCELLOR: You remember HER, don't[nl]
+Kansleri: You remember HER, don't[nl]
    you?[nl]
    The poor little girl who lost her cat?[nl]
    You wouldn't even listen to her!
 $GhOy:
 You ignored me!
 $GhP0:
-CHANCELLOR: Oh you poor dear![nl]
+Kansleri: Oh you poor dear![nl]
    Thank you.
 $GhP2:
-CHANCELLOR: As you can see, no further[nl]
+Kansleri: As you can see, no further[nl]
    proof is necessary here.
 $GhP4:
-CHANCELLOR: Have you ever stolen[nl]
+Kansleri: Have you ever stolen[nl]
    anything?[nl]
       Well...yes.[nl]
       No! I've never been a thief.
 $GhP6:
-CHANCELLOR: See![nl]
+Kansleri: See![nl]
    He lacks morals![nl]
    This should be on the record![nl]
    He's crying out for help!
 $GhP8:
-CHANCELLOR: DO NOT feign ignorance![nl]
+Kansleri: DO NOT feign ignorance![nl]
    We have a witness.
 $GhPA:
 Him![nl]
 He ate my lunch right off the table!
 $GhPC:
-CHANCELLOR: Let the record show that[nl]
+Kansleri: Let the record show that[nl]
    he stole from a poor, helpless man!
 $GhPE:
 PIERRE: The issue here is MOTIVE.[nl]
@@ -15170,31 +15172,31 @@ PIERRE: The issue here is MOTIVE.[nl]
    citizen to kidnap Princess Nadia?[nl]
    No! There was none.
 $GhPG:
-CHANCELLOR: What about ransom?
+Kansleri: What about ransom?
 [pause]
    Crono, her fortune DID tempt[nl]
    you, did it not?[nl]
       No.[nl]
       Yes.
 $GhPI:
-CHANCELLOR: So, you admit it!
+Kansleri: So, you admit it!
 $GhPK:
-CHANCELLOR: Nothing more your honor.[nl]
+Kansleri: Nothing more your honor.[nl]
    The prosecution rests.
 $GhPM:
-CHANCELLOR: Are you sure?[nl]
+Kansleri: Are you sure?[nl]
    You really weren't tempted?[nl]
       Not at all.[nl]
       Just a bit.
 $GhPO:
-CHANCELLOR: That's enough.[nl]
+Kansleri: That's enough.[nl]
    I have no more questions.
 [pause]
 PIERRE: It is evident that my client is a[nl]
    fine, noble young man![nl]
    Your honor, the defense rests.
 $GhPQ:
-CHANCELLOR: Please keep in mind that[nl]
+Kansleri: Please keep in mind that[nl]
    he just said he had NO interest in her[nl]
    fortune.
 [pause]
@@ -15216,7 +15218,7 @@ $GhPa:
 He tried to sell it to the merchant,[nl]
 Melchior.
 $GhPc:
-CHANCELLOR: And this person's final bit[nl]
+Kansleri: And this person's final bit[nl]
    of testimony will prove our case!
 $GhPe:
 I heard it clearly.[nl]
@@ -15251,24 +15253,24 @@ did not kidnap her, he ran off with her.[nl]
 3 days solitary confinement as[nl]
 punishment.
 $GhPy:
-CHANCELLOR: Take him away!
+Kansleri: Take him away!
 $GhQ0:
 Marle: Now just a darn minute...
 [pause]
-CHANCELLOR: Princess!
+Kansleri: Princess!
 $GhQ2:
-KING: That's enough, my dear!
+Kuningas: That's enough, my dear!
 $GhQ4:
 Marle: But Father...!
 [pause]
-KING: All I asked was for you to[nl]
+Kuningas: All I asked was for you to[nl]
    behave like a princess.
 [pause]
    Even royalty must obey rules.[nl]
    Leave the rest up to the Chancellor[nl]
    and forget about the events in town.
 $GhQ6:
-KING: We're leaving!
+Kuningas: We're leaving!
 $GhQ8:
 Marle: Crono!!!
 $GhQA:
@@ -15425,7 +15427,7 @@ Magus: Idiot![nl]
 $GhRa:
 Marle: You won't reconsider?
 [pause]
-SOLDIER: No, Princess.
+Sotilas: No, Princess.
 $GhRc:
 Marle: There is one way...[nl]
    It's a bit rough, but just follow me!
@@ -15503,7 +15505,7 @@ $GhSC:
 [nl]
        You got the Rainbow Shell!
 $GhSE:
-MELCHIOR: This is a very rare![nl]
+Melchior: This is a very rare![nl]
    As armor, it deflects magic!
 [pause]
    I can make you 1 Prism Dress,[nl]
@@ -15515,33 +15517,33 @@ MELCHIOR: This is a very rare![nl]
       1 Prism Dress[nl]
       3 Prism Helms
 $GhSG:
-MELCHIOR: The Prism Dress?[nl]
+Melchior: The Prism Dress?[nl]
    Only females may equip it.[nl]
       I want the Prism Dress.[nl]
       I've changed my mind.
 $GhSI:
-MELCHIOR: You want Prism Helms?[nl]
+Melchior: You want Prism Helms?[nl]
    You're sure?[nl]
       Yes[nl]
       No
 $GhSK:
-MELCHIOR: All right, you just wait there!
+Melchior: All right, you just wait there!
 $GhSM:
-MELCHIOR: Finished![nl]
+Melchior: Finished![nl]
    Off you go, now!
 $GhSO:
-MELCHIOR: I finally feel like I'm doing[nl]
+Melchior: I finally feel like I'm doing[nl]
    something worthwhile!
 $GhSQ:
-MELCHIOR: Interesting substance![nl]
+Melchior: Interesting substance![nl]
    I could make some great stuff with[nl]
    an alloy of it!
 $GhSS:
-MELCHIOR: Ahh![nl]
+Melchior: Ahh![nl]
    A Sun Stone![nl]
    I'll create an alloy out of it!
 $GhSU:
-MELCHIOR: Heh heh![nl]
+Melchior: Heh heh![nl]
    Don't think that's the last of my bag[nl]
    of tricks!
 $GhSW:
@@ -16779,7 +16781,7 @@ $HRDI:
 Robo: Let us proceed to the Tyrano[nl]
    Lair!
 $HRDK:
-MASA: The ancient Red Rock has been[nl]
+Masa: The ancient Red Rock has been[nl]
    passed down through the ages.[nl]
    From it, a magic pendant and a knife[nl]
    were made.
@@ -16787,7 +16789,7 @@ MASA: The ancient Red Rock has been[nl]
    We embody Melchior's dreams,[nl]
    sealed, within the knife...
 $HRDM:
-MASA: Now hurry, if you plan to[nl]
+Masa: Now hurry, if you plan to[nl]
    confront the Queen.[nl]
    We're counting on you!
 $HRDO:
@@ -17081,7 +17083,7 @@ $HRGY:
 ELDER: Whoa![nl]
    That ship can fly!
 $HRGa:
-SOLDIER: Bow, and pay homage to our[nl]
+Sotilas: Bow, and pay homage to our[nl]
    new liege, King Dalton!
 $HRGc:
 DALTON: You there![nl]

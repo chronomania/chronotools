@@ -1,6 +1,7 @@
 #include <cstdio>
+
 #include "space.hh"
-#include "organizer.hh"
+#include "binpacker.hh"
 
 using namespace std;
 
@@ -215,14 +216,13 @@ void freespacemap::Organize(vector<freespacerec> &blocks, unsigned pagenum)
             pagenum, totalsize, totalspace);
     }
     
-    map<unsigned, unsigned> organization;
-    Organizer tmp(holes, items, organization);
+    vector<unsigned> organization = PackBins(holes, items);
     
     bool errors = false;
     for(unsigned a=0; a<blocks.size(); ++a)
     {
         unsigned itemsize = blocks[a].len;
-        unsigned holeid   = organization.find(a)->second;
+        unsigned holeid   = organization[a];
         
         unsigned spaceptr = NOWHERE;
         if(holes[holeid] >= itemsize)
@@ -234,13 +234,10 @@ void freespacemap::Organize(vector<freespacerec> &blocks, unsigned pagenum)
         }
         else
         {
-        	errors = true;
+            errors = true;
         }
         blocks[a].pos = spaceptr;
     }
     if(errors)
-    {
         fprintf(stderr, "Error: Organization failed\n");
-        tmp.Dump();
-    }
 }
