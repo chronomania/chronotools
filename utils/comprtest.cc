@@ -118,27 +118,27 @@ static void PerformanceTest(unsigned char seg, unsigned n)
 
 static void DumpGFX(unsigned addr)
 {
-	unsigned n = Decompress(addr);
+    unsigned n = Decompress(addr);
     fprintf(stderr, "Uncompressed %u bytes.\n", n);
-	char Buf[64];
-	sprintf(Buf, "ct-%06X.sd2", addr);
-	
-	FILE *fp = fopen(Buf, "wb");
-	
-	vector<unsigned char> data2(65536);
-	
-	for(unsigned n=0; n<0x40; ++n)
-	{
-		memcpy(&data2[n*32], &Data[ROM[0x027321+n]*32], 32);
+    char Buf[64];
+    sprintf(Buf, "ct-%06X.sd2", addr);
+    
+    FILE *fp = fopen(Buf, "wb");
+    
+    vector<unsigned char> data2(65536);
+    
+    for(unsigned n=0; n<0x40; ++n)
+    {
+        memcpy(&data2[n*32], &Data[ROM[0x027321+n]*32], 32);
     }
     
-	for(unsigned n=0; n<0x40; ++n)
-	{
-    	fwrite(&data2[ROM[0x03E7D0+n]*32],1,32, fp);
+    for(unsigned n=0; n<0x40; ++n)
+    {
+        fwrite(&data2[ROM[0x03E7D0+n]*32],1,32, fp);
     }
 
-	fwrite(&Data[0], 1, n, fp);
-	fclose(fp);
+    fwrite(&Data[0], 1, n, fp);
+    fclose(fp);
 }
 
 int main(void)
@@ -190,29 +190,29 @@ int main(void)
     n = Decompress(addr);
     PerformanceTest(0x7F, n);
 #endif
-	
+    
 #if 1
-	/*
-	
-	Time gauge:
-	 C38000 (pointed from C27220 (offset) and C2738C (page)) = gfx
-	   - read to 9000
-	 C6FB00 (pointed from C27224 (offset) and C273DB (page)) = ?
-	   - read to 7F:8C00
-	   - copied to 7E:C000
-	   - copied to 00:0920 = PALETTE
-	 C62000 (pointed from C27228 (offset) and C27407 (page)) = ?
-	   - read to 7F:9000
-	   - looks like tile table.
-	   - of the bg image.
-	 At C2:7361
-	  - loads bytes from $C6F700+x
-	    stores them to $7F9000
-	      hi nibble first, then lo nibble
-	     totalling $400 bytes to $800 bytes.
-	  - could be the bg image..
-	
-	*/
+    /*
+    
+    Time gauge:
+     C38000 (pointed from C27220 (offset) and C2738C (page)) = gfx
+       - read to 9000
+     C6FB00 (pointed from C27224 (offset) and C273DB (page)) = ?
+       - read to 7F:8C00
+       - copied to 7E:C000
+       - copied to 00:0920 = PALETTE
+     C62000 (pointed from C27228 (offset) and C27407 (page)) = ?
+       - read to 7F:9000
+       - looks like tile table.
+       - of the bg image.
+     At C2:7361
+      - loads bytes from $C6F700+x
+        stores them to $7F9000
+          hi nibble first, then lo nibble
+         totalling $400 bytes to $800 bytes.
+      - could be the bg image..
+    
+    */
     DumpGFX(0xC38000);
 #endif
 

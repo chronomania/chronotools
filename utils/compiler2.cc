@@ -1,3 +1,4 @@
+#include <typeinfo>
 #include <vector>
 #include <deque>
 #include <cxxabi.h>
@@ -15,7 +16,7 @@ namespace
     template<typename T>
     const string GetTypeName(const T& p)
     {
-        const type_info& ti = typeid(p);
+        const std::type_info& ti = typeid(p);
         int status;
         char* realname;
         

@@ -63,7 +63,7 @@ int main(void)
             }
             else if(c >= 0xA0 && c <= 0xFF)
             {
-            	ucs4 ch = getucs4(c, cset_12pix);
+                ucs4 ch = getucs4(c, cset_12pix);
                 putchar(ch);
             }
             else

@@ -8,7 +8,7 @@ include Makefile.sets
 #CXXFLAGS += -Ilibiconv
 #LDFLAGS += -Llibiconv -liconv
 
-DEPDIRS = utils/
+DEPDIRS = utils/ utils/asm/
 
 # VERSION 1.0.3  was the first working! :D
 # VERSION 1.0.4  handled fixed strings too
@@ -68,6 +68,7 @@ DEPDIRS = utils/
 # VERSION 1.6.3  battle item lister fixed - no vwf8 problems there now
 # VERSION 1.6.4  battle tech lister almost done; dumper: partial jap ROM support
 # VERSION 1.6.5  is working on an assembler
+# VERSION 1.6.6  has an almost working assembler
 
 OPTIM=-O3
 #OPTIM=-O0
@@ -76,7 +77,7 @@ OPTIM=-O3
 
 CXXFLAGS += -I.
 
-VERSION=1.6.5
+VERSION=1.6.6
 ARCHFILES=utils/xray.cc utils/xray.h \
           utils/viewer.c \
           utils/vwftest.cc \
@@ -122,11 +123,16 @@ ARCHFILES=utils/xray.cc utils/xray.h \
           taipus.rb ct.code \
           progdesc.php \
           binpacker.tcc binpacker.hh \
-          tristate.hh \
+          tristate \
           \
           utils/compiler2.cc utils/compiler2-parser.inc utils/ct.code2 \
           utils/o65test.cc utils/dumpo65.cc \
-          utils/assemble.cc utils/insgen.cc \
+          utils/asm/assemble.cc utils/asm/insgen.cc \
+          utils/asm/tristate \
+          utils/asm/expr.cc utils/asm/expr.hh \
+          utils/asm/insdata.cc utils/asm/insdata.hh \
+          utils/asm/parse.cc utils/asm/parse.hh \
+          utils/asm/object.cc utils/asm/object.hh \
           \
           README transnotes.txt Makefile.sets \
           \
@@ -169,7 +175,8 @@ PROGS=\
         utils/comprtest \
 	utils/vwftest \
 	utils/dumpo65 \
-	utils/o65test
+	utils/o65test \
+	utils/assemble
 
 all: $(PROGS)
 
@@ -245,6 +252,14 @@ utils/dumpo65: utils/dumpo65.o
 	$(CXX) $(CXXFLAGS) -g -O -Wall -W -pedantic -o $@ $^ $(LDFLAGS)
 
 utils/ctxtview: utils/ctxtview.o settings.o rommap.o
+	$(CXX) $(CXXFLAGS) -g -O -Wall -W -pedantic -o $@ $^ $(LDFLAGS)
+
+utils/assemble: \
+		utils/asm/assemble.o \
+		utils/asm/expr.o \
+		utils/asm/parse.o \
+		utils/asm/insdata.o \
+		utils/asm/object.o
 	$(CXX) $(CXXFLAGS) -g -O -Wall -W -pedantic -o $@ $^ $(LDFLAGS)
 
 

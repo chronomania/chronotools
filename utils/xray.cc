@@ -111,15 +111,15 @@ static void putc(unsigned x,unsigned y, unsigned char ch, unsigned char c)
 
 static void UncompressDump(FILE *fp)
 {
-	return;
-	
-	long origpos = ftell(fp);
-	unsigned char Buf[8192];
-	fread(Buf, 1, sizeof Buf, fp);
-	
-	vector<unsigned char> Result;
-	unsigned size = Uncompress(Buf, Result);
-	
+    return;
+    
+    long origpos = ftell(fp);
+    unsigned char Buf[8192];
+    fread(Buf, 1, sizeof Buf, fp);
+    
+    vector<unsigned char> Result;
+    unsigned size = Uncompress(Buf, Result);
+    
 }
 
 static void Disp(const char *s)
@@ -260,8 +260,8 @@ Redraw:
                             case 32:
                                 for(x=0; x<8; x++)
                                 {
-                                	unsigned value = 
-                                	    ((b1 >> (7-x))&1)
+                                    unsigned value = 
+                                        ((b1 >> (7-x))&1)
                                       | (((b2 >> (7-x))&1)<<1)
                                       | (((b3 >> (7-x))&1)<<2)
                                       | (((b4 >> (7-x))&1)<<3);
