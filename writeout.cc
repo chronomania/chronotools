@@ -1,12 +1,8 @@
-#include "tgaimage.hh"
 #include "ctinsert.hh"
 #include "rom.hh"
 
 namespace
 {
-    const char font8fn[]  = "ct8fnFI.tga";
-    const char font12fn[] = "ct16fnFI.tga";
-
     const unsigned Font8_Address  = 0x3F8C60;
     const unsigned Font12_Address = 0x3F2F60;
     const unsigned WidthTab_Address = 0x260E6;
@@ -14,103 +10,25 @@ namespace
 
 void insertor::Write8pixfont(ROM &ROM)
 {
-    TGAimage font8(font8fn);
-    font8.setboxsize(8, 8);
-    font8.setboxperline(32);
-    
-    static const char palette[] = {0,0,1,2,3};
-    
-    vector<unsigned char> tiletable(256*16);
-    
-    unsigned to=0;
-    for(unsigned a=0; a<256; ++a)
-    {
-        vector<char> box = font8.getbox(a);
-        for(unsigned p=0; p<box.size(); ++p)
-            if((unsigned char)box[p] < sizeof(palette))
-                box[p] = palette[box[p]];
-        
-        unsigned po=0;
-        for(unsigned y=0; y<8; ++y)
-        {
-            unsigned char byte1 = 0;
-            unsigned char byte2 = 0;
-            for(unsigned x=0; x<8; ++x)
-            {
-                unsigned shift = (7-x);
-                byte1 |= ((box[po]&1)  ) << shift;
-                byte2 |= ((box[po]&2)/2) << shift;
-                ++po;
-            }
-            tiletable[to++] = byte1;
-            tiletable[to++] = byte2;
-        }
-    }
-
     fprintf(stderr, "Writing 8-pix font...\n");
 
-    for(unsigned a=0; a<tiletable.size(); ++a)
-        ROM.Write(Font8_Address + a, tiletable[a]);
+    const vector<unsigned char> &tiletab = Font8.GetTiles();
+    
+    for(unsigned a=0; a<tiletab.size(); ++a)
+        ROM.Write(Font8_Address + a, tiletab[a]);
 }
 
 void insertor::Write12pixfont(ROM &ROM)
 {
-    TGAimage font12(font12fn);
-    font12.setboxsize(12, 12);
-    font12.setboxperline(32);
-    
-    static const char palette[] = {0,0,1,2,3,0};
-    
-    vector<unsigned char> tiletable(96 * 24 + 96 * 12);
-    
     fprintf(stderr, "Writing 12-pix font...\n");
 
-    unsigned to=0;
-    for(unsigned a=0; a<96; ++a)
-    {
-        vector<char> box = font12.getbox(a);
-
-        unsigned width=0;
-        while(box[width] != 5 && width<12)++width;
-        
-        for(unsigned p=0; p<box.size(); ++p)
-            if((unsigned char)box[p] < sizeof(palette))
-                box[p] = palette[box[p]];
-        
-        unsigned po=0;
-        for(unsigned y=0; y<12; ++y)
-        {
-            unsigned char byte1 = 0;
-            unsigned char byte2 = 0;
-            unsigned char byte3 = 0;
-            unsigned char byte4 = 0;
-            for(unsigned x=0; x<8; ++x)
-            {
-                unsigned shift = (7-x)&7;
-                byte1 |= ((box[po]&1)  ) << shift;
-                byte2 |= ((box[po]&2)/2) << shift;
-                ++po;
-            }
-            for(unsigned x=0; x<4; ++x)
-            {
-                unsigned shift = (7-x)&7;
-                byte3 |= ((box[po]&1)  ) << shift;
-                byte4 |= ((box[po]&2)/2) << shift;
-                ++po;
-            }
-            tiletable[to++] = byte1;
-            tiletable[to++] = byte2;
-            
-            if(a&1)byte3 <<= 4;
-            tiletable[96*24 + (a>>1)*24 + y*2  ] |= byte3;
-            if(a&1)byte4 <<= 4;
-            tiletable[96*24 + (a>>1)*24 + y*2+1] |= byte4;
-        }
-        
-        ROM.Write(WidthTab_Address+a, width);
-    }
-    for(unsigned a=0; a<tiletable.size(); ++a)
-        ROM.Write(Font12_Address+a, tiletable[a]);
+    for(unsigned a=0; a<Font12.GetCharCount(); ++a)
+        ROM.Write(WidthTab_Address+a, Font12.GetWidth(a));
+    
+    const vector<unsigned char> &tiletab = Font12.GetTiles();
+    
+    for(unsigned a=0; a<tiletab.size(); ++a)
+        ROM.Write(Font12_Address+a, tiletab[a]);
 }
 
 namespace
@@ -320,7 +238,7 @@ void insertor::WriteStrings(ROM &ROM)
                 break;
             }
             case stringdata::zptr8:
-            case stringdata::zptr16:
+            case stringdata::zptr12:
             {
                 // These are not interesting here, as they're handled below
                 break;

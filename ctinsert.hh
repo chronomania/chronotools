@@ -4,6 +4,7 @@
 
 #include "wstring.hh"
 #include "space.hh"
+#include "fonts.hh"
 
 using namespace std;
 
@@ -27,7 +28,7 @@ class insertor
     struct stringdata
     {
         string str;
-        enum { zptr8, zptr16, fixed } type;
+        enum { zptr8, zptr12, fixed } type;
         unsigned width; // used if type==fixed;
     };
     // Address -> string
@@ -36,16 +37,24 @@ class insertor
     
     vector<string> dict;
     unsigned dictaddr, dictsize;
+    
+    Font8data Font8;
+    Font12data Font12;
 
 public:
     freespacemap freespace;
     
     void LoadFile(FILE *fp);
+    void LoadFont8(const string &fn) { Font8.Load(fn); }
+    void LoadFont12(const string &fn) { Font12.Load(fn); }
 
     void DictionaryCompress();
     void GeneratePatches();
 
     string DispString(const string &s) const;
+    
+    unsigned GetFont12width(unsigned char chronoch) const
+    { return Font12.GetWidth(chronoch-0xA0); }
     
 private:
     void WriteDictionary(class ROM &ROM);

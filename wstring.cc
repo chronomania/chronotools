@@ -5,10 +5,11 @@
 
 #include "wstring.hh"
 
-/* Class for output */
-static const char *const midset
-  = (*(const short *)"\1\0\0\0\0\0\0\0" == 1) ? "UCS-4LE" : "UCS-4BE";
-
+namespace
+{
+    const char *const midset
+      = (*(const short *)"\1\0\0\0\0\0\0\0" == 1) ? "UCS-4LE" : "UCS-4BE";
+}
 
 wstringOut::wstringOut() : charset(midset)
 {

@@ -1,152 +1,486 @@
 #include <cstdio>
+#include <cstdarg>
+#include <list>
 
 #include "ctinsert.hh"
 #include "wstring.hh"
 #include "ctcset.hh"
 #include "miscfun.hh"
 
-#undef getc
-class ScriptCharGet
-{
-    wstringIn conv;
-    FILE *fp;
-    unsigned cacheptr;
-    wstring cache;
-    
-    wstring Comment;
-
-    ucs4 getc_priv()
-    {
-        for(;;)
-        {
-            if(cacheptr < cache.size())
-                return cache[cacheptr++];
-            
-            CLEARSTR(cache);
-            cacheptr = 0;
-            while(!cache.size())
-            {
-                int c = fgetc(fp);
-                if(c == EOF)break;
-                cache = conv.putc(c);
-            }
-            if(!cache.size()) return (ucs4)EOF;
-        }
-    }
-public:
-    ScriptCharGet(FILE *f) : fp(f), cacheptr(0)
-    {
-        conv.SetSet(getcharset());
-    }
-    ucs4 getc()
-    {
-        ucs4 c = getc_priv();
-        if(c == ';')
-        {
-            CLEARSTR(Comment);
-            for(;;)
-            {
-                c = getc_priv();
-                if(c == '\n' || c == (ucs4)EOF) break;
-                Comment += c;
-            }
-        }
-        return c;
-    }
-    const wstring &getcomment() const { return Comment; }
-};
+using namespace std;
 
 namespace
 {
-    map<string, char> symbols2, symbols8, symbols16;
+    // Ilmoita missä wrapattiin
+    const bool warn_wraps   = false;
+    
+    // Tarkista, aiheuttiko wrap ongelmia
+    const bool verify_wraps = true;
 
-    void AddSym(const char *sym, char c, int targets)
+    #undef getc
+    class ScriptCharGet
     {
-        if(targets&2)symbols2[sym]=c;
-        if(targets&8)symbols8[sym]=c;
-        if(targets&16)symbols16[sym]=c;
-    }
-    void LoadSymbols()
+        wstringIn conv;
+        FILE *fp;
+        unsigned cacheptr;
+        wstring cache;
+        
+        wstring Comment;
+
+        ucs4 getc_priv()
+        {
+            for(;;)
+            {
+                if(cacheptr < cache.size())
+                    return cache[cacheptr++];
+                
+                CLEARSTR(cache);
+                cacheptr = 0;
+                while(!cache.size())
+                {
+                    int c = fgetc(fp);
+                    if(c == EOF)break;
+                    cache = conv.putc(c);
+                }
+                if(!cache.size()) return (ucs4)EOF;
+            }
+        }
+    public:
+        ScriptCharGet(FILE *f) : fp(f), cacheptr(0)
+        {
+            conv.SetSet(getcharset());
+            fprintf(stderr, "Built script character set converter\n");
+        }
+        ucs4 getc()
+        {
+            ucs4 c = getc_priv();
+            if(c == ';')
+            {
+                CLEARSTR(Comment);
+                for(;;)
+                {
+                    c = getc_priv();
+                    if(c == '\n' || c == (ucs4)EOF) break;
+                    Comment += c;
+                }
+            }
+            return c;
+        }
+        const wstring &getcomment() const { return Comment; }
+    };
+    
+    class Symbols
     {
-        int targets=0;
+        map<string, char> symbols2, symbols8, symbols16;
 
-        // Define macro
-        #define defsym(sym, c) AddSym(#sym,static_cast<char>(c),targets);
-                               
-        // Define bracketed macro
-        #define defbsym(sym, c) defsym([sym], c)
+        void AddSym(const char *sym, char c, int targets)
+        {
+            // 16 instead of 12 because 12 = 8+4, and 8 is already used :)
+            if(targets&2)symbols2[sym]=c;
+            if(targets&8)symbols8[sym]=c;
+            if(targets&16)symbols16[sym]=c;
+        }
         
-        // 8pix symbols;  *xx:xxxx:Lxx
-        // 16pix symbols; *xx:xxxx:Zxx
-        
-        targets=2+8+16;
-        defbsym(end,         0x00)
-        targets=2;
-        defbsym(nl,          0x01)
-        targets=16;
-        // 0x01 seems to be garbage
-        // 0x02 seems to be garbage too
-        // 0x03 is delay, handled elseway
-        // 0x04 seems to do nothing
-        defbsym(nl,          0x05)
-        defbsym(nl3,         0x06)
-        defbsym(pausenl,     0x07)
-        defbsym(pausenl3,    0x08)
-        defbsym(cls,         0x09)
-        defbsym(cls3,        0x0A)
-        defbsym(pause,       0x0B)
-        defbsym(pause3,      0x0C)
-        defbsym(num8,        0x0D)
-        defbsym(num16,       0x0E)
-        defbsym(num32,       0x0F)
-        // 0x10 seems to do nothing
-        defbsym(member,      0x11)
-        defbsym(tech,        0x12)
-        defsym(Crono,        0x13)
-        defsym(Marle,        0x14)
-        defsym(Lucca,        0x15)
-        defsym(Robo,         0x16)
-        defsym(Frog,         0x17)
-        defsym(Ayla,         0x18)
-        defsym(Magus,        0x19)
-        defbsym(crononick,   0x1A)
-        defbsym(member1,     0x1B)
-        defbsym(member2,     0x1C)
-        defbsym(member3,     0x1D)
-        defsym(Nadia,        0x1E)
-        defbsym(item,        0x1F)
-        defsym(Epoch,        0x20)
-        targets=8;
-        defbsym(bladesymbol, 0x20)
-        defbsym(bowsymbol,   0x21)
-        defbsym(gunsymbol,   0x22)
-        defbsym(armsymbol,   0x23)
-        defbsym(swordsymbol, 0x24)
-        defbsym(fistsymbol,  0x25)
-        defbsym(scythesymbol,0x26)
-        defbsym(armorsymbol, 0x28)
-        defbsym(helmsymbol,  0x27)
-        defbsym(ringsymbol,  0x29)
-        defbsym(shieldsymbol,0x2E)
-        defbsym(starsymbol,  0x2F)
-        targets=16;
-        defbsym(musicsymbol, 0xEE)
-        defbsym(heartsymbol, 0xF0)
-        defsym(...,          0xF1)
-        
-        #undef defsym
-        #undef defbsym
+        void Load()
+        {
+            int targets=0;
 
-        fprintf(stderr, "%u 8pix symbols loaded\n", symbols8.size());
-        fprintf(stderr, "%u 16pix symbols loaded\n", symbols16.size());
+            // Define macro
+            #define defsym(sym, c) AddSym(#sym,static_cast<char>(c),targets);
+                                   
+            // Define bracketed macro
+            #define defbsym(sym, c) defsym([sym], c)
+            
+            // 8pix symbols;  *xx:xxxx:Lxx
+            // 16pix symbols; *xx:xxxx:Zxx
+            
+            targets=2+8+16;
+            defbsym(end,         0x00)
+            targets=2;
+            defbsym(nl,          0x01)
+            targets=16;
+            // 0x01 seems to be garbage
+            // 0x02 seems to be garbage too
+            // 0x03 is delay, handled elseway
+            // 0x04 seems to do nothing
+            defbsym(nl,          0x05)
+            defbsym(nl3,         0x06)
+            defbsym(pausenl,     0x07)
+            defbsym(pausenl3,    0x08)
+            defbsym(cls,         0x09)
+            defbsym(cls3,        0x0A)
+            defbsym(pause,       0x0B)
+            defbsym(pause3,      0x0C)
+            defbsym(num8,        0x0D)
+            defbsym(num16,       0x0E)
+            defbsym(num32,       0x0F)
+            // 0x10 seems to do nothing
+            defbsym(member,      0x11)
+            defbsym(tech,        0x12)
+            defsym(Crono,        0x13)
+            defsym(Marle,        0x14)
+            defsym(Lucca,        0x15) // HUOMIO Lucca -> Lucan/Lucasta/Lucalle
+            defsym(Robo,         0x16)
+            defsym(Frog,         0x17)
+            defsym(Ayla,         0x18)
+            defsym(Magus,        0x19) // HUOMIO Magus -> Maguksen
+            defbsym(crononick,   0x1A)
+            defbsym(member1,     0x1B)
+            defbsym(member2,     0x1C)
+            defbsym(member3,     0x1D)
+            defsym(Nadia,        0x1E)
+            defbsym(item,        0x1F)
+            defsym(Epoch,        0x20) // HUOMIO Epoch -> Epochin
+            targets=8;
+            defbsym(bladesymbol, 0x20)
+            defbsym(bowsymbol,   0x21)
+            defbsym(gunsymbol,   0x22)
+            defbsym(armsymbol,   0x23)
+            defbsym(swordsymbol, 0x24)
+            defbsym(fistsymbol,  0x25)
+            defbsym(scythesymbol,0x26)
+            defbsym(armorsymbol, 0x28)
+            defbsym(helmsymbol,  0x27)
+            defbsym(ringsymbol,  0x29)
+            defbsym(shieldsymbol,0x2E)
+            defbsym(starsymbol,  0x2F)
+            targets=16;
+            defbsym(musicsymbol, 0xEE)
+            defbsym(heartsymbol, 0xF0)
+            defsym(...,          0xF1)
+            
+            #undef defsym
+            #undef defbsym
+
+            //fprintf(stderr, "%u 8pix symbols loaded\n", symbols8.size());
+            //fprintf(stderr, "%u 16pix symbols loaded\n", symbols16.size());
+        }
+    public:
+        Symbols()
+        {
+            Load();
+            fprintf(stderr, "Built symbol converter\n");
+        }
+        const map<string, char> &operator[] (unsigned ind) const
+        {
+            switch(ind)
+            {
+                case 2: return symbols2;
+                case 8: return symbols8;
+                case 16:
+                default: return symbols16;
+            }
+        }
+    } Symbols;
+    
+    class Conjugatemap
+    {
+        typedef map<string, unsigned char> datamap_t;
+        struct form
+        {
+            datamap_t   data;
+            const char *explanation;
+        };
+        
+        list<form> forms;
+        
+        void AddForm(const form &form)
+        {
+            forms.push_back(form);
+        }
+        
+        void AddData(datamap_t &target, const string &s) const
+        {
+            const map<string, char> &symbols16 = Symbols[16];
+            const char *name = "...";
+            /* Simple method to see which character are we talking about.      */
+            /* Modify it if the first character isn't enough in your language. */
+            switch(s[0])
+            {
+                case 'C': name = "Crono"; break;
+                case 'L': name = "Lucca"; break;
+                case 'M': name = s[2]=='g' ? "Magus" : "Marle"; break;
+                case 'R': name = "Robo"; break;
+                case 'F': name = "Frog"; break;
+                case 'A': name = "Ayla"; break;
+                case 'E': name = "Epoch"; break;
+                
+                // Nadia can't be renamed, so it
+                // does not need to be taken care of.
+            }
+            unsigned char person = symbols16.find(name)->second;
+            string key = str_replace(name, person, s);
+            for(unsigned a=0; a<key.size(); ++a)
+                if(key[a] >= 'a' && key[a] <= 'z')
+                    key[a] = getchronochar(key[a]);
+            
+            target[key] = person;
+        }
+        datamap_t CreateMap(const char *word, ...) const
+        {
+            datamap_t result;
+            va_list ap;
+            va_start(ap, word);
+            while(word)
+            {
+                AddData(result, word);
+                word = va_arg(ap, const char *);
+            }
+            va_end(ap);
+            return result;
+        }
+        void Verify(const string &s,
+                    const string &plaintext,
+                    const form &form) const
+        {
+            const datamap_t &tool   = form.data;
+            const char *explanation = form.explanation;
+            
+            datamap_t::const_iterator i;
+            for(i=tool.begin(); i!=tool.end(); ++i)
+            {
+                for(unsigned a=0; a < s.size(); )
+                {
+                    unsigned b = s.find(i->first, a);
+                    if(b == s.npos) break;
+                    
+                    const char *what = "???";
+                    for(map<string, char>::const_iterator
+                        j=Symbols[16].begin();
+                        j!=Symbols[16].end(); ++j)
+                    {
+                        if(j->second == i->second) { what = j->first.c_str(); break; }
+                    }
+                    
+                    fprintf(stderr, "\nWarning: %s%s in '%s'",
+                        what, explanation, plaintext.c_str());
+                    
+                    a = b + i->first.size();
+                }
+            }
+        }
+        void Load()
+        {
+            form tmp;
+            tmp.data = CreateMap
+                ( "Cronon", "Marlen", "Luccan", "Lucan",
+                  "Robon", "Frogin", "Aylan", "Maguksen",
+                  "Magusin", "Epochin", 0 );
+            tmp.explanation = "-n";
+            AddForm(tmp);
+            
+            tmp.data = CreateMap
+                ( "Cronoa", "Marlea", "Luccaa",
+                  "Roboa", "Frogia", "Froggia",
+                  "Aylaa", "Magusta", "Epochia", 0 );
+            tmp.explanation = "-a";
+            AddForm(tmp);
+            
+            tmp.data = CreateMap
+                ( "Cronolla", "Marlella", "Luccalla", "Lucalla",
+                  "Robolla", "Frogilla", "Aylalla", "Maguksella",
+                  "Magusilla", "Epochilla", 0 );
+            tmp.explanation = "-lla";
+            AddForm(tmp);
+            
+            tmp.data = CreateMap
+                ( "Cronolle", "Marlelle", "Luccalle", "Lucalle",
+                  "Robolle", "Frogille", "Aylalle", "Magukselle",
+                  "Magusille", "Epochille", 0 );
+            tmp.explanation = "-lle";
+            AddForm(tmp);
+            
+            tmp.data = CreateMap
+                ( "Cronosta", "Marlesta", "Luccasta", "Lucasta",
+                  "Robosta", "Frogista", "Aylasta", "Maguksesta",
+                  "Magusista", "Epochista", 0 );
+            tmp.explanation = "-sta";
+            AddForm(tmp);
+        }
+    public:
+        Conjugatemap()
+        {
+            Load();
+            fprintf(stderr, "Built conjugater-map\n");
+        }
+        void Verify(const string &s, const string &plaintext) const
+        {
+            for(list<form>::const_iterator
+                i = forms.begin();
+                i != forms.end();
+                ++i)
+            {
+                Verify(s, plaintext, *i);
+            }
+        }
+    } Conjugatemap;
+
+    const string Rivita(const string &dialog, const insertor &ins)
+    {
+        //fprintf(stdout, "Rivita('%s')\n", dialog.c_str());
+        
+        unsigned row=0, col=0;
+        
+        string result;
+        
+        unsigned space3width = (ins.GetFont12width( getchronochar(' ') ) ) * 3;
+        unsigned num8width   = (ins.GetFont12width( getchronochar('8') ) );
+        unsigned w5width     = (ins.GetFont12width( getchronochar('W') ) ) * 5;
+        
+        unsigned wrappos = 0;
+        unsigned wrapcol = 0;
+        
+        bool wraps = false;
+        bool wrap_indent = false;
+        
+        for(unsigned a=0; a<dialog.size(); ++a)
+        {
+            unsigned char c = dialog[a];
+
+            if(c == getchronochar(' '))
+            {
+                if(!col) wrap_indent = true;
+                wrappos = result.size();
+                wrapcol = col;
+            }
+            if(c == getchronochar(':'))
+                wrap_indent = true;
+
+            result += c;
+            switch(c)
+            {
+                case 0x05: // nl
+                    ++row;
+                    col = 0;
+                    wrap_indent = false;
+                    break;
+                case 0x06: // nl3
+                    ++row;
+                    col = space3width;
+                    wrap_indent = true;
+                    break;
+                case 0x0B: // pause
+                case 0x09: // cls
+                    row = 0;
+                    col = 0;
+                    wrap_indent = false;
+                    break;
+                case 0x0C: // pause3
+                case 0x0A: // cls3
+                    row = 0;
+                    col = space3width;
+                    wrap_indent = true;
+                    break;
+                case 0x0D: // num8  -- assume 88
+                    col += num8width * 2;
+                    break;
+                case 0x0E: // num16 -- assume 88888
+                    col += num8width * 5;
+                    break;
+                case 0x0F: // num32 -- assume 8888888888
+                    col += num8width * 10;
+                    break;
+                case 0x1F: // item -- assume ""
+                {
+                    col += 1;
+                    break;
+                }
+                case 0x11: // User definable names
+                case 0x13: // member, Crono
+                case 0x14: // Marle
+                case 0x15: // Lucca
+                case 0x16: // Robo
+                case 0x17: // Frog
+                case 0x18: // Ayla
+                case 0x19: // Magus
+                case 0x1A: // crononick
+                case 0x1B: // member1, member2, member3
+                case 0x1C: // and Epoch
+                case 0x1D: // Assume all of them are of maximal
+                case 0x20: // length, that is 'WWWWW'.
+                {
+                    col += w5width;
+                    break;
+                }
+                case 0xA0 ... 0xFF:
+                {
+                    unsigned width = ins.GetFont12width(c);
+                    col += width;
+                    break;
+                }
+            }
+            if(col >= 256 - 16)
+            {
+                /*
+                fprintf(stderr, "\nWrap (col=%3u,row=%3u), result=%s\n",
+                    col,row,ins.DispString(result).c_str());
+                */
+                wraps = true;
+                
+                col -= wrapcol;
+                if(wrap_indent)
+                {
+                    result[wrappos] = 0x06; // nl3
+                    col += space3width;
+                }
+                else
+                {
+                    result[wrappos] = 0x05; // nl
+                }
+                wrappos = result.size();
+                wrapcol = col;
+                ++row;
+                /*
+                fprintf(stderr,  "Now  (col=%3u,row=%3u), result=%s\n",
+                    col,row,ins.DispString(result).c_str());
+                */
+            }
+            bool errors = false;
+            if(row >= 4)
+            {
+                if(!errors){errors=true;fprintf(stderr,"\n");}
+                fprintf(stderr, "Error: Four lines is maximum\n");
+            }
+            if(col >= 256-16)
+            {
+                if(!errors){errors=true;fprintf(stderr,"\n");}
+                fprintf(stderr, "Error: Too long line\n");
+            }
+            if(errors)
+            {
+                fprintf(stderr, "In %s\n",
+                    ins.DispString(dialog).c_str());
+            }
+        }
+        
+        if(wraps)
+        {
+            if(warn_wraps)
+            {
+                fprintf(stderr,
+                  "\n"
+                  "Warning: Done some wrapping\n"
+                  "In:  %s\n"
+                  "Out: %s\n",
+                      ins.DispString(dialog).c_str(),
+                      ins.DispString(result).c_str()
+                 );
+            }
+            if(verify_wraps)
+            {
+                result = Rivita(result, ins);
+            }
+        }
+        
+        Conjugatemap.Verify(result, ins.DispString(result));
+        
+        return result;
     }
 }
 
 void insertor::LoadFile(FILE *fp)
 {
     if(!fp)return;
-    
-    LoadSymbols();
     
     string header;
     
@@ -182,15 +516,15 @@ void insertor::LoadFile(FILE *fp)
             
             if(header == "z")
             {
-                model.type = stringdata::zptr16;
-                symbols = &symbols16;
+                model.type = stringdata::zptr12;
+                symbols = &Symbols[16];
                 fprintf(stderr, "Loading strings for %s (%s)", header.c_str(),
                     WstrToAsc(getter.getcomment()).c_str());
             }
             else if(header == "r")
             {
                 model.type = stringdata::zptr8;
-                symbols = &symbols2;
+                symbols = &Symbols[2];
                 fprintf(stderr, "Loading strings for %s (%s)", header.c_str(),
                     WstrToAsc(getter.getcomment()).c_str());
             }
@@ -198,7 +532,7 @@ void insertor::LoadFile(FILE *fp)
             {
                 model.type = stringdata::fixed;
                 model.width = atoi(header.c_str() + 1);
-                symbols = &symbols8;
+                symbols = &Symbols[8];
                 fprintf(stderr, "Loading strings for %s (%s)", header.c_str(),
                     WstrToAsc(getter.getcomment()).c_str());
             }
@@ -248,13 +582,34 @@ void insertor::LoadFile(FILE *fp)
                 }
             }
             wstring content;
+            bool ignore_space=false;
             for(;;)
             {
                 const bool beginning = (c == '\n');
+#if 1
+                bool was_tag = c==']';
+#endif
+                bool was_lf = c=='\n';
                 cget(c);
+                if(was_lf && c=='\n') continue;
                 if(c == (ucs4)EOF)break;
                 if(beginning && (c == '*' || c == '$'))break;
-                if(c == '\n') { continue; }
+                if(c == '\n')
+                {
+#if 1
+                    ignore_space = !was_tag && content.size();
+                    was_tag = false;
+#endif
+                    continue;
+                }
+#if 1
+                if(ignore_space)
+                {
+                    if(c == ' ') { continue; }
+                    ignore_space = false;
+                    content += ' ';
+                }
+#endif
                 if(c == '[')
                 {
                     content += c;
@@ -294,7 +649,13 @@ void insertor::LoadFile(FILE *fp)
                 dict.push_back(newcontent);
                 continue;
             }
-
+            
+            content = str_replace
+            (
+              AscToWstr(" [pause]"),
+              AscToWstr("[pause]"),
+              content
+            );
             content = str_replace
             (
               AscToWstr("[nl]   "),
@@ -331,6 +692,7 @@ void insertor::LoadFile(FILE *fp)
                                           ) != symbols->end())
                     {
                         a += testlen-1;
+                        newcontent += i->second;
                         goto GotCode;
                     }
                 if(c == '[')
@@ -345,7 +707,6 @@ void insertor::LoadFile(FILE *fp)
                     
                     if(symbols != NULL && (i = symbols->find(code)) != symbols->end())
                     {
-                GotCode:
                         newcontent += i->second;
                     }
                     else if(code.substr(0, 7) == "[delay ")
@@ -377,7 +738,11 @@ void insertor::LoadFile(FILE *fp)
                 }
                 else
                     newcontent += getchronochar(c);
+            GotCode: ;
             }
+            
+            if(model.type == stringdata::zptr12)
+                newcontent = Rivita(newcontent, *this);
             
             model.str = newcontent;
             strings[label] = model;

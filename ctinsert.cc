@@ -6,9 +6,15 @@ using namespace std;
 #include "ctcset.hh"
 #include "rom.hh"
 
-static const char scriptfile[]             = "ct_eng.txt";
-static const char patchfile_hdr[]          = "ctpatch-hdr.ips";
-static const char patchfile_nohdr[]        = "ctpatch-nohdr.ips";
+namespace
+{
+    const char font8fn[]                = "ct8fnFI.tga";
+    const char font12fn[]               = "ct16fnFI.tga";
+    const char scriptfn[]               = "ct_eng.txt";
+    
+    const char patchfile_hdr[]          = "ctpatch-hdr.ips";
+    const char patchfile_nohdr[]        = "ctpatch-nohdr.ips";
+}
 
 void insertor::GeneratePatches()
 {
@@ -97,6 +103,7 @@ string insertor::DispString(const string &s) const
             case 0x0B: result += conv.puts(AscToWstr("[pause]")); break;
             case 0x0C: result += conv.puts(AscToWstr("[pause3]")); break;
             case 0x00: result += conv.puts(AscToWstr("[end]")); break; // Uuh?
+            case 0xEE: result += conv.puts(AscToWstr("[musicsymbol]")); break;
             case 0xF1: result += conv.puts(AscToWstr("...")); break;
             default:
             {
@@ -205,7 +212,7 @@ const set<unsigned> insertor::GetZStringPageList() const
                 // This is not a pointer
                 continue;
             case stringdata::zptr8:
-            case stringdata::zptr16:
+            case stringdata::zptr12:
                 // These are ok
                 break;
             // If we omitted something, compiler should warn
@@ -228,7 +235,7 @@ const stringoffsmap insertor::GetZStringList(unsigned pagenum) const
                 // This is not a pointer
                 continue;
             case stringdata::zptr8:
-            case stringdata::zptr16:
+            case stringdata::zptr12:
                 // These are ok
                 break;
             // If we omitted something, compiler should warn
@@ -250,7 +257,12 @@ int main(void)
     
     insertor ins;
     
-    FILE *fp = fopen(scriptfile, "rt");
+    // Font loading must happen before script loading,
+    // or script won't be properly paragraph-wrapped.
+    ins.LoadFont8(font8fn);
+    ins.LoadFont12(font12fn);
+    
+    FILE *fp = fopen(scriptfn, "rt");
     ins.LoadFile(fp);
     fclose(fp);
     

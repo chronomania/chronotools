@@ -14,6 +14,8 @@ Tools aiding in
 
 ", '1.1. ctdump' => "
 
+<img src=\"http://bisqwit.iki.fi/src/chronotools-bat.png\" align=right alt=\"sample\">
+
 Dumps the script and fonts from a given ROM.<br>
 Requires <code>chrono-dumpee.smc</code>.<br>
 Produces <code>ct_eng.txt</code>,
@@ -90,10 +92,14 @@ in the script, but it isn't a real problem preventing translation.
 The 12-pix font has only 96 characters available.<br>
 Originally the characters are arranged like this:<br>
 <img src=\"http://bisqwit.iki.fi/src/chronotools-16en.png\"
-     alt=\"(Chrono Trigger English 12pix font)\"><br clear=all>
+     alt=\"(Chrono Trigger English 12pix font)\"
+     width=834 height=80
+><br clear=all>
 My font contains currently this slightly rearranged character map:<br>
 <img src=\"http://bisqwit.iki.fi/src/chronotools-16fi.png\"
-     alt=\"(Chrono Trigger Finnish 12pix font)\"><br clear=all>
+     alt=\"(Chrono Trigger Finnish 12pix font)\"
+     width=834 height=80
+><br clear=all>
 You can imagine in your mind, about which characters you would replace
 with another to get support for Thai for example...
 <p>
@@ -101,10 +107,14 @@ Similarly the 8-pix font has undergone some changes.<br>
 It has lots more redundant space though.<br>
 Originally:<br>
 <img src=\"http://bisqwit.iki.fi/src/chronotools-8en.png\"
-     alt=\"(Chrono Trigger English 8pix font)\"><br clear=all>
+     alt=\"(Chrono Trigger English 8pix font)\"
+     width=578 height=146
+><br clear=all>
 Bisqwit's Finnish 8pix Chrono Trigger font:<br>
 <img src=\"http://bisqwit.iki.fi/src/chronotools-8fi.png\"
-     alt=\"(Chrono Trigger Finnish 8pix font)\"><br clear=all>
+     alt=\"(Chrono Trigger Finnish 8pix font)\"
+     width=578 height=146
+><br clear=all>
 
 <p>
 If you are translating to a language that utilizes lots of

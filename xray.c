@@ -31,6 +31,7 @@
 */
 
 #undef putc
+#define putc xray_putc
 
 typedef unsigned char byte;
 

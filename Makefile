@@ -1,11 +1,4 @@
-CXX=g++
-#CXX=g++-2.95
-#CXX=/usr/gcc3/bin/i586-pc-linux-gnu-g++
-CC=$(CXX)
-CPPFLAGS=-Wall -W -pedantic -g -DVERSION=\"$(VERSION)\"
-LDFLAGS=
-
-CXXFLAGS=-O2
+include Makefile.sets
 
 # VERSION 1.0.3 was the first working! :D
 # VERSION 1.0.4 handled fixed strings too
@@ -26,8 +19,9 @@ CXXFLAGS=-O2
 # VERSION 1.0.19 code organising... improved 'i' in 8x8 font.
 # VERSION 1.0.20 binpacker changes, some translation done too
 # VERSION 1.0.21 more translation, some documentation, font palette changes.
+# VERSION 1.0.22 more translation, autowrapping support, conjugation detection code
 
-VERSION=1.0.21
+VERSION=1.0.22
 ARCHFILES=xray.c xray.h \
           viewer.c \
           ctcset.cc ctcset.hh \
@@ -35,6 +29,7 @@ ARCHFILES=xray.c xray.h \
           space.cc space.hh \
           wstring.cc wstring.hh \
           readin.cc rom.hh \
+          fonts.cc fonts.hh \
           tgaimage.cc tgaimage.hh \
           ctdump.cc ctinsert.cc \
           ctinsert.hh writeout.cc \
@@ -42,7 +37,7 @@ ARCHFILES=xray.c xray.h \
           taipus.rb progdesc.php \
           spacefind.cc \
           binpacker.tcc binpacker.hh \
-          README
+          README transnotes.txt
 EXTRA_ARCHFILES=\
           ct_eng.txt \
           ct8fnFI.tga ct16fnFI.tga
@@ -64,9 +59,9 @@ ctdump: ctdump.o ctcset.o miscfun.o wstring.o
 	$(CXX) -o $@ $^
 
 ctinsert: \
-		ctinsert.o ctcset.o miscfun.o wstring.o \
-		tgaimage.o readin.o space.o writeout.o \
-		dictionary.o
+		ctinsert.o miscfun.o \
+		tgaimage.o space.o writeout.o \
+		dictionary.o fonts.o readin.o ctcset.o wstring.o
 	$(CXX) -o $@ $^ $(LDFLAGS) -lm
 
 spacefind: spacefind.o
