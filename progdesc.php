@@ -44,7 +44,7 @@ So here's what you do if you want to translate Chrono Trigger.
      <a href=\"#ctdump\">ctdump</a>, included in Chronotools.</li>
  <li>You redesign the font using an image manipulation
      program such as <a href=\"http://www.gimp.org\">GIMP</a>,
-     editing <code>ct16fn.tga</code> and <code>ct8fn.tga</code>,
+     editing <tt>ct16fn.tga</tt> and <tt>ct8fn.tga</tt>,
      and update the configuration to match the new character set
      in your font and script files.</li>
  <li>You translate the script, once in a while testing it
@@ -191,14 +191,15 @@ Copypaste from the Makefile:
 # VERSION 1.12.1 is an upgrade to support the new o65 extension...
 # VERSION 1.12.2 fixes a bug in ctdump (battle message list not dumped properly)
 # VERSION 1.12.3 fixes a bug that caused utils/codegen.cc not compile
+# VERSION 1.13.0 added support for expansion to 48 Mbit or 64 Mbit
 </pre>
 
 Users of previous versions are advised to do the following:
 <ul>
- <li>Compare the old <code>etc/ct.cfg</code>
+ <li>Compare the old <tt>etc/ct.cfg</tt>
      with the new one to see what changes
      are required to update their configuration files.</li>
- <li>Do a redump with <code>ctdump</code> and
+ <li>Do a redump with <tt>ctdump</tt> and
      see if their script file needs any converting.
      (It's not required, but it's tidier now.)</li>
 </ul>
@@ -211,7 +212,7 @@ Users of previous versions are advised to do the following:
 <tr><td valign=top>
 
 Dumps the script and fonts from a given ROM.<br>
-Requires <code>chrono-dumpee.smc</code>.<br>
+Requires <tt>chrono-dumpee.smc</tt>.<br>
 Produces the script file, the font files and a couple
 of other image files.
 <p>
@@ -250,10 +251,10 @@ Usage example:
 ", 'ctinsert:1.1. ctinsert' => "
 
 Reinserts the (edited) script and (edited) fonts to a ROM.<br>
-Requires the files referenced by <code>ct.cfg</code>
-(usually <code>ct.txt</code>, <code>ct8fn.tga</code> and <code>ct16fn.tga</code>,
+Requires the files referenced by <tt>ct.cfg</tt>
+(usually <tt>ct.txt</tt>, <tt>ct8fn.tga</tt> and <tt>ct16fn.tga</tt>,
 elemental images and optional extra fonts and code files).<br>
-Produces <code>ctpatch-hdr.ips</code> and <code>ctpatch-nohdr.ips</code>.<br>
+Produces <tt>ctpatch-hdr.ips</tt> and <tt>ctpatch-nohdr.ips</tt>.<br>
 Curiously, it doesn't require the ROM.
 
 ", '1.1. other' => "
@@ -356,7 +357,7 @@ configurability. Maybe less options would be better, but then it
 wouldn't always work.
 <p>
 The compression, btw, generally shrinks the raw script
-(which is about 2/3 of the size of <code>ct.txt</code>)
+(which is about 2/3 of the size of <tt>ct.txt</tt>)
 by a factor of 30...40%.<br>
 For a 370&nbsp;kB script file this means about 30&nbsp;kB of
 free ROM space or 74&nbsp;kB of free dialog text space.
@@ -396,6 +397,12 @@ the game to draw the names in thinner font that fits on the screen.
 
 <br clear=all>
 
+", 'expand:1.1. Expansion to 48 Mbit or 64 Mbit' => "
+
+If by whatever reason 32 Mbits is not enough for you, you can expand
+the ROM size with the <tt>romsize</tt> setting in the configuration
+file.
+
 ", '1.1. Very configurable' => "
 
 I have tried to put almost everything in text-only config files
@@ -414,6 +421,7 @@ may have when compared to the standard English version:
    <li>Equip screen showing the item count (orig. in jap. only)</li>
    <li>Character names conjugated according to language rules (new feature)</li>
    <li>Translation team logo on startup screen (new feature)</li>
+   <li>Expansion to 48 Mbit or 64 Mbit</li>
   </ul>
 
 ", 'req:1. Requirements' => "
@@ -441,7 +449,7 @@ change your attitude and start learning :)
 </blockquote>
 <p>
 The <acronym title=\"Variable width 8pix tall font\">VWF8</acronym> code,
-the <code>[crononick]</code> code (something that was removed
+the <tt>[crononick]</tt> code (something that was removed
 in the English release of CT) and the conjugator require an assembler,
 <a href=\"http://bisqwit.iki.fi/source/snescom.html\">snescom</a>.
 Snescom is a GPL'd xa65-compatible 65816 assembler program,

@@ -26,6 +26,8 @@ public:
     void LoadFont8v(const string &fn) { Font8v.Load(fn); }
     void LoadFont12(const string &fn) { Font12.Load(fn); }
     
+    void ExpandROM();
+    
     void LoadImage(const string &fn, unsigned address);
 
     void WriteEverything();

@@ -10,6 +10,7 @@
 #include "settings.hh"
 #include "config.hh"
 #include "refer.hh"
+#include "rommap.hh"
 #include "ctinsert.hh"
 #include "logfiles.hh"
 
@@ -25,12 +26,11 @@ void insertor::ObsoleteCode(unsigned address, unsigned bytes, bool barrier)
 {
     const bool ClearSpace = GetConf("patch", "clear_free_space");
     
-    address &= 0x3FFFFF;
-    
     // 0x80 = BRA
     // 0xEA = NOP
     if(barrier)
     {
+        /* If the code is unreachable, the memory area can simply be freed */
         if(bytes > 0)
         {
             freespace.Add(address, bytes);
@@ -44,6 +44,33 @@ void insertor::ObsoleteCode(unsigned address, unsigned bytes, bool barrier)
     }
     else
     {
+        /* Code is reachable, thus we generate some jumps over it. */
+        
+        /* If the range is big, we create BRLs. */
+        while(bytes > 127+3)
+        {
+            bytes -= 3;
+            unsigned skipbytes = bytes;
+            if(skipbytes > 32767) skipbytes = 32767;
+            
+            vector<unsigned char> brl(3);
+            brl[0] = 0x82;
+            brl[1] = skipbytes & 255;
+            brl[2] = skipbytes >> 8;
+            objects.AddLump(brl, address, "brl"); // BRL over the space.
+            address += 3;
+            
+            freespace.Add(address, skipbytes);
+            if(ClearSpace)
+            {
+                vector<unsigned char> empty(skipbytes, 0);
+                objects.AddLump(empty, address, "free space");
+            }
+            
+            bytes -= skipbytes;
+        }
+        
+        /* If the range is small, we create BRAs. */
         while(bytes > 2)
         {
             bytes -= 2;
@@ -66,6 +93,7 @@ void insertor::ObsoleteCode(unsigned address, unsigned bytes, bool barrier)
             bytes -= skipbytes;
         }
         
+        /* If the range is too big for BRAs, we create NOPs. */
         vector<unsigned char> nops(bytes, 0xEA);
         if(!nops.empty())
             objects.AddLump(nops, address, "nop");
@@ -205,6 +233,9 @@ void insertor::WriteUserCode()
             unsigned nopcount          = elems[a+2];
             bool add_rts               = elems[a+3];
             
+            /* Convert a SNES address to ROM address */
+            address = SNES2ROMaddr(address);
+            
             if(!funcname.empty())
             {
                 objects.AddReference(WstrToAsc(funcname), CallFrom(address));
@@ -225,6 +256,43 @@ void insertor::WriteUserCode()
         }
     }
 
-    objects.DefineSymbol("DECOMPRESS_FUNC_ADDR", 0xC00000 | GetConst(DECOMPRESSOR_FUNC_ADDR));
-    objects.DefineSymbol("CHAR_OUTPUT_FUNC",     0xC00000 | GetConst(DIALOG_DRAW_FUNC_ADDR));
+    objects.DefineSymbol("DECOMPRESS_FUNC_ADDR", ROM2SNESaddr(GetConst(DECOMPRESSOR_FUNC_ADDR)));
+    objects.DefineSymbol("CHAR_OUTPUT_FUNC",     ROM2SNESaddr(GetConst(DIALOG_DRAW_FUNC_ADDR)));
+}
+
+
+/* This file isn't really the right place for this... */
+void insertor::ExpandROM()
+{
+    unsigned NumPages = GetROMsize() / 0x10000;
+    
+    for(unsigned page=0x40; page<NumPages; ++page)
+    {
+        unsigned begin = 0;
+        unsigned end   = 0x10000;
+        
+        if(page == 0x40)
+        {
+            /* $008000 has to be mirrored at $408000.
+             * Thus only the first half is "free".
+             */
+            end = 0x8000;
+        }
+        
+        unsigned snespage = ROM2SNESpage(page);
+        if(snespage == 0x7E
+        || snespage == 0x7F
+        || snespage == 0x00)
+        {
+            /* These pages are no use. */
+            continue;
+        }
+        if(page == NumPages-1 && end == 0x10000)
+        {
+            /* Leave one byte for EOF marker */
+            --end;
+        }
+        
+        freespace.Add(page, begin, end);
+    }
 }

@@ -8,6 +8,19 @@ using namespace std;
 #define IPS_ADDRESS_EXTERN 0x01
 #define IPS_ADDRESS_GLOBAL 0x02
 
+static int Improvize(char* buf, unsigned n)
+{
+	static bool warned = false;
+	if(!warned)
+	{
+		fprintf(stderr, "Warning: Output file will be larger than original.\n");
+		warned = true;
+	}
+	for(unsigned a=0; a<n; ++a)
+		buf[a] = 0;
+	return n;
+}
+
 int main(int argc, const char *const *argv)
 {
     if(argc != 1+3)
@@ -105,7 +118,7 @@ int main(int argc, const char *const *argv)
             bytes = plainlen; if(bytes > sizeof(tmp)) bytes = sizeof(tmp);
             c = fread(tmp, 1, bytes, original);
             if(c < 0 && ferror(original)) goto inferr;
-            if(!c) { infeof: fprintf(stderr, "Unexpected end of original\n"); goto arf2; }
+            if(!c) c = Improvize(tmp, bytes);
             c2 = fwrite(tmp, 1, c, resultfile);
             if(c2 < 0 && ferror(resultfile)) goto outferr;
             if(c2 != c) goto outfeof;
@@ -118,7 +131,7 @@ int main(int argc, const char *const *argv)
             bytes = skiplen; if(bytes > sizeof(tmp)) bytes = sizeof(tmp);
             c = fread(tmp, 1, bytes, original);
             if(c < 0 && ferror(original)) goto inferr;
-            if(!c) goto infeof;
+            if(!c) c = Improvize(tmp, bytes);
             skiplen -= c;
         }
         int c = fwrite(&i->second[0], 1, patchlen, resultfile);

@@ -146,6 +146,11 @@ namespace
             {
                 if(holes[b].used+items[a].size > holes[b].size) continue;
                 sizetype free = holes[b].size - holes[b].used;
+                
+                /* free = holes.size()-b;
+                 * ^ use to prefer last holes
+                 */
+                
                 if(first || free < bestfree)
                 {
                     first = false;

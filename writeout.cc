@@ -5,8 +5,9 @@
 #include "ctcset.hh"
 #include "config.hh"
 #include "logfiles.hh"
+#include "rommap.hh"
 
-void insertor::ClearROM(ROM &ROM) const
+void insertor::ClearROM(class ROM& ROM) const
 {
     const bool ClearSpace = GetConf("patch", "clear_free_space");
     if(!ClearSpace) return;
@@ -29,7 +30,7 @@ void insertor::ClearROM(ROM &ROM) const
     }
 }
 
-void insertor::PatchROM(ROM &ROM) const
+void insertor::PatchROM(class ROM& ROM) const
 {
     ClearROM(ROM);
     
@@ -40,9 +41,23 @@ void insertor::PatchROM(ROM &ROM) const
     const vector<unsigned> o65addrs = objects.GetAddrList();
     for(unsigned a=0; a<o65addrs.size(); ++a)
     {
-        unsigned addr = o65addrs[a];
-        if(addr == NOWHERE) continue;
-        ROM.AddPatch(objects.GetCode(a), addr & 0x3FFFFF, objects.GetName(a));
+        unsigned snesaddr = o65addrs[a];
+        if(snesaddr == NOWHERE) continue;
+        
+        /* The addresses in linker are all SNES-based
+         * for linking to function properly.
+         * Convert them to ROM-based for writing.
+         */
+        unsigned romaddr = SNES2ROMaddr(snesaddr);
+
+        /*
+        fprintf(stderr, "SNES $%06X -> ROM $%06X for %s\n",
+            snesaddr,
+            romaddr,
+            objects.GetName(a).c_str());
+        */
+        
+        ROM.AddPatch(objects.GetCode(a), romaddr, objects.GetName(a));
         //objects.Release(a);
     }
     

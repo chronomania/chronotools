@@ -12,9 +12,8 @@ class ROM
     unsigned length;
 
 public:
-    ROM(unsigned siz): length(siz)
-    {
-    }
+    ROM(unsigned siz);
+    ~ROM();
     
     const unsigned size() const { return length; }
 
@@ -27,6 +26,8 @@ public:
     void AddPatch(const std::vector<unsigned char>& code,
                   unsigned addr,
                   const std::string& what="");
+
+    void Write(unsigned pos, unsigned char value, const std::string& why);
 
     void SetZero(unsigned begin, unsigned size, const std::string& why="");
 

@@ -122,7 +122,8 @@ void freespacemap::VerboseDump() const
             
             unsigned pos = (page << 16) | recpos;
             
-            MarkFree(pos & 0x3FFFFF, reclen, "free");
+            /* & 0x3FFFFF removed from here */
+            MarkFree(pos, reclen, "free");
         }
     }
 }
@@ -144,7 +145,8 @@ void freespacemap::Report() const
         total += thisfree;
         if(thisfree)
         {
-            fprintf(stderr, " %02X:%u/%u", i->first & 0x3F, thisfree, hunkcount);
+            /* & 0x3F removed from here */
+            fprintf(stderr, " %02X:%u/%u", i->first, thisfree, hunkcount);
         }
     }
     fprintf(stderr, " - total: %u bytes\n", total);
@@ -209,7 +211,8 @@ void freespacemap::Add(unsigned page, unsigned begin, unsigned length)
 }
 void freespacemap::Add(unsigned longaddr, unsigned length)
 {
-    Add((longaddr >> 16) & 0x3F, longaddr & 0xFFFF, length);
+    /* & 0x3F removed from here */
+    Add(longaddr >> 16, longaddr & 0xFFFF, length);
 }
 
 void freespacemap::Del(unsigned page, unsigned begin, unsigned length)
@@ -410,7 +413,7 @@ bool freespacemap::OrganizeToAnySamePage(vector<freespacerec> &blocks, unsigned 
     freespacemap saved_this = *this;
     quiet = true;
     
-    unsigned bestpagenum = 0x3F;
+    unsigned bestpagenum = 0x3F; /* Guess */
     unsigned bestpagesize = 0;
     bool first = true;
     bool candidates = false;
@@ -463,7 +466,8 @@ unsigned freespacemap::FindFromAnyPage(unsigned length)
 {
     FILE *log = GetLogFile("mem", "log_addrs");
 
-    unsigned leastfree=0, bestpage=0x3F; bool first=true;
+    unsigned leastfree=0, bestpage=0x3F; /* guess */
+    bool first=true;
     for(const_iterator i=begin(); i!=end(); ++i)
     {
         const freespaceset &pagemap = i->second;
@@ -523,8 +527,11 @@ void freespacemap::OrganizeO65linker(O65linker& objects)
                 items.push_back(a);
                 break;
             case LinkageWish::LinkHere:
-                /* nothing to do */
+            {
+                /* no linking, just convert the address */
+            	addrs[a] = ROM2SNESaddr(addrs[a]);
                 break;
+            }
         }
         
     /* FIRST link those which require specific pages */
@@ -546,7 +553,11 @@ void freespacemap::OrganizeO65linker(O65linker& objects)
         for(unsigned c=0; c<items.size(); ++c)
         {
             unsigned addr = Organization[c].pos;
-            if(addr != NOWHERE) addr |= (page << 16) | 0xC00000;
+            if(addr != NOWHERE)
+            {
+                addr |= (page << 16);
+                addr = ROM2SNESaddr(addr);
+            }
             addrs[items[c]] = addr;
         }
     }
@@ -571,7 +582,11 @@ void freespacemap::OrganizeO65linker(O65linker& objects)
         for(unsigned c=0; c<items.size(); ++c)
         {
             unsigned addr = Organization[c].pos;
-            if(addr != NOWHERE) addr |= (page << 16) | 0xC00000;
+            if(addr != NOWHERE)
+            {
+                addr |= (page << 16);
+                addr = ROM2SNESaddr(addr);
+            }
             addrs[items[c]] = addr;
         }
     }
@@ -588,7 +603,10 @@ void freespacemap::OrganizeO65linker(O65linker& objects)
     for(unsigned c=0; c<items.size(); ++c)
     {
         unsigned addr = Organization[c].pos;
-        if(addr != NOWHERE) addr |= 0xC00000;
+        if(addr != NOWHERE)
+        {
+            addr = ROM2SNESaddr(addr);
+        }
         addrs[items[c]] = addr;
     }
     

@@ -41,7 +41,7 @@ namespace
         //for(unsigned a=0; a<n; ++a) PutC(s[a], fp);
     }
 
-    void GeneratePatch(class ROM &ROM, unsigned offset, const char *fn)
+    void GeneratePatch(class ROM& ROM, unsigned offset, const char *fn)
     {
         fprintf(stderr, "Creating %s\n", fn);
         
@@ -93,7 +93,7 @@ namespace
                         "Error: Address $%X is too big for IPS format\n", addr);
                 }
                 
-                PutL((addr + offset) & 0x3FFFFF, fp);
+                PutL(addr + offset, fp);
                 PutMW(count, fp);
                 
                 std::vector<unsigned char> data = ROM.GetContent(addr, count);
@@ -107,7 +107,8 @@ namespace
         fwrite("EOF",   1, 3, fp);
         fclose(fp);
     }
-    void GeneratePatches(class ROM &ROM)
+    
+    void WriteGameName(class ROM& ROM)
     {
         const string Name = WstrToAsc(GetConf("general", "gamename"));
         
@@ -117,6 +118,25 @@ namespace
             Buf[a] = Name[a];
         
         ROM.AddPatch(Buf, 0xFFC0, "game name");
+    }
+    
+    void WriteROMsize(class ROM& ROM)
+    {
+        unsigned size = GetROMsize();
+        unsigned sizebyte = 0;
+        for(sizebyte=0; (1 << sizebyte)*1024 < size; ++sizebyte);
+        
+        ROM.Write(0xFFD5, 0x35,   "rom speed&type tag");
+        // ^doesn't work with Tales map?
+        ROM.Write(0xFFD7, sizebyte, "rom size tag");
+        
+        ROM.Write(GetROMsize()-1, 0xFF, "EOF");
+    }
+    
+    void GeneratePatches(class ROM& ROM)
+    {
+        WriteGameName(ROM);
+        WriteROMsize(ROM);
         
         /* Should there be a language code at $FFB5? */
         /* No - it would affect PAL/NTSC things */
@@ -190,6 +210,9 @@ int main(void)
         "Copyright (C) 1992,2004 Bisqwit (http://iki.fi/bisqwit/)\n");
     
     insertor *ins = new insertor;
+    
+    /* Ensure the ROM size */
+    ins->ExpandROM();
     
     const string font8fn  = WstrToAsc(GetConf("font",   "font8fn"));
     const string font8vfn = WstrToAsc(GetConf("font",   "font8vfn"));

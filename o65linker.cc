@@ -239,21 +239,16 @@ void O65linker::LinkSymbol(const string& name, unsigned value)
 
 void O65linker::FinishReference(const ReferMethod& reference, unsigned target, const string& what)
 {
-    unsigned pos = reference.from_addr & 0x3FFFFF;
-    
-    unsigned value = target;
-    if(reference.shr_by > 0) value >>= reference.shr_by;
-    if(reference.shr_by < 0) value <<= -reference.shr_by;
-    
-    value |= reference.or_mask;
+    unsigned pos = reference.GetAddr();
+    unsigned value = reference.Evaluate(target);
     
     char Buf[513];
     sprintf(Buf, "%016X", value);
 
-    std::string title = "ref " + what + ": $" + (Buf + 16-reference.num_bytes*2);
+    std::string title = "ref " + what + ": $" + (Buf + 16-reference.GetSize()*2);
 
     vector<unsigned char> bytes;
-    for(unsigned n=0; n<reference.num_bytes; ++n)
+    for(unsigned n=0; n<reference.GetSize(); ++n)
     {
         bytes.push_back(value & 255);
         value >>= 8;
@@ -585,7 +580,7 @@ void O65linker::LoadIPSfile(FILE* fp, const string& what)
         }
         
         char Buf[64];
-        sprintf(Buf, "block $%06X of ", lump.addr | 0xC00000);
+        sprintf(Buf, "block $%06X of ", lump.addr); /* | 0xC00000 removed here */
         
         LinkageWish wish;
         wish.SetAddress(lump.addr);

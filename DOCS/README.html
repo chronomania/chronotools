@@ -21,9 +21,10 @@ SMALL    {font-size:70%}
   <h1>Chrono Trigger translation development system</h1>
   <h2 class=level2> 0. Contents </h2>
   
-  This is the documentation of chronotools-1.12.4.
-<div class=toc><table cellspacing=0 cellpadding=0 class=toc><tr><td width="50%" valign=middle align=left nowrap class=toc>&nbsp;&nbsp;&nbsp;1. <a href="#what">Purpose</a><br>&nbsp;&nbsp;&nbsp;2. <a href="#how">How to begin?</a><br>&nbsp;&nbsp;&nbsp;3. <a href="#status">Current status</a><br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;3.1. <a href="#changes">Version history</a><br>&nbsp;&nbsp;&nbsp;4. <a href="#h0">Program list</a><br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;4.1. <a href="#ctdump">ctdump</a><br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;4.2. <a href="#ctinsert">ctinsert</a><br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;4.3. <a href="#h1">other</a><br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;4.3.1. <a href="#h2">makeips</a><br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;4.3.2. <a href="#h3">unmakeips</a><br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;4.3.3. <a href="#h4">xray</a><br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;4.3.4. <a href="#h5">viewer</a><br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;4.3.5. <a href="#h6">spacefind</a><br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;4.3.6. <a href="#h7">sramdump</a><br></td>
-<td width="50%" valign=middle align=left nowrap class=toc>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;4.3.7. <a href="#h8">base62</a><br>&nbsp;&nbsp;&nbsp;5. <a href="#h9">Useful features</a><br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;5.1. <a href="#conj">Name conjugation</a><br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;5.2. <a href="#skew">Font/dictionary skew</a><br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;5.3. <a href="#wrap">Automatic paragraph wrapping</a><br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;5.4. <a href="#vwf8">Variable width 8pix font</a><br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;5.5. <a href="#h10">Very configurable</a><br>&nbsp;&nbsp;&nbsp;6. <a href="#h11">Summary of extra features</a><br>&nbsp;&nbsp;&nbsp;7. <a href="#req">Requirements</a><br>&nbsp;&nbsp;&nbsp;8. <a href="#copying">Copying</a><br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;8.1. <a href="#parts">If you only are interested in some features/parts</a><br>&nbsp;&nbsp;&nbsp;9. <a href="#docs">Documentation</a><br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;9.1. <a href="#undocs">Undocumented things</a><br>&nbsp;&nbsp;&nbsp;10. <a href="#h12">See also</a><br>&nbsp;&nbsp;&nbsp;11. <a href="#download">Downloading</a><br></td>
+  This is the documentation of chronotools-1.13.0.
+<div class=toc><table cellspacing=0 cellpadding=0 class=toc><tr><td width="33%" valign=middle align=left nowrap class=toc>&nbsp;&nbsp;&nbsp;1. <a href="#what">Purpose</a><br>&nbsp;&nbsp;&nbsp;2. <a href="#how">How to begin?</a><br>&nbsp;&nbsp;&nbsp;3. <a href="#status">Current status</a><br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;3.1. <a href="#changes">Version history</a><br>&nbsp;&nbsp;&nbsp;4. <a href="#h0">Program list</a><br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;4.1. <a href="#ctdump">ctdump</a><br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;4.2. <a href="#ctinsert">ctinsert</a><br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;4.3. <a href="#h1">other</a><br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;4.3.1. <a href="#h2">makeips</a><br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;4.3.2. <a href="#h3">unmakeips</a><br></td>
+<td width="33%" valign=middle align=left nowrap class=toc>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;4.3.3. <a href="#h4">xray</a><br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;4.3.4. <a href="#h5">viewer</a><br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;4.3.5. <a href="#h6">spacefind</a><br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;4.3.6. <a href="#h7">sramdump</a><br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;4.3.7. <a href="#h8">base62</a><br>&nbsp;&nbsp;&nbsp;5. <a href="#h9">Useful features</a><br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;5.1. <a href="#conj">Name conjugation</a><br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;5.2. <a href="#skew">Font/dictionary skew</a><br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;5.3. <a href="#wrap">Automatic paragraph wrapping</a><br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;5.4. <a href="#vwf8">Variable width 8pix font</a><br></td>
+<td width="34%" valign=middle align=left nowrap class=toc>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;5.5. <a href="#expand">Expansion to 48 Mbit or 64 Mbit</a><br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;5.6. <a href="#h10">Very configurable</a><br>&nbsp;&nbsp;&nbsp;6. <a href="#h11">Summary of extra features</a><br>&nbsp;&nbsp;&nbsp;7. <a href="#req">Requirements</a><br>&nbsp;&nbsp;&nbsp;8. <a href="#copying">Copying</a><br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;8.1. <a href="#parts">If you only are interested in some features/parts</a><br>&nbsp;&nbsp;&nbsp;9. <a href="#docs">Documentation</a><br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;9.1. <a href="#undocs">Undocumented things</a><br>&nbsp;&nbsp;&nbsp;10. <a href="#h12">See also</a><br>&nbsp;&nbsp;&nbsp;11. <a href="#download">Downloading</a><br></td>
 </tr></table></div><H2 id="what" class="level2"><a name="what"></a>1. Purpose</H2><div class="level2" id="divwhat">
 
 Tools for translating Chrono&nbsp;Trigger to different languages.
@@ -61,7 +62,7 @@ So here's what you do if you want to translate Chrono Trigger.
      <a href="#ctdump">ctdump</a>, included in Chronotools.</li>
  <li>You redesign the font using an image manipulation
      program such as <a href="http://www.gimp.org">GIMP</a>,
-     editing <code>ct16fn.tga</code> and <code>ct8fn.tga</code>,
+     editing <tt>ct16fn.tga</tt> and <tt>ct8fn.tga</tt>,
      and update the configuration to match the new character set
      in your font and script files.</li>
  <li>You translate the script, once in a while testing it
@@ -208,14 +209,15 @@ Copypaste from the Makefile:
 # VERSION 1.12.1 is an upgrade to support the new o65 extension...
 # VERSION 1.12.2 fixes a bug in ctdump (battle message list not dumped properly)
 # VERSION 1.12.3 fixes a bug that caused utils/codegen.cc not compile
+# VERSION 1.13.0 added support for expansion to 48 Mbit or 64 Mbit
 </pre>
 
 Users of previous versions are advised to do the following:
 <ul>
- <li>Compare the old <code>etc/ct.cfg</code>
+ <li>Compare the old <tt>etc/ct.cfg</tt>
      with the new one to see what changes
      are required to update their configuration files.</li>
- <li>Do a redump with <code>ctdump</code> and
+ <li>Do a redump with <tt>ctdump</tt> and
      see if their script file needs any converting.
      (It's not required, but it's tidier now.)</li>
 </ul>
@@ -228,7 +230,7 @@ Users of previous versions are advised to do the following:
 <tr><td valign=top>
 
 Dumps the script and fonts from a given ROM.<br>
-Requires <code>chrono-dumpee.smc</code>.<br>
+Requires <tt>chrono-dumpee.smc</tt>.<br>
 Produces the script file, the font files and a couple
 of other image files.
 <p>
@@ -267,10 +269,10 @@ Usage example:
 </div><H3 id="ctinsert" class="level3"><a name="ctinsert"></a>4.2. ctinsert</H3><div class="level3" id="divctinsert">
 
 Reinserts the (edited) script and (edited) fonts to a ROM.<br>
-Requires the files referenced by <code>ct.cfg</code>
-(usually <code>ct.txt</code>, <code>ct8fn.tga</code> and <code>ct16fn.tga</code>,
+Requires the files referenced by <tt>ct.cfg</tt>
+(usually <tt>ct.txt</tt>, <tt>ct8fn.tga</tt> and <tt>ct16fn.tga</tt>,
 elemental images and optional extra fonts and code files).<br>
-Produces <code>ctpatch-hdr.ips</code> and <code>ctpatch-nohdr.ips</code>.<br>
+Produces <tt>ctpatch-hdr.ips</tt> and <tt>ctpatch-nohdr.ips</tt>.<br>
 Curiously, it doesn't require the ROM.
 
 </div><H3 id="h1" class="level3"><a name="h1"></a>4.3. other</H3><div class="level3" id="divh1">
@@ -373,7 +375,7 @@ configurability. Maybe less options would be better, but then it
 wouldn't always work.
 <p>
 The compression, btw, generally shrinks the raw script
-(which is about 2/3 of the size of <code>ct.txt</code>)
+(which is about 2/3 of the size of <tt>ct.txt</tt>)
 by a factor of 30...40%.<br>
 For a 370&nbsp;kB script file this means about 30&nbsp;kB of
 free ROM space or 74&nbsp;kB of free dialog text space.
@@ -413,7 +415,13 @@ the game to draw the names in thinner font that fits on the screen.
 
 <br clear=all>
 
-</div><H3 id="h10" class="level3"><a name="h10"></a>5.5. Very configurable</H3><div class="level3" id="divh10">
+</div><H3 id="expand" class="level3"><a name="expand"></a>5.5. Expansion to 48 Mbit or 64 Mbit</H3><div class="level3" id="divexpand">
+
+If by whatever reason 32 Mbits is not enough for you, you can expand
+the ROM size with the <tt>romsize</tt> setting in the configuration
+file.
+
+</div><H3 id="h10" class="level3"><a name="h10"></a>5.6. Very configurable</H3><div class="level3" id="divh10">
 
 I have tried to put almost everything in text-only config files
 instead of hardcoding it in the programs. You won't be depending
@@ -431,6 +439,7 @@ may have when compared to the standard English version:
    <li>Equip screen showing the item count (orig. in jap. only)</li>
    <li>Character names conjugated according to language rules (new feature)</li>
    <li>Translation team logo on startup screen (new feature)</li>
+   <li>Expansion to 48 Mbit or 64 Mbit</li>
   </ul>
 
 </div><H2 id="req" class="level2"><a name="req"></a>7. Requirements</H2><div class="level2" id="divreq">
@@ -458,7 +467,7 @@ change your attitude and start learning :)
 </blockquote>
 <p>
 The <acronym title="Variable width 8pix tall font">VWF8</acronym> code,
-the <code>[crononick]</code> code (something that was removed
+the <tt>[crononick]</tt> code (something that was removed
 in the English release of CT) and the conjugator require an assembler,
 <a href="http://bisqwit.iki.fi/source/snescom.html">snescom</a>.
 Snescom is a GPL'd xa65-compatible 65816 assembler program,
@@ -543,9 +552,9 @@ Things that should be documented some day but currently are not:
    is at <a href="http://iki.fi/bisqwit/source/chronotools.html">http://iki.fi/bisqwit/source/chronotools.html</a>.<br>
    Check there for new versions.
 </div> <p align=right><small>Generated from
-       <code>../progdesc.php</code> (last updated: Thu, 19 Feb 2004 15:23:01 +0200)<br>
+       <code>../progdesc.php</code> (last updated: Sun,  9 May 2004 04:51:00 +0300)<br>
   with <code>docmaker.php</code> (last updated: Fri,  2 Jan 2004 17:31:18 +0200)<br>
-  at Tue,  2 Mar 2004 19:57:41 +0200</small>
+  at Sun,  9 May 2004 04:51:17 +0300</small>
  </p>
 </body>
 </html>

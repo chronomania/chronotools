@@ -28,7 +28,11 @@ struct LinkageWish
 public:
     LinkageWish(): type(LinkAnywhere), param(0) {}
     
-    unsigned GetAddress() const { return type!=LinkHere ? 0 : param | 0xC00000; }
+    unsigned GetAddress() const
+    {
+        if(type != LinkHere) return 0;
+        return param; /* | 0xC00000 removed here */
+    }
     unsigned GetPage() const { return param; }
     unsigned GetGroup() const { return param; }
     

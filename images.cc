@@ -4,6 +4,7 @@
 #include "compress.hh"
 #include "images.hh"
 #include "rom.hh"
+#include "rommap.hh"
 #include "msginsert.hh"
 
 void LoadImageData
@@ -68,6 +69,8 @@ void insertor::WriteImages()
             unsigned address            = elems[a];
             const ucs4string& filename  = elems[a+1];
             
+            /* The address must be ROM-based. */
+            
             const string fn = WstrToAsc(filename);
             const TGAimage image(fn);
             
@@ -91,14 +94,14 @@ void insertor::WriteImages()
             unsigned orig_size         = elems[a+3];
             unsigned segment           = elems[a+4];
             const ucs4string& filename = elems[a+5];
-
-            space_address &= 0x3FFFFF;
+            
+            /* The addresses must be ROM-based. */
             
             const string fn = WstrToAsc(filename);
             
             // Add the freespace from the original location
             // because the image will be moved anyway
-            freespace.Add(space_address & 0x3FFFFF, orig_size);
+            freespace.Add(space_address, orig_size);
             
             const TGAimage image(fn);
             vector<unsigned char> data;

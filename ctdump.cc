@@ -21,7 +21,8 @@ static void LoadDict()
 {
     unsigned DictPtr = ROM[GetConst(DICT_OFFSET)+0]
                     + (ROM[GetConst(DICT_OFFSET)+1] << 8)
-                   + ((ROM[GetConst(DICT_SEGMENT1)] & 0x3F) << 16);
+                    + (ROM[GetConst(DICT_SEGMENT1)] << 16);
+    DictPtr = SNES2ROMaddr(DictPtr);
 
     unsigned char UpperLimit = ROM[GetConst(CSET_BEGINBYTE)];
     
@@ -51,10 +52,11 @@ static void Dump12Font()
     
     unsigned WidthPtr = ROM[GetConst(VWF12_WIDTH_OFFSET)+0]
                      + (ROM[GetConst(VWF12_WIDTH_OFFSET)+1]<<8)
-                     + ((ROM[GetConst(VWF12_WIDTH_SEGMENT)] & 0x3F) << 16)
+                     + (ROM[GetConst(VWF12_WIDTH_SEGMENT)] << 16)
                      - Offset;
+    WidthPtr = SNES2ROMaddr(WidthPtr);
     
-    unsigned FontSeg = ROM[GetConst(VWF12_SEGMENT)] & 0x3F;
+    unsigned FontSeg = SNES2ROMpage(ROM[GetConst(VWF12_SEGMENT)]);
     unsigned FontPtr1 = ROM[GetConst(VWF12_TAB1_OFFSET)+0]
                      + (ROM[GetConst(VWF12_TAB1_OFFSET)+1] << 8)
                      + (FontSeg << 16);
@@ -124,10 +126,10 @@ namespace
     0xFF00FF, //1F001F - 5E
     0xFF00FF, //1F001F - 5F
     };
-        DumpGFX_Compressed_4bit(0xFE6002, 16, "title screen gfx", "titlegfx.tga", pal);
+        DumpGFX_Compressed_4bit(0x3E6002, 16, "title screen gfx", "titlegfx.tga", pal);
     }
 
-        DumpGFX_Compressed_4bit(0xC5DA88, 16, "worldmap gfx 1", "pontpo.tga");
+        DumpGFX_Compressed_4bit(0x05DA88, 16, "worldmap gfx 1", "pontpo.tga");
 
     {   static const unsigned pal[16] = {
     0x000000, //000000 - 80
@@ -148,7 +150,7 @@ namespace
     0x293931, //050706 - 8F
     };
         /* FIXME: duplicate tiles */
-        DumpGFX_Compressed_4bit(0xC38000, 19, "epoch control gfx", "eraes.tga", pal);
+        DumpGFX_Compressed_4bit(0x038000, 19, "epoch control gfx", "eraes.tga", pal);
     }
         DumpGFX_2bit(0x3FF488,  6, 2, "batlmode prompt gfx 2", "active2.tga"); // "Active Time Battle ver. 2"
 
@@ -307,8 +309,8 @@ namespace
         
         //DumpZStrings(0x06F400, "places", 112, false);
         DumpRZStrings("places", 112, false,
-                      '^', 0xC25681,
-                      '!', 0xC2567B,
+                      '^', 0x025681,
+                      '!', 0x02567B,
                       0);
         
         BlockComment(";era list\n");
@@ -318,8 +320,8 @@ namespace
         
         //DumpZStrings(0x3FD396, "eraes", 8, false);
         DumpRZStrings("eraes", 8, false,
-                      '^', 0xC2D3DB,
-                      '!', 0xC2D3D5,
+                      '^', 0x02D3DB,
+                      '!', 0x02D3D5,
                       0);
         
         BlockComment(";episode list\n");
@@ -333,10 +335,10 @@ namespace
         // $CD:02F0 A2 11 EF    LDX #$EF11
         // $CD:02F9 A9 CE       LDA #$CE
         DumpRZStrings("bat", 14, false,
-                      '^', 0xCD01BD,
-                      '!', 0xCD01B7,
-                      '^', 0xCD02FA,
-                      '!', 0xCD02F1,
+                      '^', 0x0D01BD,
+                      '!', 0x0D01B7,
+                      '^', 0x0D02FA,
+                      '!', 0x0D02F1,
                       0);
         
         BlockComment(";battle messages, part 2 (remember to check for wrapping)\n");

@@ -332,9 +332,9 @@ Retry:
                     c1 = (unsigned char)s[++b];
 
 #if 1
-                    if(c1 >= 0xC0)
+                    if(c1 >= 0x40 && (c1 < 0x7E || c1 >= 0x80))
                     {
-                        unsigned addr = ((c1&0x3F) << 16) + c2;
+                        unsigned addr = (SNES2ROMpage(c1) << 16) + c2;
                         
                         unsigned bytes;
                         ctstring str = LoadZString(addr, bytes, "substring", Extras_8);
@@ -510,10 +510,10 @@ void DumpRZStrings(const string& what,
     }
     va_end(ap);
 
-
-    const unsigned offs = ((ROM[pageaddr   & 0x3FFFFF] << 16)
-                         | (ROM[offsaddr+1 & 0x3FFFFF] << 8)
-                         | (ROM[offsaddr   & 0x3FFFFF])) & 0x3FFFFF;
+    unsigned offs = (ROM[pageaddr  ] << 16)
+                  | (ROM[offsaddr+1] << 8)
+                  | (ROM[offsaddr  ]);
+    offs = SNES2ROMaddr(offs);
     
     MessageBeginDumpingStrings(offs);
     

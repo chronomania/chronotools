@@ -28,7 +28,7 @@ namespace
             : col(maxco), log(GetLogFile("mem", "log_addrs"))
         {
             if(log)
-                fprintf(log, "-- %s at %06X\n", type.c_str(), offset | 0xC00000);
+                fprintf(log, "-- %s at %06X\n", type.c_str(), offset);
         }
         void AddPtr(unsigned ptrnum, unsigned where, unsigned target, unsigned bytes)
         {
@@ -63,7 +63,7 @@ namespace
                 ranges.compact();
                 
                 if(col)fprintf(log, "\n");
-                fprintf(log, "-- Table ends at %06X\n", where | 0xC00000);
+                fprintf(log, "-- Table ends at %06X\n", where);
 
                 list<rangeset<unsigned>::const_iterator> rangelist;
                 ranges.find_all_coinciding(0,0x10000, rangelist);

@@ -7,6 +7,32 @@ using namespace std;
 #define IPS_ADDRESS_EXTERN 0x01
 #define IPS_ADDRESS_GLOBAL 0x02
 
+namespace
+{
+    vector<unsigned char> ROM;
+    vector<bool> Touched;
+    
+    void WriteByte(unsigned addr, unsigned char value)
+    {
+        ROM[addr]     = value;
+        Touched[addr] = true;
+    }
+    
+    void WriteShort(unsigned addr, unsigned short value)
+    {
+        WriteByte(addr, value & 255);
+        WriteByte(addr+1, value >> 8);
+    }
+    
+    void WriteCheckSumPair(unsigned addr, unsigned sum1)
+    {
+        sum1 &= 0xFFFF;
+        
+        WriteShort(addr,   sum1);
+        WriteShort(addr+2, sum1 ^ 0xFFFF);
+    }
+}
+
 int main(int argc, const char *const *argv)
 {
     if(argc != 1+3)
@@ -44,18 +70,17 @@ int main(int argc, const char *const *argv)
         return -1;
     }
     
-    vector<unsigned char> ROM;
     while(!feof(original))
     {
         char tmp[4096];
         int c = fread(tmp, 1, sizeof tmp, original);
-        if(c < 0 && ferror(original)) { inferr: perror("fread"); goto arf2; }
+        if(c < 0 && ferror(original)) { perror("fread"); goto arf2; }
         if(!c) break;
         
         ROM.insert(ROM.end(), tmp, tmp+c);
     }
     fclose(original); original=NULL;
-    vector<bool> Touched(ROM.size(), false);
+    Touched.resize(ROM.size());
     
 //    unsigned col=0;
     for(;;)
@@ -89,17 +114,15 @@ int main(int argc, const char *const *argv)
         }
         else
         {
-            for(unsigned a=0; a<len; ++a)
+            if(pos+len > ROM.size())
             {
-                if(pos+a >= ROM.size())
-                {
-                    fprintf(stderr, "Got too big pos %u+%u (ROM size only %u)\n",
-                        pos,len, ROM.size());
-                    goto arf;
-                }
-                ROM[pos+a] = Buf2[a];
-                Touched[pos+a] = true;
+                unsigned newsize = pos+len;
+                fprintf(stderr, "Warning: ROM will grow from %u to %u (%u+%u)\n",
+                    ROM.size(), newsize, pos,len);
+                Touched.resize(newsize);
+                ROM.resize(newsize);
             }
+            for(unsigned a=0; a<len; ++a) WriteByte(pos+a, Buf2[a]);
         }
     }
 //    if(col) fprintf(stderr, "\n");
@@ -109,18 +132,31 @@ int main(int argc, const char *const *argv)
     unsigned size = CalculatedSize; 
     for(unsigned power2=0; ; ++power2)
         if(!(size >>= 1)) { size = 1 << power2; break; }
-    unsigned sum1=0, sum2=0, remainder=CalculatedSize-size;
+    unsigned sum1=0, remainder=CalculatedSize-size;
     unsigned offset = ROM.size() - CalculatedSize;
-    for(unsigned a=0; a<size; ++a) sum1 += ROM[offset+a];
-    for(unsigned a=0; a<remainder; ++a) sum2 += ROM[offset+size+a];
-    if(remainder) sum1 += sum2 * (size / remainder);
-    sum1 &= 0xFFFF;
-    sum2 = sum1 ^ 0xFFFF;
-    ROM[offset+0xFFDC] = sum2 & 255; Touched[offset+0xFFDC] = true;
-    ROM[offset+0xFFDD] = sum2 >> 8;  Touched[offset+0xFFDD] = true;
-    ROM[offset+0xFFDE] = sum1 & 255; Touched[offset+0xFFDE] = true;
-    ROM[offset+0xFFDF] = sum1 >> 8;  Touched[offset+0xFFDF] = true;
 
+    if(CalculatedSize >= 0x410000)
+    {
+    	/* ExHiROM must have $008000 mirrored at $408000 */
+    	
+        for(unsigned a=0x8000; a<=0xFFFF; ++a)
+            WriteByte(offset+0x400000+a, ROM[offset+a]);
+    }
+
+    for(unsigned a=0; a<size; ++a) sum1 += ROM[offset+a];
+    if(remainder)
+    {
+        unsigned sum2 = 0;
+        for(unsigned a=0; a<remainder; ++a) sum2 += ROM[offset+size+a];
+        sum1 += sum2 * (size / remainder);
+    }
+    
+    WriteCheckSumPair(offset + 0xFFDC, sum1);
+    if(CalculatedSize >= 0x410000)
+    {
+        WriteCheckSumPair(offset + 0x40FFDC, sum1);
+    }
+    
     fprintf(stderr, "ROM size $%X (calculated $%X, 2pow $%X, remainder $%X, offset $%X)\n",
         ROM.size(), CalculatedSize, size, remainder, offset);
     

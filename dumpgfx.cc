@@ -5,6 +5,7 @@
 
 #include "dumpgfx.hh"
 
+/* address is rom-based */
 void DumpGFX_2bit(unsigned addr,
                   unsigned xtile, unsigned ytile,
                   const string& what,
@@ -16,7 +17,7 @@ void DumpGFX_2bit(unsigned addr,
     
     if(addr > 0)
     {
-        MarkProt(addr&0x3FFFFF, xtile*ytile*8*8*2/8, what);
+        MarkProt(addr, xtile*ytile*8*8*2/8, what);
     }
     
     for(unsigned ty=0; ty<ytile; ++ty)
@@ -42,6 +43,7 @@ void DumpGFX_2bit(unsigned addr,
     MessageDone();
 }
 
+/* address is rom-based */
 void DumpGFX_4bit(unsigned addr,
                   unsigned xtile, unsigned ytile,
                   const string& what, 
@@ -54,7 +56,7 @@ void DumpGFX_4bit(unsigned addr,
     
     if(addr > 0)
     {
-        MarkProt(addr&0x3FFFFF, xtile*ytile*8*8*4/8, what);
+        MarkProt(addr, xtile*ytile*8*8*4/8, what);
     }
     
     for(unsigned ty=0; ty<ytile; ++ty)
@@ -87,6 +89,7 @@ void DumpGFX_4bit(unsigned addr,
     MessageDone();
 }
 
+/* address is rom-based */
 void DumpGFX_Compressed_4bit(unsigned addr,
                              unsigned xtile,
                              const string& what,
@@ -95,8 +98,8 @@ void DumpGFX_Compressed_4bit(unsigned addr,
 {
     vector<unsigned char> Target;
     
-    unsigned origsize = Uncompress(ROM + (addr&0x3FFFFF), Target,
-                                   ROM + 0x400000);
+    unsigned origsize = Uncompress(ROM + (addr), Target,
+                                   ROM + GetROMsize());
     unsigned size = Target.size();
     
     if(!origsize)
@@ -111,7 +114,7 @@ void DumpGFX_Compressed_4bit(unsigned addr,
         fn.c_str(), size, origsize);
 #endif
     
-    MarkProt(addr&0x3FFFFF, origsize, what);
+    MarkProt(addr, origsize, what);
     
     unsigned char *SavedROM = ROM;
     ROM = &Target[0];

@@ -204,7 +204,8 @@ void PagePtrList::Create(insertor& ins,
         if(!tablename.empty()) tmp.DeclareGlobal(CODE, tablename, 0);
         if(page >= 0)
         {
-            unsigned address = first | (page << 16) | 0xC00000;
+            /* | 0xC00000 removed here */
+            unsigned address = first | (page << 16);
             wish.SetAddress(address);
             tmp.Locate(CODE, address);
         }

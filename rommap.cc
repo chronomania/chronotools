@@ -10,6 +10,8 @@
 #include "rangemap.hh"
 #include "rangeset.hh"
 
+#include "config.hh"
+
 using namespace std;
 
 namespace
@@ -393,4 +395,61 @@ void LoadROM(FILE *fp)
     known_romsize = romsize;
     
     fprintf(stderr, "\n");
+}
+
+namespace
+{
+    struct ROMinfo
+    {
+        unsigned romsize;
+        ROMinfo()
+        {
+            romsize = GetConf("general", "romsize");
+            if(romsize != 32
+            && romsize != 48
+            && romsize != 64)
+            {
+                fprintf(stderr, "ROM size may be 32, 48 or 64 Mbits. Set to 32.\n");
+                romsize = 32;
+            }
+        }
+    } ROMinfo;
+}
+
+
+unsigned char ROM2SNESpage(unsigned char page)
+{
+    if(page < 0x40) return page | 0xC0;
+    
+    if(ROMinfo.romsize == 48) return (page - 0x40) + 0x20;
+    if(page >= 0x3E) return page;
+    return page + 0x40;
+}
+
+unsigned char SNES2ROMpage(unsigned char page)
+{
+    if(page >= 0x80) return page & 0x3F;
+    if(ROMinfo.romsize == 48) return (page & 0x1F) + 0x40;
+    return (page & 0x3F) + 0x40;
+}
+
+unsigned long ROM2SNESaddr(unsigned long addr)
+{
+    return (addr & 0xFFFF) | (ROM2SNESpage(addr >> 16) << 16);
+}
+
+unsigned long SNES2ROMaddr(unsigned long addr)
+{
+    return (addr & 0xFFFF) | (SNES2ROMpage(addr >> 16) << 16);
+}
+
+unsigned long GetROMsize()
+{
+    return 0x100000 /* 1 Megabyte */
+         * (ROMinfo.romsize / 8);
+}
+
+bool IsSNESbased(unsigned long addr)
+{
+    return addr >= 0xC00000;
 }

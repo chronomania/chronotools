@@ -168,6 +168,12 @@ unsigned ConfParser::Field::IField() const
     return 0;
 }
 
+double ConfParser::Field::DField() const
+{
+    if(!elements.empty()) return elements[0].DField;
+    return 0;
+}
+
 const ucs4string& ConfParser::Field::SField() const
 {
     static const ucs4string empty;
@@ -198,7 +204,15 @@ bool ConfParser::ParseField(CharIStream& is, Field& field, bool mergeStrings)
             {
                 c = is.getChar();
                 if(!is.good()) return false;
-                if(is.equal(c, '"')) break;
+                if(is.equal(c, '\\'))
+                {
+                    c = is.getChar();
+                    if(is.equal(c, 'n')) c = '\n';
+                    else if(is.equal(c, 't')) c = '\t';
+                    else if(is.equal(c, 'r')) c = '\r';
+                }
+                else
+                    if(is.equal(c, '"')) break;
                 element.SField += c;
             }
             if(mergeStrings && !field.elements.empty() &&
@@ -227,6 +241,7 @@ bool ConfParser::ParseField(CharIStream& is, Field& field, bool mergeStrings)
 
             Field::Element element;
             element.IField = 0;
+            element.DField = 0;
             while(true)
             {
                 unsigned value = is.toUpper(c)-'0';
@@ -240,6 +255,12 @@ bool ConfParser::ParseField(CharIStream& is, Field& field, bool mergeStrings)
                 else
                     break;
             }
+            element.DField = element.IField;
+            if(is.peekChar() == '%')
+            {
+                element.DField /= 100.0;
+                is.getChar();
+            }
             field.elements.push_back(element);
         }
         else if(is.equal(c, 't') &&
@@ -249,6 +270,7 @@ bool ConfParser::ParseField(CharIStream& is, Field& field, bool mergeStrings)
         {
             Field::Element element;
             element.IField = 1;
+            element.DField = 1;
             field.elements.push_back(element);
         }
         else if(is.equal(c, 'f') &&
@@ -259,12 +281,14 @@ bool ConfParser::ParseField(CharIStream& is, Field& field, bool mergeStrings)
         {
             Field::Element element;
             element.IField = 0;
+            element.DField = 0;
             field.elements.push_back(element);
         }
         else
         {
-            fprintf(stderr, "Syntax error in config line %u, expected a value\n",
-                is.getLineNumber());
+            fprintf(stderr, "Syntax error in config line %u, expected a value but got '%c'\n",
+                is.getLineNumber(),
+                (char)c);
             return false;
         }
     }
@@ -283,8 +307,17 @@ void ConfParser::ParseSection(CharIStream& is, const std::string& secName)
         ucs4string fieldNameString;
 
         ucs4 c = is.peekChar();
+        
+        // Section name?
         if(is.equal(c, '[')) break;
-        if(is.equal(c, '#')) { is.getChar(); is.getLine(); continue; }
+
+        // Comment line:
+        if(is.equal(c, '#'))
+        {
+            is.getChar();
+            is.getLine();
+            continue;
+        }
 
         while(true)
         {
@@ -298,8 +331,8 @@ void ConfParser::ParseSection(CharIStream& is, const std::string& secName)
 
         if(fieldName.empty())
         {
-            fprintf(stderr, "Syntax error in config line %u, expected field name\n",
-                is.getLineNumber());
+            fprintf(stderr, "Syntax error in config line %u, expected field name but got '%c'\n",
+                is.getLineNumber(), (char)c);
             continue;
         }
 

@@ -13,6 +13,7 @@
 #include "typefaces.hh"
 #include "msginsert.hh"
 #include "pageptrlist.hh"
+#include "rommap.hh"
 
 using namespace std;
 
@@ -433,6 +434,15 @@ void insertor::LoadFile(FILE *fp)
                     unsigned addr = 0;
                     while(++a < header.size() && header[a] != ':')
                         CumulateBase62(addr, header, header[a]); 
+                    
+                    if(IsSNESbased(addr))
+                    {
+                        fprintf(stderr,
+                            "\nWarning: '%s' contains a SNES-based address.\n",
+                            header.c_str());
+                        addr = SNES2ROMaddr(addr);
+                    }
+                    
                     switch(type)
                     {
                         case '^': refs.push_back(PagePtrFrom(addr)); break;
@@ -797,7 +807,8 @@ void insertor::WriteFixedStrings()
             
             std::copy(s.begin(), s.begin()+size, Buf.begin());
             
-            objects.AddLump(Buf, pos & 0x3FFFFF, "lstring");
+            /* & 0x3FFFFF removed from here */
+            objects.AddLump(Buf, pos, "lstring");
         }
     }
 }
@@ -828,7 +839,8 @@ void insertor::WriteOtherStrings()
             if(i->ref_id)
             {
                 refmap[i->ref_id].AddItem(data, i->address & 0xFFFF);
-                freespace.Add(i->address & 0x3FFFFF, 2);
+                /* & 0x3FFFFF removed from here */
+                freespace.Add(i->address, 2);
             }
             else
                 pagemap[i->address >> 16].AddItem(data, i->address & 0xFFFF);

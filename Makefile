@@ -111,6 +111,7 @@ DEPDIRS = utils/
 # VERSION 1.12.2 fixes a bug in ctdump (battle message list not dumped properly)
 # VERSION 1.12.3 fixes a bug that caused utils/codegen.cc not compile
 # VERSION 1.12.4 is a middle-development version that has windows binaries
+# VERSION 1.13.0 added support for expansion to 48 Mbit or 64 Mbit
 
 #OPTIM=-Os
 # -fshort-enums
@@ -123,7 +124,7 @@ OPTIM=-O3
 
 CXXFLAGS += -I.
 
-VERSION=1.12.4
+VERSION=1.13.0
 ARCHFILES=utils/xray.cc utils/xray.h \
           utils/viewer.c \
           utils/vwftest.cc \
@@ -169,7 +170,7 @@ ARCHFILES=utils/xray.cc utils/xray.h \
           fonts.cc fonts.hh \
           o65.cc o65.hh relocdata.hh \
           o65linker.cc o65linker.hh \
-          refer.hh \
+          refer.cc refer.hh \
           logfiles.cc logfiles.hh \
           symbols.cc symbols.hh \
           tgaimage.cc tgaimage.hh \
@@ -240,7 +241,7 @@ all: $(PROGS)
 
 # Chrono Trigger data dumping program
 ctdump: \
-		ctdump.o scriptfile.o rommap.o strload.o \
+		ctdump.o scriptfile.o rommap.o refer.o strload.o \
 		dumptext.o dumpfont.o dumpgfx.o msgdump.o \
 		 tgaimage.o extras.o compress.o \
 		 symbols.o logfiles.o settings.o \
@@ -253,7 +254,7 @@ ctinsert: \
 		space.o writeout.o \
 		dictionary.o images.o fonts.o typefaces.o \
 		rom.o dataarea.o snescode.o pageptrlist.o \
-		conjugate.o o65.o o65linker.o rommap.o \
+		conjugate.o o65.o o65linker.o rommap.o refer.o \
 		 tgaimage.o extras.o compress.o \
 		 symbols.o logfiles.o settings.o \
 		 config.o confparser.o ctcset.o wstring.o
@@ -292,7 +293,10 @@ utils/viewer: utils/viewer.o
 	$(CC) $(LDOPTS) -o $@ $^ $(LDFLAGS) -lslang
 
 # A certain disassembler (not generic)
-utils/deasm: utils/deasm.o utils/deasm-disasm.o utils/insdata.o rommap.o
+utils/deasm: \
+		utils/deasm.o utils/deasm-disasm.o utils/insdata.o \
+		rommap.o refer.o \
+		config.o confparser.o ctcset.o wstring.o
 	$(CXX) $(LDOPTS) $(CXXFLAGS)  -o $@ $^ $(LDFLAGS)
 
 # Cursive/bold typeface font generator (obsolete)

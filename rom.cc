@@ -3,14 +3,15 @@
 #include "logfiles.hh"
 #include "rommap.hh"
 
-// Far call takes four bytes:
-//     22 63 EA C0 = JSL $C0:$EA63
+ROM::ROM(unsigned siz): length(siz)
+{
+    unsigned romsize = GetConf("general", "romsize");
+}
 
-// Near jump takes three bytes:
-//     4C 23 58    = JMP db:$5823    (db=register)
-
-// Short jump takes two bytes:
-//     80 2A       = JMP (IP + 2 + $2A)
+ROM::~ROM()
+{
+    
+}
 
 void ROM::Write(unsigned pos, unsigned char value)
 {
@@ -35,13 +36,21 @@ const std::vector<unsigned char> ROM::GetContent(unsigned a, unsigned l) const
 
 
 
+void ROM::Write(unsigned pos, unsigned char value, const std::string& why)
+{
+    Data.WriteByte(pos, value);
+    MarkProt(pos, 1, why);
+}
+
+
 void ROM::AddPatch(const vector<unsigned char> &code, unsigned addr, const string& what)
 {
     if(code.empty()) return;
     
     FILE *log = GetLogFile("mem", "log_addrs");
     
-    unsigned rompos = addr & 0x3FFFFF;
+    /* & 0x3FFFFF removed from here */
+    const unsigned rompos = addr;
     
     for(unsigned a=0; a<code.size(); ++a)
         Write(rompos+a, code[a]);

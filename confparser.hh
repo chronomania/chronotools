@@ -17,22 +17,22 @@ class ConfParser
  public:
     class invalid_section //: public std::runtime_error
     {
-       string sect;
+       std::string sect;
     public:
-       explicit invalid_section(const string& arg)
+       explicit invalid_section(const std::string& arg)
          : /*runtime_error(arg), */sect(arg) {}
-       const string& GetSection() const { return sect; }
+       const std::string& GetSection() const { return sect; }
     };
     class invalid_field //: public std::runtime_error
     {
-       string sect, field;
+       std::string sect, field;
     public:
-       explicit invalid_field(const string& sectname,
-                              const string& fieldname)
+       explicit invalid_field(const std::string& sectname,
+                              const std::string& fieldname)
         : /*runtime_error(sectname + ":" + fieldname),
           */sect(sectname), field(fieldname) {}
-       const string& GetSection() const { return sect; }
-       const string& GetField() const { return field; }
+       const std::string& GetSection() const { return sect; }
+       const std::string& GetField() const { return field; }
     };
 
     void Parse(FILE *fp);
@@ -48,19 +48,23 @@ class ConfParser
         struct Element
         {
             unsigned IField;
+            double DField;
             ucs4string SField;
 
             operator bool() const { return IField; }
             operator unsigned() const { return IField; }
+            operator double() const { return DField; }
             operator const ucs4string& () const { return SField; }
         };
 
         unsigned IField() const;
+        double DField() const;
         const ucs4string& SField() const;
 
         const std::vector<Element>& Fields() const { return elements; }
         
         operator bool() const { return IField(); }
+        operator double() const { return DField(); }
         operator unsigned() const { return IField(); }
         operator const ucs4string& () const { return SField(); }
 
