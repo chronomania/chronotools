@@ -7,6 +7,8 @@
 
 #include "dumptext.hh"
 
+#include <cstdarg>
+
 namespace
 {
     ucs4string dict_converted[256];
@@ -482,12 +484,33 @@ void DumpZStrings(const unsigned offs,
     MessageDone();
 }
 
-void DumpRZStrings(const unsigned pageaddr,
-                   const unsigned offsaddr,
-                   const string& what,
+void DumpRZStrings(const string& what,
                    unsigned len,
-                   bool dolf)
+                   bool dolf,
+                   ...)
 {
+    unsigned pageaddr = 0;
+    unsigned offsaddr = 0;
+    
+    string label = "z";
+    
+    va_list ap;
+    va_start(ap, dolf);
+    
+    for(;;)
+    {
+        char format = va_arg(ap, int);
+        if(!format) break;
+        label += ':';
+        label += format;
+        unsigned addr = va_arg(ap, unsigned);
+        label += Base62Label(addr);
+        if(format == '^') pageaddr = addr;
+        if(format == '!') offsaddr = addr;
+    }
+    va_end(ap);
+
+
     const unsigned offs = ((ROM[pageaddr   & 0x3FFFFF] << 16)
                          | (ROM[offsaddr+1 & 0x3FFFFF] << 8)
                          | (ROM[offsaddr   & 0x3FFFFF])) & 0x3FFFFF;
@@ -497,10 +520,6 @@ void DumpRZStrings(const unsigned pageaddr,
     const string what_tab = what+"(zr)";
     
     vector<ctstring> strings = LoadZStrings(offs, len, what_tab, Extras_12);
-
-    string label = "z";
-    label += ":^"; label += Base62Label(pageaddr);
-    label += ":!"; label += Base62Label(offsaddr);
 
     StartBlock(label, what); 
 

@@ -697,6 +697,9 @@ EquipLeftHelper2:
         rtl
 
 EquipLeftItemFunc:
+        ; FIXME: ADD SOME KIND OF PREVENTION AGAINST THE GAME'S BUSYREFRESHLOOP
+        ;        (NECESSARY IN SHOP)
+        
         ; In - A=item number
         ;      Y=item position in list
         
@@ -744,13 +747,19 @@ EquipLeftItemFunc:
         bra DisplayFuncCommonEnd
 
 EquipRightItemFunc:        ;also used in shop
+        ; FIXME: ADD SOME KIND OF PREVENTION AGAINST THE GAME'S BUSYREFRESHLOOP
+        ;        (NECESSARY IN SHOP, EQUIP FRONT)
+        
         ; In - A=item number
         pha
          ; Find out if we were called from the routine
          ; that displays equipment (4 lines)...
          lda 6,s
          cmp #$A70F
-         bne +
+         beq were
+         ; We weren't - must be from shop then
+         bra +
+       were:
          sty $22  ; We were. Do a hack, save Y.
        + lda $22   ;counter in create-list
          clc:adc $1041 ;buy-listbegin
@@ -1115,38 +1124,55 @@ TileNumberList:
         ; Here are tilenum starting indices.
         
         ; Tile map:
-        ; 00-20 = ?
+        ; 00-0B = elemental symbol graphics
+        ; 0C-1F = --USABLE--
         ; 20-29 = item symbols
-        ; 2A-2D = "HMP:"  --USABLE--
+        ; 2A-2D = --USABLE-- "HMP:"
         ; 2E-2F = shield symbol, star-symbol
         ; 30-5A = --USABLE--
-        ; 5B-5C = left,right symbols (?) --USABLE--
-        ; 5D-5F = "():" --USABLE--
-        ; 60-63 = hand symbol (weird but) --USABLE--
-        ; 64-66 = "HMP" --USABLE--
-        ; 67-6F = hpmeter(battle) --USABLE--
-        ; 70-72 = hiragana/katakana symbols --USABLE--
+        ; 5B-5C = --USABLE-- left,right symbols (?)
+        ; 5D-5F = --USABLE-- "():"
+        ; 60-63 = --USABLE-- hand symbol (weird but yes)
+        ; 64-66 = --USABLE-- "HMP"
+        ; 67-6F = --USABLE-- hpmeter(battle)
+        ; 70-72 = --USABLE-- hiragana/katakana symbols
         ; 73-7C = number font
-        ; 7D-7E = "DZ" --USABLE--
-        ; 7F    = arrow up --USABLE--
+        ; 7D-7E = --USABLE-- "DZ"
+        ; 7F    = --USABLE-- arrow up
         ; 80-9F = --USABLE--
         ; A0-FF = user font
 
-        ; This table could be 16-bit, but we let
-        ; it be 8-bit because 16-bitness isn't
-        ; needed at the moment.
+        ; This table is 16-bit because it makes
+        ; other code faster.
 
         .word $15 ; -1F
         .word $30 ; -3A
         .word $3B ; -45
         .word $46 ; -50
         .word $51 ; -5B
-
+        
         .word $5C ; -66
-        .word $66 ; -71
+        .word $67 ; -71
         .word $7D ; -87
         .word $88 ; -92
-        .word $93 ; -9E
+        .word $93 ; -9D
+
+        ; Left free: $15 - $1F
+        ;            $92 - $9F
+        
+        ; For 10 tile font:
+        ;   0C - 15
+        ;   15 - 1E
+        ;   30 - 39
+        ;   3A - 43
+        ;   44 - 4D
+        
+        ;   4E - 57
+        ;   58 - 61
+        ;   62 - 6B
+        ;   7D - 86
+        ;   97 - 90
+        
 
 TileNumberListInBattle:
         ; 3 lines here

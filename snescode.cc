@@ -205,9 +205,12 @@ void insertor::WriteUserCode()
             unsigned nopcount          = elems[a+2];
             bool add_rts               = elems[a+3];
             
-            objects.AddReference(WstrToAsc(funcname), CallFrom(address));
+            if(!funcname.empty())
+            {
+                objects.AddReference(WstrToAsc(funcname), CallFrom(address));
+                address += 4;
+            }
             
-            address += 4;
             bool barrier = false;
             if(add_rts)
             {

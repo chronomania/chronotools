@@ -306,8 +306,10 @@ namespace
         // $C2:5680 A9 C6       LDA #$C6
         
         //DumpZStrings(0x06F400, "places", 112, false);
-        DumpRZStrings(0xC25681, 0xC2567B, "places", 112, false);
-        
+        DumpRZStrings("places", 112, false,
+                      '^', 0xC25681,
+                      '!', 0xC2567B,
+                      0);
         
         BlockComment(";era list\n");
         // REFERRED FROM:
@@ -315,7 +317,10 @@ namespace
         // $C2:D3DA A9 FF       LDA #$FF
         
         //DumpZStrings(0x3FD396, "eraes", 8, false);
-        DumpRZStrings(0xC2D3DB, 0xC2D3D5, "eraes", 8, false);
+        DumpRZStrings("eraes", 8, false,
+                      '^', 0xC2D3DB,
+                      '!', 0xC2D3D5,
+                      0);
         
         BlockComment(";episode list\n");
         DumpZStrings(0x3FD03E, "eps", 27, false);
@@ -324,8 +329,15 @@ namespace
         // REFERRED FROM:
         // $CD:01B6 A2 11 EF    LDX #$EF11
         // $CD:01BC A9 CE       LDA #$CE
-        
-        DumpRZStrings(0xCD01BD, 0xCD01B7, "bat", 14, false);
+        // AND **FIXME**
+        // $CD:02F0 A2 11 EF    LDX #$EF11
+        // $CD:02F9 A9 CE       LDA #$CE
+        DumpRZStrings("bat", 14, false,
+                      '^', 0xCD01BD,
+                      '!', 0xCD01B7,
+                      '^', 0xCD02FA,
+                      '!', 0xCD02F1,
+                      0);
         
         BlockComment(";battle messages, part 2 (remember to check for wrapping)\n");
         DumpZStrings(0x0CCBC9, "bat", 227, false);

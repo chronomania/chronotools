@@ -231,9 +231,11 @@ ctchar getchronochar(ucs4 ch, cset_class cl)
         case cset_8pix: result = cset8.find(ch); break;
         case cset_12pix: result = cset12.find(ch); break;
     }
-    if(result < get_font_begin())
+    if(!result
+    || (cl == cset_12pix && result < get_font_begin())
+      )
     {
-        fprintf(stderr, "Error: Irrepresentible character '%c' (%X) = %d", ch, ch, result);
+        fprintf(stderr, "Error: Irrepresentible character '%c' ($%X) = $%X (%d)", ch, ch, result, result);
         switch(cl)
         {
             case cset_8pix: fprintf(stderr, " in 8x8 font\n"); break;
@@ -241,6 +243,7 @@ ctchar getchronochar(ucs4 ch, cset_class cl)
             default: fprintf(stderr, " in unknown font class\n");
         }
     }
+    
     return result;
 }
 

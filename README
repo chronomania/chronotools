@@ -65,6 +65,9 @@ $C0:2172 22 09 00 C2 JSL $C2:0009         ;$C2:0009     A:7701 X:07E0 Y:001F D:0
 // Kun tulostetaan status-ruudulle tekstej‰.
 $C2:FAB2 22 09 00 C2 JSL $C2:0009         ;$C2:0009     A:FA0A X:0010 Y:FFFF D:0000 DB:7E S:0ABD P:envMxdi
 
+// Kun tulostetaan taistelussa monsterin nimi.
+$CD:04E9 22 09 00 C2 JSL $C20009[$C2:0009]   A:0001 X:000B Y:0013 D:0000 DB:7E S:06E2 P:envMxdi
+
 $C2:0009 4C 23 58    JMP $5823            ;$00:5823     A:7701 X:07E0 Y:001F D:0100 DB:00 PB:C2
 
 // 5823: merkin tulostusrutiini.
@@ -1802,6 +1805,8 @@ $C1:01C3 E2 20       SEP $20                            A:0000 X:0000 Y:94D0 D:0
 $C1:01C5 BD C0 94    LDA DB:($94C0+x)     ;$7E:94C0     A:0000 X:0000 Y:94D0 D:0000 DB:7E PB:C1
 ;Jos tuli null-terminator vastaan, pois loopista
 $C1:01C8 F0 2E       BEQ $01F8                          A:00A4 X:0000 Y:94D0 D:0000 DB:7E PB:C1
+
+--DISABLE THIS-- (JAPANESE LEGACY CODE)
 $C1:01CA C9 73       CMP A, $73                         
 $C1:01CC B0 1C       BCS $01EA          -- jos arvo on >= $73, tulostetaan sellaisenaan
                                         -- digit, alphanumeric, kana
@@ -1822,6 +1827,8 @@ $C1:01E1 69 17       ADC A, $17         -- lis‰t‰‰n $17
 $C1:01E3 9D A0 94    STA DB:($94A0+x)     ;$7E:94A0     
 $C1:01E6 A9 72       LDA A, $72         -- piirret‰‰n p‰‰lle katakanan ∞
 $C1:01E8 80 05       BRA $01EF
+--END DISABLE--
+
 ; Kopioidaan symboli tuonne jonnekin
 $C1:01EA 9D A0 94    STA DB:($94A0+x)     ;$7E:94A0     A:00A4 X:0000 Y:94D0 D:0000 DB:7E PB:C1
 $C1:01ED A9 FF       LDA A, $FF         -- v‰ri (?) $FF

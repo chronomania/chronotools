@@ -440,6 +440,7 @@ void insertor::LoadFile(FILE *fp)
                         default: fprintf(stderr, "Unknown typeid '%c'\n", type);
                     }
                 }
+                
                 if(!refs.empty())
                 {
                     refers.push_back(refs);

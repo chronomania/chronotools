@@ -188,6 +188,8 @@ Copypaste from the Makefile:
 # VERSION 1.11.8 has much more documentation than before
 # VERSION 1.11.9 is faster than the few recent versions
 # VERSION 1.12.0 allows some strings to be moved between pages
+# VERSION 1.12.1 is an upgrade to support the new o65 extension...
+# VERSION 1.12.2 fixes a bug in ctdump (battle message list not dumped properly)
 </pre>
 
 Users of previous versions are advised to do the following:

@@ -16,11 +16,10 @@ void DumpZStrings(const unsigned offs,
                   bool dolf=true);
 
 void DumpRZStrings(
-                  const unsigned pageaddr,
-                  const unsigned offsaddr,
                   const string& what,
                   unsigned len,
-                  bool dolf=true);
+                  bool dolf,
+                  ...);
 
 void Dump8Strings(const unsigned offs,
                   const string& what,
