@@ -3,7 +3,7 @@ CXX=g++
 CPPFLAGS=-Wall -W -pedantic -g
 LDFLAGS=-L/usr/lib/graphics
 
-VERSION=1.0.1
+VERSION=1.0.2
 ARCHFILES=xray.c xray.h \
           viewer.c \
           ctcset.cc \
@@ -36,6 +36,12 @@ makeips: makeips.cc
 unmakeips: unmakeips.cc
 	$(CXX) -g -O -Wall -W -pedantic -o $@ $^
 
+ct_eng.txt: ctdump chrono-uncompressed.smc
+	./ctdump >ct_eng.txt
+ctpatch-hdr.ips ctpatch-nohdr.ips: ctinsert ct_eng.txt
+	./ctinsert
+chrono-patched.smc: unmakeips ctpatch-hdr.ips chrono-uncompressed.smc
+	./unmakeips ctpatch-hdr.ips <chrono-uncompressed.smc >chrono-patched.smc
 
 clean:
 	rm -f *.o $(PROGS)

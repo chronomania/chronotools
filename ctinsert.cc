@@ -286,23 +286,34 @@ public:
             pageoffs.push_back(i->first);
         }
         
-        FILE *fp = fopen("ctpatch.ips", "wb");
+        FILE *fp = fopen("ctpatch-nohdr.ips", "wb");
+        FILE *fp2 = fopen("ctpatch-hdr.ips", "wb");
         fwrite("PATCH", 1, 5, fp);
+        fwrite("PATCH", 1, 5, fp2);
         /* Format:   24bit offset, 16-bit size, then data; repeat */
         for(unsigned a=0; a<Touched.size(); ++a)
         {
-        	if(!Touched[a])continue;
-        	putc( (a>>16)&255, fp);
-        	putc( (a>> 8)&255, fp);
-        	putc( (a    )&255, fp);
-        	unsigned c=0;
-        	while(a < Touched.size() && Touched[a])
-        		++c, ++a;
-        	putc( (c>> 8)&255, fp);
-        	putc( (c    )&255, fp);
+            if(!Touched[a])continue;
+            putc((a>>16)&255, fp);
+            putc((a>> 8)&255, fp);
+            putc((a    )&255, fp);
+            putc(((a+512)>>16)&255, fp2);
+            putc(((a+512)>> 8)&255, fp2);
+            putc(((a+512)    )&255, fp2);
+            unsigned offs=a, c=0;
+            while(a < Touched.size() && Touched[a])
+                ++c, ++a;
+            putc((c>> 8)&255, fp);
+            putc((c    )&255, fp);
+            putc((c>> 8)&255, fp2);
+            putc((c    )&255, fp2);
+            fwrite(&ROM[offs], 1, c, fp);
+            fwrite(&ROM[offs], 1, c, fp2);
         }
         fwrite("EOF",   1, 5, fp);
+        fwrite("EOF",   1, 5, fp2);
         fclose(fp);
+        fclose(fp2);
     }
 };
 
@@ -345,7 +356,7 @@ static unsigned hashstr(const char *s, unsigned len)
     unsigned h = 0;
     for(unsigned a=0; a<len; ++a)
     {
-    	unsigned char c = s[a];
+        unsigned char c = s[a];
         c = h ^ c;
         h ^= (c * 707106);
     }
@@ -375,15 +386,15 @@ void insertor::MakeDictionary()
         time_t begin = time(NULL);
         for(unsigned substrcount=0; substrcount<dictsize; ++substrcount)
         {
-		    //map<unsigned, unsigned> substringtable;
-		    //map<unsigned, string>   hashtable;
-		    map<string, unsigned> substringtable;
+            //map<unsigned, unsigned> substringtable;
+            //map<unsigned, string>   hashtable;
+            map<string, unsigned> substringtable;
             
             fprintf(stderr, "Finding substrings... %u/%u", substrcount+1, dictsize);
 
             unsigned tickpos=0;
             
-			/* For each string */
+            /* For each string */
             list<string>::iterator l;
             unsigned stringcounter=0;
             for(l = stringlist.begin(); l != stringlist.end(); ++l, ++stringcounter)
@@ -392,7 +403,7 @@ void insertor::MakeDictionary()
                     --tickpos;
                 else
                 {
-                	/* Just tell where we are */
+                    /* Just tell where we are */
                     tickpos=256;
                     double totalpos = substrcount;
                     totalpos += stringcounter / (double)stringlist.size();
@@ -424,13 +435,13 @@ void insertor::MakeDictionary()
                             break;
                         if(++c >= 2)
                         {
-                        	/* Cumulate the substring usage counter by its length */
-                        	substringtable[s.substr(a,c)] += c; /*
+                            /* Cumulate the substring usage counter by its length */
+                            substringtable[s.substr(a,c)] += c; /*
                             unsigned hash = hashstr(s.c_str()+a, c);
                             substringtable[hash] += c;
                             if(hashtable.find(hash) == hashtable.end())
                             {
-                            	const string substr = s.substr(a, c);
+                                const string substr = s.substr(a, c);
                                 hashtable.insert(pair<unsigned,string> (hash,substr));
                             } */
                         }
@@ -450,7 +461,7 @@ void insertor::MakeDictionary()
                 j != substringtable.end();
                 ++j)
             {
-            	const string &word = j->first;//hashtable[j->first];
+                const string &word = j->first;//hashtable[j->first];
                 int realscore = j->second - (j->second / word.size());
                 if(realscore > bestscore)
                 {
