@@ -77,6 +77,17 @@ namespace
     
     void FeedGcc(std::FILE *fp, std::FILE *fo)
     {
+        static const std::string firstrules =
+            "#define shl <<\n"
+            "#define shr >>\n"
+        //    "#define and &\n"     - problems!
+            "#define or |\n"
+            "#define xor ^\n"
+            "#define not ~\n"
+            "#line 1\n";
+
+        fwrite(firstrules.data(), 1, firstrules.size(), fo);
+        
         for(;;)
         {
             char Buf[2048];

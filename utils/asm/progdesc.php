@@ -19,29 +19,29 @@ made with <a href=\"http://www.google.fi/search?q=xa65\">XA65</a>.
 
 The following mnemonics are supported:
 <p>
-<code>ADC</code>, <code>AND</code>, <code>ASL</code>, <code>BCC</code>,
-<code>BCS</code>, <code>BEQ</code>, <code>BIT</code>, <code>BMI</code>,
-<code>BNE</code>, <code>BPL</code>, <code>BRA</code>, <code>BRK</code>,
-<code>BRL</code>, <code>BVC</code>, <code>BVS</code>, <code>CLC</code>,
-<code>CLD</code>, <code>CLI</code>, <code>CLV</code>, <code>CMP</code>,
-<code>COP</code>, <code>CPX</code>, <code>CPY</code>, <code>DB </code>,
-<code>DEC</code>, <code>DEX</code>, <code>DEY</code>, <code>EOR</code>,
-<code>INC</code>, <code>INX</code>, <code>INY</code>, <code>JML</code>,
-<code>JMP</code>, <code>JSL</code>, <code>JSR</code>, <code>LDA</code>,
-<code>LDX</code>, <code>LDY</code>, <code>LSR</code>, <code>MVN</code>,
-<code>MVP</code>, <code>NOP</code>, <code>ORA</code>, <code>PEA</code>,
-<code>PEI</code>, <code>PER</code>, <code>PHA</code>, <code>PHB</code>,
-<code>PHD</code>, <code>PHK</code>, <code>PHP</code>, <code>PHX</code>,
-<code>PHY</code>, <code>PLA</code>, <code>PLB</code>, <code>PLD</code>,
-<code>PLP</code>, <code>PLX</code>, <code>PLY</code>, <code>REP</code>,
-<code>ROL</code>, <code>ROR</code>, <code>RTI</code>, <code>RTL</code>,
-<code>RTS</code>, <code>SBC</code>, <code>SEC</code>, <code>SED</code>,
-<code>SEI</code>, <code>SEP</code>, <code>STA</code>, <code>STP</code>,
-<code>STX</code>, <code>STY</code>, <code>STZ</code>, <code>TAX</code>,
-<code>TAY</code>, <code>TCD</code>, <code>TCS</code>, <code>TDC</code>,
-<code>TRB</code>, <code>TSB</code>, <code>TSC</code>, <code>TSX</code>,
-<code>TXA</code>, <code>TXS</code>, <code>TXY</code>, <code>TYA</code>,
-<code>TYX</code>, <code>WAI</code>, <code>XBA</code>, <code>XCE</code>
+<code>adc</code>, <code>and</code>, <code>asl</code>, <code>bcc</code>,
+<code>bcs</code>, <code>beq</code>, <code>bit</code>, <code>bmi</code>,
+<code>bne</code>, <code>bpl</code>, <code>bra</code>, <code>brk</code>,
+<code>brl</code>, <code>bvc</code>, <code>bvs</code>, <code>clc</code>,
+<code>cld</code>, <code>cli</code>, <code>clv</code>, <code>cmp</code>,
+<code>cop</code>, <code>cpx</code>, <code>cpy</code>, <code>db </code>,
+<code>dec</code>, <code>dex</code>, <code>dey</code>, <code>eor</code>,
+<code>inc</code>, <code>inx</code>, <code>iny</code>, <code>jml</code>,
+<code>jmp</code>, <code>jsl</code>, <code>jsr</code>, <code>lda</code>,
+<code>ldx</code>, <code>ldy</code>, <code>lsr</code>, <code>mvn</code>,
+<code>mvp</code>, <code>nop</code>, <code>ora</code>, <code>pea</code>,
+<code>pei</code>, <code>per</code>, <code>pha</code>, <code>phb</code>,
+<code>phd</code>, <code>phk</code>, <code>php</code>, <code>phx</code>,
+<code>phy</code>, <code>pla</code>, <code>plb</code>, <code>pld</code>,
+<code>plp</code>, <code>plx</code>, <code>ply</code>, <code>rep</code>,
+<code>rol</code>, <code>ror</code>, <code>rti</code>, <code>rtl</code>,
+<code>rts</code>, <code>sbc</code>, <code>sec</code>, <code>sed</code>,
+<code>sei</code>, <code>sep</code>, <code>sta</code>, <code>stp</code>,
+<code>stx</code>, <code>sty</code>, <code>stz</code>, <code>tax</code>,
+<code>tay</code>, <code>tcd</code>, <code>tcs</code>, <code>tdc</code>,
+<code>trb</code>, <code>tsb</code>, <code>tsc</code>, <code>tsx</code>,
+<code>txa</code>, <code>txs</code>, <code>txy</code>, <code>tya</code>,
+<code>tyx</code>, <code>wai</code>, <code>xba</code>, <code>xce</code>
 </p>
 
 ", 'addrmodes:1.1. Addressing modes' => "
@@ -108,6 +108,13 @@ Expressions are supported. These are valid code:
  <li><code>ldy #\$1234 + (\$6C * 3)</li>
 </ul>
 
+", 'segs:1.1. Segments' => "
+
+Code, labels and data can be generated to four segments:
+<code>text</code>, <code>data</code>, <code>zero</code> and <code>bss</code>.<br>
+Use <code>.text</code>, <code>.data</code>, <code>.zero</code> and <code>.bss</code>
+respectively to select the segment.
+
 ", 'comments:1.1. Comments' => "
 
 Comments begin with a semicolon (;) and end with a newline.<br>
@@ -116,6 +123,29 @@ A colon is allowed to appear in comment.
 ", 'separation:1.1. Command separation' => "
 
 Commands are separated by newlines and colons (:).
+
+", 'branchlabels:1.1. Branch labels' => "
+
+The label <code>-</code> can be defined for branches backward
+and <code>+</code> for branches forward.<br>
+Example:<br>
+<pre class=smallerpre
+>        ; Space-fill the buffer to end
+        phx
+         cpx #$0010
+         bcs +     ;jumps to the next \"+\"
+         SET_8_BIT_A()
+         lda #$FF
+-        sta $94A0,x
+         sta $94B0,x
+         inx
+         cpx #$0010
+         bcc -     ;jumps to the previous \"-\"
+         SET_16_BIT_A()
++        lda W_VRAMADDR
+         sta @$002116
+        pla</pre>
+
 
 ", 'cpp:1.1. Preprocessor' => "
 
@@ -138,6 +168,12 @@ In the source distribution there are some C++ modules
 that can be used to handle the o65 files.<br>
 There are also some example assembler files
 (copied from <a href=\"http://bisqwit.iki.fi/source/chronotools.html\">Chronotools</a>).
+
+", 'changelog:1. Changelog' => "
+
+Sep 23 2003; 0.0.0 started working with the project.<br>
+Sep 28 2003; 1.0.0 initial release. All features working.<br>
+Sep 29 2003; 1.1.0 added feature: branch labels.<br>
 
 ", 'copying:1. Copying' => "
 

@@ -71,6 +71,10 @@ public:
     const vector<string> GetSymbolList() const;
     const vector<string> GetExternList() const;
     
+    const string GetByteAt(unsigned addr) const;
+    const string GetWordAt(unsigned addr) const;
+    const string GetLongAt(unsigned addr) const;
+    
     /* Verifies that all symbols have been properly defined */
     void Verify() const;
 

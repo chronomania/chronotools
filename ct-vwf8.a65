@@ -1095,17 +1095,16 @@ BattleWriteEnd:
         ; Space-fill the buffer to end
         phx
 Loop1:   cpx #$0010
-         bcs Skip1
+         bcs +
          SET_8_BIT_A()
          lda #$FF
-Loop1a:  sta $94A0,x
+-        sta $94A0,x
          sta $94B0,x
          inx
          cpx #$0010
-         bcc Loop1a
+         bcc -
          SET_16_BIT_A()
-Skip1:
-         lda W_VRAMADDR
++        lda W_VRAMADDR
          sta @$002116 ; Tell PPU what we think
         pla
         beq DontLoop
@@ -1117,8 +1116,7 @@ Skip1:
          tdc : tax  ; smaller than ldx #$0000
          lda #$2118 ; to PPU
          tcd
-Loop2:
-        ; If you want to unroll, choices are 1/2/4/8 lines
+-        ; If you want to unroll, choices are 1/2/4/8 lines
          lda TILEBUF+$0,x : sta $00
          lda TILEBUF+$2,x : sta $00
          lda TILEBUF+$4,x : sta $00
@@ -1127,7 +1125,7 @@ Loop2:
          clc:adc #$0008
          tax
          dey
-         bne Loop2
+         bne -
         pld
 DontLoop:
         rts

@@ -15,6 +15,12 @@
 bool A_16bit = true;
 bool X_16bit = true;
 
+std::string PrevBranchLabel; // What "-" means
+std::string NextBranchLabel; // What "+" means
+
+#define SHOW_CHOICES   0
+#define SHOW_POSSIBLES 0
+
 namespace
 {
     struct OpcodeChoice
@@ -25,6 +31,29 @@ namespace
     };
 
     typedef std::vector<OpcodeChoice> ChoiceList;
+    
+    std::list<std::string> DefinedBranchLabels;
+    
+    void CreateNewPrevBranch()
+    {
+        static unsigned BranchNumber = 0;
+        char Buf[128];
+        std::sprintf(Buf, "$PrevBranch$%u", ++BranchNumber);
+        
+        PrevBranchLabel = Buf;
+        
+        DefinedBranchLabels.push_back(PrevBranchLabel);
+    }
+    void CreateNewNextBranch()
+    {
+        static unsigned BranchNumber = 0;
+        char Buf[128];
+        std::sprintf(Buf, "$NextBranch$%u", ++BranchNumber);
+        
+        NextBranchLabel = Buf;
+        
+        DefinedBranchLabels.push_back(NextBranchLabel);
+    }
 
     void ParseIns(ParseData& data, Object& result)
     {
@@ -42,6 +71,11 @@ namespace
         if(data.PeekC() == '+')
         {
             tok += data.GetC(); // defines global
+        }
+        else if(data.PeekC() == '-')
+        {
+            tok += data.GetC();
+            goto GotLabel;
         }
         else
         {
@@ -61,7 +95,23 @@ namespace
               )
                 tok += data.GetC();
             else
+            {
                 break;
+            }
+        }
+
+GotLabel:
+        if(tok == "+") // It's a next-branch-label
+        {
+            result.DefineLabel(NextBranchLabel);
+            CreateNewNextBranch();
+            goto MoreLabels;
+        }
+        if(tok == "-") // It's a prev-branch-label
+        {
+            CreateNewPrevBranch();
+            result.DefineLabel(PrevBranchLabel);
+            goto MoreLabels;
         }
         
         //std::fprintf(stderr, "Took token '%s'\n", tok.c_str());
@@ -142,11 +192,20 @@ namespace
                     choices.push_back(choice);
                 }
             }
-            else if(!tok.empty())
+            else if(!tok.empty() && tok[0] != '.')
             {
+                // Labels may not begin with '.'
+                
                 //std::fprintf(stderr, "Defined label '%s'\n", tok.c_str());
                 result.DefineLabel(tok);
                 goto MoreLabels;
+            }
+            else if(!data.EOF())
+            {
+                std::fprintf(stderr,
+                    "Error: What is '%s' - previous token: '%s'?\n",
+                        data.GetRest().c_str(),
+                        tok.c_str());
             }
         }
         else
@@ -199,8 +258,7 @@ namespace
                             choice.is_certain = valid.is_true();
                             choices.push_back(choice);
                         }
-                        
-                    /*
+#if SHOW_POSSIBLES
                         std::fprintf(stderr, "- %s mode %u (%s) (%u bytes)\n",
                             valid.is_true() ? "Is" : "Could be",
                             addrmode, op.c_str(),
@@ -208,7 +266,7 @@ namespace
                                     );
                         std::fprintf(stderr, "  - p1=\"%s\"\n", p1.Dump().c_str());
                         std::fprintf(stderr, "  - p2=\"%s\"\n", p2.Dump().c_str());
-                    */
+#endif
                     }
                     
                     data.LoadState(state);
@@ -219,7 +277,7 @@ namespace
             if(!something_ok)
             {
                 std::fprintf(stderr,
-                    "'%s' is invalid parameter for '%s' in current context (%u choices).\n",
+                    "Error: '%s' is invalid parameter for '%s' in current context (%u choices).\n",
                         data.GetRest().c_str(),
                         tok.c_str(),
                         choices.size());
@@ -281,7 +339,7 @@ namespace
         
         const OpcodeChoice& c = choices[smallestnum];
         
-#if 0
+#if SHOW_CHOICES
         std::fprintf(stderr, "Choice %u:", smallestnum);
 #endif
         for(unsigned b=0; b<c.parameters.size(); ++b)
@@ -378,11 +436,11 @@ namespace
                     break;
             }
             
-#if 0
+#if SHOW_CHOICES
             std::fprintf(stderr, " %s(%u)", param.Dump().c_str(), size);
 #endif
         }
-#if 0
+#if SHOW_CHOICES
         if(c.is_certain)
             std::fprintf(stderr, " (certain)");
         std::fprintf(stderr, "\n");
@@ -417,6 +475,13 @@ void AssemblePrecompiled(std::FILE *fp, Object& obj)
     {
         return;
     }
+    
+    CreateNewPrevBranch();
+    CreateNewNextBranch();
+
+    obj.StartScope();
+    obj.SelectTEXT();
+    
     for(;;)
     {
         char Buf[2048];
@@ -429,4 +494,15 @@ void AssemblePrecompiled(std::FILE *fp, Object& obj)
         }
         ParseLine(obj, Buf);
     }
+
+    obj.EndScope();
+
+    for(std::list<std::string>::const_iterator
+        i = DefinedBranchLabels.begin();
+        i != DefinedBranchLabels.end();
+        ++i)
+    {
+        obj.UndefineLabel(*i);
+    }
+    DefinedBranchLabels.clear();
 }

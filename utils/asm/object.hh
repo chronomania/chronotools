@@ -20,7 +20,7 @@ public:
     class Segment
     {
     public:
-	    typedef std::map<std::string, unsigned> LabelList;
+        typedef std::map<std::string, unsigned> LabelList;
         typedef std::map<unsigned, LabelList> LabelMap;
     private:
         LabelMap labels;
@@ -82,11 +82,16 @@ public:
         
         bool FindLabel(const std::string& name) const;
         
+        void UndefineLabel(const std::string& name);
+        
         void DumpLabels() const;
     };
+
 private:
     class Fixup
     {
+        // This record saves a references to a label.
+    
         SegmentSelection homeseg;
         unsigned homeoffset;
 
@@ -155,6 +160,8 @@ public:
     void AddFixup(char prefix, const std::string& ref, long value);
     
     void DefineLabel(const std::string& label);
+    void DefineLabel(const std::string& label, unsigned level);
+    void UndefineLabel(const std::string& label);
     
     void SelectTEXT() { CurSegment = CODE; }
     void SelectDATA() { CurSegment = DATA; }

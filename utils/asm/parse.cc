@@ -72,15 +72,42 @@ expression* RealParseExpression(ParseData& data, int prio=0)
     if(s.empty()) /* If no number or symbol */
     {
         char c = data.PeekC();
-        if(c == '-') // negation
+        if(c == '+')
+        {
+            data.GetC();
+            left = new expr_label(NextBranchLabel);
+        }
+        else if(c == '-') // negation
         {
             ParseData::StateType state = data.SaveState();
-            left = RealParseExpression(data, prio_negate);
             data.GetC(); // eat
-            if(!left) { data.LoadState(state); return left; }
-            left = new expr_negate(left);
+            data.SkipSpace();
+            const std::string RestBefore = data.GetRest();
+            if(data.PeekC() != '+')
+            {
+                left = RealParseExpression(data, prio_negate);
+            }
+            if(!left)
+            {
+                const std::string RestAfter = data.GetRest();
+                data.LoadState(state);
+                
+                if(RestBefore != RestAfter)
+                {
+                    // If the error happened later, return an error.
+                    return left;
+                }
+                
+                // If it ate *nothing*, we've got PrevBranchLabel here.
+                data.GetC(); // eat the '-' again
+                left = new expr_label(PrevBranchLabel);
+            }
+            else
+            {
+                left = new expr_negate(left);
+            }
         }
-        if(c == '~')
+        else if(c == '~')
         {
             ParseData::StateType state = data.SaveState();
             data.GetC(); // eat
@@ -330,6 +357,11 @@ tristate ParseAddrMode(ParseData& data, unsigned modenum,
         case AddrMode::tRel16: ;
         case AddrMode::tNone: ;
     }
+    
+/*
+    std::fprintf(stderr, "Parsed: p1=\"%s\", p2=\"%s\"\n",
+        p1.Dump().c_str(),p2.Dump().c_str());
+*/
 
     return result;
 }

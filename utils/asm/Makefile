@@ -11,7 +11,8 @@ ARGHLINK=-Largh -largh
 # For STATIC argh-linking, use:
 #ARGHLINK=utils/asm/argh/libargh.a
 
-VERSION=1.0.0
+VERSION=1.1.0
+
 ARCHFILES=COPYING Makefile.sets progdesc.php \
           assemble.cc insgen.cc \
           tristate \
@@ -39,6 +40,7 @@ ARCHDIR=archives/
 
 PROGS=snescom
 INSTALLPROGS=snescom
+INSTALL=install
 
 all: $(PROGS)
 

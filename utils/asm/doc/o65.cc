@@ -5,7 +5,7 @@
  * Version 1.1.0 - Aug 18 2003, Sep 4 2003
  */
 
-#define DEBUG_FIXUPS 0
+#define DEBUG_FIXUPS 1
 
 #include <map>
 
@@ -318,7 +318,7 @@ void O65::segment::Locate(unsigned newaddress)
         unsigned newvalue = oldvalue + diff;
         
 #if DEBUG_FIXUPS
-        fprintf(stderr, "Replaced %04X with %04X at %06X\n", oldvalue,newvalue&65535, addr+0xC00000);
+        fprintf(stderr, "Replaced %04X with %04X at %06X\n", oldvalue,newvalue&65535, addr);
 #endif
         space[addr] = newvalue&255;
         space[addr+1] = (newvalue>>8) & 255;
@@ -329,7 +329,7 @@ void O65::segment::Locate(unsigned newaddress)
         unsigned oldvalue = space[addr];
         unsigned newvalue = oldvalue + diff;
 #if DEBUG_FIXUPS
-        fprintf(stderr, "Replaced %02X with %02X at %06X\n", oldvalue,newvalue&255, addr+0xC00000);
+        fprintf(stderr, "Replaced %02X with %02X at %06X\n", oldvalue,newvalue&255, addr);
 #endif
         space[addr] = newvalue & 255;
     }
@@ -339,7 +339,7 @@ void O65::segment::Locate(unsigned newaddress)
         unsigned oldvalue = (space[addr] << 8) | R16hi.Fixups[a].second;
         unsigned newvalue = oldvalue + diff;
 #if DEBUG_FIXUPS
-        fprintf(stderr, "Replaced %02X with %02X at %06X\n", space[addr],(newvalue>>8)&255, addr+0xC00000);
+        fprintf(stderr, "Replaced %02X with %02X at %06X\n", space[addr],(newvalue>>8)&255, addr);
 #endif
         space[addr] = (newvalue>>8) & 255;
     }
@@ -350,7 +350,7 @@ void O65::segment::Locate(unsigned newaddress)
         unsigned newvalue = oldvalue + diff;
         
 #if DEBUG_FIXUPS
-        fprintf(stderr, "Replaced %06X with %06X at %06X\n", oldvalue,newvalue, addr+0xC00000);
+        fprintf(stderr, "Replaced %06X with %06X at %06X\n", oldvalue,newvalue, addr);
 #endif
         space[addr] = newvalue&255;
         space[addr+1] = (newvalue>>8) & 255;
@@ -363,7 +363,7 @@ void O65::segment::Locate(unsigned newaddress)
         unsigned newvalue = oldvalue + diff;
         
 #if DEBUG_FIXUPS
-        fprintf(stderr, "Replaced %02X with %02X at %06X\n", space[addr],newvalue>>16, addr+0xC00000);
+        fprintf(stderr, "Replaced %02X with %02X at %06X\n", space[addr],newvalue>>16, addr);
 #endif
         space[addr] = (newvalue>>16) & 255;
     }
@@ -489,4 +489,56 @@ void O65::Verify() const
             fprintf(stderr, "Symbol %s is still not defined\n",
                 undefines[a].first.c_str());
         }
+}
+
+const string O65::GetByteAt(unsigned addr) const
+{
+#if 0
+    for(unsigned a=0; a<text->R16lo.Relocs.size(); ++a)
+    {
+        if(text->R16lo.Relocs[a].first != addr) continue;
+        
+        unsigned symno = text->R16lo.Relocs[a].second;
+        string result = undefines[symno].first;
+        
+        unsigned Target = undefines[symno].second.second;
+
+        signed char diff = text->space[addr] - Target;
+        if(diff)
+        {
+            char Buf[64]; sprintf(Buf, "%+d", diff);
+            result += Buf;
+        }
+        return result;
+    }
+    for(unsigned a=0; a<text->R16lo.Fixups.size(); ++a)
+    {
+        if(text->R16lo.Fixups[a].first != addr) continue;
+        
+        unsigned symno = text->R16lo.Fixups[a].second;
+        string result = undefines[symno].first;
+
+        signed char diff = text->space[addr] - undefines[symno].second.second;
+        if(diff)
+        {
+            char Buf[64]; sprintf(Buf, "%+d", diff);
+            result += Buf;
+        }
+        return result;
+    }
+#endif
+    char Buf[4]; sprintf(Buf, "$%02X", text->space[addr]);
+    return Buf;
+}
+
+const string O65::GetWordAt(unsigned addr) const
+{
+    char Buf[6]; sprintf(Buf, "$%02X%02X", text->space[addr], text->space[addr+1]);
+    return Buf;
+}
+
+const string O65::GetLongAt(unsigned addr) const
+{
+    char Buf[8]; sprintf(Buf, "$%02X%02X%02X", text->space[addr], text->space[addr+1], text->space[addr+2]);
+    return Buf;
 }

@@ -70,6 +70,7 @@ DEPDIRS = utils/ utils/asm/ utils/asm/argh/
 # VERSION 1.6.5  is working on an assembler
 # VERSION 1.6.6  has an almost working assembler
 # VERSION 1.6.7  has a complete assembler, doesn't require xa65 anymore
+# VERSION 1.6.8  patch version
 
 OPTIM=-O3
 #OPTIM=-O0
@@ -78,7 +79,7 @@ OPTIM=-O3
 
 CXXFLAGS += -I. -Iutils/asm/argh
 
-VERSION=1.6.7
+VERSION=1.6.8
 ARCHFILES=utils/xray.cc utils/xray.h \
           utils/viewer.c \
           utils/vwftest.cc \
@@ -275,7 +276,7 @@ utils/ctxtview: utils/ctxtview.o settings.o rommap.o
 
 utils/assemble: FORCE
 	$(MAKE) -C utils/asm snescom
-	ln -sf utils/asm/snescom $@
+	ln -sf asm/snescom $@
 
 utils/asm/argh/libargh.a: FORCE
 	$(MAKE) -C utils/asm/argh libargh.a

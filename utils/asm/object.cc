@@ -1,3 +1,4 @@
+#include <cstdio>
 #include <map>
 
 #include "assemble.hh"
@@ -53,6 +54,16 @@ bool Object::Segment::FindLabel(const std::string& name) const
 void Object::Segment::DefineLabel(unsigned level, const std::string& name)
 {
     labels[level][name] = GetPos();
+}
+
+void Object::Segment::UndefineLabel(const std::string& label)
+{
+    for(LabelMap::iterator
+        i = labels.begin();
+        i != labels.end(); ++i)
+    {
+        i->second.erase(label);
+    }
 }
 
 void Object::Segment::DumpLabels() const
@@ -209,6 +220,19 @@ void Object::DefineLabel(const std::string& label)
     }
     
     GetSeg().DefineLabel(scopenum, s);
+}
+
+void Object::DefineLabel(const std::string& label, unsigned level)
+{
+    GetSeg().DefineLabel(level, label);
+}
+
+void Object::UndefineLabel(const std::string& label)
+{
+    CodeSeg.UndefineLabel(label);
+    DataSeg.UndefineLabel(label);
+    ZeroSeg.UndefineLabel(label);
+    BssSeg.UndefineLabel(label);
 }
 
 void Object::DumpFixups() const
@@ -645,6 +669,6 @@ void Object::WriteOut(std::FILE* fp)
 
 void Object::Dump()
 {
-    DumpFixups();
+    //DumpFixups();
     DumpLabels();
 }

@@ -1,6 +1,7 @@
 #include "o65.hh"
 
-static void DisAsm(unsigned origin, const unsigned char *data, unsigned length);
+static void DisAsm(unsigned origin, const unsigned char *data,
+                   unsigned length, const O65& o65);
 
 int main(void)
 {
@@ -34,15 +35,17 @@ int main(void)
     
     const vector<unsigned char>& code = tmp.GetCode();
     printf("Code:\n");
-    DisAsm(origin, &code[0], code.size());
+    DisAsm(origin, &code[0], code.size(), tmp);
     return 0;
 }
 
 
 /* Bisqwit's humble little snes-disassembler. */
-static void DisAsm(unsigned origin, const unsigned char *data, unsigned length)
+static void DisAsm(unsigned origin, const unsigned char *data,
+                   unsigned length, const O65& o65)
 {
     bool A=true,X=true;
+    const unsigned char *begin = data;
     for(unsigned size,address=origin; length>0;
         address+=size,length-=size,data+=size)
     {
@@ -72,7 +75,17 @@ static void DisAsm(unsigned origin, const unsigned char *data, unsigned length)
                              s+=sprintf(s,"%+d (%06X)",n,address+n+2); }
             else if(c=='R'){ signed short n=data[1]+data[2]*256;
                              s+=sprintf(s,"%+d (%06X)",n,address+n+3); }
-            else{*s++='$';for(c-='0';c;s+=sprintf(s,"%02X",data[c--]));}
+            else
+            {
+                string res;
+                switch(c)
+                {
+                    case '1': res = o65.GetByteAt(data-begin+1); break;
+                    case '2': res = o65.GetWordAt(data-begin+1); break;
+                    case '3': res = o65.GetLongAt(data-begin+1); break;
+                }
+                s += sprintf(s, "%s", res.c_str());
+            }
         }
         if(info[size]=='x')s+=sprintf(s,",x");
         if('-'!=(c=info[size+78]))

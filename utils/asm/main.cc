@@ -133,13 +133,10 @@ int main(int argc, const char* const *argv)
             }
         }
     
-        obj.StartScope();
-        obj.SelectTEXT();
         if(assemble)
             PrecompileAndAssemble(fp ? fp : stdin, obj);
         else
             Precompile(fp ? fp : stdin, output ? output : stdout);
-        obj.EndScope();
         
         if(fp)
             std::fclose(fp);

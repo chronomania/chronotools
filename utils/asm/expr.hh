@@ -81,7 +81,7 @@ private:
         virtual long GetConst() const { return op sub->GetConst(); } \
     \
         virtual const std::string Dump() const \
-        { return std::string(stringop) + sub->Dump(); } \
+        { return std::string(stringop) + "(" + sub->Dump() + ")"; } \
     };
 
 #define binary_class(classname, op, stringop) \
@@ -95,7 +95,7 @@ private:
         { return std::string("(") + left->Dump() + stringop + right->Dump() + ")"; } \
     };
 
-unary_class(expr_bitnot, ~, "~")
+unary_class(expr_bitnot, ~, "not")
 unary_class(expr_negate, -, "-")
 
 binary_class(expr_plus,   +, "+")
