@@ -12,7 +12,8 @@ LDFLAGS=-L/usr/lib/graphics
 # VERSION 1.0.8 documented the script
 # VERSION 1.0.9 fixed "..." handling and located the font
 # VERSION 1.0.10 had knowledge of character sets
-VERSION=1.0.10
+# VERSION 1.0.11 had a working font insertor
+VERSION=1.0.11
 ARCHFILES=xray.c xray.h \
           viewer.c \
           ctcset.cc \
@@ -22,7 +23,8 @@ ARCHFILES=xray.c xray.h \
           makeips.cc unmakeips.cc \
           README
 EXTRA_ARCHFILES=ct_eng.txt \
-          dictionary1 dictionary2 dictionary3 dictionary4 dictionary5
+          dictionary5 \
+          ct8fnFI.tga ct16fnFI.tga
 
 ARCHNAME=chronotools-$(VERSION)
 ARCHDIR=archives/
@@ -52,7 +54,8 @@ unmakeips: unmakeips.cc
 
 ct_eng.txt: ctdump chrono-uncompressed.smc
 	./ctdump >ct_eng.txt
-ctpatch-hdr.ips ctpatch-nohdr.ips: ctinsert ct_eng.txt
+ctpatch-hdr.ips ctpatch-nohdr.ips: ctinsert ct_eng.txt \
+	ct16fnFI.tga ct8fnFI.tga
 	./ctinsert
 chrono-patched.smc: unmakeips ctpatch-hdr.ips chrono-uncompressed.smc
 	./unmakeips ctpatch-hdr.ips <chrono-uncompressed.smc >chrono-patched.smc

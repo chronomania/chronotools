@@ -1,6 +1,7 @@
 #include <map>
 #include "ctcset.hh"
 
+/* These are language-specific settings! */
 static const char CharSet[] = "iso-8859-1";
 static const char Font16[] =
     // This is supposed to be in CharSet.
@@ -8,10 +9,15 @@ static const char Font16[] =
     "QRSTUVWXYZabcdef"   // B0
     "ghijklmnopqrstuv"   // C0
     "wxyz0123456789!?"   // D0
-    "/«»:&()'.,=-+%¶ "   // E0
-    "¶¶¶#¶¶¶¶¶¶¶¶¶¶¶_";  // F0
+    "/«»:&()'.,=-+%¶ "   // E0  EE=musicsymbol
+    "¶¶¶#äöéå¶ÄÖÉÅ¶¶_";  // F0  F0=heartsymbol, F1=..., F2=infinity
+
+    // Note: There is space for only 10 extra symbols!
 
 const char *getcharset() { return CharSet; }
+
+
+/* Language-specific settings end here. */
 
 static class CharacterSet
 {

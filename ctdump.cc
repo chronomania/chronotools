@@ -439,47 +439,137 @@ static const string revtrans(const char *s)
     return result;
 }
 
+static void TgaPutB(FILE *fp, unsigned c) { fputc(c, fp); }
+static void TgaPutW(FILE *fp, unsigned c) { fputc(c&255, fp); fputc(c >> 8, fp); } 
+static void TgaPutP(FILE *fp, unsigned r,unsigned g,unsigned b)
+{ TgaPutB(fp,r);TgaPutB(fp,g);TgaPutB(fp,b); }
+static void OutImage(const string &fntemplate,
+                     unsigned xdim, unsigned ydim,
+                     const vector<char> &pixels)
+{
+	string filename = fntemplate + ".tga";
+	
+	FILE *fp = fopen(filename.c_str(), "wb");
+	if(!fp) { perror(filename.c_str()); return; }
+	
+	TgaPutB(fp, 0); // id field len
+	TgaPutB(fp, 1); // color map type
+	TgaPutB(fp, 1); // image type code
+	TgaPutW(fp, 0); // palette start
+	TgaPutW(fp, 6); // palette size
+	TgaPutB(fp, 24);// palette bitness
+	TgaPutW(fp, 0);    TgaPutW(fp, 0);
+	TgaPutW(fp, xdim); TgaPutW(fp, ydim);
+	TgaPutB(fp, 8); // pixel bitness
+	TgaPutB(fp, 0); //misc
+	
+	// border color:
+	TgaPutP(fp, 192,0,0);
+	// colours 0..3
+	TgaPutP(fp, 255,255,255);
+	TgaPutP(fp, 192,128, 32);
+	TgaPutP(fp, 255,255,128);
+	TgaPutP(fp, 0,0,0);
+	// filler
+	TgaPutP(fp, 160,160,160);
+	
+	for(unsigned y=ydim; y-->0; )
+		fwrite(&pixels[y*xdim], 1, xdim, fp);
+	
+	fclose(fp);
+}
+
 static void Dump8x8sprites(unsigned spriteoffs, unsigned count)
 {
+	const unsigned xdim = 32;
+	const unsigned ydim = (count+xdim-1)/xdim;
+	
+	const unsigned xpixdim = xdim*8 + (xdim+1);
+	const unsigned ypixdim = ydim*8 + (ydim+1);
+	
+	const char palette[] = {4,2,3,1};
+	const char bordercolor=0;
+	
+	vector<char> pixels (xpixdim * ypixdim, bordercolor);
+	
     unsigned offs = spriteoffs;
     for(unsigned a=0; a<count; ++a)
     {
         for(unsigned y=0; y<8; ++y)
         {
+        	unsigned xpos = (a%xdim) * (8+1) + 1;
+        	unsigned ypos = (a/xdim) * (8+1) + 1+y;
+        	
             unsigned char byte1 = ROM[offs];
             unsigned char byte2 = ROM[offs+1];
             offs += 2;
             for(unsigned x=0; x<8; ++x)
-                putchar(".coO"
-                    [((byte1 >> (7-x))&1) | (((byte2 >> (7-x))&1) << 1)]
-                );
-            putchar('\n');
-            fflush(stdout);
+            	pixels[(xpos + x) + xpixdim * ypos] = 
+            	   palette
+                    [((byte1 >> (7-x))&1)
+                  | (((byte2 >> (7-x))&1) << 1)];
         }
-        putchar('\n');
     }
+
+	OutImage("ct8fn", xpixdim, ypixdim, pixels);
 }
-static void DumpFont(unsigned spriteoffs, unsigned sizeoffs, unsigned count)
+
+static void DumpFont(unsigned spriteoffs, unsigned sizeoffs)
 {
-    unsigned offs = spriteoffs;
-    for(unsigned a=0; a<count; ++a)
+	const unsigned count = 0x100 - 0xA0;
+	
+	const unsigned xdim = 32;
+	const unsigned ydim = (count+xdim-1)/xdim;
+	
+	const unsigned xpixdim = xdim*12 + (xdim+1);
+	const unsigned ypixdim = ydim*12 + (ydim+1);
+	
+	const char palette[] = {1,2,3,4};
+	const char bordercolor=0;
+	const char fillercolor=5;
+	
+	vector<char> pixels (xpixdim * ypixdim, bordercolor);
+	
+    for(unsigned a=0xA0; a<0x100; ++a)
     {
+	    unsigned hioffs = spriteoffs + 24 * a;
+	    unsigned looffs = spriteoffs + 24 * 0x100 + (a>>1)*24;
+    	
         unsigned width = ROM[sizeoffs + a];
-        printf("[%u]\n", width); fflush(stdout);
         for(unsigned y=0; y<12; ++y)
         {
-            unsigned char byte1 = ROM[offs];
-            unsigned char byte2 = ROM[offs+1];
-            offs += 2;
-            for(unsigned x=0; x<=width; ++x)
-                putchar(".coO"
-                    [((byte1 >> (7-x))&1) | (((byte2 >> (7-x))&1) << 1)]
-                );
-            putchar('\n');
+        	unsigned xpos = ((a-0xA0)%xdim) * (12+1) + 1;
+        	unsigned ypos = ((a-0xA0)/xdim) * (12+1) + 1+y;
+        	
+            unsigned char byte1 = ROM[hioffs];
+            unsigned char byte2 = ROM[hioffs+1];
+            unsigned char byte3 = ROM[looffs];
+            unsigned char byte4 = ROM[looffs+1];
+            hioffs += 2;
+            looffs += 2;
+            
+            for(unsigned x=0; x<width; ++x)
+            {
+                if(x == 8)
+                {
+                    byte1 = byte3;
+                    byte2 = byte4;
+                    if(a&1) { byte1 = (byte1 & 15) << 4;
+                              byte2 = (byte2 & 15) << 4;
+                            }
+                }
+                
+                pixels[(xpos + x) + xpixdim * ypos] = 
+                	palette
+                     [((byte1 >> (7-(x&7)))&1)
+                   | (((byte2 >> (7-(x&7)))&1) << 1)];
+            }
+            for(unsigned x=width; x<12; ++x)
+                pixels[(xpos + x) + xpixdim * ypos] = fillercolor;
         }
-        putchar('\n');
-        fflush(stdout);
     }
+	
+	OutImage("ct16fn", xpixdim, ypixdim, pixels);
 }
 
 int main(void)
@@ -489,8 +579,6 @@ int main(void)
         "Copyright (C) 1992,2002 Bisqwit (http://bisqwit.iki.fi/)\n");
     
     LoadROM();
-
-#if 1
 
     substrings.resize(256);
     
@@ -643,15 +731,8 @@ int main(void)
     if(TryFindExtraSpace)
         FindEndSpaces();
 
-#else
-
-    // The font for the magic 0x60 characters
-    // starts actually from 0x3F9660
-    //Dump8x8sprites(0x3F9360, 142);
-    // This is the beginning for the 0x60 chars
-    DumpFont(0x3F2F60, 0x260E5, 64);
-
-#endif
+    Dump8x8sprites(0x3F8C60, 256);
+    DumpFont(0x3F2060, 0x26046);
 
     ListSpaces();
 }

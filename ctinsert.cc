@@ -21,6 +21,78 @@ static const bool sort_dictionary          = !true;
 static const unsigned MaxDictWordLen       = 20;
 static const unsigned MaxDictRecursLen     = 3;
 static const unsigned DictMaxSpacesPerWord = 4;
+static const char font8fn[]  = "ct8fnFI.tga";
+static const char font12fn[] = "ct16fnFI.tga";
+
+class TGAimage
+{
+    unsigned xdim, ydim;
+    vector<char> data;
+    
+    unsigned xsize, ysize; // size of each box
+    unsigned xbox; // boxes per line
+public:
+    TGAimage(const string &filename) : xdim(0), ydim(0)
+    {
+        FILE *fp = fopen(filename.c_str(), "rb");
+        if(!fp) { perror(filename.c_str()); return; }
+        
+        int idlen        = fgetc(fp);
+        fgetc(fp); // color map type, should be 1
+        fgetc(fp); // image type code, should be 1
+        fgetc(fp); fgetc(fp); // palette start
+        int palsize = fgetc(fp); palsize += fgetc(fp)*256; 
+        int palbitness = fgetc(fp); // palette bitness, should be 24
+        fgetc(fp); fgetc(fp);
+        fgetc(fp); fgetc(fp);
+
+        xdim=fgetc(fp); xdim += fgetc(fp)*256;
+        ydim=fgetc(fp); ydim += fgetc(fp)*256;
+        
+        fgetc(fp); // pixel bitness, should be 8
+        fgetc(fp); // misc, should be 0
+        if(idlen)fseek(fp, idlen, SEEK_CUR);
+        if(palsize)fseek(fp, palsize * ((palbitness+7)/8), SEEK_CUR);
+        
+        data.resize(xdim*ydim);
+        
+        for(unsigned y=ydim; y-->0; )
+            fread(&data[y*xdim], 1, xdim, fp);
+        
+        fclose(fp);
+        
+        xsize=8; ysize=8; xbox=32;
+    }
+
+    void setboxsize(unsigned x, unsigned y)
+    {
+        xsize = x;
+        ysize = y;
+    }
+    void setboxperline(unsigned n) { xbox = n; }
+    
+    const vector<char> getbox(unsigned boxnum) const
+    {
+        const unsigned boxposx = (boxnum%xbox) * (xsize+1) + 1;
+        const unsigned boxposy = (boxnum/xbox) * (ysize+1) + 1;
+        /*
+        fprintf(stderr, "fetching box %u (%ux%u @ %ux%u) from %ux%u size image (%u bytes)\n",
+            boxnum,
+            xsize, ysize,
+            boxposx, boxposy,
+            xdim, ydim, data.size());*/
+        
+        vector<char> result(xsize*ysize);
+        unsigned pos=0;
+        for(unsigned ny=0; ny<ysize; ++ny)
+        {
+            unsigned ppos = (boxposy + ny) * xdim + boxposx;
+            for(unsigned nx=0; nx<xsize; ++nx)
+                result[pos++] = data[ppos++];
+        }
+        return result;
+    }
+};
 
 class insertor
 {
@@ -112,6 +184,14 @@ public:
         return bestpos;
     }
     
+    inline void WriteByte(vector<unsigned char> &ROM,
+                          vector<bool> &Touched,
+                          unsigned offs, unsigned char value)
+    {
+        ROM[offs] = value;
+        Touched[offs] = true;
+    }
+    
     void WritePPtr(vector<unsigned char> &ROM,
                    vector<bool> &Touched,
                    unsigned pointeraddr,
@@ -122,21 +202,14 @@ public:
         if(spaceptr == 0x10000)
             return;
         
-        Touched[pointeraddr] = true;
-        Touched[pointeraddr+1] = true;
-        
-        ROM[pointeraddr  ] = spaceptr & 255;
-        ROM[pointeraddr+1] = spaceptr >> 8;
+        WriteByte(ROM, Touched, pointeraddr,   spaceptr&255);
+        WriteByte(ROM, Touched, pointeraddr+1, spaceptr>>8);
         
         //fprintf(stderr, "Wrote %u bytes at %06X->%04X\n", string.size()+1, pointeraddr, spaceptr);
         
         spaceptr += page<<16;
         for(unsigned a=0; a<=string.size(); ++a)
-        {
-            if(!a)ROM[spaceptr] = string.size();
-            else ROM[spaceptr+a] = string[a-1];
-            Touched[spaceptr+a] = true;
-        }
+            WriteByte(ROM, Touched, spaceptr+a, a ? string[a-1] : string.size());
     }
 
     unsigned WriteZPtr(vector<unsigned char> &ROM,
@@ -154,11 +227,8 @@ public:
                 return 0x10000;
         }
         
-        Touched[pointeraddr] = true;
-        Touched[pointeraddr+1] = true;
-        
-        ROM[pointeraddr  ] = spaceptr & 255;
-        ROM[pointeraddr+1] = spaceptr >> 8;
+        WriteByte(ROM, Touched, pointeraddr,   spaceptr&255);
+        WriteByte(ROM, Touched, pointeraddr+1, spaceptr>>8);
         
         /*fprintf(stderr, "Wrote %u bytes at %06X->%04X: ", string.size()+1, pointeraddr, spaceptr);
         fprintf(stderr, DispString(string).c_str());
@@ -166,12 +236,106 @@ public:
         
         spaceptr += page<<16;
         for(unsigned a=0; a<=string.size(); ++a)
-        {
-            if(a==string.size()) ROM[spaceptr+a]=0;
-            else ROM[spaceptr+a] = string[a];
-            Touched[spaceptr+a] = true;
-        }
+            WriteByte(ROM, Touched, spaceptr+a, a==string.size() ? 0 : string[a]);
         return spaceptr & 0xFFFF;
+    }
+    
+    void Write8pixfont(vector<unsigned char> &ROM,
+                       vector<bool> &Touched)
+    {
+        TGAimage font8(font8fn);
+        font8.setboxsize(8, 8);
+        font8.setboxperline(32);
+        
+        static const char palette[] = {0,3,1,2,0};
+        
+        vector<unsigned char> tiletable(256*16);
+        
+        unsigned to=0;
+        for(unsigned a=0; a<256; ++a)
+        {
+            vector<char> box = font8.getbox(a);
+            for(unsigned p=0; p<box.size(); ++p)
+                if((unsigned char)box[p] < sizeof(palette))
+                    box[p] = palette[box[p]];
+            
+            unsigned po=0;
+            for(unsigned y=0; y<8; ++y)
+            {
+                unsigned char byte1 = 0;
+                unsigned char byte2 = 0;
+                for(unsigned x=0; x<8; ++x)
+                {
+                    unsigned shift = (7-x);
+                    byte1 |= ((box[po]&1)  ) << shift;
+                    byte2 |= ((box[po]&2)/2) << shift;
+                    ++po;
+                }
+                tiletable[to++] = byte1;
+                tiletable[to++] = byte2;
+            }
+        }
+        for(unsigned a=0; a<tiletable.size(); ++a)
+            WriteByte(ROM, Touched, 0x3F8C60+a, tiletable[a]);
+    }
+    
+    void Write12pixfont(vector<unsigned char> &ROM,
+                        vector<bool> &Touched)
+    {
+        TGAimage font12(font12fn);
+        font12.setboxsize(12, 12);
+        font12.setboxperline(32);
+        
+        static const char palette[] = {0,0,1,2,3,0};
+        
+        vector<unsigned char> tiletable(96 * 24 + 96 * 12);
+        
+        unsigned to=0;
+        for(unsigned a=0; a<96; ++a)
+        {
+            vector<char> box = font12.getbox(a);
+
+            unsigned width=0;
+            while(box[width] != 5 && width<12)++width;
+            
+            for(unsigned p=0; p<box.size(); ++p)
+                if((unsigned char)box[p] < sizeof(palette))
+                    box[p] = palette[box[p]];
+            
+            unsigned po=0;
+            for(unsigned y=0; y<12; ++y)
+            {
+                unsigned char byte1 = 0;
+                unsigned char byte2 = 0;
+                unsigned char byte3 = 0;
+                unsigned char byte4 = 0;
+                for(unsigned x=0; x<8; ++x)
+                {
+                    unsigned shift = (7-x)&7;
+                    byte1 |= ((box[po]&1)  ) << shift;
+                    byte2 |= ((box[po]&2)/2) << shift;
+                    ++po;
+                }
+                for(unsigned x=0; x<4; ++x)
+                {
+                    unsigned shift = (7-x)&7;
+                    byte3 |= ((box[po]&1)  ) << shift;
+                    byte4 |= ((box[po]&2)/2) << shift;
+                    ++po;
+                }
+                tiletable[to++] = byte1;
+                tiletable[to++] = byte2;
+                
+                if(a&1)byte3 <<= 4;
+                tiletable[96*24 + (a>>1)*24 + y*2  ] |= byte3;
+                if(a&1)byte4 <<= 4;
+                tiletable[96*24 + (a>>1)*24 + y*2+1] |= byte4;
+            }
+            
+            WriteByte(ROM, Touched, 0x260E6+a, width);
+        }
+        for(unsigned a=0; a<tiletable.size(); ++a)
+            WriteByte(ROM, Touched, 0x3F2F60+a, tiletable[a]);
     }
     
     void WriteROM();
@@ -181,6 +345,9 @@ void insertor::WriteROM()
 {
     vector<unsigned char> ROM(4194304,        0);
     vector<bool>      Touched(ROM.size(), false);
+    
+    {FILE *fp = fopen("chrono-uncompressed.smc", "rb");
+    if(fp){fseek(fp,512,SEEK_SET);fread(&ROM[0], 1, ROM.size(), fp);fclose(fp);}}
     
     fprintf(stderr, "Writing dictionary...\n");
     for(unsigned a=0; a<dictsize; ++a)
@@ -200,18 +367,8 @@ void insertor::WriteROM()
             const string &s = i->second.str;
             unsigned pos = i->first;
             unsigned a;
-            for(a=0; a<s.size(); ++a)
-            {
-                ROM[pos] = s[a];
-                Touched[pos] = true;
-                ++pos;
-            }
-            for(; a < i->second.width; ++a)
-            {
-                ROM[pos] = 0;
-                Touched[pos] = true;
-                ++pos;
-            }
+            for(a=0; a<s.size(); ++a)      WriteByte(ROM, Touched, pos++, s[a]);
+            for(; a < i->second.width; ++a)WriteByte(ROM, Touched, pos++, 0);
             continue;
         }
 
@@ -308,6 +465,9 @@ void insertor::WriteROM()
         pagestrings.push_back(s);
         pageoffs.push_back(i->first);
     }
+    
+    Write8pixfont(ROM, Touched);
+    Write12pixfont(ROM, Touched);
     
     /* Now write the patches */
     FILE *fp = fopen("ctpatch-nohdr.ips", "wb");
@@ -958,11 +1118,11 @@ void insertor::LoadFile(FILE *fp)
                     else if(isdigit(code[1]))
                     {
                         newcontent += (char)atoi(code.c_str()+1);
-                        fprintf(stderr, "Warning: Raw code: %s\n", code.c_str());
+                        fprintf(stderr, " \nWarning: Raw code: %s\n", code.c_str());
                     }
                     else
                     {
-                        fprintf(stderr, "Unknown code: %s\n", code.c_str());
+                        fprintf(stderr, " \nUnknown code: %s\n", code.c_str());
                     }
                 }
                 else
