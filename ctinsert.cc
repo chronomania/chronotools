@@ -14,72 +14,51 @@ namespace
     
     const char patchfile_hdr[]          = "ctpatch-hdr.ips";
     const char patchfile_nohdr[]        = "ctpatch-nohdr.ips";
-}
 
-void insertor::GeneratePatches()
-{
-    ROM ROM(4194304);
-    
-    /*
-    {FILE *fp = fopen("chrono-uncompressed.smc", "rb");
-    if(fp){fseek(fp,512,SEEK_SET);fread(&ROM[0], 1, ROM.size(), fp);fclose(fp);}}
-    */
-    
-    fprintf(stderr, "Initializing all free space to zero...\n");
-    
-    set<unsigned> pages = freespace.GetPageList();
-    for(set<unsigned>::const_iterator i = pages.begin(); i != pages.end(); ++i)
+    void GeneratePatches(ROM &ROM)
     {
-        freespaceset list = freespace.GetList(*i);
+        /*
+        {FILE *fp = fopen("chrono-uncompressed.smc", "rb");
+        if(fp){fseek(fp,512,SEEK_SET);fread(&ROM[0], 1, ROM.size(), fp);fclose(fp);}}
+        */
         
-        for(freespaceset::const_iterator j = list.begin(); j != list.end(); ++j)
+        const unsigned MaxHunkSize = 20000;
+        
+        /* Now write the patches */
+        FILE *fp = fopen(patchfile_nohdr, "wb");
+        FILE *fp2 = fopen(patchfile_hdr, "wb");
+        fwrite("PATCH", 1, 5, fp);
+        fwrite("PATCH", 1, 5, fp2);
+        /* Format:   24bit offset, 16-bit size, then data; repeat */
+        for(unsigned a=0; a<ROM.size(); ++a)
         {
-            unsigned offs = (*i << 16) | j->pos;
-            for(unsigned a=0; a < j->len; ++a) ROM.Write(offs+a, 0);
+            if(!ROM.touched(a))continue;
+            
+            // Offset is "a" in fp, "a+512" in fp2
+            putc((a>>16)&255, fp);
+            putc((a>> 8)&255, fp);
+            putc((a    )&255, fp);
+            putc(((a+512)>>16)&255, fp2);
+            putc(((a+512)>> 8)&255, fp2);
+            putc(((a+512)    )&255, fp2);
+            
+            unsigned offs=a, c=0;
+            while(a < ROM.size() && ROM.touched(a) && c < MaxHunkSize)
+                ++c, ++a;
+            
+            // Size is "c" in both.
+            putc((c>> 8)&255, fp);
+            putc((c    )&255, fp);
+            putc((c>> 8)&255, fp2);
+            putc((c    )&255, fp2);
+            fwrite(&ROM[offs], 1, c, fp);
+            fwrite(&ROM[offs], 1, c, fp2);
         }
+        fwrite("EOF",   1, 3, fp);
+        fwrite("EOF",   1, 3, fp2);
+        fclose(fp); fprintf(stderr, "Created %s\n", patchfile_nohdr);
+        fclose(fp2); fprintf(stderr, "Created %s\n", patchfile_hdr);
     }
-    
-    WriteDictionary(ROM);
-    WriteStrings(ROM);
-    Write8pixfont(ROM);
-    Write12pixfont(ROM);
-    
-    const unsigned MaxHunkSize = 20000;
-    
-    /* Now write the patches */
-    FILE *fp = fopen(patchfile_nohdr, "wb");
-    FILE *fp2 = fopen(patchfile_hdr, "wb");
-    fwrite("PATCH", 1, 5, fp);
-    fwrite("PATCH", 1, 5, fp2);
-    /* Format:   24bit offset, 16-bit size, then data; repeat */
-    for(unsigned a=0; a<ROM.size(); ++a)
-    {
-        if(!ROM.touched(a))continue;
-        
-        // Offset is "a" in fp, "a+512" in fp2
-        putc((a>>16)&255, fp);
-        putc((a>> 8)&255, fp);
-        putc((a    )&255, fp);
-        putc(((a+512)>>16)&255, fp2);
-        putc(((a+512)>> 8)&255, fp2);
-        putc(((a+512)    )&255, fp2);
-        
-        unsigned offs=a, c=0;
-        while(a < ROM.size() && ROM.touched(a) && c < MaxHunkSize)
-            ++c, ++a;
-        
-        // Size is "c" in both.
-        putc((c>> 8)&255, fp);
-        putc((c    )&255, fp);
-        putc((c>> 8)&255, fp2);
-        putc((c    )&255, fp2);
-        fwrite(&ROM[offs], 1, c, fp);
-        fwrite(&ROM[offs], 1, c, fp2);
-    }
-    fwrite("EOF",   1, 3, fp);
-    fwrite("EOF",   1, 3, fp2);
-    fclose(fp); fprintf(stderr, "Created %s\n", patchfile_nohdr);
-    fclose(fp2); fprintf(stderr, "Created %s\n", patchfile_hdr);
 }
 
 string insertor::DispString(const string &s) const
@@ -255,24 +234,32 @@ int main(void)
         "Chrono Trigger script insertor version "VERSION"\n"
         "Copyright (C) 1992,2003 Bisqwit (http://iki.fi/bisqwit/)\n");
     
-    insertor ins;
+    insertor *ins = new insertor;
     
     // Font loading must happen before script loading,
     // or script won't be properly paragraph-wrapped.
-    ins.LoadFont8(font8fn);
-    ins.LoadFont12(font12fn);
+    ins->LoadFont8(font8fn);
+    ins->LoadFont12(font12fn);
     
     FILE *fp = fopen(scriptfn, "rt");
-    ins.LoadFile(fp);
+    ins->LoadFile(fp);
     fclose(fp);
     
-    ins.DictionaryCompress();
+    ins->DictionaryCompress();
     
-    ins.freespace.Report();
+    ins->freespace.Report();
 
-    ins.GeneratePatches();
+    fprintf(stderr, "Creating a virtual ROM...\n");
+    ROM ROM(4194304);
     
-    ins.freespace.Report();
+    ins->PatchROM(ROM);
+
+    ins->freespace.Report();
+    
+    fprintf(stderr, "Unallocating insertor data...\n");
+    delete ins; ins = NULL;
+    
+    GeneratePatches(ROM);
     
     return 0;
 }

@@ -195,6 +195,12 @@ def adessiiviksi(s, plural=false)
   softstem(s, plural) + (s.front? ? 'll‰' : 'lla')
 end
 
+# elatiivi   = source of something
+#              example: cronosta
+def elatiiviksi(s, plural=false)
+  softstem(s, plural) + (s.front? ? 'st‰' : 'sta')
+end
+
 # allatiivi   = target of something, in English sometimes as "to" or "for" preposition
 #               example: cronolle
 def allatiiviksi(s, plural=false)
@@ -208,6 +214,7 @@ def testit(nimi, plural=false)
   puts "Pasi kiitt‰‰ " + partitiiviksi(nimi, plural) + " (Pasi thanks " + nimi + ")"
   puts genetiiviksi(nimi, plural) + " kello on rikki (" + nimi + "'s clock is broken)"
   puts adessiiviksi(nimi, plural) + " on kissa (" + nimi + " has a cat)"
+  puts elatiiviksi(nimi, plural) + " se kissa on kaunis (" + nimi + " thinks the cat is cute)"
   puts allatiiviksi(nimi, plural) + " soitettiin monta kertaa (" + nimi + " was called many times)"
 end
 

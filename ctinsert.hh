@@ -49,18 +49,20 @@ public:
     void LoadFont12(const string &fn) { Font12.Load(fn); }
 
     void DictionaryCompress();
-    void GeneratePatches();
 
     string DispString(const string &s) const;
     
     unsigned GetFont12width(unsigned char chronoch) const
     { return Font12.GetWidth(chronoch-0xA0); }
     
+    void PatchROM(class ROM &ROM);
+
 private:
     void WriteDictionary(class ROM &ROM);
     void WriteStrings(class ROM &ROM);
     void Write8pixfont(class ROM &ROM);
     void Write12pixfont(class ROM &ROM);
+    void WriteCode(class ROM &ROM);
     
     void ApplyDictionary();
     void RebuildDictionary();

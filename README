@@ -4,9 +4,253 @@ NOTES
 
 THE REST OF THIS FILE IS MY NOTES
 
-KÄÄNNÖSOHJEITA
-
 Ks transnotes.txt
+
+----------------
+
+// DIALOGIN PIIRTO - ASSEMBLER
+
+// Tästä hypätään ->C0:2126
+$C0:2018 20 26 21    JSR [DB:$2126]       ;$00:2126     A:7700 X:07E0 Y:001F D:0100 DB:00 PB:C0
+// Tämä on lause, johon 21A7 palaa.
+$C0:201B 6B          RTL                                A:0001 X:0058 Y:0200 D:0100 DB:00 PB:C0
+
+// Täällä tarkistetaan erikoiskoodeja.
+// Jossain välissä ilmeisesti 215:een on tallennettu
+// dialogista haettu merkki!
+$C0:2126 AD 15 02    LDA [DB:$0215]       ;$00:0215     A:7700 X:07E0 Y:001F D:0100 DB:00 PB:C0
+$C0:2129 D0 03       BNE $212E                          A:7710 X:07E0 Y:001F D:0100 DB:00 PB:C0
+// Ei ollut 0
+$C0:212E C9 09       CMP A, $09    eli CLS              A:7710 X:07E0 Y:001F D:0100 DB:00 PB:C0
+$C0:2130 F0 2F       BEQ $2161                          A:7710 X:07E0 Y:001F D:0100 DB:00 PB:C0
+$C0:2132 C9 0A       CMP A, $0A    eli CLS3             A:7710 X:07E0 Y:001F D:0100 DB:00 PB:C0
+$C0:2134 F0 2B       BEQ $2161                          A:7710 X:07E0 Y:001F D:0100 DB:00 PB:C0
+$C0:2136 C9 0B       CMP A, $0B    eli PAUSE            A:7710 X:07E0 Y:001F D:0100 DB:00 PB:C0
+$C0:2138 F0 27       BEQ $2161                          A:7710 X:07E0 Y:001F D:0100 DB:00 PB:C0
+$C0:213A C9 0C       CMP A, $0C    eli PAUSE3           A:7710 X:07E0 Y:001F D:0100 DB:00 PB:C0
+$C0:213C F0 23       BEQ $2161                          A:7710 X:07E0 Y:001F D:0100 DB:00 PB:C0
+$C0:213E C9 05       CMP A, $05    eli NL               A:7710 X:07E0 Y:001F D:0100 DB:00 PB:C0
+$C0:2140 F0 19       BEQ $215B                          A:7710 X:07E0 Y:001F D:0100 DB:00 PB:C0
+$C0:2142 C9 06       CMP A, $06    eli NL3              A:7710 X:07E0 Y:001F D:0100 DB:00 PB:C0
+$C0:2144 F0 15       BEQ $215B                          A:7710 X:07E0 Y:001F D:0100 DB:00 PB:C0
+$C0:2146 C9 07       CMP A, $07    eli PAUSENL          A:7710 X:07E0 Y:001F D:0100 DB:00 PB:C0
+$C0:2148 F0 11       BEQ $215B                          A:7710 X:07E0 Y:001F D:0100 DB:00 PB:C0
+$C0:214A C9 08       CMP A, $08    eli PAUSENL3         A:7710 X:07E0 Y:001F D:0100 DB:00 PB:C0
+$C0:214C F0 0D       BEQ $215B                          A:7710 X:07E0 Y:001F D:0100 DB:00 PB:C0
+$C0:214E C9 03       CMP A, $03    eli DELAY            A:7710 X:07E0 Y:001F D:0100 DB:00 PB:C0
+$C0:2150 F0 02       BEQ $2154                          A:7710 X:07E0 Y:001F D:0100 DB:00 PB:C0
+$C0:2152 80 19       BRA $216D                          A:7710 X:07E0 Y:001F D:0100 DB:00 PB:C0
+
+// 215B: newline-handler
+
+// 2161: cls-handler
+
+// 216D: muu merkki
+//        0213: nyt tulostettavien merkkien määrä
+$C0:216D A9 01       LDA A, $01                         A:7710 X:07E0 Y:001F D:0100 DB:00 PB:C0
+$C0:216F 8D 13 02    STA [DB:$0213]       ;$00:0213     A:7701 X:07E0 Y:001F D:0100 DB:00 PB:C0
+$C0:2172 22 09 00 C2 JSL [$C2:$0009]      ;$C2:0009     A:7701 X:07E0 Y:001F D:0100 DB:00 PB:C0
+$C2:0009 4C 23 58    JMP [DB:$5823]       ;$00:5823     A:7701 X:07E0 Y:001F D:0100 DB:00 PB:C2
+
+// 5823: merkin tulostusrutiini.
+$C2:5823 08          PHP                                A:7701 X:07E0 Y:001F D:0100 DB:00 PB:C2
+$C2:5824 C2 20       REP $20                            A:7701 X:07E0 Y:001F D:0100 DB:00 PB:C2
+$C2:5826 0B          PHD                                A:7701 X:07E0 Y:001F D:0100 DB:00 PB:C2
+$C2:5827 A9 00 02    LDA A, $0200                       A:7701 X:07E0 Y:001F D:0100 DB:00 PB:C2
+$C2:582A 5B          TCD                                A:0200 X:07E0 Y:001F D:0100 DB:00 PB:C2
+$C2:582B A9 00 00    LDA A, $0000                       A:0200 X:07E0 Y:001F D:0200 DB:00 PB:C2
+$C2:582E E2 20       SEP $20                            A:0000 X:07E0 Y:001F D:0200 DB:00 PB:C2
+$C2:5830 20 4A 58    JSR DB:$584A         ;$00:584A     A:0000 X:07E0 Y:001F D:0200 DB:00 PB:C2
+// jatkuu 5833:ssa
+$C2:584A A5 15       LDA [$00:D+$15]      ;$00:0215     A:0000 X:07E0 Y:001F D:0200 DB:00 PB:C2
+$C2:584C 0A          ASL A                              A:0010 X:07E0 Y:001F D:0200 DB:00 PB:C2
+$C2:584D AA          TAX                                A:0020 X:07E0 Y:001F D:0200 DB:00 PB:C2
+$C2:584E 7C 51 58    JMP [PB:word[PB:$0058+x]] ;$C2:5895 A:0020 X:0020 Y:001F D:0200 DB:00 PB:C
+$C2:5895 80 19       BRA $58B0                          A:0020 X:0020 Y:001F D:0200 DB:00 PB:C2
+$C2:58B0 18          CLC                                A:0020 X:0020 Y:001F D:0200 DB:00 PB:C2
+$C2:58B1 60          RTS                                A:0020 X:0020 Y:001F D:0200 DB:00 PB:C2
+// Hyppy 58B2:n ohi, jos carry set
+$C2:5833 B0 07       BCS $583C                          A:0020 X:0020 Y:001F D:0200 DB:00 PB:C2
+$C2:5835 A5 30       LDA [$00:D+$30]      ;$00:0230     A:0020 X:0020 Y:001F D:0200 DB:00 PB:C2
+$C2:5837 0A          ASL A                              A:0000 X:0020 Y:001F D:0200 DB:00 PB:C2
+$C2:5838 AA          TAX                                A:0000 X:0020 Y:001F D:0200 DB:00 PB:C2
+$C2:5839 FC 42 58    JSR [PB:word[PB:$0058+x]] ;$C2:58B2 A:0000 X:0000 Y:001F D:0200 DB:00 PB:C
+// 583C: mitä lie?
+$C2:583C A9 00       LDA A, $00                         A:0010 X:0022 Y:02A0 D:0200 DB:00 PB:C2
+$C2:583E EB          XBA                                A:0000 X:0022 Y:02A0 D:0200 DB:00 PB:C2
+$C2:583F 2B          PLD                                A:0000 X:0022 Y:02A0 D:0200 DB:00 PB:C2
+$C2:5840 28          PLP                                A:0000 X:0022 Y:02A0 D:0100 DB:00 PB:C2
+$C2:5841 6B          RTL                                A:0000 X:0022 Y:02A0 D:0100 DB:00 PB:C2
+// merkin tulostusrutiini loppuu tähän.
+
+
+// Haetaan merkki pointterin osoittamasta paikasta
+$C2:58B2 A7 31       LDA [long[D+$31]]    ;$F7:531D     A:0000 X:0000 Y:001F D:0200 DB:00 PB:C2
+// Kasvatetaan merkkijonopointteria
+$C2:58B4 C2 20       REP $20                            A:003D X:0000 Y:001F D:0200 DB:00 PB:C2
+$C2:58B6 E6 31       INC [$00:D+$31]      ;$00:0231     A:003D X:0000 Y:001F D:0200 DB:00 PB:C2
+$C2:58B8 E2 20       SEP $20                            A:003D X:0000 Y:001F D:0200 DB:00 PB:C2
+// Jos lukuarvo on alle 0xA0...
+$C2:58BA C9 A0       CMP A, $A0                         A:003D X:0000 Y:001F D:0200 DB:00 PB:C2
+$C2:58BC 90 12       BCC $58D0                          A:003D X:0000 Y:001F D:0200 DB:00 PB:C2
+
+// Merkki oli siis >= 0xA0. Tulostetaan se!
+$C2:58BE C2 20       REP $20                            A:00F8 X:0000 Y:001F D:0200 DB:00 PB:C2
+$C2:58C0 85 35       STA [$00:D+$35]      ;$00:0235     A:00F8 X:0000 Y:001F D:0200 DB:00 PB:C2
+$C2:58C2 E2 20       SEP $20                            A:00F8 X:0000 Y:001F D:0200 DB:00 PB:C2
+$C2:58C4 20 C4 5D    JSR [DB:$5DC4]       ;$00:5DC4     A:00F8 X:0000 Y:001F D:0200 DB:00 PB:C2
+
+// Kun merkki on tulostettu, vähennetään jotain laskuria (?)
+$C2:58C7 C6 13       DEC [$00:D+$13]      ;$00:0213     A:0000 X:002E Y:0050 D:0200 DB:00 PB:C2
+// Jos merkkejä on yhä jäljellä, tulostetaan seuraava.
+$C2:58C9 D0 E7       BNE $58B2                          A:0000 X:002E Y:0050 D:0200 DB:00 PB:C2
+// Sijoitetaan $10 seuraavaksi tulostettavaksi merkiksi.
+$C2:58CB A9 10       LDA A, $10                         A:0000 X:002E Y:0050 D:0200 DB:00 PB:C2
+$C2:58CD 85 15       STA [$00:D+$15]      ;$00:0215     A:0010 X:002E Y:0050 D:0200 DB:00 PB:C2
+$C2:58CF 60          RTS                                A:0010 X:002E Y:0050 D:0200 DB:00 PB:C2
+// Tämä on matkalla pois tulostusrutiinista.
+
+
+
+// Jossain korkeammalla tasolla on tällainen:
+// Jos se seuraava tulostettava merkki on 0...
+$C0:2176 AD 15 02    LDA [DB:$0215]       ;$00:0215     A:0000 X:0058 Y:0200 D:0100 DB:00 PB:C0
+$C0:2179 F0 58       BEQ $21D3                          A:0010 X:0058 Y:0200 D:0100 DB:00 PB:C0
+// Jos se on 0x10?
+$C0:217B C9 10       CMP A, $10                         A:0010 X:0058 Y:0200 D:0100 DB:00 PB:C0
+$C0:217D F0 24       BEQ $21A3                          A:0010 X:0058 Y:0200 D:0100 DB:00 PB:C0
+// Veikkaan, että 217F on [pause]-käsittelijä.
+$C0:21A3 A9 01       LDA A, $01                         A:0010 X:0058 Y:0200 D:0100 DB:00 PB:C0
+$C0:21A5 85 36       STA [$00:D+$36]      ;$00:0136     A:0001 X:0058 Y:0200 D:0100 DB:00 PB:C0
+$C0:21A7 60          RTS                                A:0001 X:0058 Y:0200 D:0100 DB:00 PB:C0
+
+// Jos arvo oli 0, rutiini loppuu tähän.
+$C0:21D3 A2 FF FF    LDX $FFFF                          A:0000 X:0000 Y:0000 D:0100 DB:00 PB:C0
+$C0:21D6 86 34       STX [$00:D+$34]      ;$00:0134     A:0000 X:FFFF Y:0000 D:0100 DB:00 PB:C0
+$C0:21D8 A9 07       LDA A, $07                         A:0000 X:FFFF Y:0000 D:0100 DB:00 PB:C0
+$C0:21DA 85 29       STA [$00:D+$29]      ;$00:0129     A:0007 X:FFFF Y:0000 D:0100 DB:00 PB:C0
+$C0:21DC A9 81       LDA A, $81                         A:0007 X:FFFF Y:0000 D:0100 DB:00 PB:C0
+$C0:21DE 85 36       STA [$00:D+$36]      ;$00:0136     A:0081 X:FFFF Y:0000 D:0100 DB:00 PB:C0
+$C0:21E0 60          RTS                                A:0081 X:FFFF Y:0000 D:0100 DB:00 PB:C0
+
+
+
+
+// Tänne saavutaan, jos merkki oli alle 0xA0. Jos se on alle 0x21 myös...
+$C2:58D0 C9 21       CMP A, $21                         A:003D X:0000 Y:001F D:0200 DB:00 PB:C2
+$C2:58D2 90 29       BCC $58FD                          A:003D X:0000 Y:001F D:0200 DB:00 PB:C2
+// Ei ollut, joten tallennetaan se temppipaikkaan
+$C2:58D4 85 3B       STA [$00:D+$3B]      ;$00:023B     A:003D X:0000 Y:001F D:0200 DB:00 PB:C2
+$C2:58D6 38          SEC                                A:003D X:0000 Y:001F D:0200 DB:00 PB:C2
+$C2:58D7 E9 21       SBC A, $21                         A:003D X:0000 Y:001F D:0200 DB:00 PB:C2
+$C2:58D9 0A          ASL A                              A:001C X:0000 Y:001F D:0200 DB:00 PB:C2
+$C2:58DA AA          TAX                                A:0038 X:0000 Y:001F D:0200 DB:00 PB:C2
+$C2:58DB C2 20       REP $20                            A:0038 X:0038 Y:001F D:0200 DB:00 PB:C2
+// Haetaan pointteri dictionarystä
+$C2:58DD BF 00 FA DE LDA [$DE:$FA00+x]    ;$DE:FA38     A:0038 X:0038 Y:001F D:0200 DB:00 PB:C2
+// Laitetaan talteen se
+$C2:58E1 85 37       STA [$00:D+$37]      ;$00:0237     A:FB4B X:0038 Y:001F D:0200 DB:00 PB:C2
+$C2:58E3 A9 00 00    LDA A, $0000                       A:FB4B X:0038 Y:001F D:0200 DB:00 PB:C2
+$C2:58E6 E2 20       SEP $20                            A:0000 X:0038 Y:001F D:0200 DB:00 PB:C2
+$C2:58E8 A9 DE       LDA A, $DE                         A:0000 X:0038 Y:001F D:0200 DB:00 PB:C2
+// Ja sen segment-osa
+$C2:58EA 85 39       STA [$00:D+$39]      ;$00:0239     A:00DE X:0038 Y:001F D:0200 DB:00 PB:C2
+// Haetaan merkkijonon pituus
+$C2:58EC A7 37       LDA [long[D+37]]     ;$DE:FB4B     A:00DE X:0038 Y:001F D:0200 DB:00 PB:C2
+// Talteen se
+$C2:58EE 85 3A       STA [$00:D+$3A]      ;$00:023A     A:0002 X:0038 Y:001F D:0200 DB:00 PB:C2
+// Kasvatetaan pointteria
+$C2:58F0 C2 20       REP $20                            A:0002 X:0038 Y:001F D:0200 DB:00 PB:C2
+$C2:58F2 E6 37       INC [$00:D+$37]      ;$00:0237     A:0002 X:0038 Y:001F D:0200 DB:00 PB:C2
+$C2:58F4 E2 20       SEP $20                            A:0002 X:0038 Y:001F D:0200 DB:00 PB:C2
+// Varmaankin laskuri sanakirjaesineen hakuun
+$C2:58F6 A9 01       LDA A, $01                         A:0002 X:0038 Y:001F D:0200 DB:00 PB:C2
+$C2:58F8 85 30       STA [$00:D+$30]      ;$00:0230     A:0001 X:0038 Y:001F D:0200 DB:00 PB:C2
+$C2:58FA 4C F5 5B    JMP [DB:$5BF5]       ;$00:5BF5     A:0001 X:0038 Y:001F D:0200 DB:00 PB:C2
+
+// Tänne saavutaan, jos merkki oli < 0x21.
+$C2:58FD A8          TAY                                A:0013 X:0000 Y:001F D:0200 DB:00 PB:C2
+$C2:58FE 0A          ASL A                              A:0013 X:0000 Y:0013 D:0200 DB:00 PB:C2
+$C2:58FF AA          TAX                                A:0026 X:0000 Y:0013 D:0200 DB:00 PB:C2
+$C2:5900 7C 03 59    JMP [PB:word[PB:$0059+x]]  ;$C2:5B15 A:0026 X:0026 Y:0013 D:0200 DB:00 PB:
+
+// y:ssä on se kyseinen merkki.
+$C2:5B15 98          TYA                                A:0026 X:0026 Y:0013 D:0200 DB:00 PB:C2
+$C2:5B16 38          SEC                                A:0013 X:0026 Y:0013 D:0200 DB:00 PB:C2
+$C2:5B17 E9 13       SBC A, $13                         A:0013 X:0026 Y:0013 D:0200 DB:00 PB:C2
+$C2:5B19 0A          ASL A                              A:0000 X:0026 Y:0013 D:0200 DB:00 PB:C2
+$C2:5B1A AA          TAX                                A:0000 X:0026 Y:0013 D:0200 DB:00 PB:C2
+// x:ssä on nyt (merkki-0x13)*2
+$C2:5B1B C2 20       REP $20                            A:0000 X:0000 Y:0013 D:0200 DB:00 PB:C2
+// Sillä arvolla indeksoidaan taulua 02:5FD8.
+// Sisältö: 2C23 2C29 2C2F 2C35
+//          2C3B 2C41 2C47 0000
+$C2:5B1D BF D8 5F C2 LDA [$C2:$5FD8+x]    ;$C2:5FD8     A:0000 X:0000 Y:0013 D:0200 DB:00 PB:C2
+// Saatu pointteri talteen
+$C2:5B21 8D 37 02    STA [DB:$0237]       ;$00:0237     A:2C23 X:0000 Y:0013 D:0200 DB:00 PB:C2
+$C2:5B24 E2 20       SEP $20                            A:2C23 X:0000 Y:0013 D:0200 DB:00 PB:C2
+// Mitä lie.
+$C2:5B26 A9 7E       LDA A, $7E                         A:2C23 X:0000 Y:0013 D:0200 DB:00 PB:C2
+$C2:5B28 8D 39 02    STA [DB:$0239]       ;$00:0239     A:2C7E X:0000 Y:0013 D:0200 DB:00 PB:C2
+$C2:5B2B A9 01       LDA A, $01                         A:2C7E X:0000 Y:0013 D:0200 DB:00 PB:C2
+$C2:5B2D 85 30       STA [$00:D+$30]      ;$00:0230     A:2C01 X:0000 Y:0013 D:0200 DB:00 PB:C2
+
+// Alirutiini...
+// ...joka laskee merkkijonon pituuden!
+// Osoite: $7E:2C23. Ilmeisesti RAM!
+// Tuloksen(0-5) rutiini sijoittaa A:han.
+$C2:5B2F 20 45 5D    JSR [DB:$5D45]       ;$00:5D45     A:2C01 X:0000 Y:0013 D:0200 DB:00 PB:C2
+$C2:5D45 A0 00 00    LDY $0000                          A:2C01 X:0000 Y:0013 D:0200 DB:00 PB:C2
+// Pituus tallennetaan.
+$C2:5B32 8D 3A 02    STA [DB:$023A]       ;$00:023A     A:2C05 X:0000 Y:0005 D:0200 DB:00 PB:C2
+$C2:5B35 A9 00       LDA A, $00                         A:2C05 X:0000 Y:0005 D:0200 DB:00 PB:C2
+$C2:5B37 EB          XBA                                A:2C00 X:0000 Y:0005 D:0200 DB:00 PB:C2
+$C2:5B38 4C F5 5B    JMP [DB:$5BF5]       ;$00:5BF5     A:002C X:0000 Y:0005 D:0200 DB:00 PB:C2
+
+
+// Tänne päädytään, kun on jokin merkki,
+// joka selvästi voidaan tulostaa.
+// Haetaan merkki.
+$C2:5BF5 A7 37       LDA [long[D+37]]     ;$DE:FB4C     A:0001 X:0038 Y:001F D:0200 DB:00 PB:C2
+// Kasvatetaan pointteria
+$C2:5BF7 C2 20       REP $20                            A:00C8 X:0038 Y:001F D:0200 DB:00 PB:C2
+$C2:5BF9 E6 37       INC [$00:D+$37]      ;$00:0237     A:00C8 X:0038 Y:001F D:0200 DB:00 PB:C2
+$C2:5BFB E2 20       SEP $20                            A:00C8 X:0038 Y:001F D:0200 DB:00 PB:C2
+// Tapaus c==0x01
+$C2:5BFD C9 01       CMP A, $01                         A:00C8 X:0038 Y:001F D:0200 DB:00 PB:C2
+$C2:5BFF F0 04       BEQ $5C05                          A:00C8 X:0038 Y:001F D:0200 DB:00 PB:C2
+// Tapaus c==0x02
+$C2:5C01 C9 02       CMP A, $02                         A:00C8 X:0038 Y:001F D:0200 DB:00 PB:C2
+$C2:5C03 D0 07       BNE $5C0C                          A:00C8 X:0038 Y:001F D:0200 DB:00 PB:C2
+// Ei ollut 1 tai 2. Merkki talteen.
+$C2:5C0C C2 20       REP $20                            A:00C8 X:0038 Y:001F D:0200 DB:00 PB:C2
+$C2:5C0E 85 35       STA [$00:D+$35]      ;$00:0235     A:00C8 X:0038 Y:001F D:0200 DB:00 PB:C2
+$C2:5C10 E2 20       SEP $20                            A:00C8 X:0038 Y:001F D:0200 DB:00 PB:C2
+// Alirutiini...
+// joka ainakin hakee fontista merkin, ehkä piirtääkin!
+$C2:5C12 20 C4 5D    JSR [DB:$5DC4]       ;$00:5DC4     A:00C8 X:0038 Y:001F D:0200 DB:00 PB:C2
+// Piirtää siis merkin joka on $00:0235.
+$C2:5DC4 C2 20       REP $20                            A:00C8 X:0038 Y:001F D:0200 DB:00 PB:C2
+
+//...
+$C2:5C15 A9 00       LDA A, $00                         A:0000 X:0028 Y:0050 D:0200 DB:00 PB:C2
+// Vähennetään merkkijonon pituutta yhdellä
+$C2:5C17 C6 3A       DEC [$00:D+$3A]      ;$00:023A     A:0000 X:0028 Y:0050 D:0200 DB:00 PB:C2
+// Jos merkkijono loppui?
+$C2:5C19 F0 02       BEQ $5C1D                          A:0000 X:0028 Y:0050 D:0200 DB:00 PB:C2
+// Ei loppunut.
+$C2:5C1B 09 01       ORA A, $01                         A:0000 X:0028 Y:0050 D:0200 DB:00 PB:C2
+// Mikä laskuri tämä on?
+$C2:5C1D C6 13       DEC [$00:D+$13]      ;$00:0213     A:0001 X:0028 Y:0050 D:0200 DB:00 PB:C2
+$C2:5C1F F0 02       BEQ $5C23                          A:0001 X:0028 Y:0050 D:0200 DB:00 PB:C2
+// Se joka tapauksessa oli 0, ja nyt mennään jonnekin.
+$C2:5C23 0A          ASL A                              A:0001 X:0028 Y:0050 D:0200 DB:00 PB:C2
+$C2:5C24 AA          TAX                                A:0002 X:0028 Y:0050 D:0200 DB:00 PB:C2
+$C2:5C25 7C 28 5C    JMP [PB:word[PB:$005C+x]]  ;$C2:5C32 A:0002 X:0002 Y:0050 D:0200 DB:00 PB:
+
+
+
+
 
    
 [1EFA00]

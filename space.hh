@@ -32,6 +32,7 @@ public:
     void DumpPageMap(unsigned pagenum) const;
     
     unsigned Find(unsigned page, unsigned length);
+    unsigned FindFromAnyPage(unsigned length);
     
     unsigned Size() const;
     unsigned Size(unsigned page) const;

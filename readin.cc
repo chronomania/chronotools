@@ -1,11 +1,13 @@
 #include <cstdio>
-#include <cstdarg>
+#include <set>
 #include <list>
 
 #include "ctinsert.hh"
 #include "wstring.hh"
 #include "ctcset.hh"
 #include "miscfun.hh"
+#include "symbols.hh"
+#include "conjugate.hh"
 
 using namespace std;
 
@@ -16,6 +18,15 @@ namespace
     
     // Tarkista, aiheuttiko wrap ongelmia
     const bool verify_wraps = true;
+    
+    // How many pixels at max
+    const unsigned MaxTextWidth =
+      // 256 is the width of the screen
+      256
+      // The left border is 8 pixels
+      - 8
+      // Right border is... 16 pixels?
+      - 8;
 
     #undef getc
     class ScriptCharGet
@@ -68,257 +79,9 @@ namespace
         }
         const wstring &getcomment() const { return Comment; }
     };
-    
-    class Symbols
-    {
-        map<string, char> symbols2, symbols8, symbols16;
-
-        void AddSym(const char *sym, char c, int targets)
-        {
-            // 16 instead of 12 because 12 = 8+4, and 8 is already used :)
-            if(targets&2)symbols2[sym]=c;
-            if(targets&8)symbols8[sym]=c;
-            if(targets&16)symbols16[sym]=c;
-        }
-        
-        void Load()
-        {
-            int targets=0;
-
-            // Define macro
-            #define defsym(sym, c) AddSym(#sym,static_cast<char>(c),targets);
-                                   
-            // Define bracketed macro
-            #define defbsym(sym, c) defsym([sym], c)
-            
-            // 8pix symbols;  *xx:xxxx:Lxx
-            // 16pix symbols; *xx:xxxx:Zxx
-            
-            targets=2+8+16;
-            defbsym(end,         0x00)
-            targets=2;
-            defbsym(nl,          0x01)
-            targets=16;
-            // 0x01 seems to be garbage
-            // 0x02 seems to be garbage too
-            // 0x03 is delay, handled elseway
-            // 0x04 seems to do nothing
-            defbsym(nl,          0x05)
-            defbsym(nl3,         0x06)
-            defbsym(pausenl,     0x07)
-            defbsym(pausenl3,    0x08)
-            defbsym(cls,         0x09)
-            defbsym(cls3,        0x0A)
-            defbsym(pause,       0x0B)
-            defbsym(pause3,      0x0C)
-            defbsym(num8,        0x0D)
-            defbsym(num16,       0x0E)
-            defbsym(num32,       0x0F)
-            // 0x10 seems to do nothing
-            defbsym(member,      0x11)
-            defbsym(tech,        0x12)
-            defsym(Crono,        0x13)
-            defsym(Marle,        0x14)
-            defsym(Lucca,        0x15) // HUOMIO Lucca -> Lucan/Lucasta/Lucalle
-            defsym(Robo,         0x16)
-            defsym(Frog,         0x17)
-            defsym(Ayla,         0x18)
-            defsym(Magus,        0x19) // HUOMIO Magus -> Maguksen
-            defbsym(crononick,   0x1A)
-            defbsym(member1,     0x1B)
-            defbsym(member2,     0x1C)
-            defbsym(member3,     0x1D)
-            defsym(Nadia,        0x1E)
-            defbsym(item,        0x1F)
-            defsym(Epoch,        0x20) // HUOMIO Epoch -> Epochin
-            targets=8;
-            defbsym(bladesymbol, 0x20)
-            defbsym(bowsymbol,   0x21)
-            defbsym(gunsymbol,   0x22)
-            defbsym(armsymbol,   0x23)
-            defbsym(swordsymbol, 0x24)
-            defbsym(fistsymbol,  0x25)
-            defbsym(scythesymbol,0x26)
-            defbsym(armorsymbol, 0x28)
-            defbsym(helmsymbol,  0x27)
-            defbsym(ringsymbol,  0x29)
-            defbsym(shieldsymbol,0x2E)
-            defbsym(starsymbol,  0x2F)
-            targets=16;
-            defbsym(musicsymbol, 0xEE)
-            defbsym(heartsymbol, 0xF0)
-            defsym(...,          0xF1)
-            
-            #undef defsym
-            #undef defbsym
-
-            //fprintf(stderr, "%u 8pix symbols loaded\n", symbols8.size());
-            //fprintf(stderr, "%u 16pix symbols loaded\n", symbols16.size());
-        }
-    public:
-        Symbols()
-        {
-            Load();
-            fprintf(stderr, "Built symbol converter\n");
-        }
-        const map<string, char> &operator[] (unsigned ind) const
-        {
-            switch(ind)
-            {
-                case 2: return symbols2;
-                case 8: return symbols8;
-                case 16:
-                default: return symbols16;
-            }
-        }
-    } Symbols;
-    
-    class Conjugatemap
-    {
-        typedef map<string, unsigned char> datamap_t;
-        struct form
-        {
-            datamap_t   data;
-            const char *explanation;
-        };
-        
-        list<form> forms;
-        
-        void AddForm(const form &form)
-        {
-            forms.push_back(form);
-        }
-        
-        void AddData(datamap_t &target, const string &s) const
-        {
-            const map<string, char> &symbols16 = Symbols[16];
-            const char *name = "...";
-            /* Simple method to see which character are we talking about.      */
-            /* Modify it if the first character isn't enough in your language. */
-            switch(s[0])
-            {
-                case 'C': name = "Crono"; break;
-                case 'L': name = "Lucca"; break;
-                case 'M': name = s[2]=='g' ? "Magus" : "Marle"; break;
-                case 'R': name = "Robo"; break;
-                case 'F': name = "Frog"; break;
-                case 'A': name = "Ayla"; break;
-                case 'E': name = "Epoch"; break;
-                
-                // Nadia can't be renamed, so it
-                // does not need to be taken care of.
-            }
-            unsigned char person = symbols16.find(name)->second;
-            string key = str_replace(name, person, s);
-            for(unsigned a=0; a<key.size(); ++a)
-                if(key[a] >= 'a' && key[a] <= 'z')
-                    key[a] = getchronochar(key[a]);
-            
-            target[key] = person;
-        }
-        datamap_t CreateMap(const char *word, ...) const
-        {
-            datamap_t result;
-            va_list ap;
-            va_start(ap, word);
-            while(word)
-            {
-                AddData(result, word);
-                word = va_arg(ap, const char *);
-            }
-            va_end(ap);
-            return result;
-        }
-        void Verify(const string &s,
-                    const string &plaintext,
-                    const form &form) const
-        {
-            const datamap_t &tool   = form.data;
-            const char *explanation = form.explanation;
-            
-            datamap_t::const_iterator i;
-            for(i=tool.begin(); i!=tool.end(); ++i)
-            {
-                for(unsigned a=0; a < s.size(); )
-                {
-                    unsigned b = s.find(i->first, a);
-                    if(b == s.npos) break;
-                    
-                    const char *what = "???";
-                    for(map<string, char>::const_iterator
-                        j=Symbols[16].begin();
-                        j!=Symbols[16].end(); ++j)
-                    {
-                        if(j->second == i->second) { what = j->first.c_str(); break; }
-                    }
-                    
-                    fprintf(stderr, "\nWarning: %s%s in '%s'",
-                        what, explanation, plaintext.c_str());
-                    
-                    a = b + i->first.size();
-                }
-            }
-        }
-        void Load()
-        {
-            form tmp;
-            tmp.data = CreateMap
-                ( "Cronon", "Marlen", "Luccan", "Lucan",
-                  "Robon", "Frogin", "Aylan", "Maguksen",
-                  "Magusin", "Epochin", 0 );
-            tmp.explanation = "-n";
-            AddForm(tmp);
-            
-            tmp.data = CreateMap
-                ( "Cronoa", "Marlea", "Luccaa",
-                  "Roboa", "Frogia", "Froggia",
-                  "Aylaa", "Magusta", "Epochia", 0 );
-            tmp.explanation = "-a";
-            AddForm(tmp);
-            
-            tmp.data = CreateMap
-                ( "Cronolla", "Marlella", "Luccalla", "Lucalla",
-                  "Robolla", "Frogilla", "Aylalla", "Maguksella",
-                  "Magusilla", "Epochilla", 0 );
-            tmp.explanation = "-lla";
-            AddForm(tmp);
-            
-            tmp.data = CreateMap
-                ( "Cronolle", "Marlelle", "Luccalle", "Lucalle",
-                  "Robolle", "Frogille", "Aylalle", "Magukselle",
-                  "Magusille", "Epochille", 0 );
-            tmp.explanation = "-lle";
-            AddForm(tmp);
-            
-            tmp.data = CreateMap
-                ( "Cronosta", "Marlesta", "Luccasta", "Lucasta",
-                  "Robosta", "Frogista", "Aylasta", "Maguksesta",
-                  "Magusista", "Epochista", 0 );
-            tmp.explanation = "-sta";
-            AddForm(tmp);
-        }
-    public:
-        Conjugatemap()
-        {
-            Load();
-            fprintf(stderr, "Built conjugater-map\n");
-        }
-        void Verify(const string &s, const string &plaintext) const
-        {
-            for(list<form>::const_iterator
-                i = forms.begin();
-                i != forms.end();
-                ++i)
-            {
-                Verify(s, plaintext, *i);
-            }
-        }
-    } Conjugatemap;
 
     const string Rivita(const string &dialog, const insertor &ins)
     {
-        //fprintf(stdout, "Rivita('%s')\n", dialog.c_str());
-        
         unsigned row=0, col=0;
         
         string result;
@@ -332,6 +95,9 @@ namespace
         
         bool wraps = false;
         bool wrap_indent = false;
+        
+        bool linelength_error = false;
+        bool linecount_error = false;
         
         for(unsigned a=0; a<dialog.size(); ++a)
         {
@@ -409,7 +175,7 @@ namespace
                     break;
                 }
             }
-            if(col >= 256 - 16)
+            if(col >= MaxTextWidth)
             {
                 /*
                 fprintf(stderr, "\nWrap (col=%3u,row=%3u), result=%s\n",
@@ -435,22 +201,17 @@ namespace
                     col,row,ins.DispString(result).c_str());
                 */
             }
-            bool errors = false;
-            if(row >= 4)
-            {
-                if(!errors){errors=true;fprintf(stderr,"\n");}
-                fprintf(stderr, "Error: Four lines is maximum\n");
-            }
-            if(col >= 256-16)
-            {
-                if(!errors){errors=true;fprintf(stderr,"\n");}
-                fprintf(stderr, "Error: Too long line\n");
-            }
-            if(errors)
-            {
-                fprintf(stderr, "In %s\n",
-                    ins.DispString(dialog).c_str());
-            }
+            if(row >= 4) linecount_error = true;
+            if(col >= MaxTextWidth) linelength_error = true;
+        }
+        
+        if(linecount_error || linelength_error)
+        {
+            fprintf(stderr,
+                "\n"
+                "Error: Too long text\n"
+                "In: %s\n",
+                    ins.DispString(result).c_str());
         }
         
         if(wraps)
@@ -472,7 +233,14 @@ namespace
             }
         }
         
-        Conjugatemap.Verify(result, ins.DispString(result));
+        Conjugatemap.Work(result, ins.DispString(result));
+        
+#if 0
+        fprintf(stdout, "Rivita('%s')\n"
+                        "->     '%s'\n",
+            ins.DispString(dialog).c_str(),
+            ins.DispString(result).c_str());
+#endif
         
         return result;
     }
@@ -493,6 +261,8 @@ void insertor::LoadFile(FILE *fp)
     
     stringdata model;
     const map<string, char> *symbols = NULL;
+    
+    set<string> rawcodes;
     
     for(;;)
     {
@@ -729,7 +499,7 @@ void insertor::LoadFile(FILE *fp)
                     else if(isdigit(code[1]))
                     {
                         newcontent += (char)atoi(code.c_str()+1);
-                        fprintf(stderr, " \nWarning: Raw code: %s", code.c_str());
+                        rawcodes.insert(code);
                     }
                     else
                     {
@@ -756,5 +526,12 @@ void insertor::LoadFile(FILE *fp)
         }
         fprintf(stderr, "Unexpected char '%c'\n", c);
         cget(c);
+    }
+    if(rawcodes.size())
+    {
+        fprintf(stderr, "Warning: Raw codes encountered:");
+        for(set<string>::const_iterator i=rawcodes.begin(); i!=rawcodes.end(); ++i)
+            fprintf(stderr, " %s", i->c_str());
+        fprintf(stderr, "\n");
     }
 }

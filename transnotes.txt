@@ -2,19 +2,17 @@ TEKNISIÄ OHJEITA
 
    Skriptirivit:
 
-     - Neljä riviä max per repliikki.
-       Jos tarvitaan enemmän, jaa repliikki
-       kolmen rivin ryhmiin ja erota [pause]:lla.
-       ([pause] vie ikäänkuin yhden rivin, ja
-        tyhjentää sen jälkeen dialogiruudun.)
+     - Insertor wrappaa rivit automaattisesti.
+       Niiden pituuksista ei tarvitse kantaa
+       huolta, kunhan tekstiä ei tule vallan
+       kamalasti.
 
-     - Rivien pituuksilla on raja, mutta se riippuu
-       vähän tekstistä (variable width). Yritä
-       välttää kamalan pitkiä rivejä, mutta älä
-       tee hirveän lyhyitäkään.
-     
      - Jos dialogissa on kysymys ("kyllä/ei"), älä
        muuta rivien määrää ennen sitä.
+     
+     - Dialogin riveissä on "   " alussa, jos repliikin
+       ensimmäisellä rivillä on puhujan nimi ja kaksoispiste.
+       Muutoin teksti tulee rivin alkuun.
      
      - Nimet tulee kirjoittaa pienillä kirjaimilla
        mutta isolla alkukirjaimella, vaikka ne olisivat
@@ -69,7 +67,7 @@ TEKNISIÄ OHJEITA
        lightning/thunder = ukkonen
        shadow            = varjo
        pendant           = riipus (vai pitäisikö ToPin tyyliin medaljonki?)
-       reptite           = ?? (reptile=matelija)
+       reptite           = liskos
        prophet           = Profeetta
        mammon machine    = Mammonakone
        ocean palace      = Meripalatsi

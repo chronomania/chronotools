@@ -59,7 +59,7 @@ enum csettype
 
 static int breaks=0;
 static int fullhex=0;
-static csettype usecset = normalset;
+static enum csettype usecset = normalset;
 
 static char merktab[4][4][4][4];
 
@@ -133,13 +133,13 @@ static unsigned char REV(unsigned char n)
 }
 
 
-static int Equal(const unsigned char *s, const unsigned char *data, unsigned step, int len)
+static int Equal(const unsigned char *s, const unsigned char *s2, unsigned step, int len)
 {
     for(;;)
     {
         if(!len)return 1;
-        if(*data != *s)return 0;
-        data += step;
+        if(*s2 != *s)return 0;
+        s2 += step;
         ++s;
         --len;
     }
@@ -153,8 +153,10 @@ static int OpenVCSA()
     SLsmg_normal_video();
     return 0;
 }
-static void WriteVCSA(int fd, unsigned char chr, unsigned char attr)
+static void WriteVCSA(int fd, unsigned chr, unsigned attr)
 {
+	attr = (unsigned char) attr;
+	chr  = (unsigned char) chr;
     //if(chr < 0x20 || chr > 0x7E)chr = '.';
     SLsmg_gotorc(SlangPos/COLS, SlangPos%COLS);
     SLsmg_set_color(attr);
@@ -263,9 +265,18 @@ static void display(void)
             "¶¶¶¶¶¶¶¶¶¶¶¶¶¶¶¶¶¶¶¶¶¶¶¶¶¶¶¶¶¶¶¶"   // 40
             "¶¶¶¶¶¶¶¶¶¶¶¶¶¶¶¶¶¶¶¶¶¶¶¶¶¶¶¶¶¶¶¶"   // 60
             "¶¶¶¶¶¶¶¶¶¶¶¶¶¶¶¶¶¶¶¶¶¶¶¶¶¶¶¶¶¶¶¶"   // 80
+#if 0
             "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdef"   // A0
             "ghijklmnopqrstuvwxyz0123456789!?"   // C0
-            "/`':&()'.,=-+%¶ ¶¶¶#¶¶¶¶¶¶¶¶¶¶¶_";  // E0
+            "/`':&()'.,=-+%¶ ¶¶¶#¶¶¶¶¶¶¶¶¶¶¶_"   // E0
+#else
+	        "ABCDEFGHIJKLMNOP"   // A0
+	        "QRSTUVWXYZabcdef"   // B0
+	        "ghijklmnopqrstuv"   // C0
+	        "wxyz0123456789ÅÄ"   // D0
+	        "Ö«»:-()'.,åäöé¶ "   // E0  EE=musicsymbol
+	        "¶¶%É=&+#!?¶¶¶/¶_";  // F0  F0=heartsymbol, F1=..., F2=infinity
+#endif
         
         #define writ(byt, attr) do{\
             WriteVCSA(fd, (byt), (attr)); \
@@ -295,18 +306,23 @@ static void display(void)
         }
             
         char attr = searchtype?14:7;
-        char chr;
+        char chr = *s + add;
         switch(usecset)
         {
             case normalset:
-                chr = *s + add;
                 break;
             case pokemonset:
-                chr  = set1[(unsigned char)(*s + add)];
+            {
+            	unsigned char c = (unsigned char)chr;
+                chr  = set1[c];
                 break;
+            }
             case chronoset:
-                chr  = set3[(unsigned char)(*s + add)];
+            {
+            	unsigned char c = (unsigned char)chr;
+                chr  = set3[c];
                 break;
+            }
             default:
                 chr=0;
         }
@@ -334,6 +350,34 @@ static void display(void)
             writ('O', attr);
             writ('K', attr);
             chr = '‚';
+        }
+        
+        if(usecset == chronoset
+        && (unsigned char)*s >= 0x21
+        && (unsigned char)*s <  0xA0)
+        {
+        	unsigned dict_ind = (unsigned char)*s - 0x21;
+        	unsigned dict_ptr  = 0x200+0x1EFA00 + dict_ind*2;
+        	unsigned dict_addr = 0x200+0x1E0000 + data[dict_ptr] + 256*data[dict_ptr+1];
+        	unsigned count=data[dict_addr++];
+        	
+        	/*
+        	attr = 12;
+        	writ("0123456789ABCDEF"[(dict_addr>>20)&15], attr);
+        	writ("0123456789ABCDEF"[(dict_addr>>16)&15], attr);
+        	writ("0123456789ABCDEF"[(dict_addr>>12)&15], attr);
+        	writ("0123456789ABCDEF"[(dict_addr>> 8)&15], attr);
+        	writ("0123456789ABCDEF"[(dict_addr>> 4)&15], attr);
+        	writ("0123456789ABCDEF"[(dict_addr    )&15], attr);
+        	*/
+        	attr = searchtype?10:2;
+        	
+        	while(count-- > 0)
+        	{
+        		chr = data[dict_addr++];
+        		chr = set3[(unsigned char)chr];
+        		if(count) writ(chr, attr);
+        	}
         }
         
         if((breaks==1 && !*s) || (breaks==2 && (*s=='\n')))

@@ -18,4 +18,10 @@ public:
     const unsigned char &operator[] (unsigned ind) const { return Data[ind]; }
     const unsigned size() const { return Data.size(); }
     bool touched(unsigned ind) const { return Touched[ind]; }
+    
+    // Adds JSL to the specific location.
+    void AddCall(unsigned codeaddress, unsigned target);
+    
+    // Writes a subroutine. Remember to terminate it with LONG-RETURN!
+    void AddSubRoutine(unsigned target, const vector<unsigned char> &code);
 };

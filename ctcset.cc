@@ -10,19 +10,13 @@ namespace
 
     // Map of chrono symbols to document set
     const char Font16[] =
-        // This is supposed to be in CharSet.
-        "ABCDEFGHIJKLMNOP"   // A0
-        "QRSTUVWXYZabcdef"   // B0
-        "ghijklmnopqrstuv"   // C0
-#if 0
-        "wxyz0123456789!?"   // D0
-        "/«»:&()'.,=-+%¶ "   // E0  EE=musicsymbol
-        "¶¶å#äöéÉÅ¶¶¶¶ÖÄ_";  // F0  F0=heartsymbol, F1=..., F2=infinity
-#else
-        "wxyz0123456789ÅÄ"   // D0
-        "Ö«»:-()'.,åäöé¶ "   // E0  EE=musicsymbol
-        "¶¶%É=&+#!?¶¶¶/¶_";  // F0  F0=heartsymbol, F1=..., F2=infinity
-#endif
+     // This is supposed to be encoded in CharSet.
+     "ABCDEFGHIJKLMNOP"   // A0
+     "QRSTUVWXYZabcdef"   // B0
+     "ghijklmnopqrstuv"   // C0
+     "wxyz0123456789ÅÄ"   // D0
+     "Ö«»:-()'.,åäöé¶ "   // E0  EE=musicsymbol
+     "¶¶%É=&+#!?¶¶¶/¶_";  // F0  F0=heartsymbol, F1=..., F2=originally infinity
 }
 
 // Note: There is no more space for extra symbols in 8x8 font!

@@ -20,8 +20,9 @@ include Makefile.sets
 # VERSION 1.0.20 binpacker changes, some translation done too
 # VERSION 1.0.21 more translation, some documentation, font palette changes.
 # VERSION 1.0.22 more translation, autowrapping support, conjugation detection code
+# VERSION 1.1.0  did some assembly hacking, support for code patching
 
-VERSION=1.0.22
+VERSION=1.1.0
 ARCHFILES=xray.c xray.h \
           viewer.c \
           ctcset.cc ctcset.hh \
@@ -30,12 +31,14 @@ ARCHFILES=xray.c xray.h \
           wstring.cc wstring.hh \
           readin.cc rom.hh \
           fonts.cc fonts.hh \
+          conjugate.cc conjugate.hh \
+          symbols.cc symbols.hh \
           tgaimage.cc tgaimage.hh \
           ctdump.cc ctinsert.cc \
           ctinsert.hh writeout.cc \
           makeips.cc unmakeips.cc \
           taipus.rb progdesc.php \
-          spacefind.cc \
+          spacefind.cc base62.cc sramdump.cc \
           binpacker.tcc binpacker.hh \
           README transnotes.txt
 EXTRA_ARCHFILES=\
@@ -59,9 +62,10 @@ ctdump: ctdump.o ctcset.o miscfun.o wstring.o
 	$(CXX) -o $@ $^
 
 ctinsert: \
-		ctinsert.o miscfun.o \
+		ctinsert.o miscfun.o readin.o \
 		tgaimage.o space.o writeout.o \
-		dictionary.o fonts.o readin.o ctcset.o wstring.o
+		dictionary.o fonts.o rom.o \
+		conjugate.o symbols.o ctcset.o wstring.o
 	$(CXX) -o $@ $^ $(LDFLAGS) -lm
 
 spacefind: spacefind.o
@@ -70,6 +74,11 @@ spacefind: spacefind.o
 makeips: makeips.cc
 	$(CXX) -o $@ $^
 unmakeips: unmakeips.cc
+	$(CXX) -g -O -Wall -W -pedantic -o $@ $^
+
+sramdump: sramdump.cc wstring.o
+	$(CXX) -g -O -Wall -W -pedantic -o $@ $^
+base62: base62.cc
 	$(CXX) -g -O -Wall -W -pedantic -o $@ $^
 
 ct_eng.txt: ctdump chrono-dumpee.smc
@@ -84,6 +93,9 @@ chrono-patched.smc: unmakeips ctpatch-hdr.ips chrono-dumpee.smc
 snes9xtest: chrono-patched.smc FORCE
 	#~/src/snes9x/bisq-1.39/Gsnes9x -stereo -alt -m 256x256[C32/32] -r 7 chrono-patched.smc
 	~/snes9x -stereo -alt -y 4 -r 7 chrono-patched.smc
+
+snes9xtest2: chrono-patched.smc FORCE
+	~/snes9x -r 0 chrono-patched.smc
 
 clean: FORCE
 	rm -f *.o $(PROGS)

@@ -539,7 +539,7 @@ $3Lld:Vähentää fys. iskuja 33%:lla
 $3Llf:Taikapuolustus +10
 $3Llh:Estää «Chaos»
 $3Llj:Estää «Lock»
-$3Lll:Estää «Stop,» «Slow»
+$3Lll:Estää «Stop», «Slow»
 $3Lln:Suojaa statusta
 $3Llp:???
 $3Llr:50% nopeampi iskujen lataus
@@ -910,7 +910,7 @@ $3MVt:3x tek.
 ;monsters
 *l11;252 fixed length strings (length: 11 bytes)
 $3PJQ:Nuu        
-$3PJb:Reptite    
+$3PJb:Liskos     
 $3PJm:Terrasaur  
 $3PJx:Kilwala    
 $3PK8:Krawlie    
@@ -970,7 +970,7 @@ $3PTX:Juggler
 $3PTi:Retinite   
 $3PTt:Mage       
 $3PU4:           
-$3PUF:Reptite    
+$3PUF:Liskos     
 $3PUQ:Blue Shield
 $3PUb:Yodu De    
 $3PUm:Incognito  
@@ -1176,7 +1176,7 @@ $0j0a:Tarvike__
 $1uXg:
 ;     TÄSSÄ PISIN
 ;     **************
-$1uXi:Pormestarin kartano
+$1uXi:Pormestarin[nl]kartano
 $1uXk:Asuintalo
 $1uXm:Cronon koti
 $1uXo:Luccan koti
@@ -1216,7 +1216,7 @@ $1uYe:Vajonnut aavikko
 $1uYg:Taikaluola
 $1uYi:Maguksen maja
 $1uYk:Ozzien linnake
-$1uYm: 
+$1uYm:
 ;Elder's House
 $1uYo:Vanhimman talo
 ;Northern Ruins
@@ -1245,7 +1245,7 @@ $1uZO:Päällikön kota
 $1uZQ:Kohtauspaikka
 $1uZS:Metsäsokkelo
 ;Reptite Lair
-$1uZU:Reptite Lair
+$1uZU:Liskosluola
 ;Hunting Range
 $1uZW:Metsästystienoo
 $1uZY:Daktyylien tyyssija
@@ -1452,12 +1452,12 @@ $3WDb:Bluuurp! / Copying Dalton...
 $3WDd:Runs away when the core is lost...
 $3WDf:Absorbing energy from the core...
 $3WDh:Go! GolemBoss...???
-$3WDj:Napalm 
+$3WDj:Napalm
 $3WDl:Opposite magic attack.
 $3WDn:Wing Blow / Chaos
 $3WDp:Dalton: Take this!!!!
 $3WDr:Self-destructed!
-$3WDt:Attacks with «Lavos Spawn Needle.»
+$3WDt:Attacks with «Lavos Spawn Needle».
 $3WDv:A small current...
 $3WDx:
 $3WDz:NeedleSpin: Version 13!
@@ -1539,9 +1539,9 @@ $3WGP:Crying Heavens / Hidden blow
 $3WGR:Puolustus tippui!
 $3WGT:Minä...OLEN...
 $3WGV:Area Bomb
-$3WGX:Scouter fights all Mag but «Lightning.»
-$3WGZ:Red Scout fights all mag but «Fire.»
-$3WGb:Blue Scout fights all mag but «Water.»
+$3WGX:Scouter fights all Mag but «Lightning».
+$3WGZ:Red Scout fights all mag but «Fire».
+$3WGb:Blue Scout fights all mag but «Water».
 $3WGd:Lavos's sigh / Sleep
 $3WGf:Suolaa
 $3WGh:Shining Bit / Lightning
@@ -1595,8 +1595,8 @@ LEENE: Glenn, ole sinäkin varovainen!
 $6p1w:
 Glenn: Voikaatte hyvin, teidän majesteettinne!
 $6p1y:
-Sinäkö haluat Rohkeuden[nl]
-Mitalin, pikku ritari?[nl]
+Sinäkö haluat Rohkeuden Mitalin,[nl]
+pikku ritari?[nl]
 Sen kun yrität ottaa...[nl]
 Krroaks...
 $6p20:
@@ -1605,7 +1605,7 @@ Cyrus: Varo vain, nilviäinen![nl]
    Nirvanaisku!
 $6p22:
 KRAAAAK...![nl]
-Kuinka kehtaatkin kiusata avutonta sammakkoeläintä!
+Kuinka kehtaatkin kiusata avutonta nilviäistä!
 [pause]
 Typerä mitali![nl]
 Minä en unohda tätä!
@@ -1633,16 +1633,14 @@ Masa: Mitä nyt, Mune?
 $6p2I:
 Masa: Taasko!?
 $6p2K:
-Masa: No niin! Tekö haluatte tulla
-   tunnetuiksi Masamunen saajina?
-   Mitä pellejä!
+Masa: No niin! Tekö haluatte tulla tunnetuiksi Masamunen saajina?[nl]
+   Naurettavaa!
 $6p2M:
-Mune: Ihmiset ovat niin... hölmöjä![nl]
-   Ratkaisevaa on se, MITEN miekkaa
-   käytetään... ei se, kuka sen omistaa!
+Mune: Ihmiset ovat niin... typeriä![nl]
+   Ratkaisevaa on se, MITEN miekkaa käytetään...[nl]
+   ei se, kuka sen omistaa!
 $6p2O:
-Masa: Ette ymmärrä edes noin yksinkertaista
-   asiaa. Siksi te olettekin ihmisiä.
+Masa: Ette ymmärrä edes noin yksinkertaista asiaa. Siksipä te olettekin ihmisiä.
 $6p2Q:
 Mune: Mitäs tehdään?
 $6p2S:
@@ -1686,7 +1684,7 @@ Masa: Antakaas minun! Ratsastamme tuulella vuoren juurelle!
 $6p2w:
 Lucca: Eli tämä on siis Masamune...
 [pause]
-   Mutta näyttää siltä kuin se olisi ollut rikki ties kuinka kauan.
+   Mutta näyttää, kuin se olisi ollut rikki ties kuinka kauan.
 $6p2y:
 Robo: No niin![nl]
    Masamune ei siis ole vain myytti...
@@ -1715,7 +1713,7 @@ Te... olette ihmisiä?
 He piilottelevat kuningatarta takana. Pelastakaa hänet!
 $6p3E:
 Tässä rakennuksessa on Magukselle omistettu huone...[nl]
-Kuulin vähän sen suuntaista kuin siellä olisi jokin aarre...
+Siellä on kuulemma jokin aarre...
 $6p3G:
 Löysit salaisen Naga-ette Bromidin!
 $6p3I:
@@ -1849,7 +1847,7 @@ Lucca: Mitä ihm...!
 $6pvk:
 Robo: Älkää säikyttäkö häntä. Hän on hieman kiihkoissaan nyt.
 $6pvm:
-Marle: Ack!
+Marle: Hei!
 $6pvo:
 Lucca: Emme tulleet taistelemaan!
 $6pvq:
@@ -1888,7 +1886,7 @@ Ayla: Sinä erilainen,[nl]
 $6pwC:
 Robo: Johtuu siitä, että olen robotti.
 $6pwE:
-Ayla: «Ropotti?» Mikä se?[nl]
+Ayla: «Ropotti?» Mikä se on?[nl]
    Ayla ei tietää.
 $6pwG:
 Robo: Se on ihmisen näköinen kone.
@@ -1920,8 +1918,8 @@ Marle: Kiitos vain, mutta emme voi. Tulimme etsimään Unelmakiveä.
 $6pwc:
 Lucca: Se olisi hauskaa, mutta meidän on etsittävä Unelmakiveä nyt.
 $6pwe:
-Ayla: Kivi? Paljon kiviä![nl]
-   Siellä, täällä, kylässä![nl]
+Ayla: Kivi? Paljon kiviä.[nl]
+   Siellä, täällä, kylässä.[nl]
    Ottaa monta!
 $6pwg:
 [crononick] tule, Ioka kylä täällä.
@@ -1937,11 +1935,11 @@ $6pwo:
 Teillä oudot nahat.
 ;;;FIXME: TÄSSÄ KESKEN
 $6pwq:
-You one of Reptites?[nl]
-I beat you up!
+Sinä liskoksia?[nl]
+Piekseä sinut!
 $6pws:
-Reptites have scales, cold blood.[nl]
-Hard to beat.
+Liskoksilla on suomut, kylmä veri.[nl]
+Vaikea piekseä.
 $6pwu:
 Kaunis punainen kivi, haluatte nähdä?[nl]
 Päälliköllä on.
@@ -1954,21 +1952,22 @@ Kino-vauva löytyi vuorelta myös.[nl]
    Päällikkö kasvatti Kino.[nl]
    Nyt päällikön oikea käsi.
 $6px0:
-We fight Reptites.[nl]
-Laruba clan no fight Reptites.
+Me taistelemme liskokset.[nl]
+Laruba-klaani ei taistele liskokset.
 $6px2:
-Laruba clan hide in north woods.[nl]
-Always hide, run from Reptites.[nl]
-Weaklings!
+Laruba-klaani piileksii metsä
+pohjoisessa.[nl]
+Aina piileksii, pakenee liskokset.[nl]
+Heikkoja!
 $6px4:
-Drink Sweet Water?[nl]
-Grow strong when drink.[nl]
-      Yes.[nl]
-      No.
+Juo sulovettä?[nl]
+Juo, tulee vahva.[nl]
+      Kyllä.[nl]
+      Ei.
 $6px6:
-Rest?[nl]
-      Yes.[nl]
-      No.
+Lepää?[nl]
+      Kyllä.[nl]
+      Ei.
 $6px8:
 Kino: Mistä te tulette?[nl]
    Miksi te täällä?
@@ -1979,11 +1978,11 @@ You strange![nl]
 Have good stuff?[nl]
 Chief no okay, no can trade!
 $6pxC:
-Well come.[nl]
-   What you have?
+Tervetuloa.[nl]
+   Mitä tavaroita?
 $6pxE:
 [nl]
-              Transform!
+               Muutu!
 $6pxG:
 Tämä on kauppamaja.[nl]
 Paljon tavaraa kaupan.
@@ -2040,8 +2039,8 @@ Lucca: Oletko mies vai hiiri?![nl]
 $6pxq:
 Lucca: Rröyh!
 $6pxs:
-Lucca: Hei, et kai vain ole nyhverö?[nl]
-   Vauhtia![nl]
+Lucca: Hei, et kai vain ole[nl]
+   nyhverö? Vauhtia![nl]
       Ok.[nl]
       Ei.
 $6pxu:
@@ -2056,24 +2055,23 @@ Ayla: [crononick] kokeilee?![nl]
    Erikois-läskisoppaa![nl]
    Hyvää!!
 $6py0:
-Ayla: Ayla fight Reptites.[nl]
-   Their leader Azala.[nl]
+Ayla: Ayla taistelee liskokset.[nl]
+   Niiden johtaja Azala.[nl]
    Tosi fiksu.
 $6py2:
-Ayla: All in Ioka village fight.[nl]
-   No fight, go to Laruba village.[nl]
-   Don't know where village is.[nl]
-   Always hide.
+Ayla: Koko Ioka-kylä taistelee.[nl]
+   Ei taistelua, menkää Laruba-kylä.[nl]
+   En tiedä missä se on.[nl]
+   Aina piilossa.
 $6py4:
-   Azala want to destroy Ioka AND[nl]
-   Laruba.
+   Azala haluaa tuhota Ioka JA Laruba.
 $6py6:
    Mutta Ayla ei häviä.[nl]
    Jos Ayla kuollut, sitten luovuttaa!
 $6py8:
 Ayla: Riittää.
 $6pyA:
-   Tapaa [crononick] tänään.[nl]
+   Tapasi [crononick] tänään.[nl]
    Hyvä päivä![nl]
    Ruoka, juhla, laulu, tanssi!
 $6pyC:
@@ -2190,10 +2188,10 @@ Marle: Antaisimme sinun nukkua, mutta meiltä on
    varastettu arvokas esine
 $6pzQ:
 Ayla: M-mitä?[nl]
-   Must be Reptites!
+   Varmasti liskokset!
 $6pzS:
 Ayla: [crononick] tule Aylan kanssa![nl]
-   We settle with Reptites!
+   Selvitämme liskosten kanssa!
 $6pzU:
 Ayla: Kuka muu tulee?
 $6pzW:
@@ -2204,15 +2202,15 @@ $6pzY:
 Missä Kino?[nl]
 Koko aamu poissa.
 $6pza:
-Me saw Reptites.[nl]
-Came from meeting site.[nl]
-Went south to Forest Maze.
+Näimme liskoksia.[nl]
+Tulivat kohtauspaikka.[nl]
+Menivät etelä, Metsäsokkeloon.
 $6pzc:
 Metsäsokkelo, pelottava paikka.[nl]
-Paljon hirviö ja polku, eksyy.[l]
+Paljon hirviö ja polku, eksyy.[nl]
 Päällikkö! Ole varovainen.
 $6pze:
-Reptites strong.[nl]
+Liskokset vahva.[nl]
 Päällikkö, ota tämä.
 $6pzg:
 Jättää jalanjälkiä kun juoksee.[nl]
@@ -2223,7 +2221,7 @@ $6pzk:
 Päällikkö vahva![nl]
 Sinä vahva myös!
 $6pzm:
-Reptites no come around lately.
+Liskokset poissa hiljan.
 $6pzo:
 Ayla: Hyvä, [crononick] tulla.[nl]
    Kohta yö ja aika juhla.[nl]
@@ -2267,8 +2265,7 @@ $6q0C:
 Ayla: Antaa tavara [crononick] takaisin.[nl]
    NYT!
 $6q0E:
-Azala: But remember, WE Reptites will[nl]
-   rule the world!
+Azala: Mutta muistakaa, ME, Liskokset, kyllä vielä hallitsemme maailmaa!
 $6q0G:
 Azala: Päivänne ovat luetut!
 $6q0I:
@@ -2311,7 +2308,7 @@ $6q0i:
 Paina LRXYB tanssiaksesi![nl]
 Paina A lopettaaksesi.
 $6q0k:
-«Fang,» «Petal,» «Horn,» «Feather»...[nl]
+«Fang», «Petal», «Horn», «Feather»...[nl]
 Bring 3 each of any 2 items, I give you 1 weapon or 1 item![nl]
 What you give me?
 $6q0m:
@@ -2327,7 +2324,7 @@ Valitse kaksi erilainen!
 $6q0s:
 Sinulla ei mitään, ei kauppa!
 $6q0u:
-«Fang,» «Petal,» «Horn,» «Feather»...[nl]
+«Fang», «Petal», «Horn», «Feather»...[nl]
 Give 3 each of any 2 items, I give you 1 weapon or 1 item!
 $6q0w:
 Vielä kauppa?[nl]
@@ -2410,7 +2407,7 @@ $6q1e:
                You got a Tonic.
 $6q1g:
 Made armor from many rubies.[nl]
-10 each of «Petal,» «Fang,» «Horn,» and «Feather» for trade.
+10 each of «Petal», «Fang», «Horn», and «Feather» for trade.
 $6q1i:
 Haluaa kauppa?[nl]
       Kyllä.[nl]
@@ -2468,8 +2465,8 @@ $6q2G:
 Kino: [crononick], nyt ok?[nl]
    Ayla kiire, etsii Laruba kylä.
 [pause]
-   Fight Reptites together.[nl]
-   Destroy Reptites or we no survive.
+   Taistelee Liskokset yhdessä.[nl]
+   Tuhoaa Liskokset tai häviämme.
 $6q2I:
 Kiiiiiiinoooo!
 $6q2K:
@@ -2479,46 +2476,46 @@ Kino: Mitä nyt?[nl]
 $6q2M:
 Pohjoinen metsä palaa!!
 $6q2O:
-Chief look for Laruba village in north[nl]
-wood!![nl]
-Chief okay?
+Päällikkö katsoo Laruba kylä
+pohjoinen metsässä!![nl]
+Päällikkö ok?
 $6q2Q:
-Red star in sky.[nl]
-See during daytime!
+Punainen tähti taivaalla.[nl]
+Näkyy päivällä!
 $6q2S:
-Red star grow strong![nl]
-Bad sign...
+Punainen tähti vahvenee![nl]
+Paha merkki...
 $6q2U:
-Saw Reptites follow chief![nl]
-Went north wood!
+Näkyi liskokset seuraa päällikköä![nl]
+Meni pohjoinen metsä!
 $6q2W:
-Hear weird cry in lava field to east.[nl]
-Never hear before.
+Kuuli outo kiljunta laavakentällä.[nl]
+Ei koskaan ennen.
 $6q2Y:
-Weird thing appear in lava field.[nl]
-Must be Azala![nl]
-But flying Dactyl go anywhere.
+Outo uusi esine laavakentällä.[nl]
+Varmaan Azala![nl]
+Mutta Dactyl lentää vaikka minne.
 $6q2a:
 Kauppiaalla uusia aseita![nl]
 Menkää, katsokaa.
 $6q2c:
-Laruba clan call Dactyl.[nl]
-Fly in sky![nl]
-We no can call Dactyl, no can fly.
+Laruba-klaani kutsuu Dactyl.[nl]
+Lentää taivaalla![nl]
+Me ei voi kutsua, ei voi lentää.
 $6q2e:
-Find «Petal,» «Fang,» «Horn,» and «Feather,» in hunting range!
+Find «Petal», «Fang», «Horn», and «Feather», in hunting range!
 [pause]
-When rain, rare monster appear!
+Sataa, niin outoja hirviöitä ilmestyy!
 $6q2g:
-Strong one become chief.[nl]
-Man, woman, child, no matter.[nl]
-Chief of Ioka, big muscles!
+Vahva tulee päällikkö.[nl]
+Mies, nainen, lapsi, ei väliä.[nl]
+Iokan päällikkö, isot muskelit!
 $6q2i:
 [nl]
-               Recover HP/MP!
+               HP/MP palautuu!
 $6q2k:
-Thunder stun all dinosaur![nl]
-You know?
+Ukkonen jähmettää dinosaurus![nl]
+Te tiesi?
 $6q2m:
 Want to know items?[nl]
       Kyllä.[nl]
@@ -2551,70 +2548,70 @@ I tell you something good.
 «Ruby Vest» strong against fire.[nl]
 No get burn while wear!
 $6q2s:
-Reptites gone![nl]
-Happy happy!
+Liskokset pois![nl]
+Ilo, riemu !
 $6q2u:
-All relieved.[nl]
-Peace good.[nl]
-Everyone happy.
+Kaikki helpottunut.[nl]
+Rauha hyvä.[nl]
+Kaikki iloisia.
 $6q2w:
-Red star fall...bad omen.[nl]
-But Reptites gone![nl]
-Happy!
+Punainen tähti tippui...[nl]
+Paha merkki. Mutta liskokset pois![nl]
+Riemu!
 $6q2y:
-Red Star![nl]
-Me saw![nl]
-Big fire where Lavos fall.[nl]
-Me scared!
+Punainen tähti![nl]
+Minä näin![nl]
+Iso tuli missä Lavos tippui.[nl]
+Minä pelkäsin!
 $6q30:
-No more Reptites![nl]
-   Happy happy, joy joy.
+Liskokset loppu![nl]
+   Oi ilo, oi riemu.
 $6q32:
-Reptites gone!
+Liskokset poissa!
 $6q34:
-Praise strong chief, and [crononick]!
+Ylistää vahva päällikkö, ja [crononick]!
 $6q36:
-Kino: Did good![nl]
-   Take time, rest.
+Kino: Teki hyvin![nl]
+   Levätä rauhassa.
 $6q38:
 Kino: Ayla!![nl]
    Ayla ok?[nl]
    Kino ok!
 $6q3A:
-Kino: Lavos fall.[nl]
-   Reptites gone. Good![nl]
-   But get cold now.[nl]
-   Hunting bad...
+Kino: Lavos tippui.[nl]
+   Liskokset pois. Hyvä![nl]
+   Mutta tulee kylmä.[nl]
+   Huono metsästää...
 $6q3C:
-   But Kino not give up![nl]
-   Ayla no worry, leave to Kino!
+   Mutta Kino ei luovuta![nl]
+   Ayla ei huolehdi, Kino hoitaa!
 $6q3E:
-Ayla quit chief.[nl]
-   Kino now chief.
+Ayla ei enää päällikkö.[nl]
+Kino nyt päällikkö.
 $6q3G:
-Bright fire, Lavos, fall.[nl]
-   Get cold now.
+Kirkas tuli, Lavos, tippui.[nl]
+Nyt kylmä.
 $6q3I:
 Brr![nl]
-   Cold!
+Kylmä..!
 $6q3K:
-Less monster, now cold.[nl]
-   Less animal too.
+Vähemmän hirviö, nyt kylmä.[nl]
+Vähemmän eläimiä myös.
 $6q3M:
-No more Sweet Water.[nl]
-   Never happen before.
+Sulovesi loppui.[nl]
+Ei koskaan ennen.
 $6q3O:
-Found strange rock![nl]
-   But feel icky when touch, so throw away.
+Löysi outo kivi![nl]
+Koski, tuntui outo, siis heitti pois.
 $6q3Q:
-Thankful for Ioka.[nl]
-   When village burn, they take us in.
+Ioka hyvä, Ioka kiitos.[nl]
+Kun kylä paloi, he ottaa meidät.
 $6q3S:
-Many cloud in sky.[nl]
-   No can see sun.
+Pilviä taivas täynnä.[nl]
+Aurinko ei näy.
 $6q3U:
-I peek inside trader shop.[nl]
-   New item there!
+Katsoo kauppamajaa.[nl]
+Uusi tavara siellä!
 $6q3W:
 Valkoinen, kylmä aine, tippuu taivaalta.[nl]
 Mitä se on?
@@ -2631,7 +2628,7 @@ Info [num16][nl]
 $8SFm:
 Näyttää patsaalta.
 [pause]
-   Siinä on lappu.
+Siinä on lappu.
 [pause]
 Varoitus.[nl]
 Robotit hyökkäävät varastohuoneeseen tunkeutuvien kimppuun!
@@ -2677,7 +2674,7 @@ Marle: Siemen? Voisiko se kasvaa tällaisessa paikassa?
 $8SG6:
 Nuhruisessa paperissa on seuraava teksti...
 [pause]
-   Rotta ei ole pelkästään patsas![nl]
+   Rotta ei ole pelkkä patsas![nl]
    Se tietää kupolin salaisuuden.[nl]
    Pyydystä se!
 $8SG8:
@@ -2721,55 +2718,42 @@ $8SGQ:
    Minä olen Belthasar, Järjen Guru.[nl]
    Asuin kerran Zealin valtakunnassa.
 [pause]
-   Valtava katastrofi Zealissa kuitenkin
-   siirsi minut tähän aikakauteen.
+   Valtava katastrofi Zealissa kuitenkin siirsi minut tähän aikakauteen.
 [pause]
-   Yllätyksekseni, Lavos on täällä olemassa,
-   ja, arvelen, muissakin aikakausissa
-   samoin. Aikakausia sitten Lavos
+   Yllätyksekseni, Lavos on täällä olemassa, ja, arvelen,
+   muissakin aikakausissa samoin. Aikakausia sitten Lavos
    laskeutui taivaista.
 [pause]
-   Möyrien syvälle maailman ytimeen, se
-   alkoi syödä planeettamme energiaa
-   ja vahvistua.
+   Möyrien syvälle maailman ytimeen, se alkoi
+   syödä planeettamme energiaa ja vahvistua.
 $8SGS:
-   Lavos katosi hetkeksi, kun
-   eräs 600-luvulla Guardiassa elänyt
+   Lavos katosi hetkeksi, kun eräs 600-luvulla Guardiassa elänyt
    velho kutsui sen pois.
 [pause]
-   In 1999, Lavos claims this area, and[nl]
-   reigns from high atop Death Peak.
+   In 1999, Lavos claims this area, and reigns from high atop Death Peak.
 [pause]
    Lavos jatkaa monistumista...[nl]
-   kuin valtava loinen, se kuluttaa
-   maailmaamme.
+   kuin valtava loinen, se kuluttaa maailmaamme.
 $8SGU:
-   Pakotettuna elämään täällä, jatkoin
-   tutkimustani Lavoksesta.[nl]
+   Pakotettuna elämään täällä, jatkoin tutkimustani Lavoksesta.[nl]
    Mutta väistämättä ikäännyn.
 [pause]
-   On mahdotonta pysyä järjissään
-   näin koettelevina aikoina. Joten
-   vielä kun pystyn, varmuuskopioin
-   tietoni, ja suurimman teokseni...
+   On mahdotonta pysyä järjissään näin koettelevina aikoina. Joten
+   vielä kun pystyn, varmuuskopioin tietoni, ja suurimman teokseni...
 $8SGW:
    Kuinka ikävöinkään kotiani...[nl]
    Mutta olen jo heikko...
 [pause]
-   Joten te... TE, ketkä avasitte
-   tämän oven![nl]
+   Joten te... TE, ketkä avasitte tämän oven![nl]
    Jätän asian teidän käsiinne.
 [pause]
-   Vain hallitsemalla itse aikaa,
-   on teillä mahdollisuuksia
-   Lavosta vastaan.
+   Vain hallitsemalla itse aikaa, on teillä mahdollisuuksia Lavosta vastaan.
 $8SGY:
    Mahdollisuudet ovat pienet...[nl]
    Mutta olette todellisia sankareita.[nl]
    Maailma on teidän käsissänne.
 [pause]
-   Nyt avatkaa viimeinen ovi, ja
-   ottakaa, mitä sieltä löydätte.[nl]
+   Nyt avatkaa viimeinen ovi, ja ottakaa, mitä sieltä löydätte.[nl]
    Viimeinen keksintöni...
 [pause]
    «Ajan siivet» ...
@@ -2788,9 +2772,8 @@ Ayla: !!
 [pause]
    Mikä tämä esine?
 $8SGk:
-Outo vaakuna on kaiverrettuna[nl]
-tässä. Jokin tuntematon voima[nl]
-pitää sen sinetöitynä.
+Outo vaakuna on kaiverrettuna tässä.
+Jokin tuntematon voima pitää sen sinetöitynä.
 $8SGm:
 Riipus kimmeltää..!
 $8SGo:
@@ -2846,7 +2829,7 @@ Outo otus: Ohjeet aikakoneen käyttöön ovat seuraavanlaiset.
 [pause]
    A-napilla kuljette laitteeseen ja pois siitä, sekä matkaatte ajan halki.
 [pause]
-   Professorin viestin loppu. 
+   Professorin viestin loppu.
 $8SH6:
 Outo otus: Kirjoita aikakoneen nimi.
 $8SH8:
@@ -2900,8 +2883,8 @@ Vartija: !
 $8SHc:
 Herra Krawlie: Täh?
 $8SHe:
-Shut up![nl]
-   Get lost!
+Turpa kiinni![nl]
+Häivy siitä!
 $8SHg:
 Vuoret ovat kivoja.
 $8SHi:
@@ -2930,8 +2913,8 @@ Azala: No niin... olette viimeinkin
    täällä. Tämä se nyt on. Tämä
    taistelu määrää lopputuloksen.
 [pause]
-   Will it be the Reptites, or you silly
-   apes who end up ruling the world?
+   Ovatko ne liskokset, vai tyhmät apinat,
+   jotka päätyvät hallitsemaan maailmaa?
 $8SHw:
 Ayla: Vahvat selviytyvät.[nl]
    Ayla vahva.[nl]
@@ -2943,8 +2926,9 @@ $8SI0:
 Azala: Ei... ei voi olla! Voiko tosiaan olla,
    että taivaat ovat apinoiden puolella?
 [pause]
-   Listen, primates, and let it be known. We
-   Reptites fought bravely to the bitter end!
+   Kuulkaas, alkueläimet, tulkoon se tietyksi.
+   Me liskokset taistelimme rohkeasti
+   kirpeään loppuun saakka!
 $8SI2:
 Ayla: Ayla ymmärtää...
 $8SI4:
@@ -2963,11 +2947,11 @@ Azala: Kohta täällä sataa tulikiveä.
 $8SI8:
 Ayla: Lavos...
 $8SIA:
-Marle: Anteeksi mitä?
+Marle: Anteeksi mitä sanoit?
 $8SIC:
 Lucca: La...Lavos!?
 $8SIE:
-Robo: Lavos...Mahdotonta!
+Robo: Lavos..? Mahdotonta!
 $8SIG:
 Ayla: Aylan sana.[nl]
    «La» on tuli.[nl]
@@ -2991,8 +2975,7 @@ Ayla: Tule![nl]
    Azala![nl]
    Tule!
 $8SIW:
-Azala: Ei missään tapauksessa
-   käy päinsä! Voimat ovat puhuneet.
+Azala: Ei missään tapauksessa käy päinsä! Voimat ovat puhuneet.
 $8SIY:
 Ayla: ...
 $8SIa:
@@ -3010,36 +2993,36 @@ Ayla: Tulevaisuus?[nl]
 $8SIi:
 Azala: Me... meillä ei ole tulevaisuutta.
 $8SIk:
-NIZBEL: Azala's in the back.
+Nizbel: Azala on takana.
 $8SIm:
-NIZBEL: Hold it.
+Nizbel: Odottakaas.
 [pause]
-   This is a special place.[nl]
-   The great Nizbel was defeated here!
+   Tämä on erityinen paikka.[nl]
+   Suuri Nizbel kukistettiin täällä!
 $8SIo:
-NIZBEL: Well, well!
+Nizbel: Noh, noh!
 [pause]
-   Out for a little stroll, are we?
+   Pienellä kävellylläkö sitä ollaan?
 $8SIq:
-UNDERLING: Press the switch, and the bridge opens, ribbit!
+Käskyläinen: Paina kytkintä, ja silta aukeaa, kroak!
 $8SIs:
-BOSS: So, switch on, gribbit!
+Pomo: Eli, kytkin päälle, krroaak!
 $8SIu:
-UNDERLING: Riiiiiiiiibit!
+Käskyläinen: kroaaaaak!
 [pause]
-   It's out of reach, ribbit!
+   En yletä, kroak!
 $8SIw:
-BOSS: And you call yourself a frog, ribbit, GRIBBIT!
+Pomo: Ja sinä kutsut itseäsi sammakoksi, kroak, KROAAK!
 $8SIy:
-There's a diary.[nl]
-Here's the last page.
+Tämä on päiväkirja.[nl]
+Tässä sen viimeinen sivu.
 [pause]
-It's all over.[nl]
-The fishmen attack if I make even the[nl]
-slightest noise.
+   «Kaikki on ohi.
+   Kalamiehet hyökkäävät jos pidän
+   vähääkään ääntä.
 [pause]
-I'd rather have my gums scraped than[nl]
-have to fight these fiends.
+   Katkoisin mieluummin käteni kuin
+   tappelisin näitä piruja vastaan».
 $8SJ0:
 Outo otus: Ömmömmm?[nl]
       Matkaan.[nl]
@@ -3058,48 +3041,52 @@ $8SJC:
 Magus: Lähdemme.
 $8SJE:
 [nl]
-             Found 1 [item]!
+             Löytyi 1 [item]!
 $8SJG:
 [nl]
                1 [item] saatu!
 $8SJI:
 Outo otus: Toimitan teille viestin professorilta.
 $8SJK:
-Belthasar: On «Death Peak» you will find the power to restore life.
+Belthasar: «Kuolemankärjeltä» löydätte voiman palauttaa elämän.
 [pause]
-   But to activate this power, the deceased
-   must be important to the space-time continuum.
+;FIXME: "must be _important_ to the", onko tämä oikein?
+   Mutta jotta voima voidaan aktivoida, kuolleen
+   pitää olla tärkeä aika-avaruus -jatkumolle.
 [pause]
-   And you MUST have a clone identical to that person.
-   Only then, can a Chrono Trigger work its magic...
+   Ja teillä on ehdottomasti oltava klooni, joka on
+   täysin identtinen henkilön kanssa! Vain tällöin
+   Chrono Trigger voi suorittaa taikansa...
 $8SJM:
-Belthasar: Enough.
+Belthasar: Riittää.
 [pause]
-   The time has come for you to attempt
-   «Death Peak.» It's the only chance
-   you have of reviving your friend.
+   Teidän on nyt aika yrittää «Kuolemankärkeä».
+   Se on ainoa mahdollisuutenne herättää ystävänne
+   henkiin.
 [pause]
-   The last program I've implanted in this creature's
-   memory banks will help you up the mountain. Stand back.
+   Viimeinen tämän olennon muistipankkeihin istuttamani
+   ohjelma auttaa teitä vuorella. Väistäkää.
 $8SJO:
-Belthasar: Without the Clone, there's no point in going to «Death Peak!» Now, scram!
+Belthasar: Ilman kloonia, «Kuolemankärjelle» on aivan
+   hyödytöntä yrittää mennä!
 $8SJQ:
-Belthasar: Need a Clone? The magician, Nolstein Bekkler
-   could whip one up in the wink of an eye.
+Belthasar: Tarvitsette kloonin? Maagi Nolstein Bekkler
+   voi järjestää teille sellaisen tuossa tuokiossa.
 [pause]
-   Bekkler loves festivals. Find a festival,
-   and there, too, you shall find Bekkler!
+   Bekkler rakastaa festivaaleja. Kun löydätte jostain
+   sellaisen, löydätte sieltä myös Bekklerin!
 $8SJS:
 Suoritetaan ohjelma!
 $8SJU:
-Belthasar: The 3 entities you saw will help you climb «Death Peak.»
+Belthasar: Näkemänne kolme asiaa auttavat teitä
+   «Kuolemankärjelle» kiipeämisessä.
 [pause]
-   This ends my message.
+   Viestini loppuu tähän.
 [pause]
-   Now I must ask you for a favor.
+   Pyytäisin teiltä vielä palvelusta.
 [pause]
-   This creature has executed its program. Please
-   let him sleep. The switch is on his stomach.
+   Tämä olento on suorittanut ohjelmansa loppuun.
+   Antakaa sen nukkua. Kytkin on mahassa.
 $8SJW:
 Sammutatko otuksen?[nl]
       Kyllä.[nl]
@@ -3509,10 +3496,10 @@ Marle looks so much like Leene,
 [pause]
 But if the real Queen is killed...
 $8UcS:
-... Marle will simply disappear.[nl]
-   There might still be time![nl]
-   If we can save Leene, history as we
-   know it should remain unchanged!
+... Marle vain katoaa.
+   Mutta ehkä asialle voi tehdä jotain!
+   Jos pelastamme Leenen, tuntemamme
+   historia voi pysyä muuttumattomana!
 $8UcU:
 My son's the legendary Hero!
    It must have been all that oatmeal!
@@ -3520,7 +3507,7 @@ My son's the legendary Hero!
 $8UcW:
 TATA: I...I'm sorry everyone. Some frog guy dropped this in a cafe.
 [pause]
-   I thought I'd sell it, but then everyone started calling me a «Hero.»[nl]
+   I thought I'd sell it, but then everyone started calling me a «Hero».[nl]
    I couldn't bear to get rid of it!
 $8UcY:
    I just can't fake it any longer. I'm no Hero...! I'm so ashamed! Here.[nl]
@@ -3540,9 +3527,8 @@ My grandson's a brave Hero!
 $8Uci:
 Oh, my grandson!
 [pause]
-He secretly told me, «My next goal is to[nl]
-command the Super Legendary Space[nl]
-Ship, XR-RX!»[nl]
+He secretly told me, «My next goal is to command
+the Super Legendary Space Ship, XR-RX!»[nl]
 Hahahahaha!!
 $8Uck:
 [nl]
@@ -3742,9 +3728,8 @@ $8Ues:
               Got a Speed Tab!
 $8Ueu:
 Toma's crumpled note:[nl]
-«Those holes! What if I jump into them[nl]
-on purpose? Yes![nl]
-I'll start back at the beginning, and...»
+«Those holes! What if I jump into them on purpose? Yes!
+I'll start back at the beginning, and..».
 
 
 ;Treasure box messages
@@ -3796,8 +3781,8 @@ $F1Io:
 Lucca: Did I make it back...to that moment?
 $F1Iq:
 «6/24/990AD[nl]
-Dad promised to go hiking with me, but[nl]
-blew me off again, due to his work. I[nl]
+Dad promised to go hiking with me, but
+blew me off again, due to his work. I
 hate science! I loathe it!»
 $F1Is:
 LARA: What IS this thing?[nl]
@@ -3822,8 +3807,7 @@ LARA: Oh no...![nl]
    Help!![delay 04][delay 00]
 $F1J2:
 7/1/990 AD[nl]
-I wish I hadn't heard what the doctor[nl]
-told dad.
+I wish I hadn't heard what the doctor told dad.
 [pause]
 Mommie's legs...they're...
 $F1J4:
@@ -3834,8 +3818,7 @@ If only I...
 $F1J6:
 7/2/990 AD[nl]
 I feel like I've learned something![nl]
-I'll study machines now. There'll be no[nl]
-more accidents around here.
+I'll study machines now. There'll be no more accidents around here.
 $F1J8:
 Enter password.
 $F1JA:
@@ -3945,7 +3928,7 @@ $F1KO:
 To use the crane, enter any two of[nl]
 these letters, A B X Y, after the beep.
 $F1KQ:
-Last defense lock code named «ZABIE.»[nl]
+Last defense lock code named «ZABIE».[nl]
 Translation...XABY.
 [pause]
 That's X A B Y.
@@ -4086,7 +4069,7 @@ Kuningas: Your mother...[nl]
    «Someday when Nadia grows up, she will bring her beloved to meet you.[nl]
    Welcome him warmly.
 [pause]
-   It will be a day you remember forever.»
+   It will be a day you remember forever».
 $F1Lg:
 Marle: You...heard her last words?
 [pause]
@@ -4557,7 +4540,7 @@ $F7gs:
 [pause]
    Kello on jo paljon, Crono.[delay 0E][delay 00]
 $F7gu:
-Äiti: Aika nousta ylös. Tule pian alas.[delay 09][delay 00]
+Äiti: Aika nousta ylös. Tule pian alakertaan.[delay 09][delay 00]
 $F7gw:
 Crono...
 [pause]
@@ -4565,7 +4548,9 @@ Crono!
 [pause]
 Herää, Crono!
 $F7gy:
-Äiti: Huomenta, Crono!
+Äiti: Huomenta, Crono![nl]
+   a=«Cronoa» n=«Cronon» lle=«Cronolle»
+   lla=«Cronolla» sta=«Cronosta»
 $F7h0:
 Äiti: Aah, Leenen kello se soi vaan niin ihanasti!
 $F7h2:
@@ -4574,7 +4559,7 @@ $F7h2:
 [pause]
    Kello on jo paljon, Crono.
 $F7h4:
-Äiti: Aika nousta ylös. Tule pian alas.
+Äiti: Aika nousta ylös. Tule pian alakertaan.
 $F7h6:
 Äiti: Viimeinkin![nl]
    Muuten, se sinun keksijäystäväsi...[nl]
@@ -4662,8 +4647,8 @@ $F7hu:
 $F7hw:
 Äiti: Älä pelottele tuolla tavoin!
 $F7hy:
-Äiti: Oi, katsos vain! Olen nähnyt sinun vain Luccan
-   seurassa! Kuka on tämä kaunis uusi ystäväsi?
+Äiti: Oi, katsos vain! Olen nähnyt sinut aiemmin
+   vain Luccan seurassa! Kuka on tämä kaunis uusi ystäväsi?
 $F7i0:
 Marle: Hei, olen Marle!
 $F7i2:
@@ -4734,7 +4719,7 @@ Ayla: [crononick] vahva...
 [pause]
    [crononick] äiti vahva myös!
 $F7ig:
-Äiti: O.. oletko sinä Cronon ystäviä?
+Äiti: O-oletko sinä Cronon ystäviä?
 $F7ii:
 Magus: ...
 $F7ik:
@@ -4836,10 +4821,10 @@ $F7jY:
 Why is there a different guard on duty[nl]
 at the castle every time I go there?
 $F7ja:
-Hi![nl]
-Do you know about our establishment?[nl]
-      No.[nl]
-      Yes.
+Tervetuloa![nl]
+Tiedätkö mikä tämä talo on?[nl]
+      En.[nl]
+      Kyllä.
 $F7jc:
 This is the Mayor's Education Center.[nl]
 Think of it as a workshop for[nl]
@@ -4847,9 +4832,9 @@ beginners!
 [pause]
 You can take the things you find here!
 $F7je:
-Scattered throughout this world are[nl]
-places where you can save your game.[nl]
-Save whenever you can, especially in[nl]
+Scattered throughout this world are
+places where you can save your game.
+Save whenever you can, especially in
 unfamiliar or dangerous areas!
 $F7jg:
 That's just a replica. Record your[nl]
@@ -4954,7 +4939,7 @@ Blind[nl]
    It's hard to hit enemies!
 $F7kK:
 Lock[nl]
-   Can't use any «Techniques.»
+   Can't use any «Techniques».
 $F7kM:
 Stop[nl]
    Immobilizes and disables you.
@@ -4962,7 +4947,7 @@ $F7kO:
 In these situations your guard is down,[nl]
 and you'll sustain more damage.
 [pause]
-Use «Heal,» or wait until the battle[nl]
+Use «Heal», or wait until the battle[nl]
 ends to heal automatically.
 $F7kQ:
 Would you like to hear more?[nl]
@@ -4988,7 +4973,7 @@ power.
 The higher the number, the greater the[nl]
 power.
 [pause]
-«M. Def.» indicates your ability to block[nl]
+«M. Def». indicates your ability to block[nl]
 magic attacks. If it's 10, then magic[nl]
 damage will be reduced by 10%.
 [pause]
@@ -5184,13 +5169,13 @@ Marle: Enough with the false modesty!
 $F7mM:
 Lucca: Well, if you say so...
 $F7mO:
-Lucca: Anyway, I call this thing a «Gate.»
+Lucca: Anyway, I call this thing a «Gate».
 $F7mQ:
    It's a kind of portal, that takes you to the same location in a different era.
 $F7mS:
    Gates are very unstable, so I used the principal behind my Telepod device...
 $F7mU:
-Lucca: ...to create a «Gate Key.» Now we can use them as we please.
+Lucca: ...to create a «Gate Key». Now we can use them as we please.
 $F7mW:
 Marle: But why did this Gate suddenly appear?
 $F7mY:
@@ -5216,7 +5201,7 @@ The legendary Hero has appeared!
 He went to see the King.[nl]
 Now Magus's army hasn't a chance!
 $F7mm:
-Wearing the «Hero Medal,» the chosen[nl]
+Wearing the «Hero Medal», the chosen[nl]
 one has appeared![nl]
 We're saved!
 $F7mo:
@@ -5481,7 +5466,7 @@ ROBOT: Mo......
    Good morning, mistress.[nl]
    What is your command?
 $F7pE:
-Marle: I'm not your «mistress.»[nl]
+Marle: I'm not your «mistress».[nl]
    I'm Marle!
 $F7pG:
    ...and this is Crono...
@@ -6214,7 +6199,7 @@ south through the Sewer Access,[nl]
 but stay off of «Death Peak.
 $FCZa:
 There's an old man living in a dome[nl]
-near «Death Peak.»[nl]
+near «Death Peak».[nl]
 Talk about crackpots!
 $FCZc:
 Did you really come from the dome to[nl]
@@ -6402,6 +6387,7 @@ $FCbi:
 Vanhus: Kun neljä tai useampi olento astuu aikaporttiin,
    Ajan säilymislain mukaan he päätyvät...
 [pause]
+;FIXME: "of the least _resistance_".. onko tämä oikein?
    ...aika-avaruuden koordinaatteihin, jossa on vähiten asutusta. Eli tänne.
 [pause]
    Häiriöt aika-avaruudessa ovat hiljan yleistyneet. Liikaa väkeä hyppii tänne...
@@ -7306,11 +7292,11 @@ Spekkio: You are strong of will...!
    Lightning, Fire, Water, & Shadow.
 $FCkQ:
 Spekkio: You, with the punk hairdo![nl]
-   You're «Lightning.»
+   You're «Lightning».
 $FCkS:
-Spekkio: The one with the ponytail is «Water.»
+Spekkio: The one with the ponytail is «Water».
 $FCkU:
-Spekkio: The one with goofy glasses is «Fire.»
+Spekkio: The one with goofy glasses is «Fire».
 $FCkW:
 Spekkio: That's the biggest toy I've ever seen...[nl]
    Hey, you're not alive, are you?!
@@ -7324,7 +7310,7 @@ Spekkio: That's the biggest toy I've ever seen...[nl]
 $FCkY:
 Spekkio: Not just magic, but EVERYTHING is based on the balance of these 4 powers.
 $FCka:
-Spekkio: Think «MAGIC,» and, starting from the door,
+Spekkio: Think «MAGIC», and, starting from the door,
    walk clockwise along the walls of my room 3 times.
 [pause]
    Don't lose track, now.
@@ -7687,7 +7673,7 @@ $FCoY:
 Robo: It's enormous![nl]
    I'm picking up a tremendous amount of spiritual power!
 $FCoa:
-Frog: Valtameripalatsi noussut on?[l]
+Frog: Valtameripalatsi noussut on?[nl]
    Se varmasti meitä kutsuu!
 $FCoc:
 Ayla: Me hate![nl]
@@ -8627,7 +8613,7 @@ the shoes of his predecessor, Sir Cyrus,[nl]
 Commander of the Knights.
 $FCze:
 Those two are brothers. You've heard[nl]
-the expression, «sibling rivalry,» right?
+the expression, «sibling rivalry», right?
 $FCzg:
 My husband chose this life because he's[nl]
 a pacifist.
@@ -8783,7 +8769,7 @@ Marle: Crono, you wouldn't have[nl]
       Wrong!
 $FD14:
 Marle: See?[nl]
-   I like Marle better than «Princess,» anyway!
+   I like Marle better than «Princess», anyway!
 $FD16:
 Marle: Oh, Crono![nl]
    That's why I like you!
@@ -12005,7 +11991,7 @@ $FrXe:
 Magus's lair is on an island to the east.[nl]
 Sheer cliffs make it inaccessible.
 $FrXg:
-Only the ancient sword, «Masamune,» can defeat him.[nl]
+Only the ancient sword, «Masamune», can defeat him.[nl]
 And only the Hero can wield it!
 $FrXi:
 Behold...!
@@ -12018,7 +12004,7 @@ The Hero has come!
 [pause]
 He's strong and he's gonna thrash those monsters!
 $FrXm:
-HEADMAN: I want you to find the mythical «Rainbow Shell.»
+HEADMAN: I want you to find the mythical «Rainbow Shell».
 [pause]
    Here's some front money.[nl]
    We're counting on you Toma!
@@ -12539,7 +12525,7 @@ How eerie...
 $Frca:
 They say that Gaspar, the Guru of Time, continues his work on some deserted island.
 [pause]
-He's making a «Chrono Trigger» or «Time Egg,» or something.[nl]
+He's making a «Chrono Trigger» or «Time Egg», or something.[nl]
 But no one has seen him for ages.
 $Frcc:
 Even Belthasar is gone, after designing the Blackbird and the Ocean Palace.
@@ -12699,7 +12685,7 @@ Lucca: Heh, heh...[nl]
    Even a door of this caliber can't keep science at bay!
 $Fre4:
 Robo: There is no doubt.[nl]
-   Marle's pendant is made of the «Guru's Rock.»
+   Marle's pendant is made of the «Guru's Rock».
 $Fre6:
 Frog: What doth challenge us now?
 $Fre8:
@@ -13262,8 +13248,8 @@ Marle: Something doesn't look right...
 $GhKA:
 Marle: Let's return to the castle!
 $GhKC:
-Wahhh![nl]
-Where's my cat?!!
+Yäääh![nl]
+Minne kissani on kadonnut?
 $GhKE:
 Sinä palautit kisuni![nl]
 Kiitos tosi paljon!
@@ -13323,12 +13309,12 @@ $GhKm:
 Impressive![nl]
 I'll put 1 Silver Point on your card!
 $GhKo:
-Mitä...![nl]
-Sehän on... se riipus..!
+Mitä ihmettä...[nl]
+Tuohan on se riipus...
 [pause]
 Tuota, en minä voi tuota ostaa![nl]
 Se on... aivan liian erityinen![nl]
-Pitäkää se tallessa!
+Pitäkää se hyvässä tallessa!
 $GhKq:
 Ostatko jotain aseseppä Melchiorilta?
 [pause]
@@ -13494,8 +13480,8 @@ Näkemiin.
 $GhMO:
 Typerää hömpötystä tällainen juhla.[nl]
 Haluatko kuulla yhden jutun?[nl]
-      Kyllä.[nl]
-      En.
+      En.[nl]
+      Kyllä.
 $GhMQ:
 Ei sitten.
 $GhMS:
@@ -13511,6 +13497,7 @@ $GhMY:
 Taban: Ja laite siirtää samassa tänne![nl]
    Tämä on kauniin tyttäreni, Luccan, mestariteos.
 $GhMa:
+;-han -pääte ei vaadi taivutusta
 Taban: Haluatko kokeilla, poika?[nl]
    ...Ai katsos, Cronohan siinä!
 $GhMc:
@@ -13543,12 +13530,12 @@ $GhMq:
 Marle: Vau mikä laite![nl]
    Minäkin haluan kokeilla!
 $GhMs:
-Lucca: Oho?
+Lucca: Kas?
 $GhMu:
 Lucca: Hei Crono, mistä sinä tuollaisen söpöliinin löysit?
 $GhMw:
 Marle: Odota siinä, Crono![nl]
-   Olen siellä ihan kohta!
+   Palaan tuossa tuokiossa!
 $GhMy:
 Taban: Katsokaa, naiset ja herrat, kun tämä
    kauneuden kuvastuma astuu tähän laitteeseen!
@@ -13559,7 +13546,7 @@ $GhN2:
 Taban: Oletko aivan varma..?[nl]
    Voit vielä muuttaa mieltäsi!
 $GhN4:
-Marle: Totta kai![nl]
+Marle: Totta kai olen varma![nl]
    Kääntäkää vipua!
 $GhN6:
 Taban: Ok, antakaa kaikki suuret aplodit, kun hän palaa!
@@ -13571,7 +13558,7 @@ $GhNC:
 Marle: Mitä nyt tapahtuu?[nl]
    Tämä riipus... se...
 $GhNE:
-Lucca: Hän näyttää niin tutulta![nl] 
+Lucca: Hän näytti niin tutulta![nl]
    Olen VARMASTI nähnyt hänet jossain...
 $GhNG:
 Lucca: Täh?
@@ -13592,7 +13579,7 @@ $GhNS:
 Taban: Mitä ihmettä tapahtui, Lucca?[nl]
    MINNE SE TYTTÖ KATOSI?
 $GhNU:
-Lucca: Hän katosi sillä tavoin...[nl]
+Lucca: Tuo tapa, miten hän katosi...[nl]
    Syynä ei mitenkään voinut olla siirtäjä...
 [pause]
    Siirtokenttä näytti jotenkin reagoivan
@@ -13606,7 +13593,7 @@ $GhNa:
 Lucca: Crono!
 $GhNc:
 Taban: Meinaatko oikeasti tehdä sen?![nl]
-   Miten hieno nuorukainen!
+   Miten jalo nuorukainen!
 $GhNe:
 Lucca: Kuuntele![nl]
    Minä en tiedä, minne tämä laite sinut lähettää,
@@ -13615,7 +13602,7 @@ Lucca: Kuuntele![nl]
 Taban: Etteivät he molemmat katoa?
 [pause]
 Lucca: Riipus on ainoa johtolanka, mikä
-   meillä on! Pidä Crono siitä kiinni!
+   meillä on! Pidä kiinni siitä, Crono!
 $GhNg:
 Lucca: Tehot täysille!
 $GhNi:
@@ -13627,7 +13614,7 @@ $GhNm:
 Lucca: No niin![nl]
    Onnistuimme!
 $GhNo:
-Lucca: Seuraan sinua, kun tiedän mikä meni pieleen.[nl]
+Lucca: Seuraan sinua sitten kun tiedän, mikä meni pieleen.[nl]
    Onnea matkaan, Crono!
 $GhNq:
 Marle: Fiuh![nl]
@@ -13656,7 +13643,7 @@ Katso millaiset lasit tuolla tytöllä on!
 $GhO6:
 Hän varmaan näkisi niillä kuun takapuolenkin.
 $GhO8:
-Vau!
+Yllättävää!
 $GhOA:
 Luccan keksinnöt eivät koskaan toimi kunnolla.
 $GhOC:
@@ -13681,7 +13668,7 @@ Kansleri: Te, hyvät valamiehistön jäsenet, päätätte hänen kohtalonsa.[nl]
 $GhOO:
 Tuomari: Crono, teidän on täten kerrottava totuus ja vain totuus!
 $GhOQ:
-Pierre: Cronoa syytetään «Harkitusta kuninkaallisen kaappauksesta.»[nl]
+Pierre: Cronoa syytetään «Harkitusta kuninkaallisen kaappauksesta».
    Kysymys onkin, kaappasiko hän prinsessa Nadian. Mikä on vastaus?
 [pause]
    Vastaus on «ei».[nl]
@@ -13959,7 +13946,7 @@ Marle: Aha![nl]
 $GhRE:
 Marle: It's probably in the basement!
 $GhRG:
-Lucca: Find the «Rainbow Shell,» and we'll be able to prove the King's innocence!
+Lucca: Find the «Rainbow Shell», and we'll be able to prove the King's innocence!
 $GhRI:
 Lucca: We changed history back in 600 AD, so
    the «Rainbow Shell» should still be in the castle!
@@ -14020,7 +14007,7 @@ Marle: To Marle...?
    Someday, when you have children, you will understand.
 [pause]
    This special bond is part of a family tree which links us together.[nl]
-       -Queen Guardia XXI, Leene.»
+       -Queen Guardia XXI, Leene».
 $GhRw:
 Lucca: Boy, can she tell it like it is!!
 $GhRy:
@@ -14688,8 +14675,8 @@ Frog: 'Tis true that mortals do relive their most profound
 [pause]
    Yet those memories most often are sad ones.
 $HOfW:
-Robo: Thinking things like, «If only I had done this,»
-   or, «I shouldn't have done that...» triggers
+Robo: Thinking things like, «If only I had done this»,
+   or, «I shouldn't have done that..». triggers
    unpleasant, old memories.
 $HOfY:
 Marle: Will that happen when our time comes?
@@ -14817,7 +14804,7 @@ $HPyQ:
 $HPyS:
 The city of Kajar, where they study magic, lies on the edge of the western continent.
 [pause]
-The airship, «Blackbird,» is kept there.[nl]
+The airship, «Blackbird», is kept there.[nl]
 Zzz...
 $HPyU:
 Zzz...zzz...[nl]
@@ -14960,7 +14947,7 @@ It must be very primitive compared to ours![nl]
 You poor things!
 $HPzk:
 Those lacking magic have always lived beneath
-the clouds, as the «Earthbound Ones.»
+the clouds, as the «Earthbound Ones».
 [pause]
 After all, they lack what we have...
 $HPzm:
@@ -15004,7 +14991,7 @@ I heard a strange prophet has come to the palace.
 I don't know the details...but I heard he has uncanny powers.
 $HQ04:
 Indeed![nl]
-That great aeroplane «Blackbird,» which Belthasar built.
+That great aeroplane «Blackbird», which Belthasar built.
 [pause]
 When it soars in the sky, it looks alive![nl]
 Belthasar is truly a genius!
@@ -15987,7 +15974,7 @@ $HXAZ:Ei   [nl]onnistu!
 
 *r;2 pointerstrings (8pix font)
 $HXAn:Skill Pts[nl]Need_[3]d[154][66][126]
-$HXAp:Can be used [nl]by[45][2][136][nl][ptr 9890]_[ptr 9896][nl][ptr 989C]_[ptr 98A2][nl][ptr 98A8]_[ptr 98AE][nl][ptr 98B4][2][24][3][3][77][13][33][126][2][skip 3][4][144][153][126]
+$HXAp:Käyttää[nl]voi[45][2][136][nl][ptr 9890]_[ptr 9896][nl][ptr 989C]_[ptr 98A2][nl][ptr 98A8]_[ptr 98AE][nl][ptr 98B4][2][24][3][3][77][13][33][126][2][skip 3][4][144][153][126]
 
 
 *r;18 pointerstrings (8pix font)
@@ -16008,24 +15995,29 @@ $HXBL:_Pue_____
 $HXBN:_Pue_____
 $HXBP:__Osta___
 $HXBR:__Myy____
-$HXBT:Osta_Myy_
+$HXBT:Osta__Myy
 
 
 *r;2 pointerstrings (8pix font)
-$HXBZ:Attack[45] 
+$HXBZ:Attack[45]
 $HXBb:Defense[45]
 
 
 ;Misc prompts
+; HUOM: Näissä on lyhyempi pituusraja.
 *z;7 pointerstrings (12pix font)
 $HXsh:
-Syötä nimi ja paina sen jälkeen Start.
+Syötä nimi ja paina[nl]
+sen jälkeen Start.
 $HXsj:
-Viholliset hyökkäävät, vaikka et olisi valmis!     
+Viholliset hyökkäävät,[nl]
+vaikka et olisi valmis!
 $HXsl:
-Sinulla on aikaa miettiä, ja voit taistella strategisesti.
+Voit rauhassa miettiä[nl]
+ja taistella strategisesti.
 $HXsn:
-Valitse ladattava tallenne.
+Valitse    [nl]
+tallenne.
 $HXsp:
 Kenet[nl]
 vaihdat?
@@ -16180,6 +16172,9 @@ $HXxe:   Kohtalon tunti
 $HXxg:    Lopputaistelu
 $HXxi:    Ei tallennusta
 
+
+*s02 ;Free space in segment $02:
+$100:7E00;
 
 *s06 ;Free space in segment $06:
 $1025:F000;F401

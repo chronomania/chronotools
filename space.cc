@@ -241,3 +241,28 @@ void freespacemap::Organize(vector<freespacerec> &blocks, unsigned pagenum)
     if(errors)
         fprintf(stderr, "Error: Organization failed\n");
 }
+
+unsigned freespacemap::FindFromAnyPage(unsigned length)
+{
+    unsigned leastfree=0, bestpage=0; bool first=true;
+    for(const_iterator i=begin(); i!=end(); ++i)
+    {
+        freespaceset::const_iterator j;
+        for(j=i->second.begin(); j!=i->second.end(); ++j)
+        {
+            if(j->len < length) continue;
+            if(first || j->len < leastfree)
+            {
+                bestpage  = i->first;
+                leastfree = j->len;
+                first = false;
+            }
+        }
+    }
+    if(first)
+    {
+        fprintf(stderr, "No %u-byte free space block available!\n", length);
+        return NOWHERE;
+    }
+    return Find(bestpage, length);
+}

@@ -13,6 +13,7 @@
 #endif
 
 #define LOADP_DEBUG      1
+#define LOADZ_DEBUG      1
 //#define LOADZ_EXTRASPACE 1
 //#define LOADP_EXTRASPACE 1
 
@@ -121,7 +122,7 @@ static const vector<string> LoadZStrings(unsigned offset, unsigned count=0)
     const unsigned base = segment << 16;
 
     vector<string> result(count);
-#if 0
+#if LOADZ_DEBUG
     const unsigned maxco=10;
     unsigned col=maxco;
 #endif
@@ -136,7 +137,7 @@ static const vector<string> LoadZStrings(unsigned offset, unsigned count=0)
             break;
         offsetlist.insert(stringptr);
 
-#if 0
+#if LOADZ_DEBUG
         if(col==maxco){printf(";ptr%2u ", a);col=0;}
         else if(!col)printf(";%5u ", a);
         if(maxco==10 && col==5)putchar(' ');
@@ -168,7 +169,7 @@ static const vector<string> LoadZStrings(unsigned offset, unsigned count=0)
         
         offset += 2;
     }
-#if 0
+#if LOADZ_DEBUG
     if(col)printf("\n");
 #endif
     return result;
@@ -674,26 +675,8 @@ static void DumpFont(unsigned spriteoffs, unsigned sizeoffs)
     fprintf(stderr, " done\n");
 }
 
-int main(void)
+static void PatchSubStrings()
 {
-    fprintf(stderr,
-        "Chrono Trigger script dumper version "VERSION"\n"
-        "Copyright (C) 1992,2003 Bisqwit (http://iki.fi/bisqwit/)\n");
-    
-    LoadROM();
-
-    substrings.resize(256);
-    
-    printf("; Note: There is a one byte sequence for [nl] and three spaces.\n"
-           ";       Don't attempt to save space by removing those spaces,\n"
-           ";       you will only make things worse...\n"
-           ";       Similar for [pause]s, [pausenl]s and [cls]s.\n"
-           ";\n"
-          );
-    
-    // 127 instead of 128: Don't load "..." (ellipsis)
-    LoadDict(0x1EFA00, 127);
-    
     // 0x01 and 0x02 are doublebyte things.
     // They eat the next character and use it
     // as a pointer to somewhere. Seems like
@@ -738,10 +721,32 @@ int main(void)
     substrings[0xEE] = AscToWstr("[musicsymbol]");
     substrings[0xF0] = AscToWstr("[heartsymbol]");
     substrings[0xF1] = AscToWstr("...");
+}
+
+int main(void)
+{
+    fprintf(stderr,
+        "Chrono Trigger script dumper version "VERSION"\n"
+        "Copyright (C) 1992,2003 Bisqwit (http://iki.fi/bisqwit/)\n");
+    
+    LoadROM();
+
+    substrings.resize(256);
+    
+    printf("; Note: There is a one byte sequence for [nl] and three spaces.\n"
+           ";       Don't attempt to save space by removing those spaces,\n"
+           ";       you will only make things worse...\n"
+           ";       Similar for [pause]s, [pausenl]s and [cls]s.\n"
+           ";\n"
+          );
+    
+    // 127 instead of 128: Don't load "..." (ellipsis)
+    LoadDict(0x1EFA00, 127);
+    
+    PatchSubStrings();
     
     Dump8x8sprites(0x3F8C60, 256);
-    DumpFont(0x3F2060, 0x26046);
-    
+    DumpFont      (0x3F2060, 0x26046);
     // 
     puts(";items");
     DumpFStrings(0x0C0B5E, 11, 242);
