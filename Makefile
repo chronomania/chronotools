@@ -127,6 +127,7 @@ DEPDIRS = utils/
 # VERSION 1.13.8 C++ standard compliance upgrade... also a new eq-related feature
 # VERSION 1.13.9 is a vwf8 bugfix, but seems to have other problems!
 # VERSION 1.14.0 is a new "stable" release, at least for posix.
+# VERSION 1.14.1 fixes the checksum generator problem and stabilizes the windows port.
 
 #OPTIM=-Os
 # -fshort-enums
@@ -142,7 +143,7 @@ CFLAGS += -I/usr/include/slang
 LDFLAGS += -L/usr/lib/slang
 
 
-VERSION=1.14.0
+VERSION=1.14.1
 ARCHFILES=utils/xray.cc utils/xray.h \
           utils/viewer.c \
           utils/vwftest.cc \

@@ -62,7 +62,11 @@ wchar_t ConfParser::CharIStream::getC()
     for(;;)
     {
         if(cacheptr < cache.size())  
-            return cache[cacheptr++];
+        {
+            wchar_t result = cache[cacheptr++];
+            //fprintf(stderr, "Cache: '%c' (%X)\n", (char)result, (unsigned)result);
+            return result;
+        }
         
         cache.clear();
         cacheptr = 0;

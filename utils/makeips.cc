@@ -90,7 +90,7 @@ int main(int argc, const char *const *argv)
             
             fwrite(d2+a, c, 1, stdout);
             
-            fprintf(stderr, "%u bytes hunk at %u\n", c, a);
+            fprintf(stderr, "%u bytes hunk at $%06X\n", c, a);
 
             a += c;
         }

@@ -16,8 +16,23 @@
 
 namespace
 {
-    const char *const midset
-      = (*(const short *)"\1\0\0\0\0\0\0\0" == 1) ? "UCS-4LE" : "UCS-4BE";
+    static class midset
+    {
+        const char* set;
+    public:
+        midset(): set(NULL)
+        {
+            wchar_t tmp = 1;
+            if(sizeof(wchar_t) == 4)
+                set = (*(const char *)&tmp == 1) ? "UCS-4LE" : "UCS-4BE";
+            else
+                set = (*(const char *)&tmp == 1) ? "UCS-2LE" : "UCS-2BE";
+        }
+        operator const char*() const
+        {
+            return set;
+        }
+    } midset;
 }
 #else
 /* not iconv */

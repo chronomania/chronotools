@@ -58,6 +58,7 @@ enum csettype
     pokemonset,
     chronoset,
     mkrset,
+    ff5set,
     
     CSETCOUNT
 };
@@ -74,7 +75,8 @@ static void initmerktab(void)
     FILE *fp = fopen("/usr/lib/kbd/consolefonts/cp437-8x8", "rb");
     FILE *fp = fopen("/home/root/pokedex/cp437-8x8", "rb");
 #endif
-    FILE *fp = fopen("cp437-8x8", "rb");
+    FILE *fp = fopen("utils/cp437-8x8", "rb");
+    
     unsigned char Fontti[256][8];
     int a,b,c,d;
     static struct {int a,b,c,d; } mrk[256];
@@ -139,22 +141,22 @@ static unsigned char REV(unsigned char n)
     return n;
 }
 
-static int Equal(const unsigned char *s, const unsigned char *s2, unsigned step, int len)
+static int Equal(const unsigned char *s, const unsigned char *rom, unsigned step, int len)
 {
-    for(;;)
+    while(len)
     {
-        if(!len)return 1;
-        if(*s2 != *s)return 0;
-        s2 += step;
+        unsigned char chr = *rom;
+        if(chr != *s)return 0;
+        rom += step;
         ++s;
         --len;
     }
+    return 1;
 }
 
 static long SlangPos=0;
 static int OpenVCSA(void)
 {
-    //return open("/dev/vcsa0", O_WRONLY);
     SLsig_block_signals();
     SLsmg_normal_video();
     return 0;
@@ -164,32 +166,30 @@ static void WriteVCSA(int fd, unsigned chr, unsigned attr)
 	attr = (unsigned char) attr;
 	chr  = (unsigned char) chr;
     
+    chr = chr & 0xFF;
+
     if(chr == 0x00) chr = '^';
-    else if(chr < 0x20 || (chr > 0x7E && chr < 0xA0))chr = '.';
+    else if(chr < 0x20) chr = '.';
+    else if(chr >= 0x7F && chr < 0xA0) chr = '.';
     
     SLsmg_gotorc(SlangPos/COLS, SlangPos%COLS);
     SLsmg_set_color(attr);
     SLsmg_write_char(chr);
     ++SlangPos;
     fd=fd;
-    //const char Buf[2] = {chr,attr};
-    //write(fd, Buf, 2);
 }
 static long TellVCSA(int fd)
 {
-    //return lseek(fd, 0, SEEK_CUR);
     fd=fd;
     return 4 + SlangPos*2;
 }
 static void SeekVCSA(int fd, long newpos)
 {
-    //lseek(fd, newpos, SEEK_SET);
     fd=fd;
     SlangPos = (newpos-4)/2;
 }
 static void CloseVCSA(int fd)
 {
-    //close(fd);
     fd=fd;
     SLsmg_refresh();
     SLsig_unblock_signals();
@@ -249,7 +249,7 @@ static void display(void)
     
     for(;;)
     {
-        static const char set1[256] =
+        static const char PokemonSet1[256] =
            "\r¶¶¶¶¶¶¶¶¶¶¶¶¶¶¶¶¶¶¶¶¶¶¶¶¶¶¶¶¶¶¶"  // 0x00
             "¶¶¶¶¶¶¶¶¶¶¶¶¶¶¶¶¶¶¶¶¶¶¶¶¶¶¶¶¶¶¶¶"  // 0x20
           "'\"gÚÄ¿³³Ã ´Ã´¶\t¶;¶¶¶¶¶¶¶¶¶¶¶¶¶¶."  // 0x40
@@ -258,7 +258,7 @@ static void display(void)
             "abcdefghijklmnopqrstuvwxyz‚'''''"  // 0xA0
             "                                "  // 0xC0
             "'PM-''?!.¶¶¶¶¶¶-$*./,+0123456789"; // 0xE0
-        static const char set2[256] = 
+        static const char PokemonSet2[256] = 
             "                                "
             "                                "
             "                ;               "
@@ -268,7 +268,7 @@ static void display(void)
             "                                "
             " kn rm                          ";
 
-        static const char set3[256] =
+        static const char ChronoSet1[256] =
             "¶¶¶¶¶¶¶¶¶¶¶¶¶¶¶¶¶¶¶¶¶¶¶¶¶¶¶¶¶¶¶¶"   // 00
             "¶¶¶¶¶¶¶¶¶¶¶¶¶¶¶¶¶¶¶¶¶¶¶¶¶¶¶¶¶¶¶¶"   // 20
             "¶¶¶¶¶¶¶¶¶¶¶¶¶¶¶¶¶¶¶¶¶¶¶¶¶¶¶¶¶¶¶¶"   // 40
@@ -286,7 +286,20 @@ static void display(void)
 	        "Ö«»:-()'.,åäöé¶ "   // E0  EE=musicsymbol
 	        "¶¶%É=&+#!?¶¶¶/¶_";  // F0  F0=heartsymbol, F1=..., F2=infinity
 #endif
-        char attr=0, chr=0;
+        static const char FF5Set1[256] =
+            "¶¶¶¶¶¶¶¶¶¶¶¶¶¶¶¶¶¶¶¶¶¶¶¶¶¶¶¶¶¶¶¶"   // 00
+            "¶¶¶¶¶¶¶¶¶¶¶¶¶¶¶¶¶¶¶¶¶¶¶¶¶¶¶¶¶¶¶¶"   // 20
+            "¶¶¶¶¶¶¶¶¶¶¶¶¶¶¶¶¶¶¶¶0123456789¶¶"   // 40
+            "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdef"   // 60
+            "ghijklmnopqrstuvwxyz¶¶¶¶¶'\":;,()"   // 80
+            "/!?.¶¶¶¶¶¶¶¶¶¶¶¶¶¶¶¶¶¶¶¶¶¶¶¶¶¶¶¶"   // A0
+            "¶¶¶¶¶¶¶¶¶¶¶¶¶¶¶¶¶¶¶¶¶¶¶¶¶¶¶¶¶¶¶¶"   // C0
+            "¶¶¶¶¶¶¶¶¶¶¶¶¶¶¶¶¶¶¶¶¶¶¶¶¶¶¶¶¶¶¶ ";  // E0
+            //123456789ABCDEF0123456789ABCDEF
+            
+
+        unsigned char attr=0;
+        unsigned char chr=0;
         
         #define writ(byt, attr) do{\
             WriteVCSA(fd, (byt), (attr)); \
@@ -322,16 +335,22 @@ static void display(void)
             case normalset:
             case mkrset:
                 break;
+            case ff5set:
+            {
+            	unsigned char c = (unsigned char)chr;
+                chr  = FF5Set1[c];
+                break;
+            }
             case pokemonset:
             {
             	unsigned char c = (unsigned char)chr;
-                chr  = set1[c];
+                chr  = PokemonSet1[c];
                 break;
             }
             case chronoset:
             {
             	unsigned char c = (unsigned char)chr;
-                chr  = set3[c];
+                chr  = ChronoSet1[c];
                 break;
             }
             default:
@@ -340,13 +359,13 @@ static void display(void)
         
         if((*s && fullhex) || fullhex==2)goto Hex;
         
-        if(usecset == pokemonset && set2[*s] != ' ')
+        if(usecset == pokemonset && PokemonSet2[*s] != ' ')
         {
-            if(set2[*s] != ';')
+            if(PokemonSet2[*s] != ';')
             {
                 attr = searchtype?10:2;
                 writ(chr, attr);
-                chr = set2[*s];
+                chr = PokemonSet2[*s];
             }
             else
             {
@@ -407,7 +426,7 @@ static void display(void)
                 while(count-- > 0)
                 {
                     chr = data[dict_addr++];
-                    chr = set3[(unsigned char)chr];
+                    chr = ChronoSet1[(unsigned char)chr];
                     if(count) writ(chr, attr);
                 }
         	}
@@ -457,7 +476,7 @@ Hex:        attr = (searchtype && !(searchtype%searchstep)) ? 15 : 3;
             writ(("0123456789ABCDEF"[(unsigned char)*s>>4]), attr);
             chr = "0123456789ABCDEF"[*s&15];
         }
-
+        
         writ(chr, attr);
         s++;
     }
@@ -662,8 +681,8 @@ Restart:
             case '': Rt: pos++; Upd(); break;
             case '': Dn: if(fullhex)pos+=X/2;else pos+=X; Upd(); break;
             case '': Up: if(pos>X)pos-=X;else pos=0; Upd(); break;
-            case '': case '.': case ' ': pos += X*Y/2; Upd(); break;
-            case '': case ',': if(pos>X*Y)pos -= X*Y/2;else pos=0; Upd(); break;
+            case '': case '.': case ' ': PgDn: pos += X*Y/2; Upd(); break;
+            case '': case ',':           PgUp: if(pos>X*Y)pos -= X*Y/2;else pos=0; Upd(); break;
             case 'a': if(X>=4)--X; Upd(); break;
             case 's': if(X<900)++X; Upd(); break;
             case 'b': breaks=((breaks+1)%3); Upd(); break;
@@ -694,8 +713,10 @@ Restart:
                     if(c=='C')goto Rt;
                     if(c=='D')goto Lt;
                     if(c>='0'&&c<='9'){n=n*10+c-'0';continue;}
-                    if(c!=';'&&c!='[')break;
+                    if(c!=';'&&c!='['&&c!='O')break;
                 }
+                if(n == 5) goto PgUp;
+                if(n == 6) goto PgDn;
                 break;
             }
             case 'f':

@@ -8,6 +8,12 @@
 
 #include <ggi/ggi.h>
 
+static const unsigned WINDOW_WIDTH  = 1088;
+static const unsigned WINDOW_HEIGHT = 768;
+
+static const unsigned TILESPACE_X   = 960;
+static const unsigned TILESPACE_Y   = 768;
+
 /*
  Copyright (C) 1992,2003 Bisqwit (http://iki.fi/bisqwit/)
  
@@ -45,11 +51,56 @@ static byte font[256][8];
 //dummy, used by compress.o
 void MessageWorking() { fprintf(stderr, "."); }
 
+static unsigned SwapPosition
+   (unsigned swapwidth,
+    unsigned swapheight,
+     
+    /* Tile number on screen */
+    unsigned x,unsigned y,
+    
+    /* How many tiles horizontally */
+    unsigned linewidth,
+    
+    /* How many bytes is each box */
+    unsigned boxsize)
+{
+    /*********
+     *
+     * 3,2 means, that
+     *
+     *    AaBbCcDdEeFfGgHh
+     *    IiJjKkLlMmNnOoPp
+     *    qqRrSsTtUuVvWwXx
+     *
+     * is automatically converted to:
+     * 
+     *    AaDdGgJjMmPpSsVv
+     *    BbEeHhKkNnQqTtWw
+     *    CcFfIillOoRrUuXx
+    */
+    
+    unsigned result = 0;
+    
+    unsigned sprite_box_size = swapwidth * swapheight;
+    
+    unsigned box_horiz = x % swapwidth;
+    unsigned box_index = x / swapwidth;
+    
+    result += box_horiz + box_index * sprite_box_size;
+    
+    unsigned box_vert  = y % swapheight;
+    unsigned box_reset = y / swapheight;
+    
+    result += (box_vert * swapwidth) + box_reset * (linewidth * swapheight);
+    
+    return result * boxsize;
+}
+
 static void Init(void)
 {
     ggiInit();
     vis = ggiOpen(NULL);
-    if(!vis || ggiSetGraphMode(vis, 400,240, 0,0, GT_16BIT))
+    if(!vis || ggiSetGraphMode(vis, WINDOW_WIDTH,WINDOW_HEIGHT, 0,0, GT_16BIT))
         exit(-1);
     memcpy(font, VGAFont, sizeof(font));
 }
@@ -131,8 +182,9 @@ static void Disp(const char *s)
 {
     FILE *fp = fopen(s, "rb");
     
-    unsigned posi=0, swap=0, bits=16, nes=0;
-    int ylimit=8;
+    unsigned posi=0, bits=16, nes=0;
+    unsigned ylimit=8;
+    unsigned swapwidth=1, swapheight=1;
     
     if(!fp)return;
     
@@ -142,26 +194,27 @@ static void Disp(const char *s)
 Redraw:    
     memset(merk, ' ', sizeof(merk));
     ggiSetGCBackground(vis, 15);
-    ggiSetGCForeground(vis, 15); ggiDrawBox(vis, 0,0, 400,240);
+    ggiSetGCForeground(vis, 15);  ggiDrawBox(vis, 0,0, WINDOW_WIDTH,240);
 
     ggiSetGCForeground(vis, 255); ggiDrawVLine(vis, 32*8, 0, 16*8);
     ggiSetGCForeground(vis, 253); ggiDrawVLine(vis, 32*8+1, 0, 16*8);
     
     ggiSetGCForeground(vis, 255);
-    ggiPuts(vis,256+6,16+0*10, "a,d = shift");
-    ggiPuts(vis,256+6,16+1*10, "arrows=move");
-    ggiPuts(vis,256+6,16+2*10, "y =pkmn");
-    ggiPuts(vis,256+6,16+3*10, "p=toggle swap");
-    ggiPuts(vis,256+6,16+4*10, "b=toggle bits");
-    ggiPuts(vis,256+6,16+5*10, "n=toggle nes/gb");
-    ggiPuts(vis,256+6,16+6*10,"esc=quit");
+    
+    ggiPuts(vis,WINDOW_WIDTH-16*8,16+0*10, "a,d = shift");
+    ggiPuts(vis,WINDOW_WIDTH-16*8,16+1*10, "arrows=move");
+    ggiPuts(vis,WINDOW_WIDTH-16*8,16+2*10, "y =pkmn");
+    ggiPuts(vis,WINDOW_WIDTH-16*8,16+3*10, "numpad=tile size");
+    ggiPuts(vis,WINDOW_WIDTH-16*8,16+4*10, "b=toggle bits");
+    ggiPuts(vis,WINDOW_WIDTH-16*8,16+5*10, "n=toggle nes/gb");
+    ggiPuts(vis,WINDOW_WIDTH-16*8,16+6*10,"esc=quit");
     
     for(;;)
     {
-        int sx, sy;
-        int cx=0, cy=0;
+        unsigned cx=0, cy=0;
         
-        int sylimit=128/ylimit;
+        unsigned sxlimit = TILESPACE_X / 8;
+        unsigned sylimit = TILESPACE_Y / ylimit;
         
         unsigned widthharppaus = (bits * ylimit + 7) / 8;
         
@@ -169,46 +222,27 @@ Redraw:
         
         UncompressDump(fp);
         
-        for(sy=0; sy<sylimit; sy++)
-            for(sx=0; sx<32; sx++)
+        for(unsigned sy=0; sy<sylimit; sy++)
+            for(unsigned sx=0; sx<sxlimit; sx++)
             {
-                byte Buf[512];
+                byte Buf[(32/*bits*/ * 128/*ylimit*/ + 7) / 8];
+                
                 unsigned x, y;
                 
-                int bx,by;
+                unsigned bx = sx * 8;
+                unsigned by = sy * ylimit;
+
+                fseek(fp, posi + SwapPosition(swapwidth,swapheight, sx,sy, sxlimit, widthharppaus), SEEK_SET);
                 
-                switch(swap)
-                {
-                    case 0:
-                        bx = sx;
-                        by = sy;
-                        break;
-                    case 1:
-                        bx = (sx&1) | ((sy&1)<<1) | (sx&~3);
-                        by = ((sx&2)>>1) | (sy&~1);
-                        break;
-                    case 2:
-                        bx = (sx&15) | ((sy&1)<<4);
-                        by = ((sx&16)>>4) | (sy&~1);
-                        break;
-                    case 3:
-                        bx = (sx&7) | ((sy&3)<<3) | (sx&~31);
-                        by = ((sx&24)>>3) | (sy&~3);
-                        break;
-                }
-                
-                /*  1256 */
-                /*  3478 */
-                
-                bx*=8;
-                by*=ylimit;
-            
                 if(fread(Buf, widthharppaus, 1, fp) != 1)
+                {
                     for(y=0; y<ylimit; y++)
                         for(x=0; x<8; x++)
                             ggiPutPixel(vis, bx+x, by+y, 251);
+                }
                 else
                 {
+/*
                     if(cy==0 && cx==0)
                     {
                         ggiSetGCForeground(vis, 253);
@@ -224,7 +258,7 @@ Redraw:
                               "0123456789ABCDEF"[Buf[x]&15]);
                         }
                     }
-                    if(cy < (200-16*8-16)/8)
+                    if(cy < (WINDOW_HEIGHT-16*8-16)/8)
                     {
                         for(y=0; y<bits; y++)
                         {
@@ -233,9 +267,10 @@ Redraw:
                             {
                                 putc(cx*8, 16*8 + (cy)*8, merk[cy][cx]=c, 252);
                             }
-                            if(++cx>=320/8){cx=0;cy++;}
+                            if(++cx>=WINDOW_WIDTH/8){cx=0;cy++;}
                         }
                     }
+*/
                     for(y=0; y<ylimit; y++)
                     {
                         byte b1, b2, b3, b4;
@@ -289,23 +324,35 @@ Redraw:
             }
         
         ggiSetGCForeground(vis, 255);
-        ggiPutc(vis,320-48+ 0,0, 'P');
-        ggiPutc(vis,320-48+ 8,0, swap+'0');
-        ggiPutc(vis,320-48+16,0, 'B');
-        ggiPutc(vis,320-48+24,0, bits==8?'1':bits==16?'2':'4');
-        ggiPutc(vis,320-48+32,0, 'N');
-        ggiPutc(vis,320-48+40,0, nes+'0');
+        
+        {
+          unsigned textpos=WINDOW_WIDTH/8-16;
+          ggiPutc(vis,8*textpos++,0, 'B');
+          ggiPutc(vis,8*textpos++,0, bits==8?'1':bits==16?'2':'4');
+          ggiPutc(vis,8*textpos++,0, 'N');
+          ggiPutc(vis,8*textpos++,0, nes+'0');
+          ggiPutc(vis,8*textpos++,0, 'Y');
+          ggiPutc(vis,8*textpos++,0, '0'+(ylimit/100)%10);
+          ggiPutc(vis,8*textpos++,0, '0'+(ylimit/10 )%10);
+          ggiPutc(vis,8*textpos++,0, '0'+(ylimit/1  )%10);
+          ggiPutc(vis,8*textpos++,0, 'S');
+          ggiPutc(vis,8*textpos++,0, '0'+(swapwidth/10)%10);
+          ggiPutc(vis,8*textpos++,0, '0'+(swapwidth/1 )%10);
+          ggiPutc(vis,8*textpos++,0, ',');
+          ggiPutc(vis,8*textpos++,0, '0'+(swapheight/10)%10);
+          ggiPutc(vis,8*textpos++,0, '0'+(swapheight/1 )%10);
+        }
         
         ggiSetGCForeground(vis, 254);
         {char Buf[8];
          unsigned rom = posi | 0xC00000;
-         
          sprintf(Buf, "%07X", posi);
-
-          ggiPuts(vis,256+2, 193, Buf);
+         
+         unsigned textpos=WINDOW_WIDTH-16*8;
+         ggiPuts(vis,textpos, 16+8*10, Buf);
           
          sprintf(Buf, "%02X:%04X", rom>>16, rom&0xFFFF);
-         ggiPuts(vis, 256+2, 193+16, Buf);
+         ggiPuts(vis,textpos, 16+9*10, Buf);
         }
         
         do {
@@ -315,24 +362,32 @@ Redraw:
                 case 'a': if(posi>0)posi--; break;
                 case 'd': posi++; break;
                 case GIIK_Down:
-                case 's': posi+=32*widthharppaus; break;
+                case 's': posi+=sxlimit*widthharppaus; break;
                 case GIIK_Up:
-                case 'w': if(posi>32*widthharppaus)posi-=32*widthharppaus;else posi=0; break;
+                case 'w': if(posi>sxlimit*widthharppaus)posi-=sxlimit*widthharppaus;else posi=0; break;
                 case GIIK_PageDown:
                 case '.':
                 case '':
-                case 'v': posi+=15*32*bits; break;
+                case 'v': posi+=sxlimit*widthharppaus*sylimit; break;
                 case GIIK_PageUp:
                 case ',':
                 case '':
-                case 'u': if(posi>15*32*bits)posi-=15*32*bits;else posi=0; break;
+                case 'u': if(posi>sxlimit*widthharppaus*sylimit)
+                               posi-=sxlimit*widthharppaus*sylimit;
+                          else posi=0; break;
                 case GIIK_Right:
                 case '':
                 case 'e': posi+=widthharppaus; break;
                 case GIIK_Left:
                 case '':
-                case 'q': if(posi>widthharppaus)posi-=widthharppaus;else posi=0; break;
-                case 'p': swap=(swap+1)%4; break;
+                case 'q': if(posi>widthharppaus)posi-=widthharppaus;
+                          else posi=0; break;
+
+                case '8': if(swapheight>1)--swapheight;break;
+                case '4': if(swapwidth>1)--swapwidth;break;
+                case '2': if(swapheight<99)++swapheight;break;
+                case '6': if(swapwidth<99)++swapwidth;break;
+                
                 case 'b': bits=bits==8?16:bits==16?32:8; break;
                 case 'n': nes^=1; break;
                 case 'y': LoadPokeFont(fp); /* fall to ^L */
@@ -355,7 +410,7 @@ int main(int argc, const char *const *argv)
     {
         printf(
             "Designed for Game Boy, SNES and NES files, but can be used on others as well\n"
-            "Copyright (C) 1992,2003 Bisqwit (http://iki.fi/bisqwit/)\n"
+            "Copyright (C) 1992,2004 Bisqwit (http://iki.fi/bisqwit/)\n"
             "Usage: xray <filename>\n");
         return 0;
     }

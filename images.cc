@@ -61,6 +61,12 @@ void insertor::WriteImages()
 {
     MessageLoadingImages();
     
+    static const char Signature[] = 
+        " Created with Chronotools \0 "
+        " http://iki.fi/bisqwit/source/chronotools.html ";
+    vector<unsigned char> data(Signature, Signature+sizeof(Signature));
+    objects.AddLump(data, "Chronotools Signature", "_CTSIG");
+    
     if(true) /* Load unpacked images */
     {
         const ConfParser::ElemVec& elems = GetConf("images", "putimage").Fields();

@@ -20,6 +20,8 @@ namespace
     
     void WriteShort(unsigned addr, unsigned short value)
     {
+        unsigned oldvalue = ROM[addr] | (ROM[addr+1] << 8);
+        fprintf(stderr, "Writing %04X @ %06X (was %04X)\n", value, addr, oldvalue);
         WriteByte(addr, value & 255);
         WriteByte(addr+1, value >> 8);
     }
@@ -28,8 +30,8 @@ namespace
     {
         sum1 &= 0xFFFF;
         
-        WriteShort(addr,   sum1);
-        WriteShort(addr+2, sum1 ^ 0xFFFF);
+        WriteShort(addr+2, sum1);
+        WriteShort(addr+0, sum1 ^ 0xFFFF);
     }
 }
 

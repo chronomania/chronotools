@@ -1,5 +1,5 @@
 <?php
-//TITLE=Chrono Trigger translation development system
+//TITLE=Chrono Trigger (SNES) translation development system
 
 $title = 'Chrono Trigger translation development system';
 $progname = 'chronotools';
@@ -202,9 +202,10 @@ Copypaste from the Makefile:
 # VERSION 1.13.8 C++ standard compliance upgrade... also a new eq-related feature
 # VERSION 1.13.9 is a vwf8 bugfix, but seems to have other problems!
 # VERSION 1.14.0 is a new \"stable\" release, at least for posix.
+# VERSION 1.14.1 fixes the checksum generator problem and stabilizes the windows port.
 </pre>
 
-Users of previous versions are advised to do the following:
+<!--Users of previous versions are advised to do the following:
 <ul>
  <li>Compare the old <tt>etc/ct.cfg</tt>
      with the new one to see what changes
@@ -212,7 +213,7 @@ Users of previous versions are advised to do the following:
  <li>Do a redump with <tt>ctdump</tt> and
      see if their script file needs any converting.
      (It's not required, but it's tidier now.)</li>
-</ul>
+</ul-->
 
 ", '1. Program list' => "
 
@@ -288,10 +289,6 @@ for browsing the ROM contents.
 
 viewer requires S-Lang and is a textmode ROM browser
 originally developed by me for Pokémon hacking.
-
-", '1.1.1. spacefind' => "
-
-A <a href=\"/source/jaa3.html\">bin-packing</a> algorithm test.
 
 ", '1.1.1. sramdump' => "
 
