@@ -535,7 +535,7 @@ void Dump8Strings(const unsigned offs,
     {
         ucs4string line = Get8string(strings[a]);
         PutBase62Label(offs + a*2);
-        PutContent(conv.puts(line), false);
+        PutContent(conv.puts(line), true);
     }
     EndBlock();
 

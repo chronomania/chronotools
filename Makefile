@@ -107,6 +107,7 @@ DEPDIRS = utils/
 # VERSION 1.11.8 has much more documentation than before
 # VERSION 1.11.9 is faster than the few recent versions
 # VERSION 1.12.0 allows some strings to be moved between pages
+# VERSION 1.12.1 upgrade to support the new o65 extension...
 
 #OPTIM=-Os
 # -fshort-enums
@@ -119,7 +120,7 @@ OPTIM=-O3
 
 CXXFLAGS += -I.
 
-VERSION=1.12.0
+VERSION=1.12.1
 ARCHFILES=utils/xray.cc utils/xray.h \
           utils/viewer.c \
           utils/vwftest.cc \
@@ -163,7 +164,7 @@ ARCHFILES=utils/xray.cc utils/xray.h \
           strload.cc strload.hh \
           images.cc images.hh \
           fonts.cc fonts.hh \
-          o65.cc o65.hh \
+          o65.cc o65.hh relocdata.hh \
           o65linker.cc o65linker.hh \
           refer.hh \
           logfiles.cc logfiles.hh \
@@ -365,8 +366,7 @@ ct-conj.o65: ct-conj1.a65 ct-conj.a65
 	sed 's/#\([^a-z]\)/§\1/g;s/;.*//' < ct-conj1.a65 > .tmptmp
 	sed 's§<CONJUGATER>§#include ".tmptmp"§' < ct-conj.a65 | \
 		snescom -E - | sed 's/§/#/g' > .tmptmp2
-	snescom -J -Wall -o $@ .tmptmp2
-	rm -f .tmptmp .tmptmp2
+	snescom -J -Wall -o $@ .tmptmp2 && rm -f .tmptmp .tmptmp2
 
 # Rules for creating ct-crononick.o65
 ct-crononick1.a65: ct-crononick.code utils/compile
@@ -375,8 +375,7 @@ ct-crononick.o65: ct-crononick1.a65 ct-crononick.a65
 	sed 's/#\([^a-z]\)/§\1/g;s/;.*//' < ct-crononick1.a65 > .tmptmp
 	sed 's§<CONJUGATER>§#include ".tmptmp"§' < ct-crononick.a65 | \
 		snescom -E - | sed 's/§/#/g' > .tmptmp2
-	snescom -J -Wall -o $@ .tmptmp2
-	rm -f .tmptmp .tmptmp2
+	snescom -J -Wall -o $@ .tmptmp2 && rm -f .tmptmp .tmptmp2
 
 
 

@@ -1023,9 +1023,9 @@ void insertor::WriteVWF12()
     for(unsigned a=0; a<tilecount; ++a) widths[a] = Font12.GetWidth(a);
 
     O65 widthblock;
-    widthblock.LoadCodeFrom(widths);
-    widthblock.LocateCode(get_font_begin());
-    widthblock.DeclareCodeGlobal("VWF12_WIDTH_TABLE", 0);
+    widthblock.LoadSegFrom(CODE, widths);
+    widthblock.Locate(CODE, get_font_begin());
+    widthblock.DeclareGlobal(CODE, "VWF12_WIDTH_TABLE", 0);
     objects.AddObject(widthblock, "VWF12_WIDTH_TABLE");
     objects.AddReference("VWF12_WIDTH_TABLE", OffsPtrFrom(GetConst(VWF12_WIDTH_OFFSET)));
     objects.AddReference("VWF12_WIDTH_TABLE", PagePtrFrom(GetConst(VWF12_WIDTH_SEGMENT)));
@@ -1034,14 +1034,14 @@ void insertor::WriteVWF12()
     O65 block1, block2;
     
     /* Create a patch for both tile tables. */
-    block1.LoadCodeFrom(Font12.GetTab1());
-    block2.LoadCodeFrom(Font12.GetTab2());
-    block1.LocateCode(font_begin * 24);
-    block2.LocateCode(font_begin * 12);
-    block1.DeclareCodeGlobal("VWF12_TABLE1", 0);
-    block2.DeclareCodeGlobal("VWF12_TABLE2", 0);
+    block1.LoadSegFrom(CODE, Font12.GetTab1());
+    block2.LoadSegFrom(CODE, Font12.GetTab2());
+    block1.Locate(CODE, font_begin * 24);
+    block2.Locate(CODE, font_begin * 12);
+    block1.DeclareGlobal(CODE, "VWF12_TABLE1", 0);
+    block2.DeclareGlobal(CODE, "VWF12_TABLE2", 0);
     
-    O65linker::LinkageWish wish;
+    LinkageWish wish;
     wish.SetLinkageGroup(pagegroup);
     
     objects.AddObject(block1, "VWF12_TABLE1", wish);

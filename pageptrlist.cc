@@ -136,7 +136,7 @@ void PagePtrList::Create(insertor& ins,
 {
     Combine();
     
-    O65linker::LinkageWish wish;
+    LinkageWish wish;
     if(page >= 0)
     {
         wish.SetLinkagePage(page);
@@ -158,14 +158,14 @@ void PagePtrList::Create(insertor& ins,
         if(d.data.empty()) continue;
         
         O65 tmp;
-        tmp.LoadCodeFrom(d.data);
+        tmp.LoadSegFrom(CODE, d.data);
         
         for(std::list<Reference>::const_iterator
             i = d.refs.begin(); i != d.refs.end(); ++i)
         {
             const Reference& ref = *i;
             const string name = CreateRefName();
-            tmp.DeclareCodeGlobal(name, ref.offset);
+            tmp.DeclareGlobal(CODE, name, ref.offset);
             NamedRefs[ref.ptraddr] = name;
         }
         
@@ -193,20 +193,20 @@ void PagePtrList::Create(insertor& ins,
             if(last->first != prev+2) break;
         }
 
-        tmp.ResizeCode(n * 2);
+        tmp.Resize(CODE, n * 2);
         
         for(unsigned a=0; a<n; ++a)
         {
-            tmp.DeclareWordRelocation(i->second, a*2);
+            tmp.DeclareWordRelocation(CODE, i->second, a*2);
             ++i;
         }
         
-        if(!tablename.empty()) tmp.DeclareCodeGlobal(tablename, 0);
+        if(!tablename.empty()) tmp.DeclareGlobal(CODE, tablename, 0);
         if(page >= 0)
         {
             unsigned address = first | (page << 16) | 0xC00000;
             wish.SetAddress(address);
-            tmp.LocateCode(address);
+            tmp.Locate(CODE, address);
         }
         ins.objects.AddObject(tmp,
             tablename.empty()

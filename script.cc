@@ -258,6 +258,7 @@ const ctstring insertor::ParseScriptEntry(const ucs4string &input, const stringd
         static const ucs4string monster=AscToWstr("[monster]");
         
         // Codes used by status screen engine
+        static const ucs4string code0 = AscToWstr("[gfx");
         static const ucs4string code1 = AscToWstr("[next");
         static const ucs4string code2 = AscToWstr("[goto,");
         static const ucs4string code3 = AscToWstr("[func1,");
@@ -270,7 +271,6 @@ const ctstring insertor::ParseScriptEntry(const ucs4string &input, const stringd
         static const ucs4string code10= AscToWstr("[attr,");
         static const ucs4string code11= AscToWstr("[func2,");
         static const ucs4string code12= AscToWstr("[stat,");
-        static const ucs4string code0 = AscToWstr("[gfx");
         
         if(false) {} // for indentation...
         else if(is_dialog && !code.compare(0, delay.size(), delay))

@@ -10,8 +10,8 @@ bool IsReservedWord(const std::string& s);
 struct AddrMode
 {
     char forbid;
-    char prereq[2];
-    char postreq[6];
+    const char *prereq;
+    const char *postreq;
     enum { tNone, tByte, tWord, tLong, tA, tX, tRel8, tRel16 } p1, p2;
 };
 extern const struct AddrMode AddrModes[];
@@ -19,9 +19,8 @@ extern const unsigned AddrModeCount;
 
 struct ins
 {
-    char token[6];
-    char opcodes[26*3];
-
+    const char *token;
+    const char *opcodes;
     bool operator< (const std::string &s) const { return s > token; }
 };
 extern const struct ins ins[];

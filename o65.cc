@@ -2,15 +2,18 @@
  * For loading and linking 65816 object files
  * Copyright (C) 1992,2003 Bisqwit (http://iki.fi/bisqwit/)
  *
- * Version 1.2.0 - Aug 18 2003, Sep 4 2003, Jan 23 2004
+ * Version 1.9.0 - Aug 18 2003, Sep 4 2003, Jan 23 2004,
+ *                 Jan 31 2004
  */
 
 #define DEBUG_FIXUPS 0
 
 #include <map>
+#include <set>
 
 #include "o65.hh"
 
+using std::set;
 using std::map;
 using std::make_pair;
 using std::fprintf;
@@ -18,39 +21,9 @@ using std::fprintf;
 using std::stderr;
 #endif
 
-class O65::segment
-{
-public:
-    vector<unsigned char> space;
+#include "relocdata.hh"
 
-    // where it is assumed to start
-    unsigned base;
-    
-    // absolute addresses of all symbols
-    typedef map<string, unsigned> symbolmap_t;
-    symbolmap_t symbols;
-    
-    template<typename T>
-    struct Relocdata
-    {
-        vector<T> Fixups;
-        vector<pair<T, unsigned> > Relocs; // fixup,undef_indx
-    };
-    
-    Relocdata<unsigned> R16;                   // addr
-    Relocdata<unsigned> R16lo;                 // addr
-    Relocdata<pair<unsigned,unsigned> > R16hi; // addr,lowpart
-    Relocdata<pair<unsigned,unsigned> > R24seg;// addr,offspart
-    Relocdata<unsigned> R24;                   // addr
-public:
-    segment(): base(0)
-    {
-    }
-private:
-    friend class O65;
-    void Locate(unsigned newaddress);
-    void LocateSym(unsigned symno, unsigned newaddress);
-};
+// TODO: per-segment linkage instruction
 
 namespace
 {
@@ -72,117 +45,96 @@ namespace
     {
         return use32 ? LoadDWord(fp) : LoadWord(fp);
     }
-    
-    void LoadRelocations(FILE *fp, O65::segment& seg)
-    {
-        int addr = -1;
-        for(;;)
-        {
-            int c = fgetc(fp);
-            if(!c || c == EOF)break;
-            if(c == 255) { addr += 254; continue; }
-            addr += c;
-            c = fgetc(fp);
-            unsigned type = c & 0xE0;
-            unsigned area = c & 0x07;
-            
-            switch(area)
-            {
-                case 0: // external
-                {
-                    unsigned undef_idx = LoadWord(fp);
-                    switch(type)
-                    {
-                        case 0x20:
-                        {
-                            seg.R16lo.Relocs.push_back(make_pair(addr, undef_idx));
-                            break;
-                        }
-                        case 0x40:
-                        {
-                            pair<unsigned,unsigned> tmp(addr, fgetc(fp));
-                            seg.R16hi.Relocs.push_back(make_pair(tmp, undef_idx));
-                            break;
-                        }
-                        case 0x80:
-                        {
-                            seg.R16.Relocs.push_back(make_pair(addr, undef_idx));
-                            break;
-                        }
-                        case 0xA0:
-                        {
-                            pair<unsigned,unsigned> tmp(addr, LoadWord(fp));
-                            seg.R24seg.Relocs.push_back(make_pair(tmp, undef_idx));
-                            break;
-                        }
-                        case 0xC0:
-                        {
-                            seg.R24.Relocs.push_back(make_pair(addr, undef_idx));
-                            break;
-                        }
-                        default:
-                        {
-                            fprintf(stderr,
-                                "Error: External reloc type %02X not supported yet\n",
-                                type);
-                        }
-                    }
-                    break;
-                }
-                case 2: // code
-                {
-                    switch(type)
-                    {
-                        case 0x20:
-                        {
-                            seg.R16lo.Fixups.push_back(addr);
-                            break;
-                        }
-                        case 0x40:
-                        {
-                            pair<unsigned,unsigned> tmp(addr, fgetc(fp));
-                            seg.R16hi.Fixups.push_back(tmp);
-                            break;
-                        }
-                        case 0x80:
-                        {
-                            seg.R16.Fixups.push_back(addr);
-                            break;
-                        }
-                        case 0xA0:
-                        {
-                            pair<unsigned,unsigned> tmp(addr, LoadWord(fp));
-                            seg.R24seg.Fixups.push_back(tmp);
-                            break;
-                        }
-                        case 0xC0:
-                        {
-                            seg.R24.Fixups.push_back(addr);
-                            break;
-                        }
-                        default:
-                        {
-                            fprintf(stderr,
-                                "Error: Fixup type %02X not supported yet\n",
-                                type);
-                        }
-                    }
-                    break;
-                }
-                default:
-                {
-                    fprintf(stderr,
-                        "Error: Reloc area type %02X not supported yet\n",
-                            area);
-                    // others are ignored
-                    // FIXME: 3 would be data
-                }
-            }
-        }
-    }
 }
 
-O65::O65(): code(NULL), data(NULL), error(false)
+class O65::Defs
+{
+    std::map<string, unsigned> symno;
+    std::map<unsigned, string> nosym;
+    std::set<unsigned> undefines;
+    std::map<unsigned, unsigned> defines;
+public:
+    unsigned AddUndefined(const string& name)
+    {
+        unsigned a = symno.size();
+        undefines.insert(a);
+        symno[name] = a;
+        nosym[a] = name;
+        return a;
+    }
+    unsigned GetSymno(const string& name) const
+    {
+        std::map<string, unsigned>::const_iterator i = symno.find(name);
+        if(i == symno.end()) return ~0U;
+        return i->second;
+    }
+    bool IsDefined(unsigned a) const
+    {
+        return defines.find(a) != defines.end();
+    }
+    unsigned GetValue(unsigned a) const
+    {
+        return defines.find(a)->second;
+    }
+    void Define(unsigned a, unsigned value)
+    {
+        undefines.erase(a);
+        defines[a] = value;
+    }
+    const vector<string> GetExternList() const
+    {
+        vector<string> result;
+        result.reserve(undefines.size());
+        for(std::set<unsigned>::const_iterator
+            i = undefines.begin(); i != undefines.end(); ++i)
+        {
+            const std::string& name = nosym.find(*i)->second;
+            result.push_back(name);
+        }
+        return result;
+    }
+    void DumpUndefines() const
+    {
+        for(std::set<unsigned>::const_iterator
+            i = undefines.begin(); i != undefines.end(); ++i)
+        {
+            const std::string& name = nosym.find(*i)->second;
+
+            fprintf(stderr, "Symbol %s is still not defined\n",
+                name.c_str());
+        }
+    }
+};
+
+class O65::Segment
+{
+public:
+    vector<unsigned char> space;
+
+    // where it is assumed to start
+    unsigned base;
+    
+    // absolute addresses of all publics
+    typedef map<string, unsigned> publicmap_t;
+    publicmap_t publics;
+
+public:    
+    typedef Relocdata<unsigned> RT; RT R;
+public:
+    Segment(): base(0)
+    {
+    }
+private:
+    friend class O65;
+    void Locate(SegmentSelection seg, unsigned diff, bool is_me);
+    void LocateSym(unsigned symno, unsigned newaddress);
+    void LoadRelocations(FILE* fp);
+};
+
+O65::O65(): defs(new Defs),
+            code(NULL), data(NULL),
+            zero(NULL), bss(NULL),
+            error(false)
 {
 }
 
@@ -190,21 +142,28 @@ O65::~O65()
 {
     delete code;
     delete data;
+    delete zero;
+    delete bss;
+    delete defs;
 }
 
 O65::O65(const O65& b)
-    : undefines(b.undefines),
-      code(b.code ? new segment(*b.code) : NULL),
-      data(b.data ? new segment(*b.data) : NULL),
+    : defs(new Defs(*b.defs)),
+      code(b.code ? new Segment(*b.code) : NULL),
+      data(b.data ? new Segment(*b.data) : NULL),
+      zero(b.zero ? new Segment(*b.zero) : NULL),
+      bss(b.bss ? new Segment(*b.bss) : NULL),
       error(b.error)
 {
 }
 void O65::operator= (const O65& b)
 {
     if(&b == this) return;
-    delete code; code = b.code ? new segment(*b.code) : NULL;
-    delete data; data = b.data ? new segment(*b.data) : NULL;
-    undefines = b.undefines;
+    delete code; code = b.code ? new Segment(*b.code) : NULL;
+    delete data; data = b.data ? new Segment(*b.data) : NULL;
+    delete zero; zero = b.zero ? new Segment(*b.zero) : NULL;
+    delete bss; bss = b.bss ? new Segment(*b.bss) : NULL;
+    delete defs; defs = new Defs(*b.defs);
 }
 
 void O65::Load(FILE* fp)
@@ -223,50 +182,72 @@ void O65::Load(FILE* fp)
     
     if(this->code) delete this->code;
     if(this->data) delete this->data;
+    if(this->zero) delete this->zero;
+    if(this->bss) delete this->bss;
 
-    this->code = new segment;
-    this->data = new segment;
+    this->code = new Segment;
+    this->data = new Segment;
+    this->zero = new Segment;
+    this->bss = new Segment;
     
     this->code->base = LoadSWord(fp, use32);
-    this->ResizeCode(LoadSWord(fp, use32));
+    this->code->space.resize(LoadSWord(fp, use32));
 
     this->data->base = LoadSWord(fp, use32);
-    this->ResizeData(LoadSWord(fp, use32));
+    this->data->space.resize(LoadSWord(fp, use32));
     
-    LoadSWord(fp, use32); // Skip bss_base
-    LoadSWord(fp, use32); // Skip bss_len
-    LoadSWord(fp, use32); // Skip zero_base
-    LoadSWord(fp, use32); // Skip zero_len
+    this->bss->base = LoadSWord(fp, use32);
+    this->bss->space.resize(LoadSWord(fp, use32));
+    
+    this->zero->base = LoadSWord(fp, use32);
+    this->zero->space.resize(LoadSWord(fp, use32));
+    
     LoadSWord(fp, use32); // Skip stack_len
     
     // Skip some headers
     for(;;)
     {
         unsigned len = fgetc(fp);
-        if(!len)break;
-        /* FIXME: These could be valuable */
-        for(unsigned a=0; a<len; ++a) fgetc(fp);
+        if(!len || len == (unsigned)EOF)break;
+        
+        len &= 0xFF;
+        
+        unsigned char type = fgetc(fp);
+        if(len >= 2) len -= 2; else len = 0;
+        
+        //fprintf(stderr, "Custom header %02X (len=%u)\n", type, len);
+        
+        switch(type)
+        {
+            case 10: // linkage type
+            case 0: // filename
+            case 1: // operating system header
+            case 2: // assembler name
+            case 3: // author
+            case 4: // creation date
+            default:
+                // ignore
+                for(unsigned a=0; a<len; ++a) fgetc(fp);
+        }
     }
     
     fread(&this->code->space[0], this->code->space.size(), 1, fp);
     fread(&this->data->space[0], this->data->space.size(), 1, fp);
+    // zero and bss Segments don't exist in o65 format.
     
+    // load external symbols
     unsigned num_und = LoadSWord(fp, use32);
     for(unsigned a=0; a<num_und; ++a)
     {
         string varname;
         while(int c = fgetc(fp)) { if(c==EOF)break; varname += (char) c; }
         
-        undefines.push_back(make_pair(varname, make_pair(false, 0)));
+        defs->AddUndefined(varname);
     }
     
-    LoadRelocations(fp, *this->code);
-    LoadRelocations(fp, *this->data);
-    
-    if(!this->data->space.empty())
-    {
-        fprintf(stderr, "Warning: Nonempty data segment completely ignored.\n");
-    }
+    code->LoadRelocations(fp);
+    code->LoadRelocations(fp);
+    // relocations don't exist for zero/bss in o65 format.
     
     unsigned num_global = LoadSWord(fp, use32);
     for(unsigned a=0; a<num_global; ++a)
@@ -274,79 +255,79 @@ void O65::Load(FILE* fp)
         string varname;
         while(int c = fgetc(fp)) { if(c==EOF)break; varname += (char) c; }
         
-        unsigned seg = fgetc(fp);
+        SegmentSelection seg = (SegmentSelection)fgetc(fp);
+        
         unsigned value = LoadSWord(fp, use32);
         
-        switch(seg)
-        {
-            case 2:
-                DeclareCodeGlobal(varname, value);
-                break;
-            case 3:
-                DeclareDataGlobal(varname, value);
-                break;
-        }
+        DeclareGlobal(seg, varname, value);
     }
 }
 
-void O65::DeclareCodeGlobal(const string& name, unsigned address)
+void O65::DeclareGlobal(SegmentSelection seg, const string& name, unsigned address)
 {
-    code->symbols[name] = address;
+    if(Segment**s = GetSegRef(seg))
+    {
+        (*s)->publics[name] = address;
+    }
 }
 
-void O65::DeclareDataGlobal(const string& name, unsigned address)
+void O65::Locate(SegmentSelection seg, unsigned newaddress)
 {
-    data->symbols[name] = address;
-}
-
-void O65::LocateCode(unsigned newaddress)
-{
-    code->Locate(newaddress);
+    Segment**s = GetSegRef(seg);
+    if(!s) return;
+    
+    unsigned diff = newaddress - (*s)->base;
+    
+    if(code) code->Locate(seg, diff, seg==CODE);
+    if(data) data->Locate(seg, diff, seg==DATA);
+    if(zero) zero->Locate(seg, diff, seg==ZERO);
+    if(bss)   bss->Locate(seg, diff, seg==BSS);
 }
 
 void O65::LinkSym(const string& name, unsigned value)
 {
-    bool found = false;
-    
-    for(unsigned a=0; a<undefines.size(); ++a)
+    unsigned symno = defs->GetSymno(name);
+    if(symno == ~0U)
     {
-        if(undefines[a].first != name) continue;
-        
-        found = true;
-        
-        if(undefines[a].second.first)
-        {
-            fprintf(stderr, "Attempt to redefine symbol '%s' as %X, old value %X\n",
-                name.c_str(),
-                value,
-                undefines[a].second.second
-                   );
-        }
-        code->LocateSym(a, value);
-        undefines[a].second.first  = true;  // mark defined
-        undefines[a].second.second = value; // as this value
-    }
-    
-    if(!found)
-        fprintf(stderr, "Attempt to define unknown symbol '%s' as %X\n",
+        fprintf(stderr, "O65: Attempt to define unknown symbol '%s' as %X\n",
             name.c_str(), value);
+        return;
+    }
+    if(defs->IsDefined(symno))
+    {
+        unsigned oldvalue = defs->GetValue(symno);
+        
+        fprintf(stderr, "O65: Attempt to redefine symbol '%s' as %X, old value %X\n",
+            name.c_str(),
+            value,
+            oldvalue
+               );
+    }
+    if(code) code->LocateSym(symno, value);
+    if(data) data->LocateSym(symno, value);
+    if(zero) zero->LocateSym(symno, value);
+    if(bss) bss->LocateSym(symno, value);
+        
+    defs->Define(symno, value);
 }
 
-void O65::segment::Locate(unsigned newaddress)
+void O65::Segment::Locate(SegmentSelection seg, unsigned diff, bool is_me)
 {
-    unsigned diff = newaddress - base;
-    
-    /* Relocate symbols */
-    map<string, unsigned>::iterator i;
-    for(i = symbols.begin(); i != symbols.end(); ++i)
+    if(is_me)
     {
-        i->second += diff;
+        /* Relocate publics */
+        map<string, unsigned>::iterator i;
+        for(i = publics.begin(); i != publics.end(); ++i)
+        {
+            i->second += diff;
+        }
     }
     
-    /* Fix all references to local symbols */
-    for(unsigned a=0; a<R16.Fixups.size(); ++a)
+    /* Fix all references to symbols in the given seg */
+    for(unsigned a=0; a<R.R16.Fixups.size(); ++a)
     {
-        unsigned addr = R16.Fixups[a] - base;
+        if(R.R16.Fixups[a].first != seg) continue;
+        unsigned addr = R.R16.Fixups[a].second - base;
         unsigned oldvalue = space[addr] | (space[addr+1] << 8);
         unsigned newvalue = oldvalue + diff;
         
@@ -356,9 +337,10 @@ void O65::segment::Locate(unsigned newaddress)
         space[addr] = newvalue&255;
         space[addr+1] = (newvalue>>8) & 255;
     }
-    for(unsigned a=0; a<R16lo.Fixups.size(); ++a)
+    for(unsigned a=0; a<R.R16lo.Fixups.size(); ++a)
     {
-        unsigned addr = R16lo.Fixups[a] - base;
+        if(R.R16lo.Fixups[a].first != seg) continue;
+        unsigned addr = R.R16lo.Fixups[a].second - base;
         unsigned oldvalue = space[addr];
         unsigned newvalue = oldvalue + diff;
 #if DEBUG_FIXUPS
@@ -366,19 +348,21 @@ void O65::segment::Locate(unsigned newaddress)
 #endif
         space[addr] = newvalue & 255;
     }
-    for(unsigned a=0; a<R16hi.Fixups.size(); ++a)
+    for(unsigned a=0; a<R.R16hi.Fixups.size(); ++a)
     {
-        unsigned addr = R16hi.Fixups[a].first - base;
-        unsigned oldvalue = (space[addr] << 8) | R16hi.Fixups[a].second;
+        if(R.R16hi.Fixups[a].first != seg) continue;
+        unsigned addr = R.R16hi.Fixups[a].second.first - base;
+        unsigned oldvalue = (space[addr] << 8) | R.R16hi.Fixups[a].second.second;
         unsigned newvalue = oldvalue + diff;
 #if DEBUG_FIXUPS
         fprintf(stderr, "Replaced %02X with %02X at %06X\n", space[addr],(newvalue>>8)&255, addr);
 #endif
         space[addr] = (newvalue>>8) & 255;
     }
-    for(unsigned a=0; a<R24.Fixups.size(); ++a)
+    for(unsigned a=0; a<R.R24.Fixups.size(); ++a)
     {
-        unsigned addr = R24.Fixups[a] - base;
+        if(R.R24.Fixups[a].first != seg) continue;
+        unsigned addr = R.R24.Fixups[a].second - base;
         unsigned oldvalue = space[addr] | (space[addr+1] << 8) | (space[addr+2] << 16);
         unsigned newvalue = oldvalue + diff;
         
@@ -389,10 +373,11 @@ void O65::segment::Locate(unsigned newaddress)
         space[addr+1] = (newvalue>>8) & 255;
         space[addr+2] = (newvalue>>16) & 255;
     }
-    for(unsigned a=0; a<R24seg.Fixups.size(); ++a)
+    for(unsigned a=0; a<R.R24seg.Fixups.size(); ++a)
     {
-        unsigned addr = R24seg.Fixups[a].first - base;
-        unsigned oldvalue = (space[addr] << 16) | R24seg.Fixups[a].second;
+        if(R.R24seg.Fixups[a].first != seg) continue;
+        unsigned addr = R.R24seg.Fixups[a].second.first - base;
+        unsigned oldvalue = (space[addr] << 16) | R.R24seg.Fixups[a].second.second;
         unsigned newvalue = oldvalue + diff;
         
 #if DEBUG_FIXUPS
@@ -404,30 +389,35 @@ void O65::segment::Locate(unsigned newaddress)
     // Update the relocs and fixups so that they are still usable
     // after this operation. Enables also subsequent Locate() calls.
     
-    for(unsigned a=0; a<R16.Relocs.size(); ++a) R16.Relocs[a].first += diff;
-    for(unsigned a=0; a<R16lo.Relocs.size(); ++a) R16lo.Relocs[a].first += diff;
-    for(unsigned a=0; a<R16hi.Relocs.size(); ++a) R16hi.Relocs[a].first.first += diff;
-    for(unsigned a=0; a<R24.Relocs.size(); ++a) R24.Relocs[a].first += diff;
-    for(unsigned a=0; a<R24seg.Relocs.size(); ++a) R24seg.Relocs[a].first.first += diff;
+    // This updates the position of each reloc & fixup.
+    
+    if(is_me)
+    {
+        for(unsigned a=0; a<R.R16.Relocs.size(); ++a)       R.R16.Relocs[a].first += diff;
+        for(unsigned a=0; a<R.R24.Relocs.size(); ++a)       R.R24.Relocs[a].first += diff;
+        for(unsigned a=0; a<R.R16lo.Relocs.size(); ++a)   R.R16lo.Relocs[a].first += diff;
+        for(unsigned a=0; a<R.R16hi.Relocs.size(); ++a)   R.R16hi.Relocs[a].first.first += diff;
+        for(unsigned a=0; a<R.R24seg.Relocs.size(); ++a) R.R24seg.Relocs[a].first.first += diff;
 
-    for(unsigned a=0; a<R16.Fixups.size(); ++a) R16.Fixups[a] += diff;
-    for(unsigned a=0; a<R16lo.Fixups.size(); ++a) R16lo.Fixups[a] += diff;
-    for(unsigned a=0; a<R16hi.Fixups.size(); ++a) R16hi.Fixups[a].first += diff;
-    for(unsigned a=0; a<R24.Fixups.size(); ++a) R24.Fixups[a] += diff;
-    for(unsigned a=0; a<R24seg.Fixups.size(); ++a) R24seg.Fixups[a].first += diff;
+        for(unsigned a=0; a<R.R16.Fixups.size(); ++a)       R.R16.Fixups[a].second += diff;
+        for(unsigned a=0; a<R.R24.Fixups.size(); ++a)       R.R24.Fixups[a].second += diff;
+        for(unsigned a=0; a<R.R16lo.Fixups.size(); ++a)   R.R16lo.Fixups[a].second += diff;
+        for(unsigned a=0; a<R.R16hi.Fixups.size(); ++a)   R.R16hi.Fixups[a].second.first += diff;
+        for(unsigned a=0; a<R.R24seg.Fixups.size(); ++a) R.R24seg.Fixups[a].second.first += diff;
 
-    base = newaddress;
+        base += diff;
+    }
 }
 
-void O65::segment::LocateSym(unsigned symno, unsigned value)
+void O65::Segment::LocateSym(unsigned symno, unsigned value)
 {
     /* Locate an external symbol */
 
     /* Fix all references to it */
-    for(unsigned a=0; a<R16.Relocs.size(); ++a)
+    for(unsigned a=0; a<R.R16.Relocs.size(); ++a)
     {
-        if(R16.Relocs[a].second != symno) continue;
-        unsigned addr = R16.Relocs[a].first - base;
+        if(R.R16.Relocs[a].second != symno) continue;
+        unsigned addr = R.R16.Relocs[a].first - base;
         unsigned oldvalue = space[addr] | (space[addr+1] << 8);
         unsigned newvalue = oldvalue + value;
 #if DEBUG_FIXUPS
@@ -436,10 +426,10 @@ void O65::segment::LocateSym(unsigned symno, unsigned value)
         space[addr] = newvalue&255;
         space[addr+1] = (newvalue>>8) & 255;
     }
-    for(unsigned a=0; a<R16lo.Relocs.size(); ++a)
+    for(unsigned a=0; a<R.R16lo.Relocs.size(); ++a)
     {
-        if(R16lo.Relocs[a].second != symno) continue;
-        unsigned addr = R16lo.Relocs[a].first - base;
+        if(R.R16lo.Relocs[a].second != symno) continue;
+        unsigned addr = R.R16lo.Relocs[a].first - base;
         unsigned oldvalue = space[addr];
         unsigned newvalue = oldvalue + value;
 #if DEBUG_FIXUPS
@@ -447,11 +437,11 @@ void O65::segment::LocateSym(unsigned symno, unsigned value)
 #endif
         space[addr] = newvalue & 255;
     }
-    for(unsigned a=0; a<R16hi.Relocs.size(); ++a)
+    for(unsigned a=0; a<R.R16hi.Relocs.size(); ++a)
     {
-        if(R16hi.Relocs[a].second != symno) continue;
-        unsigned addr = R16hi.Relocs[a].first.first - base;
-        unsigned oldvalue = (space[addr] << 8) | R16hi.Relocs[a].first.second;
+        if(R.R16hi.Relocs[a].second != symno) continue;
+        unsigned addr = R.R16hi.Relocs[a].first.first - base;
+        unsigned oldvalue = (space[addr] << 8) | R.R16hi.Relocs[a].first.second;
         unsigned newvalue = oldvalue + value;
 #if DEBUG_FIXUPS
         fprintf(stderr, "Replaced %02X with %02X for sym %u\n",
@@ -459,10 +449,10 @@ void O65::segment::LocateSym(unsigned symno, unsigned value)
 #endif
         space[addr] = (newvalue>>8) & 255;
     }
-    for(unsigned a=0; a<R24.Relocs.size(); ++a)
+    for(unsigned a=0; a<R.R24.Relocs.size(); ++a)
     {
-        if(R24.Relocs[a].second != symno) continue;
-        unsigned addr = R24.Relocs[a].first - base;
+        if(R.R24.Relocs[a].second != symno) continue;
+        unsigned addr = R.R24.Relocs[a].first - base;
         unsigned oldvalue = space[addr] | (space[addr+1] << 8) | (space[addr+2] << 16);
         unsigned newvalue = oldvalue + value;
         
@@ -473,11 +463,11 @@ void O65::segment::LocateSym(unsigned symno, unsigned value)
         space[addr+1] = (newvalue>>8) & 255;
         space[addr+2] = (newvalue>>16) & 255;
     }
-    for(unsigned a=0; a<R24seg.Relocs.size(); ++a)
+    for(unsigned a=0; a<R.R24seg.Relocs.size(); ++a)
     {
-        if(R24seg.Relocs[a].second != symno) continue;
-        unsigned addr = R24seg.Relocs[a].first.first - base;
-        unsigned oldvalue = (space[addr] << 16) | R24seg.Relocs[a].first.second;
+        if(R.R24seg.Relocs[a].second != symno) continue;
+        unsigned addr = R.R24seg.Relocs[a].first.first - base;
+        unsigned oldvalue = (space[addr] << 16) | R.R24seg.Relocs[a].first.second;
         unsigned newvalue = oldvalue + value;
         
 #if DEBUG_FIXUPS
@@ -487,30 +477,28 @@ void O65::segment::LocateSym(unsigned symno, unsigned value)
     }
 }
 
-const vector<unsigned char>& O65::GetCode() const
+const vector<unsigned char>& O65::GetSeg(SegmentSelection seg) const
 {
+    if(const Segment*const *s = GetSegRef(seg))
+    {
+        return (*s)->space;
+    }
     return code->space;
 }
 
-unsigned O65::GetCodeSize() const
+unsigned O65::GetSegSize(SegmentSelection seg) const
 {
-    return code->space.size();
-}
-
-const vector<unsigned char>& O65::GetData() const
-{
-    return data->space;
-}
-
-unsigned O65::GetDataSize() const
-{
-    return data->space.size();
+    if(const Segment*const *s = GetSegRef(seg))
+    {
+        return (*s)->space.size();
+    }
+    return 0;
 }
 
 unsigned O65::GetSymAddress(const string& name) const
 {
-    segment::symbolmap_t::const_iterator i = code->symbols.find(name);
-    if(i == code->symbols.end())
+    Segment::publicmap_t::const_iterator i = code->publics.find(name);
+    if(i == code->publics.end())
     {
         fprintf(stderr, "Attempt to find symbol %s which not exists.\n", name.c_str());
         return 0;
@@ -520,15 +508,15 @@ unsigned O65::GetSymAddress(const string& name) const
 
 bool O65::HasSym(const string& name) const
 {
-    return code->symbols.find(name) != code->symbols.end();
+    return code->publics.find(name) != code->publics.end();
 }
 
 const vector<string> O65::GetSymbolList() const
 {
     vector<string> result;
     for(map<string, unsigned>::const_iterator
-        i = code->symbols.begin();
-        i != code->symbols.end();
+        i = code->publics.begin();
+        i != code->publics.end();
         ++i)
     {
         result.push_back(i->first);
@@ -538,112 +526,62 @@ const vector<string> O65::GetSymbolList() const
 
 const vector<string> O65::GetExternList() const
 {
-    vector<string> result;
-    
-    for(unsigned a=0; a<undefines.size(); ++a)
-    {
-        if(undefines[a].second.first) continue;
-        result.push_back(undefines[a].first);
-    }
-    
-    return result;
+    return defs->GetExternList();
 }
 
 void O65::Verify() const
 {
-    for(unsigned a=0; a<undefines.size(); ++a)
-        if(!undefines[a].second.first)
-        {
-            fprintf(stderr, "Symbol %s is still not defined\n",
-                undefines[a].first.c_str());
-        }
+    defs->DumpUndefines();
 }
 
-const string O65::GetByteAt(unsigned addr) const
+O65::Segment** O65::GetSegRef(SegmentSelection seg)
 {
-#if 0
-    for(unsigned a=0; a<code->R16lo.Relocs.size(); ++a)
+    Segment** result = NULL;
+    switch(seg)
     {
-        if(code->R16lo.Relocs[a].first != addr) continue;
-        
-        unsigned symno = code->R16lo.Relocs[a].second;
-        string result = undefines[symno].first;
-        
-        unsigned Target = undefines[symno].second.second;
-
-        signed char diff = code->space[addr] - Target;
-        if(diff)
-        {
-            char Buf[64]; sprintf(Buf, "%+d", diff);
-            result += Buf;
-        }
-        return result;
+        case CODE: result = &code; break;
+        case DATA: result = &data; break;
+        case ZERO: result = &zero; break;
+        case BSS: result = &bss; break;
+        default: return NULL;
     }
-    for(unsigned a=0; a<code->R16lo.Fixups.size(); ++a)
+    if(!*result) *result = new Segment;
+    return result;
+}
+const O65::Segment*const * O65::GetSegRef(SegmentSelection seg) const
+{
+    switch(seg)
     {
-        if(code->R16lo.Fixups[a].first != addr) continue;
-        
-        unsigned symno = code->R16lo.Fixups[a].second;
-        string result = undefines[symno].first;
-
-        signed char diff = code->space[addr] - undefines[symno].second.second;
-        if(diff)
-        {
-            char Buf[64]; sprintf(Buf, "%+d", diff);
-            result += Buf;
-        }
-        return result;
+        case CODE: return &code;
+        case DATA: return &data;
+        case ZERO: return &zero;
+        case BSS: return &bss;
     }
-#endif
-    char Buf[4]; sprintf(Buf, "$%02X", code->space[addr]);
-    return Buf;
+    return NULL;
 }
 
-const string O65::GetWordAt(unsigned addr) const
+void O65::Resize(SegmentSelection seg, unsigned newsize)
 {
-    char Buf[6]; sprintf(Buf, "$%02X%02X", code->space[addr+1], code->space[addr]);
-    return Buf;
+    if(Segment**s = GetSegRef(seg))
+    {
+        (*s)->space.resize(newsize);
+    }
 }
 
-const string O65::GetLongAt(unsigned addr) const
+void O65::Write(SegmentSelection seg, unsigned addr, unsigned char value)
 {
-    char Buf[8]; sprintf(Buf, "$%02X%02X%02X", code->space[addr+2], code->space[addr+1], code->space[addr]);
-    return Buf;
+    if(Segment**s = GetSegRef(seg))
+    {
+        (*s)->space[addr] = value;
+    }
 }
 
-void O65::ResizeCode(unsigned newsize)
+void O65::LoadSegFrom(SegmentSelection seg, const vector<unsigned char>& buf)
 {
-    if(!this->code) this->code = new segment;
-    code->space.resize(newsize);
-}
-
-void O65::ResizeData(unsigned newsize)
-{
-    if(!this->data) this->data = new segment;
-    data->space.resize(newsize);
-}
-
-void O65::WriteCode(unsigned addr, unsigned char value)
-{
-    if(!this->code) this->code = new segment;
-    code->space[addr] = value;
-}
-
-void O65::WriteData(unsigned addr, unsigned char value)
-{
-    data->space[addr] = value;
-}
-
-void O65::LoadCodeFrom(const vector<unsigned char>& buf)
-{
-    if(!this->code) this->code = new segment;
-    code->space = buf;
-}
-
-void O65::LoadDataFrom(const vector<unsigned char>& buf)
-{
-    if(!this->data) this->data = new segment;
-    data->space = buf;
+    if(Segment**s = GetSegRef(seg))
+    {
+        (*s)->space = buf;
+    }
 }
 
 bool O65::Error() const
@@ -656,77 +594,169 @@ void O65::SetError()
     error = true;
 }
 
-void O65::DeclareByteRelocation(const string& name, unsigned addr)
+void O65::DeclareByteRelocation(SegmentSelection seg, const string& name, unsigned addr)
 {
-    unsigned undef_idx = undefines.size();
-    for(unsigned a=0; a<undefines.size(); ++a)
+    Segment**s = GetSegRef(seg); if(!s) return;
+    
+    unsigned symno = defs->GetSymno(name);
+    
+    if(symno == ~0U)
+        symno = defs->AddUndefined(name);
+    else if(defs->IsDefined(symno))
     {
-        if(undefines[a].first == name)
-        {
-            if(undefines[a].second.first)
-            {
-                // Already known!
-                unsigned value = undefines[a].second.second;
-                addr -= code->base;
-                code->space[addr] = value & 0xFF;
-                return;
-            }
-            undef_idx = a;
-        }
+        unsigned value = defs->GetValue(symno);
+        addr -= (*s)->base;
+        (*s)->space[addr] = value & 0xFF;
+        return;
     }
-    if(undef_idx == undefines.size())
-        undefines.push_back(make_pair(name, make_pair(false, 0)));
-
-    code->R16lo.Relocs.push_back(make_pair(addr, undef_idx));
+    (*s)->R.R16lo.AddReloc(addr, symno);
 }
 
-void O65::DeclareWordRelocation(const string& name, unsigned addr)
+void O65::DeclareWordRelocation(SegmentSelection seg, const string& name, unsigned addr)
 {
-    unsigned undef_idx = undefines.size();
-    for(unsigned a=0; a<undefines.size(); ++a)
+    Segment**s = GetSegRef(seg); if(!s) return;
+    
+    unsigned symno = defs->GetSymno(name);
+    
+    if(symno == ~0U)
+        symno = defs->AddUndefined(name);
+    else if(defs->IsDefined(symno))
     {
-        if(undefines[a].first == name)
-        {
-            if(undefines[a].second.first)
-            {
-                // Already known!
-                unsigned value = undefines[a].second.second;
-                addr -= code->base;
-                code->space[addr    ] =  value       & 0xFF;
-                code->space[addr + 1] = (value >> 8) & 0xFF;
-                return;
-            }
-            undef_idx = a;
-        }
+        unsigned value = defs->GetValue(symno);
+        addr -= (*s)->base;
+        (*s)->space[addr    ] =  value       & 0xFF;
+        (*s)->space[addr + 1] = (value >> 8) & 0xFF;
+        return;
     }
-    if(undef_idx == undefines.size())
-        undefines.push_back(make_pair(name, make_pair(false, 0)));
-
-    code->R16.Relocs.push_back(make_pair(addr, undef_idx));
+    (*s)->R.R16.AddReloc(addr, symno);
 }
 
-void O65::DeclareLongRelocation(const string& name, unsigned addr)
+void O65::DeclareLongRelocation(SegmentSelection seg, const string& name, unsigned addr)
 {
-    unsigned undef_idx = undefines.size();
-    for(unsigned a=0; a<undefines.size(); ++a)
+    Segment**s = GetSegRef(seg); if(!s) return;
+    
+    unsigned symno = defs->GetSymno(name);
+    
+    if(symno == ~0U)
+        symno = defs->AddUndefined(name);
+    else if(defs->IsDefined(symno))
     {
-        if(undefines[a].first == name)
+        unsigned value = defs->GetValue(symno);
+        addr -= (*s)->base;
+        (*s)->space[addr    ] =  value       & 0xFF;
+        (*s)->space[addr + 1] = (value >> 8) & 0xFF;
+        (*s)->space[addr + 2] = (value >>16) & 0xFF;
+        return;
+    }
+    (*s)->R.R24.AddReloc(addr, symno);
+}
+
+void O65::Segment::LoadRelocations(FILE* fp)
+{
+    int addr = -1;
+    for(;;)
+    {
+        int c = fgetc(fp);
+        if(!c || c == EOF)break;
+        if(c == 255) { addr += 254; continue; }
+        addr += c;
+        c = fgetc(fp);
+        unsigned type = c & 0xE0;
+        unsigned area = c & 0x07;
+        
+        switch(area)
         {
-            if(undefines[a].second.first)
+            case 0: // external
             {
-                // Already known!
-                unsigned value = undefines[a].second.second;
-                addr -= code->base;
-                code->space[addr    ] =  value       & 0xFF;
-                code->space[addr + 1] = (value >> 8) & 0xFF;
-                code->space[addr + 2] = (value >>16) & 0xFF;
-                return;
+                unsigned symno = LoadWord(fp);
+                switch(type)
+                {
+                    case 0x20:
+                    {
+                        R.R16lo.AddReloc(addr, symno);
+                        break;
+                    }
+                    case 0x40:
+                    {
+                        RT::R16hi_t::Type tmp(addr, fgetc(fp));
+                        R.R16hi.AddReloc(tmp, symno);
+                        break;
+                    }
+                    case 0x80:
+                    {
+                        R.R16.AddReloc(addr, symno);
+                        break;
+                    }
+                    case 0xA0:
+                    {
+                        RT::R24seg_t::Type tmp(addr, LoadWord(fp));
+                        R.R24seg.AddReloc(tmp, symno);
+                        break;
+                    }
+                    case 0xC0:
+                    {
+                        R.R24.AddReloc(addr, symno);
+                        break;
+                    }
+                    default:
+                    {
+                        fprintf(stderr,
+                            "Error: External reloc type %02X not supported yet\n",
+                            type);
+                    }
+                }
+                break;
             }
-            undef_idx = a;
+            case CODE: // code =2
+            case DATA: // data =3
+            case ZERO: // zero =5
+            case BSS:  // bss  =4
+            {
+                SegmentSelection seg = (SegmentSelection)area;
+                switch(type)
+                {
+                    case 0x20:
+                    {
+                        R.R16lo.AddFixup(seg, addr);
+                        break;
+                    }
+                    case 0x40:
+                    {
+                        RT::R16hi_t::Type tmp(addr, fgetc(fp));
+                        R.R16hi.AddFixup(seg, tmp);
+                        break;
+                    }
+                    case 0x80:
+                    {
+                        R.R16.AddFixup(seg, addr);
+                        break;
+                    }
+                    case 0xA0:
+                    {
+                        RT::R24seg_t::Type tmp(addr, LoadWord(fp));
+                        R.R24seg.AddFixup(seg, tmp);
+                        break;
+                    }
+                    case 0xC0:
+                    {
+                        R.R24.AddFixup(seg, addr);
+                        break;
+                    }
+                    default:
+                    {
+                        fprintf(stderr,
+                            "Error: Fixup type %02X not supported yet\n",
+                            type);
+                    }
+                }
+                break;
+            }
+            default:
+            {
+                fprintf(stderr,
+                    "Error: Reloc area type %02X not supported yet\n",
+                        area);
+            }
         }
     }
-    if(undef_idx == undefines.size())
-        undefines.push_back(make_pair(name, make_pair(false, 0)));
-
-    code->R24.Relocs.push_back(make_pair(addr, undef_idx));
 }

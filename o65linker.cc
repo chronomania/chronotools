@@ -2,23 +2,28 @@
 #include "msginsert.hh"
 
 #include <list>
+#include <utility>
 #include <map>
 
+using std::make_pair;
 using std::list;
 using std::map;
 
 #include "hash.hh"
 
-struct Object
+class O65linker::Object
 {
+public:
     O65 object;
+private:
     string name;
+public:
     vector<string> extlist;
     
-    O65linker::LinkageWish linkage;
+    LinkageWish linkage;
     
 public:
-    Object(const O65& obj, const string& what, O65linker::LinkageWish link)
+    Object(const O65& obj, const string& what, LinkageWish link)
     : object(obj),
       name(what),
       extlist(obj.GetExternList()),
@@ -30,13 +35,20 @@ public:
     {
     }
     
+    const string& GetName() const { return name; }
+    
     void Release()
     {
         //*this = Object();
     }
+    
+    bool operator< (const Object& b) const
+    {
+        return linkage.GetAddress() < b.linkage.GetAddress();
+    }
 };
 
-class SymCache
+class O65linker::SymCache
 {
     typedef hash_map<string, unsigned> cachetype;
     
@@ -56,14 +68,6 @@ public:
         return make_pair(i->second, true);
     }
 };
-
-namespace
-{
-    bool SortObjectByAddr(const Object* a, const Object* b)
-    {
-        return a->linkage.GetAddress() < b->linkage.GetAddress();
-    }
-}
 
 void O65linker::AddObject(const O65& object, const string& what, LinkageWish linkage)
 {
@@ -90,7 +94,7 @@ void O65linker::AddObject(const O65& object, const string& what, LinkageWish lin
                 " is already present in object \"%s\"\n",
                 symlist[a].c_str(),
                 what.c_str(),
-                objects[tmp.first]->name.c_str());
+                objects[tmp.first]->GetName().c_str());
             ++collisions;
         }
     }
@@ -106,25 +110,31 @@ void O65linker::AddObject(const O65& object, const string& what, LinkageWish lin
 
 const vector<unsigned> O65linker::GetSizeList() const
 {
-    vector<unsigned> result(objects.size());
-    for(unsigned a=0; a<result.size(); ++a)
-        result[a] = objects[a]->object.GetCodeSize();
+    vector<unsigned> result;
+    unsigned n = objects.size();
+    result.reserve(n);
+    for(unsigned a=0; a<n; ++a)
+        result.push_back(objects[a]->object.GetSegSize(CODE));
     return result;
 }
 
 const vector<unsigned> O65linker::GetAddrList() const
 {
-    vector<unsigned> result(objects.size());
-    for(unsigned a=0; a<result.size(); ++a)
-        result[a] = objects[a]->linkage.GetAddress();
+    vector<unsigned> result;
+    unsigned n = objects.size();
+    result.reserve(n);
+    for(unsigned a=0; a<n; ++a)
+        result.push_back(objects[a]->linkage.GetAddress());
     return result;
 }
 
-const vector<O65linker::LinkageWish> O65linker::GetLinkageList() const
+const vector<LinkageWish> O65linker::GetLinkageList() const
 {
-    vector<LinkageWish> result(objects.size());
-    for(unsigned a=0; a<result.size(); ++a)
-        result[a] = objects[a]->linkage;
+    vector<LinkageWish> result;
+    unsigned n = objects.size();
+    result.reserve(n);
+    for(unsigned a=0; a<n; ++a)
+        result.push_back(objects[a]->linkage);
     return result;
 }
 
@@ -135,18 +145,18 @@ void O65linker::PutAddrList(const vector<unsigned>& addrs)
     for(unsigned a=0; a<limit; ++a)
     {
         objects[a]->linkage.SetAddress(addrs[a]);
-        objects[a]->object.LocateCode(addrs[a]);
+        objects[a]->object.Locate(CODE, addrs[a]);
     }
 }
 
 const vector<unsigned char>& O65linker::GetCode(unsigned objno) const
 {
-    return objects[objno]->object.GetCode();
+    return objects[objno]->object.GetSeg(CODE);
 }
 
 const string& O65linker::GetName(unsigned objno) const
 {
-    return objects[objno]->name;
+    return objects[objno]->GetName();
 }
 
 void O65linker::Release(unsigned objno)
@@ -252,15 +262,15 @@ void O65linker::FinishReference(const ReferMethod& reference, unsigned target, c
     AddLump(bytes, pos, title);
 }
 
-void O65linker::AddLump(const vector<unsigned char>& data,
+void O65linker::AddLump(const vector<unsigned char>& source,
                         unsigned address,
                         const string& what,
                         const string& name)
 {
     O65 tmp;
-    tmp.LoadCodeFrom(data);
-    tmp.LocateCode(address);
-    if(!name.empty()) tmp.DeclareCodeGlobal(name, address);
+    tmp.LoadSegFrom(CODE, source);
+    tmp.Locate(CODE, address);
+    if(!name.empty()) tmp.DeclareGlobal(CODE, name, address);
     
     LinkageWish wish;
     wish.SetAddress(address);
@@ -268,13 +278,13 @@ void O65linker::AddLump(const vector<unsigned char>& data,
     AddObject(tmp, what, wish);
 }
 
-void O65linker::AddLump(const vector<unsigned char>& data,
+void O65linker::AddLump(const vector<unsigned char>& source,
                         const string& what,
                         const string& name)
 {
     O65 tmp;
-    tmp.LoadCodeFrom(data);
-    if(!name.empty()) tmp.DeclareCodeGlobal(name, 0);
+    tmp.LoadSegFrom(CODE, source);
+    if(!name.empty()) tmp.DeclareGlobal(CODE, name, 0);
     AddObject(tmp, what);
 }
 
@@ -289,17 +299,17 @@ void O65linker::Link()
     
     MessageLinkingModules(objects.size());
 
-    // For all modules, satisfy their needs.
+    // For each module, satisfy each of their externs one by one.
     for(unsigned a=0; a<objects.size(); ++a)
     {
         Object& o = *objects[a];
         if(o.linkage.type != LinkageWish::LinkHere)
         {
-            MessageModuleWithoutAddress(o.name);
+            MessageModuleWithoutAddress(o.GetName());
             continue;
         }
         
-        MessageLoadingItem(o.name);
+        MessageLoadingItem(o.GetName());
         
         for(unsigned b=0; b<o.extlist.size(); ++b)
         {
@@ -530,8 +540,8 @@ void O65linker::LoadIPSfile(FILE* fp, const string& what)
         
         O65 tmp;
         
-        tmp.LoadCodeFrom(lump.data);
-        tmp.LocateCode(lump.addr);
+        tmp.LoadSegFrom(CODE, lump.data);
+        tmp.Locate(CODE, lump.addr);
         
         bool last = next_lump == lumps.end();
 
@@ -544,7 +554,7 @@ void O65linker::LoadIPSfile(FILE* fp, const string& what)
             || (j->addr >= lump.addr && j->addr < lump.addr + lump.data.size())
               )
             {
-                tmp.DeclareCodeGlobal(j->name, j->addr);
+                tmp.DeclareGlobal(CODE, j->name, j->addr);
                 globals.erase(j);
             }
         }
@@ -561,13 +571,13 @@ void O65linker::LoadIPSfile(FILE* fp, const string& what)
                 switch(j->size)
                 {
                     case 1:
-                        tmp.DeclareByteRelocation(j->name, j->addr);
+                        tmp.DeclareByteRelocation(CODE, j->name, j->addr);
                         break;
                     case 2:
-                        tmp.DeclareWordRelocation(j->name, j->addr);
+                        tmp.DeclareWordRelocation(CODE, j->name, j->addr);
                         break;
                     case 3:
-                        tmp.DeclareLongRelocation(j->name, j->addr);
+                        tmp.DeclareLongRelocation(CODE, j->name, j->addr);
                         break;
                 }
                 externs.erase(j);
@@ -586,5 +596,5 @@ void O65linker::LoadIPSfile(FILE* fp, const string& what)
 
 void O65linker::SortByAddress()
 {
-    std::sort(objects.begin(), objects.end(), SortObjectByAddr);
+    std::sort(objects.begin(), objects.end());
 }

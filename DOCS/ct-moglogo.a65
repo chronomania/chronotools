@@ -34,6 +34,7 @@ DecompressHelper:
 	stx $00
 	sty $03
 	sta $05
+	
         jsl @DECOMPRESS_FUNC_ADDR
         ; Result: $06 = bitmap data size in bytes.
 	rts

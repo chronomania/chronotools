@@ -5,7 +5,8 @@
  * For loading and linking 65816 object files
  * Copyright (C) 1992,2003 Bisqwit (http://iki.fi/bisqwit/)
  *
- * Version 1.2.0 - Aug 18 2003, Sep 4 2003, Jan 23 2004
+ * Version 1.9.0 - Aug 18 2003, Sep 4 2003, Jan 23 2004,
+ *                 Jan 31 2004
  */
 
 #include <cstdio>
@@ -38,6 +39,14 @@ using std::pair;
  *
  */
 
+enum SegmentSelection
+{
+    CODE=2,
+    DATA=3,
+    ZERO=5,
+    BSS=4
+};
+
 class O65
 {
 public:
@@ -51,61 +60,45 @@ public:
     /* Loads an object file from the specified file */
     void Load(FILE *fp);
     
-    /* Relocated the TEXT segment to new address */
-    void LocateCode(unsigned newaddress);
+    /* Relocate the given segment to new address */
+    void Locate(SegmentSelection seg, unsigned newaddress);
     
-    /* Defines the value of a symbol the TEXT is referring */
+    /* Defines the value of a symbol. */
+    /* The symbol must have been accessed in order to be defined. */
     void LinkSym(const string& name, unsigned value);
     
-    /* Declares a global label in the TEXT segment */
-    void DeclareCodeGlobal(const string& name, unsigned address);
+    /* Declares a global label in the selected segment */
+    void DeclareGlobal(SegmentSelection seg, const string& name, unsigned address);
     
-    /* Declares a global label in the DATA segment */
-    void DeclareDataGlobal(const string& name, unsigned address);
+    /* Declares a 8-bit relocation to given symbol */
+    void DeclareByteRelocation(SegmentSelection seg, const string& name, unsigned addr);
+    /* Declares a 16-bit relocation to given symbol */
+    void DeclareWordRelocation(SegmentSelection seg, const string& name, unsigned addr);
+    /* Declares a 24-bit relocation to given symbol */
+    void DeclareLongRelocation(SegmentSelection seg, const string& name, unsigned addr);
     
-    /* Declares a 8-bit relocation to given symbol at given TEXT address */
-    void DeclareByteRelocation(const string& name, unsigned addr);
-    /* Declares a 16-bit relocation to given symbol at given TEXT address */
-    void DeclareWordRelocation(const string& name, unsigned addr);
-    /* Declares a 24-bit relocation to given symbol at given TEXT address */
-    void DeclareLongRelocation(const string& name, unsigned addr);
+    /* Returns the contents of a segment */
+    const vector<unsigned char>& GetSeg(SegmentSelection seg) const;
     
-    /* Returns the TEXT segment */
-    const vector<unsigned char>& GetCode() const;
-    
-    /* Returns the TEXT segment size */
-    unsigned GetCodeSize() const;
-    
-    /* Returns the DATA segment */
-    const vector<unsigned char>& GetData() const;
-    
-    /* Returns the DATA segment size */
-    unsigned GetDataSize() const;
+    /* Returns the segment size */
+    unsigned GetSegSize(SegmentSelection seg) const;
     
     /* Returns the address of a global defined in TEXT segment */
     unsigned GetSymAddress(const string& name) const;
     
-    /* Resizes the TEXT/DATA segment */
-    void ResizeCode(unsigned newsize);
-    void ResizeData(unsigned newsize);
+    /* Resizes a segment */
+    void Resize(SegmentSelection seg, unsigned newsize);
     
-    /* Write to TEXT/DATA segment. Warning: no range checks */
-    void WriteCode(unsigned addr, unsigned char value);
-    void WriteData(unsigned addr, unsigned char value);
+    /* Write to segment. Warning: no range checks */
+    void Write(SegmentSelection seg, unsigned addr, unsigned char value);
     
-    /* Redefine TEXT/DATA segment. Warning: Does not change symbols. */
-    void LoadCodeFrom(const vector<unsigned char>& buf);
-    void LoadDataFrom(const vector<unsigned char>& buf);
+    /* Redefine a segment. Warning: Does not change symbols. */
+    void LoadSegFrom(SegmentSelection seg, const vector<unsigned char>& buf);
     
     bool HasSym(const string& name) const;
     
     const vector<string> GetSymbolList() const;
     const vector<string> GetExternList() const;
-    
-    /* Load hexdumps from TEXT segment. Warning: No range checks. */
-    const string GetByteAt(unsigned addr) const; // Return value: "$00"
-    const string GetWordAt(unsigned addr) const; // Return value: "$0000"
-    const string GetLongAt(unsigned addr) const; // Return value: "$000000"
     
     /* Verifies that all symbols have been properly defined */
     void Verify() const;
@@ -116,12 +109,16 @@ public:
     /* Set error flag */
     void SetError();
 
-    class segment;
 private:
-    // undefined symbols; sym -> defined_flag -> old value
-    vector<pair<string, pair<bool, unsigned> > > undefines;
+    class Defs;
+    class Segment;
     
-    segment *code, *data;
+    Defs *defs;
+    Segment *code, *data, *zero, *bss;
+
+    Segment** GetSegRef(SegmentSelection seg);
+    const Segment*const * GetSegRef(SegmentSelection seg) const;
+    
     bool error;
 };
 

@@ -500,96 +500,99 @@ void freespacemap::OrganizeO65linker(O65linker& objects)
     vector<unsigned> sizes = objects.GetSizeList();
     vector<unsigned> addrs = objects.GetAddrList();
     
-    vector<O65linker::LinkageWish> linkages = objects.GetLinkageList();
+    vector<LinkageWish> linkages = objects.GetLinkageList();
     
-    if(true) /* FIRST link those which require specific pages */
-    {
-        map<unsigned, vector<unsigned> > destinies;
-        for(unsigned a=0; a<linkages.size(); ++a)
-            if(linkages[a].type == O65linker::LinkageWish::LinkThisPage)
-            {
-                destinies[linkages[a].GetPage()].push_back(a);
-            }
-        
-        /* Link each page. */
-        for(map<unsigned, vector<unsigned> >::const_iterator
-            i = destinies.begin(); i != destinies.end(); ++i)
-        {
-            const unsigned page = i->first;
-            const vector<unsigned>& items = i->second;
-            
-            vector<freespacerec> Organization(items.size());
-            
-            for(unsigned c=0; c<items.size(); ++c)
-                Organization[c].len = sizes[items[c]];
-            
-            Organize(Organization, page);
-            
-            for(unsigned c=0; c<items.size(); ++c)
-            {
-                unsigned addr = Organization[c].pos;
-                if(addr != NOWHERE) addr |= (page << 16) | 0xC00000;
-                addrs[items[c]] = addr;
-            }
-        }
-    }
-    
-    if(true) /* SECOND link those which require same pages */
-    {
-        map<unsigned, vector<unsigned> > groups;
-        for(unsigned a=0; a<linkages.size(); ++a)
-            if(linkages[a].type == O65linker::LinkageWish::LinkInGroup)
-            {
-                groups[linkages[a].GetGroup()].push_back(a);
-            }
-        
-        /* Link each page. */
-        for(map<unsigned, vector<unsigned> >::const_iterator
-            i = groups.begin(); i != groups.end(); ++i)
-        {
-            //const unsigned groupnum = i->first; /* unused */
-            const vector<unsigned>& items = i->second;
-            
-            vector<freespacerec> Organization(items.size());
+    map<unsigned, vector<unsigned> > destinies;
+    map<unsigned, vector<unsigned> > groups;
+    vector<unsigned> items;
 
-            for(unsigned c=0; c<items.size(); ++c)
-                Organization[c].len = sizes[items[c]];
-            
-            unsigned page = NOWHERE;
-            OrganizeToAnySamePage(Organization, page);
-            
-            for(unsigned c=0; c<items.size(); ++c)
-            {
-                unsigned addr = Organization[c].pos;
-                if(addr != NOWHERE) addr |= (page << 16) | 0xC00000;
-                addrs[items[c]] = addr;
-            }
+    /* All structures are filled at the same time so
+     * that we can have this switch() here and see if
+     * we missed something.
+     */
+    for(unsigned a=0; a<linkages.size(); ++a)
+        switch(linkages[a].type)
+        {
+            case LinkageWish::LinkThisPage:
+                destinies[linkages[a].GetPage()].push_back(a);
+                break;
+            case LinkageWish::LinkInGroup:
+                groups[linkages[a].GetGroup()].push_back(a);
+                break;
+            case LinkageWish::LinkAnywhere:
+                items.push_back(a);
+                break;
+            case LinkageWish::LinkHere:
+                /* nothing to do */
+                break;
+        }
+        
+    /* FIRST link those which require specific pages */
+
+    /* Link each page. */
+    for(map<unsigned, vector<unsigned> >::const_iterator
+        i = destinies.begin(); i != destinies.end(); ++i)
+    {
+        const unsigned page = i->first;
+        const vector<unsigned>& items = i->second;
+        
+        vector<freespacerec> Organization(items.size());
+        
+        for(unsigned c=0; c<items.size(); ++c)
+            Organization[c].len = sizes[items[c]];
+        
+        Organize(Organization, page);
+        
+        for(unsigned c=0; c<items.size(); ++c)
+        {
+            unsigned addr = Organization[c].pos;
+            if(addr != NOWHERE) addr |= (page << 16) | 0xC00000;
+            addrs[items[c]] = addr;
         }
     }
     
-    if(true) /* LAST link those which go anywhere */
+    /* SECOND link those which require same pages */
+
+    /* Link each group. */
+    for(map<unsigned, vector<unsigned> >::const_iterator
+        i = groups.begin(); i != groups.end(); ++i)
     {
-        vector<unsigned> items;
-        for(unsigned a=0; a<linkages.size(); ++a)
-            if(linkages[a].type == O65linker::LinkageWish::LinkAnywhere)
-            {
-                items.push_back(a);
-            }
+        //const unsigned groupnum = i->first; /* unused */
+        const vector<unsigned>& items = i->second;
         
         vector<freespacerec> Organization(items.size());
 
         for(unsigned c=0; c<items.size(); ++c)
             Organization[c].len = sizes[items[c]];
-
-        OrganizeToAnyPage(Organization);
+        
+        unsigned page = NOWHERE;
+        OrganizeToAnySamePage(Organization, page);
         
         for(unsigned c=0; c<items.size(); ++c)
         {
             unsigned addr = Organization[c].pos;
-            if(addr != NOWHERE) addr |= 0xC00000;
+            if(addr != NOWHERE) addr |= (page << 16) | 0xC00000;
             addrs[items[c]] = addr;
         }
     }
+    
+    /* LAST link those which go anywhere */
+
+    vector<freespacerec> Organization(items.size());
+
+    for(unsigned c=0; c<items.size(); ++c)
+        Organization[c].len = sizes[items[c]];
+
+    OrganizeToAnyPage(Organization);
+    
+    for(unsigned c=0; c<items.size(); ++c)
+    {
+        unsigned addr = Organization[c].pos;
+        if(addr != NOWHERE) addr |= 0xC00000;
+        addrs[items[c]] = addr;
+    }
+    
+    /* Everything done. */
 
     objects.PutAddrList(addrs);
 }

@@ -3,7 +3,7 @@
 
 const struct AddrMode AddrModes[] =
 {
-    /* Sorted in priority order - but NOP type must come first! */
+    /* Sorted in priority order - but the no-parameters-type must come first! */
 
   /* num  example      reject prereq postreq p1-type         p2-type */
   { /* 0  nop          */   0, "",   "",   AddrMode::tNone, AddrMode::tNone },//o
@@ -31,7 +31,9 @@ const struct AddrMode AddrModes[] =
   { /* 22 lda [$1234]  */   0, "[", "]",   AddrMode::tWord, AddrMode::tNone },//o [W]
   { /* 23 lda ($1234,x)*/   0, "(", ",x)", AddrMode::tWord, AddrMode::tNone },//o (W,x)
   { /* 24 mvn $7E,$7F  */   0, "",   "",   AddrMode::tByte, AddrMode::tByte },//o B,B
-  { /* 25 pea #imm16   */   0, "#",  "",   AddrMode::tWord, AddrMode::tNone } //o #W
+  { /* 25 pea #imm16   */   0, "#",  "",   AddrMode::tWord, AddrMode::tNone },//o #W
+  { /* 26 .link group 1  */ 0, "group", "",AddrMode::tWord, AddrMode::tNone },
+  { /* 27 .link page $FF */ 0, "page",  "",AddrMode::tByte, AddrMode::tNone }
 };
 const unsigned AddrModeCount = sizeof(AddrModes) / sizeof(AddrModes[0]);
 
@@ -39,18 +41,20 @@ const struct ins ins[] =
 {
     // IMPORTANT: Alphabetical sorting!
 
-  { ".(",  "sb" }, // start block, no params
-  { ".)",  "eb" }, // end block, no params
-  { ".al", "al" }, // A=16bit
-  { ".as", "as" }, // A=8bit
+  { ".(",    "sb" }, // start block, no params
+  { ".)",    "eb" }, // end block, no params
+  { ".al",   "al" }, // A=16bit
+  { ".as",   "as" }, // A=8bit
   { ".bss",  "gb" }, // Select seG BSS
   { ".data", "gd" }, // Select seG DATA
+  { ".link",         // Select linkage (modes 26 and 27)
+           "--'--'--'--'--'--'--'--'--'--'--'--'--'--'--'--'--'--'--'--'--'--'--'--'--'--'li'li" },
   { ".text", "gt" }, // Select seG TEXT
-  { ".xl", "xl" }, // X=16bit
-  { ".xs", "xs" }, // X=8bit
+  { ".xl",   "xl" }, // X=16bit
+  { ".xs",   "xs" }, // X=8bit
   { ".zero", "gz" }, // Select seG ZERO
   
-  // ins     0  1  2  3  4  5  6  7  8  9 10 11 12 13 14 15 16 17 18 19 20 21 22 23 24 25
+  // ins     0  1  2  3  4  5  6  7  8  9 10 11 12 13 14 15 16 17 18 19 20 21 22 23 24 25 
   { "adc", "--'69'--'--'--'--'65'75'--'72'61'71'67'77'6D'7D'79'6F'7F'63'73'--'--'--'--'--"},
   { "and", "--'29'--'--'--'--'25'35'--'32'21'31'27'37'2D'3D'39'2F'3F'23'33'--'--'--'--'--"},
   { "asl", "0A'--'--'--'--'--'06'16'--'--'--'--'--'--'0E'1E'--'--'--'--'--'--'--'--'--'--"},

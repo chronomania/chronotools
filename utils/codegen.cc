@@ -10,7 +10,7 @@
 typedef autoptr<struct CodeNode> CodeNodePtr;
 
 #define THREAD_JUMPS     1
-#define COMBINE_NODES    1
+#define COMBINE_NODES    0
 #define REORDER_NODES    0
 #define NEGATE_JUMPS     1
 #define DEBUG_NODES      0
@@ -1540,7 +1540,7 @@ static void OutputNode(const CodeNode& node, std::list<std::string>& target)
                 default:
                     ins = node.jump.Is_C
                      ? node.jump.Is_SET ? "bcs" : "bcc"
-                        : node.jump.Is_SET ? "beq" : "bne";
+                     : node.jump.Is_SET ? "beq" : "bne";
             }
             line += ins;
             line += ' ';
