@@ -22,6 +22,7 @@
 #define OMIT_Do_SSA
 #define OMIT_Do_NA
 #define OMIT_Do_TTA
+#define OMIT_EssiveStem
 
 Conjugator:
 .(
@@ -56,21 +57,19 @@ Conjugator:
  #ifndef OMIT_Do_LLE
       + Choice(Do_LLE)
  #endif
-      
+
  #ifndef OMIT_Do_STA
       + Choice(Do_STA)
  #endif
-      
+
  #ifndef OMIT_Do_TTA
       + Choice(Do_TTA)
  #endif
-      
+
  #ifndef OMIT_Do_NA
       + Choice(Do_NA)
- #else
-  #define OMIT_EssiveStem
  #endif
-      
+
       + ; If it was none of the choices, call the original function.
         jsr Outc
         
@@ -91,6 +90,9 @@ Outc:   phk
 ;;;;;;;;;;;;;;;;;;;;;;;;;
 
 <CONJUGATER> ;Compiled ct.code will be inserted here by Makefile
+; We insert it in the middle for two reasons:
+;  - to gain warnings about unused labels from snescom
+;  - the labels don't need to be exported.
 
 OutcHelper:
          ; Outputs the character in A.
@@ -121,7 +123,7 @@ LoopHelper:
          ; Id of the name
          lda [$31]
          
-         cm
+         cmp #$20
          beq Epoch  ; Is it Epoch?
          
          ; Not Epoch.

@@ -10,6 +10,8 @@
 
 using namespace std;
 
+#define SIMPLE_OUT_FORMAT 0
+
 namespace
 {
     FILE *OutFile;
@@ -33,8 +35,11 @@ namespace
         typedef map<ucs4string, variable> vars_t;
         vars_t vars;
 
-        // code begun?
-        bool started;
+        bool started;       // Code begun?
+        unsigned LoopCount; // How many loops active
+        
+        bool end_defined;
+        bool end_needed;
         
         typedef list<pair<unsigned, const char *> > branchlist_t;
         branchlist_t openbranches;
@@ -81,26 +86,69 @@ namespace
             AHstate.Invalidate();
         }
         
-        void AddBranch(const char* name, unsigned ind)
+        void DeallocateVars()
         {
-            openbranches.push_back(make_pair(ind, name));
+            // Count variables
+            unsigned varcount = vars.size();
+            // But don't count register variables
+            for(vars_t::const_iterator i=vars.begin(); i!=vars.end(); ++i)
+                if(i->second.is_regvar)
+                    --varcount;
+            
+            if(varcount != 3 || X_is_16bit())
+            {
+                if(!X_is_8bit() || varcount > 4)
+                {
+                    while(varcount >= 2)
+                    {
+                        Emit_X(16);
+                        Emit("ply");
+                        varcount -= 2;
+                    }
+                }
+            }
+            while(varcount >= 1)
+            {
+                Emit_X(8);
+                Emit("ply");
+                varcount -= 1;
+            }
+        }
+        
+        bool IsPlainRTS() const
+        {
+            // Count variables
+            unsigned varcount = vars.size();
+            // But don't count register variables
+            for(vars_t::const_iterator i=vars.begin(); i!=vars.end(); ++i)
+                if(i->second.is_regvar)
+                    --varcount;
+
+            return !varcount;
         }
         
         void FRAME_BEGIN()
         {
+            // Count variables
             unsigned varcount = vars.size();
+            // But don't count register variables
+            for(vars_t::const_iterator i=vars.begin(); i!=vars.end(); ++i)
+                if(i->second.is_regvar)
+                    --varcount;
+            
             /* Note: All vars will be initialized with A's current value */
         #if 0
-            if(varcount >= 2) Emit_M(16);
+            // That's why this is disabled
             while(varcount >= 2)
             {
+                Emit_M(16);
                 Emit("pha");
                 varcount -= 2;
             }
         #endif
-            if(varcount >= 1) Emit_M(8);
             while(varcount >= 1)
             {
+                Emit_M(8);
                 Emit("pha");
                 varcount -= 1;
             }
@@ -112,22 +160,6 @@ namespace
         void FRAME_END()
         {
             if(CurSubName.empty()) return;
-            
-            EmitLabel("End");
-            
-            unsigned varcount = vars.size();
-            if(varcount >= 2) Emit_X(16);
-            while(varcount >= 2)
-            {
-                Emit("ply");
-                varcount -= 2;
-            }
-            if(varcount >= 1) Emit_X(8);
-            while(varcount >= 1)
-            {
-                Emit("ply");
-                varcount -= 1;
-            }
             
             for(vars_t::const_iterator
                 i = vars.begin();
@@ -154,7 +186,7 @@ namespace
             }
             
             FINISH_BRANCHES();
-            Emit("rts");
+            //VOID_RETURN(); - assume we've already done it
         }
         void FINISH_BRANCHES()
         {
@@ -200,6 +232,13 @@ namespace
             sprintf(Buf, "%.5s #$%X", op, value);
             Emit(Buf);
         }
+        void EmitParam(const char* op, const char* param)
+        {
+            string s = op;
+            s += ' ';
+            s += param;
+            Emit(s.c_str());
+        }
         void EmitCall(const ucs4string& name)
         {
             string tmp = "jsr ";
@@ -217,11 +256,13 @@ namespace
             EmitAnyBits();
         }
 
-        enum { StateUnknown, StateSet, StateUnset, StateAnything }
+        enum { StateUnknown, State16, State8, StateAnything }
             StateX, StateM,
             WantedX, WantedM;
+#if !SIMPLE_OUT_FORMAT
         bool newline;
         unsigned indent;
+#endif
 
         void Flushbits()
         {
@@ -229,29 +270,34 @@ namespace
             unsigned sep = 0;
             if(WantedX != StateAnything && WantedX != StateX)
             {
-                if(WantedX == StateSet) sep |= 0x10; else rep |= 0x10;
+                if(WantedX == State16) rep |= 0x10; else sep |= 0x10;
                 StateX = WantedX;
             }
             if(WantedM != StateAnything && WantedM != StateM)
             {
-                if(WantedM == StateSet) sep |= 0x20; else rep |= 0x20;
+                if(WantedM == State16) rep |= 0x20; else sep |= 0x20;
                 StateM = WantedM;
             }
-            if(sep & 0x10) { Emit(".xs"); EmitNoNewline(); }
-            if(sep & 0x20) { Emit(".as"); EmitNoNewline(); }
-            if(rep & 0x10) { Emit(".xl"); EmitNoNewline(); }
-            if(rep & 0x20) { Emit(".al"); EmitNoNewline(); }
+            /*static int Xflag=0, Aflag=0;*/
+            if(sep & 0x10) { /*if(Xflag!=8){Xflag=8;*/Emit(".xs");/*}*/ EmitNoNewline(); }
+            if(sep & 0x20) { /*if(Aflag!=8){Aflag=8;*/Emit(".as");/*}*/ EmitNoNewline(); }
+            if(rep & 0x10) { /*if(Xflag!=16){Xflag=16;*/Emit(".xl");/*}*/ EmitNoNewline(); }
+            if(rep & 0x20) { /*if(Aflag!=16){Aflag=16;*/Emit(".al");/*}*/ EmitNoNewline(); }
             if(sep)EmitImmed("sep", sep);
             if(rep)EmitImmed("rep", rep);
         }
+        bool A_is_8bit() const { return StateM == State8; }
+        bool X_is_8bit() const { return StateX == State8; }
+        bool A_is_16bit() const { return StateM == State16; }
+        bool X_is_16bit() const { return StateX == State16; }
         
         void Emit_M(unsigned bitness)
         {
-            WantedM = bitness==16 ? StateUnset : StateSet;
+            WantedM = bitness==8 ? State8 : State16;
         }
         void Emit_X(unsigned bitness)
         {
-            WantedX = bitness==16 ? StateUnset : StateSet;
+            WantedX = bitness==8 ? State8 : State16;
         }
         void EmitAnyBits()
         {
@@ -274,28 +320,71 @@ namespace
         {
             Flushbits();
             
+#if !SIMPLE_OUT_FORMAT
             if(!strcmp(code, ".)")) if(indent > 0) --indent;
-            
+
             if(newline) fputc('\n', OutFile);
             else fprintf(OutFile, " : ");
-            
             if(*code != '+' && newline)
             {
-                fprintf(OutFile, "\t%*s", indent, "");
+                for(unsigned a=0; a<indent; ++a)
+                    fputc('\t', OutFile);
             }
+#endif
             fprintf(OutFile, "%s", code);
+#if !SIMPLE_OUT_FORMAT
             newline = true;
             
-            if(*code == 'c') newline = false;
+            if(*code == 'c' && code[1] == 'm') newline = false;
             if(strchr(code, ';')) newline = true;
 
             if(!strcmp(code, ".(")) ++indent;
+#else
+            fputc('\n', OutFile);
+#endif
+        }
+        const char *GenLabel() const
+        {
+            static list<string> labels;
+            char Buf[64];
+            sprintf(Buf, "L%u", 1+labels.size());
+            labels.push_front(Buf);
+            return labels.begin()->c_str();
         }
 
+        void AddBranch(const char* name, unsigned ind)
+        {
+            ++indent;
+            openbranches.push_back(make_pair(ind, name));
+        }
+        
+        void GenerateComparison(const char* notjump, const char* jump, bool SHORT=true)
+        {
+            if(SHORT)
+            {
+                const char *elselabel = GenLabel();
+                EmitParam(notjump, elselabel);
+                //EmitAnyBits(); 
+                AddBranch(elselabel, indent);
+            }
+            else
+            {
+                const char *shortlabel = GenLabel();
+                const char *elselabel = GenLabel();
+                
+                EmitParam(jump, shortlabel);
+                EmitParam("brl", elselabel);
+                EmitLabel(shortlabel);
+                //EmitAnyBits();
+                AddBranch(elselabel, indent);
+            }
+        }
     public:
         void EmitNoNewline()
         {
+#if !SIMPLE_OUT_FORMAT
             newline = false;
+#endif
         }
         
         const ucs4string LoopHelperName;
@@ -308,23 +397,28 @@ namespace
           MagicVarName(GetConf("compiler", "magicvarname"))
         {
             StateX=StateM=WantedX=WantedM=StateAnything;
+            LoopCount=0;
+#if !SIMPLE_OUT_FORMAT
             newline = true;
             indent = 0;
+#endif
         }
         
-        void BRANCH_LEVEL(unsigned indent)
+        void BRANCH_LEVEL(unsigned level)
         {
-            for(branchlist_t::iterator
-                a=openbranches.begin();
-                a!=openbranches.end();
+            // Go the label list in REVERSE order; First-in, last-out
+            for(branchlist_t::reverse_iterator
+                a = openbranches.rbegin();
+                a != openbranches.rend();
                 ++a)
             {
-                if(a->first != 999 && indent <= a->first)
+                if(a->first != 999 && level <= a->first)
                 {
                     Invalidate_A();
 
+                    --indent;
                     EmitLabel(a->second);
-                    Emit(".)");
+                    //Emit(".)");
                     a->first = 999; // prevent being reassigned
                 }
             }
@@ -342,6 +436,9 @@ namespace
             Emit(".(");
             
             Invalidate_A();
+            
+            end_needed  = false;
+            end_defined = false;
         }
         void END_FUNCTION()
         {
@@ -349,9 +446,11 @@ namespace
             FRAME_END();
             if(!CurSubName.empty())
             {
-            	Emit(".)");
-            	Emit("#endif");
-            	Emit("\n");
+                Emit(".)");
+                Emit("#endif");
+#if !SIMPLE_OUT_FORMAT
+                Emit("\n");
+#endif
             }
         }
         void DECLARE_VAR(const ucs4string &name)
@@ -380,19 +479,42 @@ namespace
         {
             CheckCodeStart();
             
-            Emit("brl End");
+            bool inline_end = IsPlainRTS();
+            if(!end_defined) inline_end = true;
+            
+            if(inline_end)
+            {
+                if(!end_defined)
+                {
+                    EmitLabel("End");
+                    end_defined = true;
+                }
+
+                DeallocateVars();
+                Emit("rts");
+            }
+            else
+            {
+                end_needed = true;
+                EmitParam("bra", "End");
+            }
         }
         void BOOLEAN_RETURN(bool value)
         {
             CheckCodeStart();
             // emit flag, then return
-            if(value)
-                Emit("clc"); // CLC - carry nonset = true
-            else
-                Emit("sec"); // SEC - carry set = false
+            
+            // CLC (nonset) = false, SEC (set) = true
+            Emit(value ? "sec" : "clc");
             VOID_RETURN();
         }
-        void LOAD_VAR(const ucs4string &name)
+        
+        bool IsCached(const ucs4string &name) const
+        {
+            return ALstate.Var.Is(name);
+        }
+        
+        void LOAD_VAR(const ucs4string &name, bool need_16bit = false)
         {
             CheckCodeStart();
             // load var to A
@@ -412,21 +534,38 @@ namespace
                         WstrToAsc(CurSubName).c_str(), WstrToAsc(name).c_str());
                 }
                 
-                if(!AHstate.Const.Is(0))
+                if(need_16bit && !AHstate.Const.Is(0))
                 {
-                    if(!ALstate.Const.Is(0))
+                    if(ALstate.Const.Is(0))
                     {
-                        Emit_M(16);
-                        Emit("lda #0");
-                        ALstate.Const.Set(0);
-                        ALstate.Var.Invalidate();
-                        AHstate.Const.Set(0);
-                        AHstate.Var.Invalidate();
+                        // AL is 0. We get easily 0 to AH.
+                        Emit("xba");
+                        AHstate = ALstate;
+                        // AL is now what AH was previously,
+                        // but since we're going to change AL
+                        // anyway, not worth stating the state.
                     }
                     else
                     {
-                        Emit("xba");
-                        AHstate = ALstate;
+                        if(A_is_16bit())
+                        {
+                            /* causes too much bitness changes */
+                            Emit_M(16);
+                            Emit("lda #0");
+                            ALstate.Const.Set(0);
+                            ALstate.Var.Invalidate();
+                            AHstate.Const.Set(0);
+                            AHstate.Var.Invalidate();
+                        }
+                        else
+                        {
+                            Emit_M(8);
+                            Emit("lda #0");
+                            Emit("xba");
+                            ALstate = AHstate; // AL has now what was in AH
+                            AHstate.Const.Set(0); // And AH is 0 as we wanted
+                            AHstate.Var.Invalidate();
+                        }
                     }
                 }
                 
@@ -456,17 +595,19 @@ namespace
             unsigned lo = val&255;
             unsigned hi = val>>8;
             
-            if(!AHstate.Const.Is(hi))
+            if(need_16bit || A_is_16bit())
             {
-                Emit_M(16);
-                EmitImmed("lda", val);
-                ALstate.Const.Set(lo);
-                ALstate.Var.Invalidate();
-                AHstate.Const.Set(hi);
-                AHstate.Var.Invalidate();
-                return;
+                if(A_is_16bit() || !AHstate.Const.Is(hi))
+                {
+                    Emit_M(16);
+                    EmitImmed("lda", val);
+                    ALstate.Const.Set(lo);
+                    ALstate.Var.Invalidate();
+                    AHstate.Const.Set(hi);
+                    AHstate.Var.Invalidate();
+                    return;
+                }
             }
-            
             if(!ALstate.Const.Is(lo))
             {
                 Emit_M(8);
@@ -524,14 +665,24 @@ namespace
         {
             CheckCodeStart();
             
-            Emit_X(16);
-            Emit("phx");
+#if !SIMPLE_OUT_FORMAT
+            newline = true;
+#endif
+            // X needs to be saved if we're in a loop.
+            if(LoopCount)
+            {
+                Emit_X(16);
+                Emit("phx");
+            }
             
             // leave A unmodified and issue call to function
             EmitCall(name);
             
-            Emit_X(16);
-            Emit("plx");
+            if(LoopCount)
+            {
+                Emit_X(16);
+                Emit("plx");
+            }
 
             Invalidate_A();
         }
@@ -541,32 +692,43 @@ namespace
             
             // process subblock if boolean set
             
-            Emit(".(");
-            Emit("bcc +");
-            Emit("brl Else");
-            Emit("+");
-            //EmitAnyBits();
-            AddBranch("Else", indent);
+            GenerateComparison("bcc", "bcs");
         }
         void COMPARE_EQUAL(const ucs4string &name, unsigned indent)
         {
             CheckCodeStart();
             
-            unsigned stackpos = GetStackOffset(name);
-            vars[name].read = vars[name].loaded = true;
+            if(vars.find(name) != vars.end())
+            {
+                unsigned stackpos = GetStackOffset(name);
+                vars[name].read = vars[name].loaded = true;
+                
+                Emit_M(8);
+                
+                // process subblock if A is equal to given var
+                // Note: we're not checking ALstate here, would be mostly useless check
+                EmitStack("cmp", stackpos);
+            }
+            else
+            {
+                unsigned val = 0;
+                
+                if(name[0] == '\'')
+                    val = getchronochar(name[1], cset_12pix);
+                else
+                    val = strtol(WstrToAsc(name).c_str(), NULL, 10);
+                
+                if(A_is_8bit() && val >= 256)
+                {
+                    fprintf(stderr,
+                        "  Warning: In function '%s', numeric constant %u too large (>255)\n",
+                        WstrToAsc(CurSubName).c_str(), val);
+                }
+                // bitness is insignificant
+                EmitImmed("cmp", val);
+            }
             
-            Emit_M(8);
-            
-            // process subblock if A is equal to given var
-            // Note: we're not checking ALstate here, would be mostly useless check
-            EmitStack("cmp", stackpos);
-            
-            Emit(".(");
-            Emit("beq +");
-            Emit("brl Else");
-            Emit("+");
-            //EmitAnyBits(); 
-            AddBranch("Else", indent);
+            GenerateComparison("bne", "beq");
         }
         void COMPARE_ZERO(const ucs4string &name, unsigned indent)
         {
@@ -578,12 +740,7 @@ namespace
 
             // Note: we're not checking ALstate here, would be mostly useless check
 
-            Emit(".(");
-            Emit("beq +");
-            Emit("brl Else");
-            Emit("+");
-            //EmitAnyBits();
-            AddBranch("Else", indent);
+            GenerateComparison("bne", "beq");
         }
         void COMPARE_GREATER(const ucs4string &name, unsigned indent)
         {
@@ -597,16 +754,18 @@ namespace
             // process subblock if A is greater than given var
             EmitStack("cmp", stackpos);
             
-            Emit(".(");
-            Emit("bcs +");    // BCS- Jump to if greater or equal
-            Emit("brl Else"); // BRL- Jump to "else"
-            Emit("+");
+            const char *shortlabel1 = GenLabel();
+            const char *shortlabel2 = GenLabel();
+            const char *elselabel = GenLabel();
+            EmitParam("bcs", shortlabel1); // BCS- Jump to if greater or equal
+            EmitParam("brl", elselabel);   // BRL- Jump to "else"
+            EmitLabel(shortlabel1);
             //EmitAnyBits();
-            Emit("bne +");    // BNE- Jump to n-eq too (leaving only "greater")
-            Emit("brl Else"); // BRL- Jump to "else"
-            Emit("+");
+            EmitParam("bne", shortlabel2); // BNE- Jump to n-eq too (leaving only "greater")
+            EmitParam("brl", elselabel);   // BRL- Jump to "else"
+            EmitLabel(shortlabel2);
             //EmitAnyBits();
-            AddBranch("Else", indent);
+            AddBranch(elselabel, indent);
         }
         void SELECT_CASE(const ucs4string &cset, unsigned indent)
         {
@@ -615,8 +774,6 @@ namespace
             CheckCodeStart();
 
             // process subblock if A is in any of given chars
-            
-            Emit(".(");
             
             vector<ctchar> allowed;
             
@@ -644,24 +801,36 @@ namespace
             }
             rangebegins.push_back(first); rangeends.push_back(last);
             bool used_next = false;
+
+            const char *shortlabel = GenLabel();
+            const char *elselabel = GenLabel();
+
             for(unsigned a=0; a<rangebegins.size(); ++a)
             {
                 const bool last = (a+1) == rangebegins.size();
                 const ctchar c1 = rangebegins[a];
                 const ctchar c2 = rangeends[a];
+                
+                // Input characters are always 8-bit. (The output is 16-bit)
                 Emit_M(8);
                 if(last)
                 {
                     if(c1 == c2)
                     {
-                        EmitImmed("cmp", c1); Emit("bne Else");
+                        EmitImmed("cmp", c1); EmitParam("bne", elselabel);
+                    }
+                    else if(c1+1 == c2)
+                    {
+                        used_next = true;
+                        EmitImmed("cmp", c1); EmitParam("beq", shortlabel);
+                        EmitImmed("cmp", c2); EmitParam("bne", elselabel);
                     }
                     else
                     {
-                        EmitImmed("cmp", c1);   Emit("bcc Else");
+                        EmitImmed("cmp", c1);   EmitParam("bcc", elselabel);
                         if(c2 < 0xFF)
                         {
-                            EmitImmed("cmp", c2+1); Emit("bcs Else");
+                            EmitImmed("cmp", c2+1); EmitParam("bcs", elselabel);
                         }
                     }
                 }
@@ -669,32 +838,40 @@ namespace
                 {
                     if(c1 == c2)
                     {
-                    	used_next = true;
-                        EmitImmed("cmp", c1); Emit("beq +");
+                        used_next = true;
+                        EmitImmed("cmp", c1); EmitParam("beq", shortlabel);
+                    }
+                    else if(c1+1 == c2)
+                    {
+                        used_next = true;
+                        EmitImmed("cmp", c1); EmitParam("beq", shortlabel);
+                        EmitImmed("cmp", c2); EmitParam("beq", shortlabel);
                     }
                     else
                     {
-                        EmitImmed("cmp", c1);   Emit("bcc Else");
+                        EmitImmed("cmp", c1);   EmitParam("bcc", elselabel);
                         if(c2 >= 0xFF)
                         {
-                        	used_next = true;
-                            Emit("bra +");
+                            used_next = true;
+                            EmitParam("bra", shortlabel);
                         }
                         else
                         {
-                            EmitImmed("cmp", c2+1); Emit("bcc +");
+                            used_next = true;
+                            EmitImmed("cmp", c2+1); EmitParam("bcc", shortlabel);
                         }
                     }
                 }
             }
-            if(used_next) Emit("+");
+            if(used_next) EmitLabel(shortlabel);
             //EmitAnyBits();
-            AddBranch("Else", indent);
+            AddBranch(elselabel, indent);
         }
         void START_CHARNAME_LOOP()
         {
             CheckCodeStart();
             
+            ++LoopCount;
             Emit(".(");
             Emit("; Init loop");
             Emit_M(16);
@@ -702,10 +879,8 @@ namespace
             Emit("ldx #0");
             EmitLabel("LoopBegin");
             EmitCall(LoopHelperName);
-            Emit("; Continue loop if nonzero");
-            Emit("bne +");
-            Emit("brl LoopEnd");
-            Emit("+");
+            Emit("; If zero, break the loop");
+            EmitParam("beq", "LoopEnd");
 
             Invalidate_A();
 
@@ -718,13 +893,15 @@ namespace
         {
             CheckCodeStart();
             
+            Emit_X(16);
             Emit("inx");
-            Emit("brl LoopBegin");
+            EmitParam("bra", "LoopBegin");
             EmitLabel("LoopEnd");
 
             Invalidate_A();
             
             Emit(".)");
+            --LoopCount;
         }
         void OUT_CHARACTER()
         {
@@ -735,7 +912,6 @@ namespace
 
             Invalidate_A();
         }
-        #undef CODE
     };
 }
 
@@ -800,9 +976,11 @@ void Compile(FILE *fp)
         
         if(words[0][0] == '#')
         {
+#if !SIMPLE_OUT_FORMAT
             string s = "; ";
             s += WstrToAsc(Buf).c_str() + 1;
             fprintf(OutFile, "%s\n", s.c_str());
+#endif
             continue;
         }
         
@@ -884,9 +1062,22 @@ void Compile(FILE *fp)
                 Asm.COMPARE_ZERO(words[1], indent);
             else
             {
-                Asm.LOAD_VAR(words[2]);
-                Asm.EmitNoNewline();
-                Asm.COMPARE_EQUAL(words[1], indent);
+                // Changing this has no effect in
+                // functionality, but may have in code size
+                bool lda_param_2 = Asm.IsCached(words[2]);
+                
+                if(lda_param_2)
+                {
+                    Asm.LOAD_VAR(words[2]);
+                    Asm.EmitNoNewline();
+                    Asm.COMPARE_EQUAL(words[1], indent);
+                }
+                else
+                {
+                    Asm.LOAD_VAR(words[1]);
+                    Asm.EmitNoNewline();
+                    Asm.COMPARE_EQUAL(words[2], indent);
+                }
             }
         }
         else if(firstword == ">")
@@ -910,7 +1101,7 @@ void Compile(FILE *fp)
         }
         else if(firstword == "OUT")
         {
-            Asm.LOAD_VAR(words[1]);
+            Asm.LOAD_VAR(words[1], true);
             Asm.EmitNoNewline();
             Asm.OUT_CHARACTER();
         }

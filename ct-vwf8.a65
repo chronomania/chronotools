@@ -271,7 +271,7 @@ Handle16bytes_0:
         lda [P_FONT],y : sta [P_TILEBUF1],y : iny : iny
         lda [P_FONT],y : sta [P_TILEBUF1],y : iny : iny
         lda [P_FONT],y : sta [P_TILEBUF1],y : iny : iny
-        brl EndHandle16bytes
+        bra EndHandle16bytes
 #define REST() \
         SET_8_BIT_A() : ora [P_TILEBUF2],y : sta[P_TILEBUF2],y : \
         xba :           ora [P_TILEBUF1],y : sta[P_TILEBUF1],y : iny
@@ -295,7 +295,7 @@ Handle16bytes_1:
         .as : lda [P_FONT],y : xba : lda #$00 : SET_16_BIT_A() : lsr : REST()
         .as : lda [P_FONT],y : xba : lda #$00 : SET_16_BIT_A() : lsr : REST()
         ;cpy #$0010:; bcc Handle16bytes_1
-        brl EndHandle16bytes
+        bra EndHandle16bytes
 Handle16bytes_2:
         ; P_TILEBUF1 = 00xxxxxx P_TILEBUF2 = xx000000  - do swap;2 lsr
         .as : lda [P_FONT],y : xba : lda #$00 : SET_16_BIT_A() : lsr : lsr : REST()
@@ -315,7 +315,7 @@ Handle16bytes_2:
         .as : lda [P_FONT],y : xba : lda #$00 : SET_16_BIT_A() : lsr : lsr : REST()
         .as : lda [P_FONT],y : xba : lda #$00 : SET_16_BIT_A() : lsr : lsr : REST()
         ;cpy #$0010:; bcc Handle16bytes_2
-        brl EndHandle16bytes
+        bra EndHandle16bytes
 Handle16bytes_3:
         ; P_TILEBUF1 = 000xxxxx P_TILEBUF2 = xxx00000  - do swap;3 lsr
         .as : lda [P_FONT],y : xba : lda #$00 : SET_16_BIT_A() : lsr : lsr : lsr : REST()
@@ -335,7 +335,7 @@ Handle16bytes_3:
         .as : lda [P_FONT],y : xba : lda #$00 : SET_16_BIT_A() : lsr : lsr : lsr : REST()
         .as : lda [P_FONT],y : xba : lda #$00 : SET_16_BIT_A() : lsr : lsr : lsr : REST()
         ;cpy #$0010:; bcc Handle16bytes_3
-        brl EndHandle16bytes
+        bra EndHandle16bytes
 Handle16bytes_4:
         ; P_TILEBUF1 = 0000xxxx P_TILEBUF2 = xxxx0000  - do 4 asl
         SET_16_BIT_A() : lda [P_FONT],y : and #$00FF : asl : asl : asl : asl : REST()
@@ -355,7 +355,7 @@ Handle16bytes_4:
         SET_16_BIT_A() : lda [P_FONT],y : and #$00FF : asl : asl : asl : asl : REST()
         SET_16_BIT_A() : lda [P_FONT],y : and #$00FF : asl : asl : asl : asl : REST()
         ;cpy #$0010:; bcc Handle16bytes_4
-        brl EndHandle16bytes
+        bra EndHandle16bytes
 Handle16bytes_5:
         ; P_TILEBUF1 = 00000xxx P_TILEBUF2 = xxxxx000  - do 3 asl
         SET_16_BIT_A() : lda [P_FONT],y : and #$00FF : asl : asl : asl : REST()
@@ -375,7 +375,7 @@ Handle16bytes_5:
         SET_16_BIT_A() : lda [P_FONT],y : and #$00FF : asl : asl : asl : REST()
         SET_16_BIT_A() : lda [P_FONT],y : and #$00FF : asl : asl : asl : REST()
         ;cpy #$0010:; bcc Handle16bytes_5
-        brl EndHandle16bytes
+        bra EndHandle16bytes
 Handle16bytes_6:
         ; P_TILEBUF1 = 000000xx P_TILEBUF2 = xxxxxx00  - do 2 asl
         SET_16_BIT_A() : lda [P_FONT],y : and #$00FF : asl : asl : REST()
@@ -395,7 +395,7 @@ Handle16bytes_6:
         SET_16_BIT_A() : lda [P_FONT],y : and #$00FF : asl : asl : REST()
         SET_16_BIT_A() : lda [P_FONT],y : and #$00FF : asl : asl : REST()
         ;cpy #$0010:; bcc Handle16bytes_6 
-        brl EndHandle16bytes
+        bra EndHandle16bytes
 Handle16bytes_7:
         ; P_TILEBUF1 = 0000000x P_TILEBUF2 = xxxxxxx0  - do 1 asl
         SET_16_BIT_A() : lda [P_FONT],y : and #$00FF : asl : REST()
@@ -776,7 +776,7 @@ EquipLeftItemFunc:
         ;passthru
 DisplayFuncCommon_2bit:
         jsr DrawS_2bit
-        brl DisplayFuncCommonEnd
+        bra DisplayFuncCommonEnd
 
 EquipRightItemFunc:        ;also used in shop
         ; In - A=item number
@@ -809,7 +809,7 @@ Skip1:   lda $22   ;counter in create-list
          lda #$0000
          sta W_VRAMADDR
         pla
-        brl DisplayFuncCommon_4bit
+        bra DisplayFuncCommon_4bit
 
 ItemListFunc:
         ; In - A=item number
@@ -1093,7 +1093,7 @@ BattleWriteEnd:
         
         ; Space-fill the buffer to end
         phx
-Loop1:   cpx #$0010
+         cpx #$0010
          bcs +
          SET_8_BIT_A()
          lda #$FF

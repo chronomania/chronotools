@@ -92,17 +92,23 @@ LET Finalguess 0
 {
   LET Finalguess 1
   ? c aouAOU02368
+    # Back-vowel
     LET VowelType 1
   ? c äöyÄÖY14579
+    # Front-vowel
     LET VowelType 2
   ? c eiéEIÉ
+    # Well some vowel anyway
     LET FoundE 1
   ? c hkqåHKQÅ
+    # If ends with such char
     LET Finalguess 0
 }
 = VowelType 2
+  # Last guess was "front"
   TRUE
 = VowelType 1
+  # Last guess was "back"
   FALSE
 = FoundE 1
   TRUE
@@ -191,6 +197,16 @@ IF IsVowel c2
     TRUE
 FALSE
 
+# Returns true if the character name ends with "de"
+FUNCTION IsDe
+REG c2 c
+CALL_GET LastChar2 c2
+? c2 dD
+  CALL_GET LastChar1 c
+  ? c eE
+    TRUE
+FALSE
+
 # Returns true if the written for of the
 # character name ends with a consonant
 # but the pronounced form ends with a vowel.
@@ -254,6 +270,7 @@ RETURN
 #     +:a
 #     +:t
 #     +t
+#     +tt
 #  -ki+e
 #     +i
 FUNCTION HardStem
@@ -282,6 +299,11 @@ IF IsEs
   CALL OutWord Len
   OUT 't'
   RETURN
+IF IsDe
+  CALL OutWord Len
+  OUT 't'
+  OUT 't'
+  RETURN
 IF EndWithVowel
   IF AkiEnd
     DEC Len
@@ -299,6 +321,7 @@ RETURN
 #     +'
 #     +:
 #   -s+kse
+#  -de+tee
 # -xxi+xi
 #     +i
 FUNCTION SoftStem
@@ -318,6 +341,14 @@ IF IsEs
   CALL OutWord Len
   OUT 'k'
   OUT 's'
+  OUT 'e'
+  RETURN
+IF IsDe
+  DEC Len
+  DEC Len
+  CALL OutWord Len
+  OUT 't'
+  OUT 'e'
   OUT 'e'
   RETURN
 IF EndWithVowel
@@ -357,6 +388,14 @@ IF IsEs
   CALL OutWord Len
   OUT 'k'
   OUT 's'
+  OUT 'e'
+  RETURN
+IF IsDe
+  DEC Len
+  DEC Len
+  CALL OutWord Len
+  OUT 't'
+  OUT 'e'
   OUT 'e'
   RETURN
 IF EndWithVowel
@@ -490,8 +529,15 @@ RETURN
 
 # -- End --
 
+# Joitain muotoja:
+#   Matti   (mati matti matti)
+#   Magus   (magukse magust magukse)
+#   John    (johni johni johni)
+#   XYZ     (xyz: xyz:ä xyz:)
+#   Säde    (sätee sädett sätee)
+#   Mäki    (mäe mäke mäke)
+#   Show    (show' show't show')
 # Ongelmallisia nimiä (1.10.2003):
 #   Susi
-#   Säde
-#   Satu
+#   Satu    (sadu satu satu)
 #   Anitta

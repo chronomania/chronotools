@@ -262,6 +262,9 @@ void insertor::GenerateCode()
             if(!i->HasAddress())
                 i->YourAddressIs(blocks[a++].pos);
     }
+
+    // Doesn't use space.
+    PatchTimeBoxes();
 }
 
 void insertor::WriteCode(ROM &ROM) const
@@ -474,4 +477,28 @@ void insertor::GenerateVWF12code()
     PlaceData(tiletab1, addr1);
     PlaceData(tiletab2, addr2);
     PlaceData(widths, WidthTab_Address);
+}
+
+void insertor::PatchTimeBoxes()
+{
+    fprintf(stderr, "Patching map time boxes...\n");
+
+    // Patch tile indices in -65M textbox
+    {
+        static const unsigned char Patch[16] =
+        { 0xFC, 0x00, 0x88, 0x01,
+          0x0C, 0x00, 0x8C, 0x01,
+          0x1C, 0x00, 0x8E, 0x01,
+          0x2C, 0x00, 0x8A, 0x01 };
+        PlaceData(vector<unsigned char>(Patch,Patch+16), 0x03F87F);
+    }
+
+    // Patch tile indices in -12k textbox
+    {
+        static const unsigned char Patch[12] =
+        { 0xFE, 0x00, 0xA0, 0x01,
+          0x0E, 0x00, 0xA2, 0x01,
+          0x1E, 0x00, 0x8A, 0x01 };
+        PlaceData(vector<unsigned char>(Patch,Patch+12), 0x03F890);
+    }
 }

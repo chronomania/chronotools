@@ -85,6 +85,7 @@ private:
     void GenerateVWF12code();
     void GenerateVWF8code();
     void GenerateSignatureCode();
+    void PatchTimeBoxes();
     
     void PlaceData(const vector<unsigned char>&, unsigned address);
     void PlaceByte(unsigned char byte, unsigned address);

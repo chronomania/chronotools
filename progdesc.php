@@ -84,7 +84,10 @@ Last updated:
 Copypaste from the Makefile:
 
 <pre class=smallerpre
-># VERSION 1.0.3  was the first working! :D
+># VERSION 1.0.0  first archived version. dumper works.
+# VERSION 1.0.1  working with recompressor, added tools.
+# VERSION 1.0.2  updates to patcher
+# VERSION 1.0.3  bugfixes to patcher - first working version!
 # VERSION 1.0.4  handled fixed strings too
 # VERSION 1.0.5  found item descriptions
 # VERSION 1.0.6  compressed better
@@ -148,6 +151,7 @@ Copypaste from the Makefile:
 # VERSION 1.6.9  conjugater now partially asm; its compiler is a separate program
 # VERSION 1.7.0  some error checking; windows build of the assembler
 # VERSION 1.8.0  is GPL
+# VERSION 1.8.1  requires separate snescom (not bundled anymore)
 </pre>
 
 ", '1. Program list' => "
@@ -215,13 +219,6 @@ compares two ROMs and produces a patch file in IPS format.
 
 <a href=\"/src/unmakeips.cc\">unmakeips</a>
 reads a ROM and an IPS file and produces a patched ROM file.
-
-", '1.1.1. assemble' => "
-
-An xa65-compatible 65816 assembler program.<br>
-Full source code can be found in its separate package at
-<a href=\"http://bisqwit.iki.fi/source/snescom.html\"
-  >http://bisqwit.iki.fi/source/snescom.html</a> .
 
 ", '1.1.1. xray' => "
 
@@ -376,11 +373,12 @@ If you fear the text mode and command line, you better
 change your attitude and start learning :)
 </blockquote>
 <p>
-The VWF8 code requires an assembler.
-Previously it had to be <a href=\"http://www.google.fi/search?q=xa65\">xa65</a>
-(which can be found in Debian and compiled for other systems), but now
-Chronotools has its
-<a href=\"http://bisqwit.iki.fi/source/snescom.html\">own assembler</a>.
+The VWF8 code and the conjugator require an assembler,
+<a href=\"http://bisqwit.iki.fi/source/snescom.html\">snescom</a>.
+Snescom is a GPL'd xa65-compatible 65816 assembler program,
+and it can be downloaded at
+<a href=\"http://bisqwit.iki.fi/source/snescom.html\"
+  >http://bisqwit.iki.fi/source/snescom.html</a> .
 
 ", 'copying:1. Copying' => "
 

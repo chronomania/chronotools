@@ -1,21 +1,27 @@
 include Makefile.sets
 
+# Building for Windows:
 #HOST=/usr/local/mingw32/bin/i586-mingw32msvc-
-HOST=
-
-CXX=$(HOST)g++
-CC=$(HOST)gcc
-CPP=$(HOST)gcc
-
 #CFLAGS += -Iwinlibs
 #CPPFLAGS += -Iwinlibs
 #CXXFLAGS += -Iwinlibs
 #LDOPTS = -L/usr/local/mingw32/lib
 #LDFLAGS += -Lwinlibs -liconv
 
-DEPDIRS = utils/ utils/asm/ utils/asm/argh/
+# Building for native:
+HOST=
 
-# VERSION 1.0.3  was the first working! :D
+CXX=$(HOST)g++
+CC=$(HOST)gcc
+CPP=$(HOST)gcc
+
+
+DEPDIRS = utils/
+
+# VERSION 1.0.0  first archived version. dumper works.
+# VERSION 1.0.1  working with recompressor, added tools.
+# VERSION 1.0.2  updates to patcher
+# VERSION 1.0.3  bugfixes to patcher - first working version!
 # VERSION 1.0.4  handled fixed strings too
 # VERSION 1.0.5  found item descriptions
 # VERSION 1.0.6  compressed better
@@ -27,14 +33,14 @@ DEPDIRS = utils/ utils/asm/ utils/asm/argh/
 # VERSION 1.0.12 had better knowledge of special codes
 # VERSION 1.0.13 used 62-base numbers
 # VERSION 1.0.14 added taipus.cc
-# VERSION 1.0.15 updated FIN/README and ct_fin.txt, but neither are archived
+# VERSION 1.0.15 (patch to ctfin, which is now separate)
 # VERSION 1.0.16 added taipus.rb, fixed homepage urls and fixed mmap error checking.
 # VERSION 1.0.17 working again; uses space better; little modularized
 # VERSION 1.0.18 more of above
-# VERSION 1.0.19 code organising... improved 'i' in 8x8 font.
-# VERSION 1.0.20 binpacker changes, some translation done too
-# VERSION 1.0.21 more translation, some documentation, font palette changes.
-# VERSION 1.0.22 more translation, autowrapping support, conjugation detection code
+# VERSION 1.0.19 code organising...
+# VERSION 1.0.20 binpacker changes
+# VERSION 1.0.21 (patch to ctfin, which is now separate)
+# VERSION 1.0.22 autowrapping support, conjugation detection code
 # VERSION 1.1.0  did some assembly hacking, support for code patching
 # VERSION 1.1.1  conjugating conjugating conjugating... work goes on
 # VERSION 1.1.2  and so on
@@ -42,7 +48,7 @@ DEPDIRS = utils/ utils/asm/ utils/asm/argh/
 # VERSION 1.1.4  conjugating finally works!
 # VERSION 1.1.5  some bugfixes
 # VERSION 1.1.6  fixed an allocation bug and optimized the code generator a bit
-# VERSION 1.1.7  some translation, more asm changes
+# VERSION 1.1.7  more asm changes
 # VERSION 1.1.8  syntax changes in the compiler, optimizations
 # VERSION 1.1.9  support for font/dictionary size skew
 # VERSION 1.1.10 new configuration system. Time to squash bugs.
@@ -58,15 +64,15 @@ DEPDIRS = utils/ utils/asm/ utils/asm/argh/
 # VERSION 1.2.8  improved dictionary compression
 # VERSION 1.2.9  compiler progress, first windows binaries are working
 # VERSION 1.2.10 cursive font support
-# VERSION 1.2.11 some translation, compression optimizations
+# VERSION 1.2.11 compression optimizations
 # VERSION 1.3.0  new compression options, font reorganizer, generic typeface engine
 # VERSION 1.4.0  image patching support, more font reorganizing support
-# VERSION 1.4.1  lots of more translation (I'm archiving it here for my convenience)
+# VERSION 1.4.1  (patch to ctfin, which is now separate)
 # VERSION 1.5.0  end of the compiler project; using assembler (xa65) now.
 # VERSION 1.5.1  vwf8 optimizations, assembly experiments
 # VERSION 1.5.2  compressed graphics support: decompressor and compressor
 # VERSION 1.5.3  better graphics compressor
-# VERSION 1.5.4  another archive-only version
+# VERSION 1.5.4  (patch to ctfin, which is now separate)
 # VERSION 1.6.0  signature support (custom compressed image on startup screen)
 # VERSION 1.6.1  some remodularizing of code
 # VERSION 1.6.2  fixed the vwf8 scrolling problems and some other bugs
@@ -75,19 +81,20 @@ DEPDIRS = utils/ utils/asm/ utils/asm/argh/
 # VERSION 1.6.5  is working on an assembler
 # VERSION 1.6.6  has an almost working assembler
 # VERSION 1.6.7  has a complete assembler, doesn't require xa65 anymore
-# VERSION 1.6.8  patch version
+# VERSION 1.6.8  (patch to ctfin, which is now separate)
 # VERSION 1.6.9  conjugater now partially asm; its compiler is a separate program
 # VERSION 1.7.0  some error checking; windows build of the assembler
 # VERSION 1.8.0  is GPL
+# VERSION 1.8.1  requires separate snescom (not bundled anymore)
 
 OPTIM=-O3
 #OPTIM=-O0
 #OPTIM=-O0 -pg -fprofile-arcs
 #LDFLAGS += -pg -fprofile-arcs
 
-CXXFLAGS += -I. -Iutils/asm/argh
+CXXFLAGS += -I.
 
-VERSION=1.8.0
+VERSION=1.8.1
 ARCHFILES=utils/xray.cc utils/xray.h \
           utils/viewer.c \
           utils/vwftest.cc \
@@ -139,32 +146,6 @@ ARCHFILES=utils/xray.cc utils/xray.h \
           utils/compiler2.cc utils/compiler2-parser.inc utils/ct.code2 \
           utils/o65test.cc utils/dumpo65.cc \
           \
-          utils/asm/assemble.cc utils/asm/insgen.cc \
-          utils/asm/tristate \
-          utils/asm/expr.cc utils/asm/expr.hh \
-          utils/asm/insdata.cc utils/asm/insdata.hh \
-          utils/asm/parse.cc utils/asm/parse.hh \
-          utils/asm/object.cc utils/asm/object.hh \
-          utils/asm/precompile.cc utils/asm/precompile.hh \
-          utils/asm/main.cc \
-          \
-          utils/asm/COPYING utils/asm/Makefile.sets utils/asm/progdesc.php \
-          utils/asm/README.html utils/asm/depfun.mak utils/asm/Makefile \
-          utils/asm/docmaker.php \
-          utils/asm/doc/o65.cc utils/asm/doc/o65.hh \
-          utils/asm/doc/o65linker.cc utils/asm/doc/o65linker.hh \
-          utils/asm/doc/dumpo65.cc utils/asm/doc/testi.cc \
-          \
-          utils/asm/argh/argh.cc utils/asm/argh/argh.hh \
-          utils/asm/argh/argh.h utils/asm/argh/argh-c.inc \
-          utils/asm/argh/docmaker.php utils/asm/argh/progdesc.php \
-          utils/asm/argh/Makefile utils/asm/argh/depfun.mak \
-          utils/asm/argh/Makefile.sets \
-          utils/asm/argh/COPYING utils/asm/argh/README.html \
-          utils/asm/doc/ct-moglogo.a65 \
-          utils/asm/doc/ct-vwf8.a65 \
-          utils/asm/doc/bitness.a65 \
-          \
           README COPYING transnotes.txt Makefile.sets \
           \
           winlibs/iconv.h winlibs/libiconv.a \
@@ -173,6 +154,7 @@ ARCHFILES=utils/xray.cc utils/xray.h \
           \
           etc/ct.cfg etc/ct.code
 
+NOGZIPARCHIVES=1
 
 ARCHNAME=chronotools-$(VERSION)
 ARCHDIR=archives/
@@ -189,7 +171,6 @@ PROGS=\
 	utils/vwftest \
 	utils/dumpo65 \
 	utils/o65test \
-	utils/assemble \
 	utils/viewer \
 	utils/xray
 
@@ -213,18 +194,19 @@ ctinsert: \
 		config.o confparser.o ctcset.o wstring.o
 	$(CXX) $(LDOPTS) -o $@ $^ $(LDFLAGS) -lm
 
-%.o65: %.a65 utils/assemble
-	utils/assemble -Wall -o $@ $< 
+%.o65: %.a65
+	snescom -J -Wall -o $@ $< 
 
 ct-conj1.a65: ct.code utils/compile
 	utils/compile $< $@
 
-ct-conj.o65: ct-conj1.a65 ct-conj.a65 utils/assemble
+# ct-conj.o65 is build in a strange way.
+ct-conj.o65: ct-conj1.a65 ct-conj.a65
 	sed 's/#\([^a-z]\)/§\1/g;s/;.*//' < ct-conj1.a65 > .tmptmp
 	sed 's§<CONJUGATER>§#include ".tmptmp"§' < ct-conj.a65 | \
-		utils/assemble -E - | sed 's/§/#/g' | \
-		utils/assemble -Wall -o $@ -
-	rm -f .tmptmp
+		snescom -E - | sed 's/§/#/g' > .tmptmp2
+	snescom -J -Wall -o $@ .tmptmp2
+	rm -f .tmptmp .tmptmp2
 
 utils/makeips: utils/makeips.cc
 	$(CXX) $(LDOPTS) -o $@ $^
@@ -247,6 +229,8 @@ utils/compile: \
 		symbols.o \
 		config.o confparser.o ctcset.o wstring.o
 	$(CXX) $(LDOPTS) $(CXXFLAGS) -g -O -Wall -W -pedantic -o $@ $^ $(LDFLAGS)
+utils/compiler: FORCE
+		@echo Make utils/compile instead\!
 utils/vwftest: \
 		utils/vwftest.o tgaimage.o \
 		fonts.o typefaces.o extras.o conjugate.o o65.o settings.o \
@@ -281,57 +265,9 @@ utils/dumpo65: utils/dumpo65.o
 utils/ctxtview: utils/ctxtview.o settings.o rommap.o
 	$(CXX) $(LDOPTS) $(CXXFLAGS) -g -O -Wall -W -pedantic -o $@ $^ $(LDFLAGS)
 
-utils/assemble: \
-		utils/asm/assemble.o \
-		utils/asm/insdata.o \
-		utils/asm/object.o \
-		utils/asm/expr.o \
-		utils/asm/parse.o \
-		utils/asm/precompile.o \
-		utils/asm/main.o \
-		utils/asm/warning.o \
-		utils/asm/argh/argh.o
-	# $(MAKE) -C utils/asm snescom
-	# ln -sf asm/snescom $@
-	$(CXX) $(LDOPTS) $(CXXFLAGS) -g -O -Wall -W -pedantic -o $@ $^ $(LDFLAGS)
-
-utils/asm/argh/libargh.a: FORCE
-	$(MAKE) -C utils/asm/argh libargh.a
-
-
 #ct.txt: ctdump chrono-dumpee.smc
 #	./ctdump chrono-dumpee.smc >ct_tmp.txt || rm -f ct_tmp.txt && false
 #	mv ct_tmp.txt ct.txt
-
-ctpatch-hdr.ips ctpatch-nohdr.ips: \
-		ctinsert \
-		ct.txt ct.code ct.cfg \
-		ct-vwf8.o65 \
-		ct-conj.o65 \
-		FIN/ct8fn.tga \
-		FIN/ct16fn.tga \
-		FIN/ct8fnV.tga \
-		FIN/ct.txt \
-		FIN/ct16fn.tga \
-		FIN/ct8fn.tga \
-		FIN/ct8fnV.tga \
-		FIN/face1.tga FIN/face2.tga FIN/face3.tga FIN/face4.tga \
-		FIN/face5.tga FIN/face6.tga FIN/face7.tga FIN/face8.tga \
-		FIN/elem1.tga FIN/elem2.tga FIN/elem3.tga FIN/elem4.tga \
-		FIN/active1.tga FIN/active2.tga \
-		FIN/titlegfx.tga \
-		FIN/moglogo.tga FIN/moglogo.o65
-	time ./ctinsert
-
-chrono-patched.smc: utils/unmakeips ctpatch-hdr.ips chrono-uncompressed.smc
-	$< ctpatch-hdr.ips chrono-uncompressed.smc chrono-patched.smc 2>/dev/null
-
-snes9xtest: chrono-patched.smc FORCE
-	#~/src/snes9x/bisq-1.39/Gsnes9x -stereo -alt -m 256x256[C32/32] -r 7 chrono-patched.smc
-	./snes9x-debug -stereo -alt -y5 -r 7 chrono-patched.smc
-
-snes9xtest2: chrono-patched.smc FORCE
-	./snes9x-debug -r 0 chrono-patched.smc
 
 winzip: ctdump ctinsert
 	rm -f ctdump.exe
@@ -344,7 +280,7 @@ winzip: ctdump ctinsert
 fullzip: \
 		ctdump ctinsert \
 		utils/unmakeips utils/makeips \
-		utils/o65test utils/dumpo65 utils/assemble \
+		utils/o65test utils/dumpo65 \
 		etc/ct.cfg etc/ct.code \
 		README.html README.TXT
 	@rm -rf $(ARCHNAME)
