@@ -91,9 +91,9 @@ Last updated:
 <tr><td>Signature feature</td>
     <td>100%</td> <td>everything works</td></tr>
 <tr><td>Error recovery</td>
-    <td>20%</td> <td>not many error checks</td></tr>
-<tr><td>Documentation</td>
-    <td>3%</td> <td>if it isn't on this page, it's <a href=\"#undocs\">nowhere</a></td></tr>
+    <td>40%</td> <td>not all error situations are handled</td></tr>
+<tr><td><a href=\"#docs\">Documentation</a></td>
+    <td>40%</td> <td>it isn't good or complete, but it exists</td></tr>
 </table>
 
 ", 'changes:1.1. Version history' => "
@@ -185,6 +185,7 @@ Copypaste from the Makefile:
 # VERSION 1.11.5 another... big structural changes
 # VERSION 1.11.6 backup copy... this version has bugs
 # VERSION 1.11.7 unwraps the script when dumping, if configured so
+# VERSION 1.11.8 has much more documentation than before
 </pre>
 
 Users of previous versions are advised to do the following:
@@ -275,13 +276,6 @@ originally developed by me for Pokémon hacking.
 ", '1.1.1. spacefind' => "
 
 A <a href=\"/source/jaa3.html\">bin-packing</a> algorithm test.
-
-", '1.1.1. taipus.rb' => "
-
-This one is <a href=\"/ctfin/taipus.rb\">publicly available</a>.
-It conjugates names in Finnish.<br>It has now been
-<a href=\"/ctfin/ct-code.txt\">translated</a> to
-SNES assembly (or sort of).<br>It works. :)
 
 ", '1.1.1. sramdump' => "
 
@@ -474,12 +468,26 @@ although it now does contain some separate assembly code.<br>
 I have made my own systems to compile and link code.<br>
 If you're uncertain, <a href=\"#copying\">send me email and explain your situation</a>.
 
-", 'undocs:1. Undocumented things' => "
+", 'docs:1. Documentation' => "
+
+If this is a local copy of README.html instead of the public web
+page, you can use the following links to access the documentation
+files.
+
+<ul>
+ <li><a href=\"compression.html\">Compression</a></li>
+ <li><a href=\"conjugation.html\">Conjugation</a></li>
+ <li><a href=\"crononick.html\">Crononick</a></li>
+ <li><a href=\"imageformat.html\">Image format</a></li>
+ <li><a href=\"signature.html\">Signature</a></li>
+ <li><a href=\"VWF8.html\">VWF8</a></li>
+</ul>
+
+", 'undocs:1.1. Undocumented things' => "
 
 Things that should be documented some day but currently are not:
 <ul>
  <li>How does the character map actually work</li>
- <li>How to do conjugation</li>
  <li>Known bugs and their resolutions</li>
  <li>Script format guidelines (how do the indents work)</li>
  <li>Tips and hints one should know</li>

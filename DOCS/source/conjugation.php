@@ -1,30 +1,12 @@
-<html><head><meta http-equiv="Content-type" content="text/html; charset=iso-8859-1">
- <title>Chronotools - conjugator</title>
- <style type="text/css"><!--
-TABLE.toc {border:0px}
-A:link,A:visited{text-decoration:none;color:#2A3B83}
-A:hover{text-decoration:underline;color:#002040}
-A:active{text-decoration:underline;color:#004060;background:#CCD8FF}
-TD.toc   {font-size:80%; font-family:Tahoma; text-align:left}
-H1       {font-size:250%; font-weight:bold} .level1 {text-align:center}
-H2       {font-size:200%; font-weight:bold} .level2 {margin-left:1%}
-H3       {font-size:160%; font-weight:bold} .level3 {margin-left:2%}
-H4       {font-size:145%; font-weight:bold} .level4 {margin-left:3%}
-H5       {font-size:130%; font-weight:bold} .level5 {margin-left:4%}
-H6       {font-size:110%; font-weight:bold} .level5 {margin-left:5%}
-BODY{background:white;color:black}
-CODE{font-family:lucida console,courier new,courier;color:#105000}
-PRE.smallerpre{font-family:lucida console,courier new,courier;font-size:80%;color:#500010;margin-left:30px}
-SMALL    {font-size:70%}
---></style></head>
- <body>
-  <h1>Chronotools - conjugator</h1>
-  <h2 class=level2> 0. Contents </h2>
-  
-  This is the documentation of chronotools-1.11.8.
-<div class=toc><table cellspacing=0 cellpadding=0 class=toc><tr><td width="50%" valign=middle align=left nowrap class=toc>&nbsp;&nbsp;&nbsp;1. <a href="#h0">Introduction</a><br>&nbsp;&nbsp;&nbsp;2. <a href="#plan">Planning</a><br>&nbsp;&nbsp;&nbsp;3. <a href="#cfg">Configuration</a><br></td>
-<td width="50%" valign=middle align=left nowrap class=toc>&nbsp;&nbsp;&nbsp;4. <a href="#code">Creating the conjugator code</a><br>&nbsp;&nbsp;&nbsp;5. <a href="#bind">Binding the code to ROM</a><br>&nbsp;&nbsp;&nbsp;6. <a href="#download">Downloading</a><br></td>
-</tr></table></div><H2 id="h0" class="level2"><a name="h0"></a>1. Introduction</H2><div class="level2" id="divh0">
+<?php
+
+/* This file is the source for some html file. Read it instead. */
+
+$title = 'Chronotools - conjugator';
+$progname = 'chronotools';
+
+$text = Array(
+   '1. Introduction' => "
    
 Chronotools supports conjugation.
 <p>
@@ -32,13 +14,13 @@ Here I'll explain how it was done for Finnish.
 <p>
 This consists of the following sections:
 <ul>
- <li><a href="#plan">Planning</a></li>
- <li><a href="#cfg">Configuration</a></li>
- <li><a href="#code">Program code</a></li>
- <li><a href="#bind">Binding the code to ROM</a></li>
+ <li><a href=\"#plan\">Planning</a></li>
+ <li><a href=\"#cfg\">Configuration</a></li>
+ <li><a href=\"#code\">Program code</a></li>
+ <li><a href=\"#bind\">Binding the code to ROM</a></li>
 </ul>
 
-</div><H2 id="plan" class="level2"><a name="plan"></a>2. Planning</H2><div class="level2" id="divplan">
+", 'plan:1. Planning' => "
 
 First you need to find out which conjugations you're using.<br>
 For Finnish, they were the following:
@@ -59,13 +41,13 @@ essive               Do_NA         ZGX:nä  R66:na  Pekkana Maguksena  Cronona
 illative             Do_HUN        ZGX:ään R66:een Pekkaan Magukseen  Cronoon
 </pre>
 
-The "Form" here refers to the linguistic name of the conjugation.
+The \"Form\" here refers to the linguistic name of the conjugation.
 Chronotools doesn't use it.<br>
-"Function name" is the name of the function used in
-your <a href="#code">code file</a>. The rest of this table
+\"Function name\" is the name of the function used in
+your <a href=\"#code\">code file</a>. The rest of this table
 are examples of how different names are conjugated in the given forms.
 
-</div><H2 id="cfg" class="level2"><a name="cfg"></a>3. Configuration</H2><div class="level2" id="divcfg">
+", 'cfg:1. Configuration' => "
 
 Next you must configure each conjugation.
 For this there's the <code>[conjugator]</code> section in your configuration file.
@@ -87,17 +69,17 @@ Here's part of what it is in the Finnish version:
 #
 # c=crono m=marle l=lucca r=robo f=frog a=ayla u=magus e=epoch
 # 1=member1 2=member2 3=member3
-setup "Do_A" "
+setup \"Do_A\" \"
  cCronoa,mMarlea,lLuccaa,rRobosta,fFrogia,fFroggia,
  aAylaa,uMagusta,uMaguksea,eEpochia,
  1[member1]:a,2[member2]:a,3[member3]:a,
- 1[member1]:ä,2[member2]:ä,3[member3]:ä" ":ta"
+ 1[member1]:ä,2[member2]:ä,3[member3]:ä\" \":ta\"
 
-setup "Do_LLA" "
+setup \"Do_LLA\" \"
  cCronolla,mMarlella,lLuccalla,lLucalla,rRoboksella,fFrogilla,
  aAylalla,uMaguksella,uMagusilla,eEpochilla,
  1[member1]:lla,2[member2]:lla,3[member3]:lla,
- 1[member1]:llä,2[member2]:llä,3[member3]:llä" "kella"
+ 1[member1]:llä,2[member2]:llä,3[member3]:llä\" \"kella\"
 </pre>
 
 The first parameter of <code>setup</code> is the function name
@@ -115,7 +97,7 @@ The third parameter is a string that is used by the script
 wrapping code. It describes the <em>widest</em> possible string
 that the conjugation could append to the character name.
 
-</div><H2 id="code" class="level2"><a name="code"></a>4. Creating the conjugator code</H2><div class="level2" id="divcode">
+", 'code:1. Creating the conjugator code' => "
 
 This is the hardest part for average people.<br
 You have to write your own conjugator!<br>
@@ -125,36 +107,26 @@ Sorry, I can't help you more than this.
 <p>
 Anyway, when you are done with your code file, you just compile
 it with utils/compile, combine it with ct-conj.a65 and assemble
-it with <a href="http://bisqwit.iki.fi/source/snescom.html">snescom</a>.
+it with <a href=\"http://bisqwit.iki.fi/source/snescom.html\">snescom</a>.
 Basically, once you have snescom installed, you can just do
 <code>make ct-conj.o65</code> and that should do it.
 
-</div><H2 id="bind" class="level2"><a name="bind"></a>5. Binding the code to ROM</H2><div class="level2" id="divbind">
+", 'bind:1. Binding the code to ROM' => "
 
 Add the following lines to your <code>ct.cfg</code>
 in the <code>[linker]</code> section:
 
 <pre>
 # CONJUGATOR
-load_code "ct-conj.o65"
-add_call_of "Conjugator"         $C258C2 1 false
+load_code \"ct-conj.o65\"
+add_call_of \"Conjugator\"         \$C258C2 1 false
 </pre>
 
 This tells the insertor that it must include code from <code>ct-conj.o65</code>
-and that the Conjugator routine will be called from the ROM address <code>$C258C2</code>.
+and that the Conjugator routine will be called from the ROM address <code>\$C258C2</code>.
 <p>
 I hope I didn't forget anything.
 <p>
 Ask me for help if you didn't get it :)
 
-</div><H2 id="download" class="level2"><a name="download"></a>6. Downloading</H2><div class="level2" id="divdownload">
-   The official home page of chronotools
-   is at <a href="http://iki.fi/bisqwit/source/chronotools.html">http://iki.fi/bisqwit/source/chronotools.html</a>.<br>
-   Check there for new versions.
-</div> <p align=right><small>Generated from
-       <code>source/conjugation.php</code> (last updated: Wed, 28 Jan 2004 20:30:46 +0200)<br>
-  with <code>docmaker.php</code> (last updated: Fri,  2 Jan 2004 17:31:18 +0200)<br>
-  at Wed, 28 Jan 2004 20:57:25 +0200</small>
- </p>
-</body>
-</html>
+");

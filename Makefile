@@ -104,6 +104,7 @@ DEPDIRS = utils/
 # VERSION 1.11.5 another... big structural changes
 # VERSION 1.11.6 backup copy... this version has bugs
 # VERSION 1.11.7 unwraps the script when dumping, if configured so
+# VERSION 1.11.8 has much more documentation than before
 
 #OPTIM=-Os
 # -fshort-enums
@@ -115,7 +116,7 @@ OPTIM=-O3
 
 CXXFLAGS += -I.
 
-VERSION=1.11.7
+VERSION=1.11.8
 ARCHFILES=utils/xray.cc utils/xray.h \
           utils/viewer.c \
           utils/vwftest.cc \
@@ -177,17 +178,16 @@ ARCHFILES=utils/xray.cc utils/xray.h \
           confparser.cc confparser.hh \
           extras.cc extras.hh \
           typefaces.cc typefaces.hh \
-          taipus.rb \
           binpacker.tcc binpacker.hh \
           tristate \
           \
           conjugate.cc conjugate.hh \
           \
-          ct-conj.code ct-conj.a65 \
+          ct-conj.a65 \
           ct-vwf8.a65 \
           timebox.a65 \
           \
-          ct-crononick.code ct-crononick.a65 \
+          ct-crononick.a65 \
           \
           utils/compiler2.cc utils/compiler2-parser.inc utils/ct.code2 \
           utils/deasm-disasm.cc utils/deasm-disasm.hh \
@@ -200,18 +200,19 @@ ARCHFILES=utils/xray.cc utils/xray.h \
           \
           winlibs/iconv.h winlibs/libiconv.a \
           \
-          dist/ct.cfg dist/ct.code \
-          \
-          etc/ct.cfg etc/ct.code \
+          etc/ct.cfg \
           \
           DOCS/README.html progdesc.php \
-          DOCS/Makefile DOCS/docmaker.php \
-          DOCS/VWF8.html DOCS/VWF8.php \
-          DOCS/compression.html DOCS/compression.php \
-          DOCS/crononick.html DOCS/crononick.php \
-          DOCS/conjugation.html DOCS/conjugation.php \
-          DOCS/signature.html DOCS/signature.php \
-          DOCS/imageformat.html DOCS/imageformat.php
+          DOCS/Makefile         DOCS/docmaker.php \
+          DOCS/VWF8.html        DOCS/source/VWF8.php \
+          DOCS/compression.html DOCS/source/compression.php \
+          DOCS/crononick.html   DOCS/source/crononick.php \
+          DOCS/conjugation.html DOCS/source/conjugation.php \
+          DOCS/signature.html   DOCS/source/signature.php \
+          DOCS/imageformat.html DOCS/source/imageformat.php \
+          DOCS/ct-moglogo.a65 \
+          DOCS/ct-conj.code DOCS/ct-crononick.code \
+          DOCS/ct8fnV.tga
 
 NOGZIPARCHIVES=1
 

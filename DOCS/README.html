@@ -21,9 +21,9 @@ SMALL    {font-size:70%}
   <h1>Chrono Trigger translation development system</h1>
   <h2 class=level2> 0. Contents </h2>
   
-  This is the documentation of chronotools-1.11.7.
-<div class=toc><table cellspacing=0 cellpadding=0 class=toc><tr><td width="50%" valign=middle align=left nowrap class=toc>&nbsp;&nbsp;&nbsp;1. <a href="#what">Purpose</a><br>&nbsp;&nbsp;&nbsp;2. <a href="#how">How to begin?</a><br>&nbsp;&nbsp;&nbsp;3. <a href="#status">Current status</a><br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;3.1. <a href="#changes">Version history</a><br>&nbsp;&nbsp;&nbsp;4. <a href="#h0">Program list</a><br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;4.1. <a href="#ctdump">ctdump</a><br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;4.2. <a href="#ctinsert">ctinsert</a><br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;4.3. <a href="#h1">other</a><br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;4.3.1. <a href="#h2">makeips</a><br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;4.3.2. <a href="#h3">unmakeips</a><br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;4.3.3. <a href="#h4">xray</a><br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;4.3.4. <a href="#h5">viewer</a><br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;4.3.5. <a href="#h6">spacefind</a><br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;4.3.6. <a href="#h7">taipus.rb</a><br></td>
-<td width="50%" valign=middle align=left nowrap class=toc>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;4.3.7. <a href="#h8">sramdump</a><br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;4.3.8. <a href="#h9">base62</a><br>&nbsp;&nbsp;&nbsp;5. <a href="#h10">Useful features</a><br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;5.1. <a href="#conj">Name conjugation</a><br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;5.2. <a href="#skew">Font/dictionary skew</a><br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;5.3. <a href="#wrap">Automatic paragraph wrapping</a><br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;5.4. <a href="#vwf8">Variable width 8pix font</a><br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;5.5. <a href="#h11">Very configurable</a><br>&nbsp;&nbsp;&nbsp;6. <a href="#h12">Summary of extra features</a><br>&nbsp;&nbsp;&nbsp;7. <a href="#req">Requirements</a><br>&nbsp;&nbsp;&nbsp;8. <a href="#copying">Copying</a><br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;8.1. <a href="#parts">If you only are interested in some features/parts</a><br>&nbsp;&nbsp;&nbsp;9. <a href="#undocs">Undocumented things</a><br>&nbsp;&nbsp;&nbsp;10. <a href="#h13">See also</a><br>&nbsp;&nbsp;&nbsp;11. <a href="#download">Downloading</a><br></td>
+  This is the documentation of chronotools-1.11.8.
+<div class=toc><table cellspacing=0 cellpadding=0 class=toc><tr><td width="50%" valign=middle align=left nowrap class=toc>&nbsp;&nbsp;&nbsp;1. <a href="#what">Purpose</a><br>&nbsp;&nbsp;&nbsp;2. <a href="#how">How to begin?</a><br>&nbsp;&nbsp;&nbsp;3. <a href="#status">Current status</a><br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;3.1. <a href="#changes">Version history</a><br>&nbsp;&nbsp;&nbsp;4. <a href="#h0">Program list</a><br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;4.1. <a href="#ctdump">ctdump</a><br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;4.2. <a href="#ctinsert">ctinsert</a><br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;4.3. <a href="#h1">other</a><br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;4.3.1. <a href="#h2">makeips</a><br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;4.3.2. <a href="#h3">unmakeips</a><br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;4.3.3. <a href="#h4">xray</a><br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;4.3.4. <a href="#h5">viewer</a><br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;4.3.5. <a href="#h6">spacefind</a><br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;4.3.6. <a href="#h7">sramdump</a><br></td>
+<td width="50%" valign=middle align=left nowrap class=toc>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;4.3.7. <a href="#h8">base62</a><br>&nbsp;&nbsp;&nbsp;5. <a href="#h9">Useful features</a><br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;5.1. <a href="#conj">Name conjugation</a><br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;5.2. <a href="#skew">Font/dictionary skew</a><br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;5.3. <a href="#wrap">Automatic paragraph wrapping</a><br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;5.4. <a href="#vwf8">Variable width 8pix font</a><br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;5.5. <a href="#h10">Very configurable</a><br>&nbsp;&nbsp;&nbsp;6. <a href="#h11">Summary of extra features</a><br>&nbsp;&nbsp;&nbsp;7. <a href="#req">Requirements</a><br>&nbsp;&nbsp;&nbsp;8. <a href="#copying">Copying</a><br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;8.1. <a href="#parts">If you only are interested in some features/parts</a><br>&nbsp;&nbsp;&nbsp;9. <a href="#docs">Documentation</a><br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;9.1. <a href="#undocs">Undocumented things</a><br>&nbsp;&nbsp;&nbsp;10. <a href="#h12">See also</a><br>&nbsp;&nbsp;&nbsp;11. <a href="#download">Downloading</a><br></td>
 </tr></table></div><H2 id="what" class="level2"><a name="what"></a>1. Purpose</H2><div class="level2" id="divwhat">
 
 Tools for translating Chrono&nbsp;Trigger to different languages.
@@ -82,7 +82,7 @@ you might have about translating/hacking Chrono Trigger.<br>
 Chronotools is under active development.
 Here's the current situation.<br>
 Last updated:
-2004-01-27
+2004-01-28
 
 <p>
 <table>
@@ -108,9 +108,9 @@ Last updated:
 <tr><td>Signature feature</td>
     <td>100%</td> <td>everything works</td></tr>
 <tr><td>Error recovery</td>
-    <td>20%</td> <td>not many error checks</td></tr>
-<tr><td>Documentation</td>
-    <td>3%</td> <td>if it isn't on this page, it's <a href="#undocs">nowhere</a></td></tr>
+    <td>40%</td> <td>not all error situations are handled</td></tr>
+<tr><td><a href="#docs">Documentation</a></td>
+    <td>40%</td> <td>it isn't good or complete, but it exists</td></tr>
 </table>
 
 </div><H3 id="changes" class="level3"><a name="changes"></a>3.1. Version history</H3><div class="level3" id="divchanges">
@@ -202,6 +202,7 @@ Copypaste from the Makefile:
 # VERSION 1.11.5 another... big structural changes
 # VERSION 1.11.6 backup copy... this version has bugs
 # VERSION 1.11.7 unwraps the script when dumping, if configured so
+# VERSION 1.11.8 has much more documentation than before
 </pre>
 
 Users of previous versions are advised to do the following:
@@ -293,25 +294,18 @@ originally developed by me for Pokémon hacking.
 
 A <a href="/source/jaa3.html">bin-packing</a> algorithm test.
 
-</div><H4 id="h7" class="level4"><a name="h7"></a>4.3.6. taipus.rb</H4><div class="level4" id="divh7">
-
-This one is <a href="/ctfin/taipus.rb">publicly available</a>.
-It conjugates names in Finnish.<br>It has now been
-<a href="/ctfin/ct-code.txt">translated</a> to
-SNES assembly (or sort of).<br>It works. :)
-
-</div><H4 id="h8" class="level4"><a name="h8"></a>4.3.7. sramdump</H4><div class="level4" id="divh8">
+</div><H4 id="h7" class="level4"><a name="h7"></a>4.3.6. sramdump</H4><div class="level4" id="divh7">
 
 Views a sram dump file in a readable format.
 
-</div><H4 id="h9" class="level4"><a name="h9"></a>4.3.8. base62</H4><div class="level4" id="divh9">
+</div><H4 id="h8" class="level4"><a name="h8"></a>4.3.7. base62</H4><div class="level4" id="divh8">
 
 Converts addresses between hex and base62 formats.
 I.e. $C2:5D4C -> 0eJI and vice versa.<br>
 This development system uses base62 in the script
 dumps to reduce the amount of code written.
 
-</div><H2 id="h10" class="level2"><a name="h10"></a>5. Useful features</H2><div class="level2" id="divh10">
+</div><H2 id="h9" class="level2"><a name="h9"></a>5. Useful features</H2><div class="level2" id="divh9">
 
 </div><H3 id="conj" class="level3"><a name="conj"></a>5.1. Name conjugation</H3><div class="level3" id="divconj">
 
@@ -414,13 +408,13 @@ the game to draw the names in thinner font that fits on the screen.
 
 <br clear=all>
 
-</div><H3 id="h11" class="level3"><a name="h11"></a>5.5. Very configurable</H3><div class="level3" id="divh11">
+</div><H3 id="h10" class="level3"><a name="h10"></a>5.5. Very configurable</H3><div class="level3" id="divh10">
 
 I have tried to put almost everything in text-only config files
 instead of hardcoding it in the programs. You won't be depending
 on me to do little updates for your purposes.
 
-</div><H2 id="h12" class="level2"><a name="h12"></a>6. Summary of extra features</H2><div class="level2" id="divh12">
+</div><H2 id="h11" class="level2"><a name="h11"></a>6. Summary of extra features</H2><div class="level2" id="divh11">
 
 These are the visible extra features that games patched by Chronotools
 may have when compared to the standard English version:
@@ -500,19 +494,33 @@ although it now does contain some separate assembly code.<br>
 I have made my own systems to compile and link code.<br>
 If you're uncertain, <a href="#copying">send me email and explain your situation</a>.
 
-</div><H2 id="undocs" class="level2"><a name="undocs"></a>9. Undocumented things</H2><div class="level2" id="divundocs">
+</div><H2 id="docs" class="level2"><a name="docs"></a>9. Documentation</H2><div class="level2" id="divdocs">
+
+If this is a local copy of README.html instead of the public web
+page, you can use the following links to access the documentation
+files.
+
+<ul>
+ <li><a href="compression.html">Compression</a></li>
+ <li><a href="conjugation.html">Conjugation</a></li>
+ <li><a href="crononick.html">Crononick</a></li>
+ <li><a href="imageformat.html">Image format</a></li>
+ <li><a href="signature.html">Signature</a></li>
+ <li><a href="VWF8.html">VWF8</a></li>
+</ul>
+
+</div><H3 id="undocs" class="level3"><a name="undocs"></a>9.1. Undocumented things</H3><div class="level3" id="divundocs">
 
 Things that should be documented some day but currently are not:
 <ul>
  <li>How does the character map actually work</li>
- <li>How to do conjugation</li>
  <li>Known bugs and their resolutions</li>
  <li>Script format guidelines (how do the indents work)</li>
  <li>Tips and hints one should know</li>
  <li>The source code</li>
 </ul>
 
-</div><H2 id="h13" class="level2"><a name="h13"></a>10. See also</H2><div class="level2" id="divh13">
+</div><H2 id="h12" class="level2"><a name="h12"></a>10. See also</H2><div class="level2" id="divh12">
 
 <ul>
  <li><a href="http://bisqwit.iki.fi/ctfin/">Bisqwit's
@@ -530,9 +538,9 @@ Things that should be documented some day but currently are not:
    is at <a href="http://iki.fi/bisqwit/source/chronotools.html">http://iki.fi/bisqwit/source/chronotools.html</a>.<br>
    Check there for new versions.
 </div> <p align=right><small>Generated from
-       <code>../progdesc.php</code> (last updated: Wed, 28 Jan 2004 18:59:55 +0200)<br>
+       <code>../progdesc.php</code> (last updated: Wed, 28 Jan 2004 20:57:13 +0200)<br>
   with <code>docmaker.php</code> (last updated: Fri,  2 Jan 2004 17:31:18 +0200)<br>
-  at Wed, 28 Jan 2004 18:59:57 +0200</small>
+  at Wed, 28 Jan 2004 20:57:24 +0200</small>
  </p>
 </body>
 </html>

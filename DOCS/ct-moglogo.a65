@@ -1,0 +1,220 @@
+; Part of Chronotools - http://bisqwit.iki.fi/source/chronotools.html
+;
+; Copyright (C) 1992,2003 Bisqwit (http://iki.fi/bisqwit/)
+;
+; This code inserts the logo to the intro screen.
+;
+; To be assembled with snescom.
+;    http://bisqwit.iki.fi/source/snescom.html
+;
+
+.text
+
+; Define functions for handling the bitness...
+#define SET_8_BIT_A()   sep #$20 : .as
+#define SET_16_BIT_A()  rep #$20 : .al
+#define SET_8_BIT_X()   sep #$10 : .xs
+#define SET_16_BIT_X()  rep #$10 : .xl
+
+#define SET_8_BIT_AX()  sep #$30 : .xs : .as
+#define SET_16_BIT_AX() rep #$30 : .xl : .al
+
+/* Decompresses data */
+#define DECOMPRESS(SOURCE, DEST) \
+    .( : \
+         SET_8_BIT_A() : \
+         lda #^SOURCE : sta $02 : \
+         ldx #!SOURCE : \
+         ldy #!DEST   : \
+         lda #^DEST   : \
+         jsr DecompressHelper : \
+    .)
+DecompressHelper:
+	.as : .xl
+	stx $00
+	sty $03
+	sta $05
+        jsl @DECOMPRESS_FUNC_ADDR
+        ; Result: $06 = bitmap data size in bytes.
+	rts
+
+/* Sends bitmaps to PPU */
+/* Requires $06 having the size of bitmap data */
+/* Uses DMA 7 */
+#define SEND_BITMAPS(SOURCE, FIRST_TILE, VRAM_ADDR) \
+    .( : \
+         SET_8_BIT_A() : \
+         lda #$00 : pha : plb : \
+         ldy #VRAM_ADDR + (FIRST_TILE*16) : \
+         ldx #!SOURCE : \
+         lda #^SOURCE : \
+         jsr BitmapSendHelper : \
+    .)
+
+BitmapSendHelper:
+	.as : .xl
+	sty $2116
+	ldy #$1801 : sty $4370
+	stx $4372
+	sta $4374
+	ldy $06  : sty $4375
+	lda #$80 : sta $420B
+	rts
+
+/* Sends tiles to PPU */
+/* Uses $00 as temp (decompressor used it too, it's free) */
+/* Uses DMA 7 */
+#define SEND_TILES(VRAM_ADDR, TILE_INDEX, XSIZE, YSIZE, YINC, SOURCE) \
+    .( : \
+         SET_16_BIT_A() : \
+         ldx #VRAM_ADDR : \
+         lda #TILE_INDEX : \
+         ldy #YSIZE : \
+  yloop:  stx $2116 : \
+          phx : \
+           ldx #0 : \
+  xloop:    sta @TEMP_ADDR,x : inx : inx : inc : \
+            cpx #XSIZE*2 : bcc xloop : \
+           sta $00 : \
+           SET_8_BIT_A() : \
+           ldx #!TEMP_ADDR : stx $4372 : \
+           ldx #XSIZE*2    : stx $4375 : \
+           lda #$80        : sta $420B : \
+           SET_16_BIT_A() : \
+          plx : \
+          txa : clc : adc #YINC : tax : \
+          lda $00 : \
+         dey : bne yloop : \
+    .)
+
+/* Copies the palette to a table in RAM */
+/* Note: -1 is because MVN copies always A+1 bytes */
+/* Note: X=source offset, Y=dest offset */
+#define SEND_PALETTE(SOURCE, PALETTE_NUM, DEST, PAL_BYTES, FIRST_INDEX) \
+    .( : \
+       SET_16_BIT_AX()  : \
+       lda #PAL_BYTES-1 : \
+       ldx #!SOURCE     : \
+       ldy #!DEST+(PALETTE_NUM*32)+FIRST_INDEX*2 : \
+       mvn ^DEST, ^SOURCE : \
+    .)
+
+
+; External symbols - defined by the linker:
+;   DECOMPRESSOR_FUNC_ADDR
+;
+;   TILEDATA_ADDR
+;   PALETTE_ADDR
+
+
+#define TEMP_ADDR       $7FE000
+
+#define DISPLAY_GFX(TILES_ADDR, PAL_ADDR, \
+                    PALETTE_NUM, PAL_SIZE, FIRST_TILE, \
+                    VRAM_BITMAPS, VRAM_TILEMAPS, \
+                    VRAM_OFFSET, \
+                    SIZE_X, SIZE_Y, Y_INC) \
+    \
+    DECOMPRESS(TILES_ADDR, TEMP_ADDR) : \
+    SEND_BITMAPS(TEMP_ADDR, FIRST_TILE, VRAM_BITMAPS) : \
+    SEND_TILES(VRAM_TILEMAPS + VRAM_OFFSET,            /*vram address*/ \
+               FIRST_TILE + $2000 + $400*PALETTE_NUM,  /*tile index*/   \
+               SIZE_X, SIZE_Y, Y_INC,                  /*geometry*/     \
+               TEMP_ADDR)                              /*source*/     : \
+    SEND_PALETTE(PAL_ADDR, PALETTE_NUM, $7E2200, PAL_SIZE, 1)
+    ; Decompress graphics.
+    ; Send bitmaps.
+    ; Send tiles.
+    ; The game loads all 15 palettes from $7E2200 each fram
+    ; FIXME: All 15?
+
+
+MogLogo_Do:
+.(
+        ; Palette $00= pendulum
+        ; Palette $01= free for use
+        ; Palette $02= "TRIGGER"
+        ; Palette $03= free for use
+        ; Palette $09= "RONO"
+
+;        DISPLAY_GFX(TILEDATA_ADDR, PALETTE_ADDR,
+;                    1,PALETTE_SIZE,
+;                    $0B0,      ;first tile
+;                    $5000,     ;vram.bmap
+;                    $6000,     ;vram.tiles
+;                    $2F0,      ;vram offset
+;                    16, 5, $20);geometry
+        
+        DISPLAY_GFX(TILEDATA1_ADDR, PALETTE1_ADDR,
+                    1,PALETTE1_SIZE,
+                    $0A0,      ;first tile
+                    $5000,     ;vram.bmap
+                    $6000,     ;vram.tiles
+                    $250,      ;vram offset
+                    16, 2, $20);geometry
+        
+        DISPLAY_GFX(TILEDATA2_ADDR, PALETTE2_ADDR,
+                    3,PALETTE2_SIZE,
+                    $0C0,      ;first tile
+                    $5000,     ;vram.bmap
+                    $6000,     ;vram.tiles
+                    $1D0,      ;vram offset
+                    16, 4, $20);geometry
+        
+        rts
+.)
+
+show_moglogo:  ;global label
+.(
+        ; We are called from $FDE62F, which is 16-bit context
+        .al
+        .xl
+        ; A=$0180 X=$0500 Y=$0000 S=$06DA
+        ; If this isn't the case, we were called from
+        ; some other palette-fading function than the
+        ; intro. But is this really safe?
+        ; Do we have to save X?
+        cmp #$0180 : bne End
+        cpx #$0500 : bne End
+        cpy #$0000 : bne End
+        tsx
+        ; X is freely wasteable.
+        ; It will be overwritten at End regardless.
+        cpx #$06D7 : beq Ok
+        cpx #$06D5 : bne End
+        ; S is sometimes 6D5, sometimes 6D7...
+
+Ok:     phb
+         phd
+          pha
+           phy
+            lda #$0300
+            tcd
+            jsr MogLogo_Do
+            SET_16_BIT_AX()
+           ply
+          pla
+         pld
+        plb
+        ; Should be 16-bit here!
+
+End:    ; Arrives here if we weren't supposed to put up the logo here.
+        ; Overwrote these 4 bytes at $FDE695
+        tax
+        lda #$0000
+        
+        rtl
+.)
+
+;NOTES
+
+; We only have to put it to the PPU. Hmm...
+; BG0: VOffset:65465, HOffset:65488, W:64, H:32, TS:8, BA:0x6400, TA:0x5000
+; BG1: VOffset:0, HOffset:65344, W:32, H:32, TS:8, BA:0x6000, TA:0x5000
+
+
+; The NMI runs these DMAs:
+;DMA[7]= read Mode= 0 0x000700->0x2134 Bytes= 512 (inc) V-Line=234 VALUE= E0
+;DMA[7]= write Mode= 1 0x000C00->0x2118 Bytes= 128 (inc) V-Line=238 VRAM= 7000 (1,0) word
+;DMA[7]= write Mode= 0 0x7E2200->0x2122 Bytes= 512 (inc) V-Line=226 CGRAM= 00 (0)
+;DMA[7]= write Mode= 0 0x000700->0x2104 Bytes= 544 (inc) V-Line=230 OBJADDR= 0000

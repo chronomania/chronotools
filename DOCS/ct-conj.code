@@ -563,7 +563,7 @@ OUT 't'
 CALL Out_A
 RETURN
 
-# Outputs the character name conjugated in ablative (to/for).
+# Outputs the character name conjugated in allative (to/for).
 # Example: "Give it back _to_ Marle" -> "Anna se takaisin Marlelle"
 FUNCTION Do_LLE
 CALL SoftStem
