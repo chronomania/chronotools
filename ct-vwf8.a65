@@ -1,41 +1,40 @@
-; Part of Chronotools - http;//bisqwit.iki.fi/source/chronotools.html
+; Part of Chronotools - bisqwit.iki.fi/source/chronotools.html
 ;
-; Copyright (C) 1992,2003 Bisqwit (http;//iki.fi/bisqwit/)
+; Copyright (C) 1992,2003 Bisqwit (iki.fi/bisqwit/)
 ;
 ; This code draws text using VWF8 (variable width 8pix tall font).
 ;
 ; To be assembled with xa65.
-;    http;//www.floodgap.com/retrotech/xa/
+;    www.floodgap.com/retrotech/xa/
 ;
 
 ; Note - Caller is assumed to use PEI .
 ;   The functions to be called are:
 ;        DrawS_2bit - for 2bit screens
 ;        DrawS_4bit - for 4bit screens
-;   See DrawS_init for register usage.
+;   See DrawS_boot for register usage.
 
-; TODO:
-;   "you dont need to save DB
-;    it's mirrored remember"
 
+; Variable addresses:
+#define W_DATASIZE $10
+; W_DATASIZE must be in zeropage because used during dma init
+; Pointers are good to stay there too to be simple.
+#define P_STR      $12
+#define P_FONT     $15
+#define P_TILEBUF1 $18
+#define P_TILEBUF2 $1B
+; First unused $1E
 
 ; Params from the caller - must be set:
-#define W_TILENUM  $10
-#define W_VRAMADDR $12
+#define W_TILENUM  $6200
+#define W_VRAMADDR $6202
 
-; Own things:
-#define P_STR      $14
-#define P_FONT     $17
-#define B_PIXOFFS  $1A
-#define B_LENGTH   $1B
-#define W_ENDX     $1C
-#define P_TILEBUF1 $1E
-#define P_TILEBUF2 $21
-#define W_DATASIZE $24
-#define W_ONESIZE  $26
-
-; Tilebuf is at $7E6200 - size maximally 11*64 bytes
-#define TILEBUF   $6200
+; Tilebuf is at $7E620A - size maximally 11*64 bytes
+#define W_ONESIZE  $6204
+#define W_ENDX     $6206
+#define B_PIXOFFS  $6208
+#define B_LENGTH   $6209
+#define TILEBUF    $620A
 
 ; External symbols - defined by the linker:
 ;   Font address:
@@ -58,38 +57,116 @@
 #define SET_16_BIT_AX() rep #$30 : .xl : .al
 
 
-; -- CURRENTLY --
-; Input:
-;    xxxxxxxx
-;
-; ofs  2nd byte 1st byte
-;  0   xxxxxxxx 00000000 handled
-;  1   0xxxxxxx x0000000 xba; 1 lsr
-;  2   00xxxxxx xx000000 xba; 2 lsr
-;  3   000xxxxx xxx00000 xba; 3 lsr
-;  4   0000xxxx xxxx0000 4 asl
-;  5   00000xxx xxxxx000 3 asl
-;  6   000000xx xxxxxx00 2 asl
-;  7   0000000x xxxxxxx0 1 asl
+; Input for DrawS_*bit functions:
+;    Ah,Y = Address of the string
+;    Al   = Maximum length of the string (nul terminates earlier)
+;    DB,X = Where to put the tile indices
 
-; -- PLANNING --
-; When handling two bytes at time:
-; Input:
-;     byte2    byte1
-;    yyyyyyyyxxxxxxxx
-; 
-; Results should be (when ofs 0..7):
-; ofs    second word       first word  
-;  0  yyyyyyyyxxxxxxxx 0000000000000000
-;  1  0yyyyyyy0xxxxxxx y0000000x0000000
-;  2  00yyyyyy00xxxxxx yy000000xx000000
-;  3  000yyyyy000xxxxx yyy00000xxx00000
-;  4  0000yyyy0000xxxx yyyy0000xxxx0000
-;  5  00000yyy00000xxx yyyyy000xxxxx000
-;  6  000000yy000000xx yyyyyy00xxxxxx00
-;  7  0000000y0000000x yyyyyyy0xxxxxxx0
+; ENTRY - Draw string, create 2bit tiles
+DrawS_2bit:
+        jsr DrawS_boot  ;store registers to vars
+        jsr DrawS_2bit_setup
+        jsr DrawS_initdma
+        bra DrawS_common
 
-; -- PLANNING --
+; ENTRY - Draw string, create 4bit tiles
+DrawS_4bit:
+        jsr DrawS_boot  ;store registers to vars
+        jsr DrawS_4bit_setup
+        jsr DrawS_initdma
+        asl
+DrawS_common:
+.(
+        ; Should be 16-bit mode here
+        asl
+        asl
+        asl
+        clc
+        adc W_VRAMADDR
+        ; Tell PPU what we're going to write
+        .byt $8F,$16,$21,$00   ;sta $002116
+
+        SET_8_BIT_A()
+CharLoop:
+        ; Get a character from string
+        lda #$00
+        xba
+        lda [P_STR]
+        beq Zero
+        cmp #$01       ; 1 = chars $100..$1FF
+        beq ExtraChar
+        cmp #$02       ; 2 = chars $200..$2FF
+        bne ContinueWithChar
+ExtraChar:
+        SET_16_BIT_A()
+        inc P_STR
+        SET_8_BIT_A()
+        xba
+        lda [P_STR]
+ContinueWithChar:
+        SET_16_BIT_A()
+        inc P_STR
+        
+        ; Character should be 16bit by now
+        jsr Trans
+        jsr DrawChar
+
+        ; Print more characters, if desired.
+        SET_8_BIT_A()
+        dec B_LENGTH
+        bne CharLoop
+
+Zero:   jsr Write ; write last tile
+        ; ^FIXME - don't do if PIXOFFS=0
+
+        SET_16_BIT_A()
+        
+        cpx W_ENDX
+        bcs EndDrawS     ; if >=
+        
+        ; Note - If $FF isn't space in the normal 8pix font, change this.
+        lda #$FF00 ;byteswapped #$00FF
+        SET_8_BIT_A()
+        ora $7E    ;attr - from the game
+        xba
+        SET_16_BIT_A()
+        
+        tay
+EndLoop:
+        tya
+        jsr WriteOne
+        
+        lda W_DATASIZE
+        sec
+        sbc W_ONESIZE
+        sta W_DATASIZE  ; decrease the data size
+                        ; (generate a smaller dma transfer)
+        
+        cpx W_ENDX
+        bcc EndLoop      ; if <
+
+EndDrawS:
+        ; Should be 16-bit here
+        lda W_DATASIZE
+        .byt $8F,$75,$43,$00   ;sta $004375
+        ; ^ dma config size
+
+        SET_8_BIT_A()
+        ; Proceed with the DMA that was programmed earlier
+        lda #$80
+        .byt $8F,$0B,$42,$00   ;sta $00420B
+        ; ^ dma proceed - sends data to PPU
+        
+        ; This is required
+        SET_16_BIT_A()
+        
+        rtl
+.)
+
+
+
+
+
 ; How ROR works:
 ;      A += carry<<16
 ;      carry = A&1
@@ -99,57 +176,6 @@
 ;      A += carry
 ;      carry = A>>16
 
-; -- PLANNING --
-;  SET_8BIT_A
-;              VAR       A
-;            00000000-xxxxxxxx
-;    asl     00000000-xxxxxxx0
-;    rol VAR 0000000x-xxxxxxx0
-
-
-; ONEBIT - handles one BYTE of a 16-byte font tile.
-;
-; Input:
-;   X-flag     - must be 16-bit
-;   X          = PIXOFFS*2
-;   P_FONT     = pointer to the current tile in font
-;   Y          = index of the current byte in font
-;   P_TILEBUF1 = pointer to this tile to be constructed
-;   P_TILEBUF2 = pointer to next tile to be constructed
-; Output:
-;   Y      = Y+1
-;   M-flag - 8-bit
-; Leaves undefined:
-;   A
-
-#define ONEBIT()   \
-.(                         : \
-        rep #$20 : .al     : \
-        lda [P_FONT],y     : \
-        and #$00FF         : \
-        jmp (tab,x)        : \
-                           : \
-    tab .word s0,s1,s2,s3,s4,s5,s6,s7   : \
-                                        : \
-    s0  sep #$20: .as : bra End2        : \
-    s1  xba :             lsr : bra End : \
-    s2  xba :       lsr : lsr : bra End : \
-    s3  asl                : \
-    s4  asl                : \
-    s5  asl                : \
-    s6  asl                : \
-    s7  asl                : \
-                           : \
-    End:                   : \
-        sep #$20 : .as     : \
-        ora [P_TILEBUF2],y : \
-        sta [P_TILEBUF2],y : \
-        xba                : \
-        ora [P_TILEBUF1],y : \
-    End2:                  : \
-        sta [P_TILEBUF1],y : \
-        iny                : \
-.)
 
 
 ; DrawChar - draws one character.
@@ -159,7 +185,6 @@
 ;   X-flag     - must be 16-bit
 ;   A          - character to be drawed
 ;   DB,X       - destination for tile indices
-;   Y          - index of the current byte in font
 ;   B_PIXOFFS  - current pixel position mod 8
 ;   W_TILENUM  - tile number
 ;   P_TILEBUF1 - pointer to this tile to be constructed
@@ -171,7 +196,7 @@
 ;   P_TILEBUF1 - incremented by W_ONESIZE
 ;   P_TILEBUF2 - incremented by W_ONESIZE
 ;   W_TILENUM  - incremented if a cell was full
-; Leaves undefined:
+; Modifies in undefined way:
 ;   A
 ;   Y
 ;   M-flag
@@ -202,29 +227,73 @@ DrawChar:
           tax
 
           ; Handle 8 * 2 bits
-
+   .(
           ldy #$0000
-          
-          ONEBIT()
-          ONEBIT()
-          ONEBIT()
-          ONEBIT()
-          
-          ONEBIT()
-          ONEBIT()
-          ONEBIT()
-          ONEBIT()
-          
-          ONEBIT()
-          ONEBIT()
-          ONEBIT()
-          ONEBIT()
-          
-          ONEBIT()
-          ONEBIT()
-          ONEBIT()
-          ONEBIT()
-          
+          SET_8_BIT_A()
+          jmp (tab,x)
+          tab .word Handle16bytes_0, Handle16bytes_1
+              .word Handle16bytes_2, Handle16bytes_3
+              .word Handle16bytes_4, Handle16bytes_5
+              .word Handle16bytes_6, Handle16bytes_7
+          ; Each of these cases handles 16 bytes.
+Handle16bytes_0:
+	SET_16_BIT_A()
+	; P_TILEBUF1 = xxxxxxxx P_TILEBUF2 = 00000000  - do direct copy
+	lda [P_FONT],y : sta [P_TILEBUF1],y : iny : iny
+	lda [P_FONT],y : sta [P_TILEBUF1],y : iny : iny
+	lda [P_FONT],y : sta [P_TILEBUF1],y : iny : iny
+	lda [P_FONT],y : sta [P_TILEBUF1],y : iny : iny
+	lda [P_FONT],y : sta [P_TILEBUF1],y : iny : iny
+	lda [P_FONT],y : sta [P_TILEBUF1],y : iny : iny
+	lda [P_FONT],y : sta [P_TILEBUF1],y : iny : iny
+	lda [P_FONT],y : sta [P_TILEBUF1],y : iny : iny
+	brl EndHandle16bytes
+#define REST() \
+	sep #$20 : .as : ora [P_TILEBUF2],y : sta[P_TILEBUF2],y : \
+	xba :            ora [P_TILEBUF1],y : sta[P_TILEBUF1],y : iny
+Handle16bytes_1:
+	; P_TILEBUF1 = 0xxxxxxx P_TILEBUF2 = x0000000  - do swap;1 lsr
+	; The loop is partially unrolled.
+	.as : lda [P_FONT],y : xba : lda #$00 : rep #$20: .al : lsr : REST()
+	.as : lda [P_FONT],y : xba : lda #$00 : rep #$20: .al : lsr : REST()
+	.as : lda [P_FONT],y : xba : lda #$00 : rep #$20: .al : lsr : REST()
+	.as : lda [P_FONT],y : xba : lda #$00 : rep #$20: .al : lsr : REST()
+	cpy #$0010: bcc Handle16bytes_1 : brl EndHandle16bytes
+Handle16bytes_2:
+	; P_TILEBUF1 = 00xxxxxx P_TILEBUF2 = xx000000  - do swap;2 lsr
+	.as : lda [P_FONT],y : xba : lda #$00 : rep #$20: .al : lsr : lsr : REST()
+	.as : lda [P_FONT],y : xba : lda #$00 : rep #$20: .al : lsr : lsr : REST()
+	cpy #$0010: bcc Handle16bytes_2 : brl EndHandle16bytes
+Handle16bytes_3:
+	; P_TILEBUF1 = 000xxxxx P_TILEBUF2 = xxx00000  - do swap;3 lsr
+	.as : lda [P_FONT],y : xba : lda #$00 : rep #$20: .al : lsr : lsr : lsr : REST()
+	.as : lda [P_FONT],y : xba : lda #$00 : rep #$20: .al : lsr : lsr : lsr : REST()
+	cpy #$0010: bcc Handle16bytes_3 : brl EndHandle16bytes
+Handle16bytes_4:
+	; P_TILEBUF1 = 0000xxxx P_TILEBUF2 = xxxx0000  - do 4 asl
+	rep #$20: .al : lda [P_FONT],y : and #$00FF : asl : asl : asl : asl : REST()
+	rep #$20: .al : lda [P_FONT],y : and #$00FF : asl : asl : asl : asl : REST()
+	cpy #$0010: bcc Handle16bytes_4 : brl EndHandle16bytes
+Handle16bytes_5:
+	; P_TILEBUF1 = 00000xxx P_TILEBUF2 = xxxxx000  - do 3 asl
+	rep #$20: .al : lda [P_FONT],y : and #$00FF : asl : asl : asl : REST()
+	rep #$20: .al : lda [P_FONT],y : and #$00FF : asl : asl : asl : REST()
+	cpy #$0010: bcc Handle16bytes_5 : brl EndHandle16bytes
+Handle16bytes_6:
+	; P_TILEBUF1 = 000000xx P_TILEBUF2 = xxxxxx00  - do 2 asl
+	rep #$20: .al : lda [P_FONT],y : and #$00FF : asl : asl : REST()
+	rep #$20: .al : lda [P_FONT],y : and #$00FF : asl : asl : REST()
+	cpy #$0010: bcc Handle16bytes_6 : bra EndHandle16bytes
+Handle16bytes_7:
+	; P_TILEBUF1 = 0000000x P_TILEBUF2 = xxxxxxx0  - do 1 asl
+	rep #$20: .al : lda [P_FONT],y : and #$00FF : asl : REST()
+	rep #$20: .al : lda [P_FONT],y : and #$00FF : asl : REST()
+	rep #$20: .al : lda [P_FONT],y : and #$00FF : asl : REST()
+	rep #$20: .al : lda [P_FONT],y : and #$00FF : asl : REST()
+	cpy #$0010: bcc Handle16bytes_7 : ;bra EndHandle16bytes
+#undef REST
+       EndHandle16bytes:
+   .)
           SET_16_BIT_A()
          pla
          
@@ -299,27 +368,22 @@ End:    rts
 ;    Ah,Y = Address of the string
 ;    Al   = Maximum length of the string (nul terminates earlier)
 ;    DB,X = Where to put the tile indices
-DrawS_init:
+DrawS_boot:
         SET_8_BIT_A()
         sta B_LENGTH     ; Store Al
         xba
         sta P_STR+2      ; Store Ah
 
-        lda #<TILEDATA_SEG
-        sta P_FONT+2     ; Early handling
-
         lda #$00
         xba
-
-        stz B_PIXOFFS
 
         SET_16_BIT_AX()
         sty P_STR    ; Store Y
         
-        ; Load the maximum length * 2
+        ; Calculate W_ENDX = X + B_LENGTH*2
         asl
         sta W_ENDX
-        txa         ; Add X
+        txa
         clc
         adc W_ENDX
         sta W_ENDX   ; And store in W_ENDX
@@ -331,19 +395,19 @@ DrawS_init:
         ; X must be preserved
         rts
 
-DrawS_2bit_getdatasize:
+DrawS_2bit_setup:
         lda #$0010
         sta W_ONESIZE
         lda B_LENGTH
         and #$00FF
-        bra GetDataSizeEnd
-DrawS_4bit_getdatasize:
+        bra DrawS_setup_common
+DrawS_4bit_setup:
         lda #$0020
         sta W_ONESIZE
         lda B_LENGTH
         and #$00FF
         asl ;8*4
-GetDataSizeEnd:
+DrawS_setup_common:
         asl ;8*2
         asl
         asl
@@ -363,16 +427,16 @@ DrawS_initdma:
          pha
          plb        ;now addressing page $00
          
-         ldy #$000  ;initialize math register with zero
+         ldy #$0000 ;initialize math register with zero
          sty $211B  ;so that $2134 will give zero for dma
          sty $211B
          
-         ldy #$3480 ; $34 = $2134; mode = bytes,writing
+         ldy #$3480 ; $34 = $2134; mode = reading bytes to mem
          sty $4370  ; dma config setup
 
          lda P_TILEBUF1+2 ;target page
          ldy #TILEBUF     ;target offs = tilebuf
-         sty P_TILEBUF1
+         sty P_TILEBUF1   ;   initialize P_TILEBUF1 while we're here
          
          sty $4372  ; dma config target
          sta $4374
@@ -382,13 +446,21 @@ DrawS_initdma:
          sty $4375  ; dma config size
          sta $420B  ; dma proceed - clears TILEBUF
          
-         ; Prepare DMA settings for WriteLow
-         ldy #$1801 ; $18 = $2118; mode = words,reading
+         ;;;
+         
+         ; Prepare DMA settings for PPU write
+         ldy #$1801 ; $18 = $2118; mode = writing words to dev
          sty $4370  ; dma config new setup
          
          ldy #TILEBUF ;source= tilebuf
          sty $4372  ; dma config new source
+                    ;  page already set
         plb
+
+        lda #<TILEDATA_SEG
+        sta P_FONT+2     ; Early handling
+
+        stz B_PIXOFFS
 
         SET_16_BIT_A()
         
@@ -403,106 +475,6 @@ DrawS_initdma:
 
         lda W_TILENUM
         rts
-
-; Draw string, create 2bit tiles
-DrawS_2bit:
-        jsr DrawS_init  ;store registers to vars
-        jsr DrawS_2bit_getdatasize
-        jsr DrawS_initdma
-        bra DrawS_common
-
-; Draw string, create 4bit tiles
-DrawS_4bit:
-        jsr DrawS_init  ;store registers to vars
-        jsr DrawS_4bit_getdatasize
-        jsr DrawS_initdma
-        asl
-DrawS_common:
-.(
-        ; Should be 16-bit mode here
-        asl
-        asl
-        asl
-        clc
-        adc W_VRAMADDR
-        .byt $8F,$16,$21,$00   ;sta $002116
-
-        SET_8_BIT_A()
-CharLoop:
-        ; Get a character from string
-        lda #$00
-        xba
-        lda [P_STR]
-        beq Zero
-        cmp #$01       ; 1 = chars $100..$1FF
-        beq ExtraChar
-        cmp #$02       ; 2 = chars $200..$2FF
-        bne ContinueWithChar
-ExtraChar:
-        SET_16_BIT_A()
-        inc P_STR
-        SET_8_BIT_A()
-        xba
-        lda [P_STR]
-ContinueWithChar:
-        SET_16_BIT_A()
-        inc P_STR
-        
-        ; Character should be 16bit by now
-        jsr Trans
-        jsr DrawChar
-
-        ; Move to next character. Set Z-flag if end of string
-        SET_8_BIT_A()
-        dec B_LENGTH
-        bne CharLoop
-
-Zero:   jsr Write ; write last tile
-        ; ^FIXME - don't do if PIXOFFS=0
-
-        SET_16_BIT_A()
-        
-        cpx W_ENDX
-        bcs EndDrawS     ; if >=
-        
-        ; Note - If $FF isn't space in the normal 8pix font, change this.
-        lda #$FF00 ;byteswapped #$00FF
-        SET_8_BIT_A()
-        ora $7E    ;attr - from the game
-        xba
-        SET_16_BIT_A()
-        
-        tay
-EndLoop:
-        tya
-        jsr WriteOne
-        
-        lda W_DATASIZE
-        sec
-        sbc W_ONESIZE
-        sta W_DATASIZE  ; decrease the data size
-                        ; (generate a smaller dma transfer)
-        
-        cpx W_ENDX
-        bcc EndLoop      ; if <
-
-EndDrawS:
-        ; Should be 16-bit here
-        lda W_DATASIZE
-        .byt $8F,$75,$43,$00   ;sta $004375
-        ; ^ dma config size
-
-        SET_8_BIT_A()
-        ; Proceed with the DMA that was programmed earlier
-        lda #$80
-        .byt $8F,$0B,$42,$00   ;sta $00420B
-        ; ^ dma proceed - sends data to PPU
-        
-        ; This is required
-        SET_16_BIT_A()
-        
-        rtl
-.)
 
 Trans:
 .(

@@ -10,12 +10,13 @@ namespace
     unsigned DrawS_4bit;
     
     #define START_VARS  0x10
-    #define END_VARS    0x28
+    #define END_VARS    0x1E
     
-    #define TILENUM   0x10 //word
-    #define VRAMADDR  0x12 //word
+    #define TILENUM   0x6200 //word
+    #define VRAMADDR  0x6202 //word
 
-    #define CALCTMP   0x14 //word
+    #define CALCTMP   0x10   //word
+
     
     // NMI k‰ytt‰‰ muuttujia osoitteista:
     //    00:0Dxx
@@ -462,9 +463,11 @@ namespace
         code.Set16bit_M();
         code.EmitCode(0x48);             //PHA
        
-        // VRAMADDR = VRAM_Addr
-        code.EmitCode(0xA9, VRAM_Addr&255, VRAM_Addr/256);
-        code.EmitCode(0x85, VRAMADDR);
+        code.EmitCode(0xA9, VRAM_Addr&255, VRAM_Addr/256); // LDA const
+        if(VRAMADDR < 256)
+            code.EmitCode(0x85, VRAMADDR);                   //STA VRAMADDR
+        else
+            code.EmitCode(0x8D, VRAMADDR&255, VRAMADDR>>8);  //STA VRAMADDR
         
 #if 1
         code.EmitCode(0x8A);             //TXA
@@ -492,7 +495,11 @@ namespace
         GenerateCalculation(code, 0,0,1, TileNum);
 #endif
         
-        code.EmitCode(0x85, TILENUM);    //STA TILENUM
+        if(TILENUM < 256)
+            code.EmitCode(0x85, TILENUM);                  //STA TILENUM
+        else
+            code.EmitCode(0x8D, TILENUM&255, TILENUM>>8);  //STA TILENUM
+
         code.EmitCode(0x68); //PLA
         /////
         
@@ -505,7 +512,11 @@ namespace
 #if 1
 #else
         code.Set16bit_M();
-        code.EmitCode(0xA5, TILENUM);    //LDA TILENUM
+        if(TILENUM < 256)
+            code.EmitCode(0xA5, TILENUM);                  //LDA TILENUM
+        else
+            code.EmitCode(0xAD, TILENUM&255, TILENUM>>8);  //LDA TILENUM
+
         // V‰hennet‰‰n TileNum-base
         GenerateCalculation(code, TileNum,0,1, 0);
         // Save to global var

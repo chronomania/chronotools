@@ -17,6 +17,7 @@ using namespace std;
 #include "config.hh"
 #include "extras.hh"
 #include "ctdump.hh"
+#include "compress.hh"
 
 static ucs4string dict[256];
 
@@ -635,8 +636,72 @@ static void DumpGFX_4bit(unsigned addr, unsigned xtile, unsigned ytile, const st
     result.Save(fn, TGAimage::pal_16color, palette);
 }
 
+static void DumpGFX_Compressed_4bit
+    (unsigned addr, unsigned xtile,
+     const string &fn,
+     const unsigned *palette = NULL)
+{
+    vector<unsigned char> Target(65536, 0);
+    
+    unsigned size = Uncompress(ROM + (addr&0x3FFFFF), &Target[0], Target.size());
+    
+    fprintf(stderr, "Uncompressed %u bytes...\n", size);
+    
+    unsigned char *SavedROM = ROM;
+    ROM = &Target[0];
+    
+    unsigned ytile = (size+xtile*32-1) / (xtile*32);
+
+    DumpGFX_4bit(0, xtile,ytile, fn, palette);
+    
+    ROM = SavedROM;
+}
+
 static void DumpGFX()
 {
+{   static const unsigned pal[16] = {
+0x000000, //000000 - 50
+0x525252, //0A0A0A - 51
+0x101008, //020201 - 52
+0x292929, //050505 - 54
+0x312910, //060502 - 55
+0x393939, //070707 - 56
+0x5A4120, //0B0804 - 57
+0x735229, //0E0A05 - 58
+0x836231, //100C06 - 59
+0x8B7B62, //110F0C - 5A
+0x949494, //121212 - 5B
+0x9C7B41, //130F08 - 5C
+0xFF00FF, //1F001F - 5D
+0xFF00FF, //1F001F - 5E
+0xFF00FF, //1F001F - 5F
+};
+    DumpGFX_Compressed_4bit(0xFE6002, 16, "titlegfx.tga", pal);
+}
+
+    DumpGFX_Compressed_4bit(0xC5DA88, 16, "pontpo.tga");
+
+{   static const unsigned pal[16] = {
+0x000000, //000000 - 80
+0x293931, //050706 - 81
+0x293931, //050706 - 82
+0x293931, //050706 - 83
+0x293931, //050706 - 84
+0x293931, //050706 - 85
+0x293931, //050706 - 86
+0xC5C5C5, //181818 - 87
+0x83838B, //101011 - 88
+0x52525A, //0A0A0B - 89
+0x313139, //060607 - 8A
+0x080810, //010102 - 8B
+0x293931, //050706 - 8C
+0x293931, //050706 - 8D
+0x293931, //050706 - 8E
+0x293931, //050706 - 8F
+};
+    /* FIXME: duplicate tiles */
+    DumpGFX_Compressed_4bit(0xC38000, 19, "eraes.tga", pal);
+}
     DumpGFX_2bit(0x3FF488,  6, 2, "active2.tga"); // "Active Time Battle ver. 2"
 
 {   static const unsigned pal[16] = {

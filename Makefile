@@ -59,6 +59,7 @@ DEPDIRS = utils/
 # VERSION 1.4.1  lots of more translation (I'm archiving it here for my convenience)
 # VERSION 1.5.0  end of the compiler project; using assembler (xa65) now.
 # VERSION 1.5.1  vwf8 optimizations, assembly experiments
+# VERSION 1.5.2  compressed graphics support: decompressor and compressor
 
 OPTIM=-O3
 #OPTIM=-O0
@@ -67,7 +68,7 @@ OPTIM=-O3
 
 CXXFLAGS += -I.
 
-VERSION=1.5.1
+VERSION=1.5.2
 ARCHFILES=utils/xray.c utils/xray.h \
           utils/viewer.c \
           utils/vwftest.cc \
@@ -77,9 +78,11 @@ ARCHFILES=utils/xray.c utils/xray.h \
           utils/facegenerator.cc \
           utils/makeips.cc \
           utils/unmakeips.cc \
+          utils/comprtest.cc \
           \
           ctcset.cc ctcset.hh \
           miscfun.cc miscfun.hh \
+          compress.hh \
           space.cc space.hh \
           crc32.cc crc32.h \
           hash.hh \
@@ -148,6 +151,7 @@ PROGS=\
 	utils/xray \
 	utils/spacefind \
 	utils/comp2test \
+        utils/comprtest \
 	utils/vwftest \
 	utils/dumpo65 \
 	utils/o65test
@@ -188,18 +192,18 @@ utils/xray: utils/xray.o
 utils/viewer: utils/viewer.o
 	$(CC) -o $@ $^ $(LDFLAGS) -lslang
 
-utils/sramdump: utils/sramdump.cc config.o confparser.o ctcset.o wstring.o
+utils/sramdump: utils/sramdump.o config.o confparser.o ctcset.o wstring.o
 	$(CXX) $(CXXFLAGS) -g -O -Wall -W -pedantic -o $@ $^ $(LDFLAGS)
 utils/base62: utils/base62.cc
 	$(CXX) $(CXXFLAGS) -g -O -Wall -W -pedantic -o $@ $^ $(LDFLAGS)
 utils/vwftest: \
-		utils/vwftest.cc tgaimage.o \
+		utils/vwftest.o tgaimage.o \
 		fonts.o typefaces.o extras.o conjugate.o \
 		snescode.o symbols.o space.o logfiles.o compiler.o \
 		config.o confparser.o ctcset.o wstring.o
 	$(CXX) $(CXXFLAGS) -g -O -Wall -W -pedantic -o $@ $^ $(LDFLAGS)
 utils/facegenerator: \
-		utils/facegenerator.cc tgaimage.o
+		utils/facegenerator.o tgaimage.o
 	$(CXX) $(CXXFLAGS) -g -O -Wall -W -pedantic -o $@ $^ $(LDFLAGS)
 
 utils/compiler2.o: utils/compiler2.cc
@@ -208,10 +212,13 @@ utils/compiler2.o: utils/compiler2.cc
 utils/comp2test: utils/compiler2.cc config.o confparser.o ctcset.o wstring.o
 	$(CXX) $(CXXFLAGS) -g -O -Wall -W -pedantic -o $@ $^ $(LDFLAGS)
 
-utils/o65test: utils/o65test.cc o65.o wstring.o
+utils/comprtest: utils/comprtest.o rommap.o
 	$(CXX) $(CXXFLAGS) -g -O -Wall -W -pedantic -o $@ $^ $(LDFLAGS)
 
-utils/dumpo65: utils/dumpo65.cc
+utils/o65test: utils/o65test.o o65.o wstring.o
+	$(CXX) $(CXXFLAGS) -g -O -Wall -W -pedantic -o $@ $^ $(LDFLAGS)
+
+utils/dumpo65: utils/dumpo65.o
 	$(CXX) $(CXXFLAGS) -g -O -Wall -W -pedantic -o $@ $^ $(LDFLAGS)
 
 
