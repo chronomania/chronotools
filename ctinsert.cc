@@ -16,8 +16,10 @@ using namespace std;
 #include "ctcset.hh"
 #include "miscfun.hh"
 
-static const bool rebuild_dict    = false;
-static const bool sort_dictionary = false;
+static const bool rebuild_dict         = !false;
+static const bool sort_dictionary      = false;
+static const unsigned MaxDictWordLen   = 32;
+static const unsigned MaxDictRecursLen = 3;
 
 class insertor
 {
@@ -39,7 +41,7 @@ class insertor
     typedef map<unsigned, stringdata> stringmap;
     stringmap strings;
 
-    vector<string> dict;
+    vector<string> dict, replacedict;
     unsigned dictaddr, dictsize;
 
 public:
@@ -47,9 +49,10 @@ public:
     void LoadSymbols();
     void LoadFile(FILE *fp);
 
-    string DispString(const string &s);
+    string DispString(const string &s) const;
     void MakeDictionary();
     
+    void ReportFreeSpace() const;
     unsigned FindFreeSpace(unsigned page, unsigned length)
     {
         freespacemap::iterator mapi = freespace.find(page);
@@ -163,185 +166,210 @@ public:
         return spaceptr & 0xFFFF;
     }
     
-    void WriteROM()
-    {
-        vector<unsigned char> ROM(4194304,        0);
-        vector<bool>      Touched(ROM.size(), false);
-        
-        fprintf(stderr, "Writing dictionary...\n");
-        for(unsigned a=0; a<dictsize; ++a)
-            WritePPtr(ROM, Touched, dictaddr + a*2, dict[a]);
-        
-        stringmap::const_iterator i;
-
-        vector<string>   pagestrings;
-        vector<unsigned> pageoffs;
-        unsigned prevpage = 0xFFFF;
-        for(i=strings.begin(); ; ++i)
-        {
-            if(i == strings.end()) goto Flush16;
-            
-            if(i->second.type == stringdata::fixed)
-            {
-            	const string &s = i->second.str;
-            	unsigned pos = i->first;
-            	unsigned a;
-            	for(a=0; a<s.size(); ++a)
-            	{
-            		ROM[pos] = s[a];
-            		Touched[pos] = true;
-            		++pos;
-            	}
-            	for(; a < i->second.width; ++a)
-            	{
-            		ROM[pos] = 0;
-            		Touched[pos] = true;
-            		++pos;
-            	}
-            	continue;
-            }
-
-            if(i->second.type != stringdata::zptr16
-            && i->second.type != stringdata::zptr8)continue;
-            
-            if((i->first >> 16) != prevpage)
-            {
-        Flush16:;
-                // terminology: potilas=needle, tohtori=haystack
-
-                multimap<unsigned/*potilas*/, unsigned/*tohtori*/> belong1;
-                multimap<unsigned/*tohtori*/, unsigned/*potilas*/> belong2;
-                
-                fprintf(stderr, "Writing %u strings...\n", pagestrings.size());
-                for(unsigned potilasnum=0; potilasnum<pagestrings.size(); ++potilasnum)
-                {
-                    const string &potilas = pagestrings[potilasnum];
-                    unsigned longest=0, tohtoribest=0;
-                    for(unsigned tohtorinum=potilasnum+1;
-                                 tohtorinum<pagestrings.size();
-                                 ++tohtorinum)
-                    {
-                        const string &tohtori = pagestrings[tohtorinum];
-                        if(tohtori.size() < potilas.size())
-                            continue;
-                        
-                        unsigned extralen = tohtori.size()-potilas.size();
-                        if(potilas == tohtori.substr(extralen))
-                            if(extralen > longest)
-                            {
-                                longest = extralen;
-                                tohtoribest = tohtorinum;
-                            }
-                    }
-                    if(longest)
-                    {
-                        fprintf(stderr, "String %u(",potilasnum);
-                        fprintf(stderr, DispString(pagestrings[potilasnum]).c_str());
-                        fprintf(stderr, ") depends on string %u(",tohtoribest);
-                        fprintf(stderr, DispString(pagestrings[tohtoribest]).c_str());
-                        fprintf(stderr, ")\n");
-                        
-                        belong1.insert(pair<unsigned,unsigned> (potilasnum, tohtoribest));
-                        belong2.insert(pair<unsigned,unsigned> (tohtoribest, potilasnum));
-                    }
-                }
-                /* Nyt noissa mapeissa on listattu, kuka
-                 * tarvitsee ket‰kin. Tarvitsemisketjut
-                 * eiv‰t voi muodostaa ympyr‰‰, joten nyt
-                 * pit‰‰ vain asettaa elementit siihen
-                 * j‰rjestykseen, miss‰ ensinn‰ ovat ne,
-                 * ketk‰ eiv‰t tarvitse mit‰‰n. Sen j‰lkeen
-                 * ne, jotka tarvitsevat, lis‰t‰‰n erikseen
-                 * muokaten pointtereita.
-                 */
-                
-                set<unsigned> done;
-                while(done.size() != pagestrings.size())
-                {
-                    for(unsigned stringnum=0; stringnum<pagestrings.size(); ++stringnum)
-                    {
-                        if(done.find(stringnum) != done.end())continue;
-                        multimap<unsigned,unsigned>::const_iterator i = belong1.find(stringnum);
-                        // If this string does not require any other string
-                        if(i == belong1.end())
-                        {
-                            pageoffs[stringnum] = WriteZPtr(ROM, Touched, pageoffs[stringnum], pagestrings[stringnum]);
-                            done.insert(stringnum);
-                        }
-                        else
-                        {
-                            set<unsigned>::const_iterator p = done.find(i->second);
-                            if(p != done.end()) /* The depending string has already been dumped */
-                            {
-                                unsigned b = i->second;
-                                //fprintf(stderr, "Reusing pointer!\n");
-                                pageoffs[stringnum] = WriteZPtr(ROM, Touched, pageoffs[stringnum], pagestrings[stringnum],
-                                                        pageoffs[b] + pagestrings[b].size()-pagestrings[stringnum].size());
-                                done.insert(stringnum);
-                            }
-                        }
-                    }
-                }
-                
-                if(i == strings.end())break;
-                pagestrings.clear();
-                pageoffs.clear();
-            }
-            prevpage = i->first >> 16;
-            
-            string s = i->second.str;
-            
-            if(i->second.type == stringdata::zptr16)
-            {
-                unsigned char Buf[2];
-                Buf[0] = 0x21;
-                Buf[1] = 0;
-
-                vector<string>::const_iterator l;
-                for(l = dict.begin(); l != dict.end(); ++l)
-                {
-                    s = str_replace(*l, (const char *)Buf, s);
-                    ++Buf[0];
-                    if(Buf[0] == 0xA0)Buf[0] = 0xF1;
-                }
-            }
-            
-            pagestrings.push_back(s);
-            pageoffs.push_back(i->first);
-        }
-        
-        FILE *fp = fopen("ctpatch-nohdr.ips", "wb");
-        FILE *fp2 = fopen("ctpatch-hdr.ips", "wb");
-        fwrite("PATCH", 1, 5, fp);
-        fwrite("PATCH", 1, 5, fp2);
-        /* Format:   24bit offset, 16-bit size, then data; repeat */
-        for(unsigned a=0; a<Touched.size(); ++a)
-        {
-            if(!Touched[a])continue;
-            putc((a>>16)&255, fp);
-            putc((a>> 8)&255, fp);
-            putc((a    )&255, fp);
-            putc(((a+512)>>16)&255, fp2);
-            putc(((a+512)>> 8)&255, fp2);
-            putc(((a+512)    )&255, fp2);
-            unsigned offs=a, c=0;
-            while(a < Touched.size() && Touched[a])
-                ++c, ++a;
-            putc((c>> 8)&255, fp);
-            putc((c    )&255, fp);
-            putc((c>> 8)&255, fp2);
-            putc((c    )&255, fp2);
-            fwrite(&ROM[offs], 1, c, fp);
-            fwrite(&ROM[offs], 1, c, fp2);
-        }
-        fwrite("EOF",   1, 5, fp);
-        fwrite("EOF",   1, 5, fp2);
-        fclose(fp);
-        fclose(fp2);
-    }
+    void WriteROM();
 };
 
-string insertor::DispString(const string &s)
+void insertor::WriteROM()
+{
+    vector<unsigned char> ROM(4194304,        0);
+    vector<bool>      Touched(ROM.size(), false);
+    
+    fprintf(stderr, "Writing dictionary...\n");
+    for(unsigned a=0; a<dictsize; ++a)
+        WritePPtr(ROM, Touched, dictaddr + a*2, dict[a]);
+    
+    stringmap::const_iterator i;
+
+    vector<string>   pagestrings;
+    vector<unsigned> pageoffs;
+    unsigned prevpage = 0xFFFF;
+    for(i=strings.begin(); ; ++i)
+    {
+        if(i == strings.end()) goto Flush16;
+        
+        if(i->second.type == stringdata::fixed)
+        {
+            const string &s = i->second.str;
+            unsigned pos = i->first;
+            unsigned a;
+            for(a=0; a<s.size(); ++a)
+            {
+                ROM[pos] = s[a];
+                Touched[pos] = true;
+                ++pos;
+            }
+            for(; a < i->second.width; ++a)
+            {
+                ROM[pos] = 0;
+                Touched[pos] = true;
+                ++pos;
+            }
+            continue;
+        }
+
+        if(i->second.type != stringdata::zptr16
+        && i->second.type != stringdata::zptr8)continue;
+        
+        if((i->first >> 16) != prevpage)
+        {
+    Flush16:;
+            // terminology: potilas=needle, tohtori=haystack
+
+            multimap<unsigned/*potilas*/, unsigned/*tohtori*/> belong;
+            
+            fprintf(stderr, "Writing %u strings...\n", pagestrings.size());
+            for(unsigned potilasnum=0; potilasnum<pagestrings.size(); ++potilasnum)
+            {
+                const string &potilas = pagestrings[potilasnum];
+                unsigned longest=0, tohtoribest=0;
+                for(unsigned tohtorinum=potilasnum+1;
+                             tohtorinum<pagestrings.size();
+                             ++tohtorinum)
+                {
+                    const string &tohtori = pagestrings[tohtorinum];
+                    if(tohtori.size() < potilas.size())
+                        continue;
+                    
+                    unsigned extralen = tohtori.size()-potilas.size();
+                    if(potilas == tohtori.substr(extralen))
+                        if(extralen > longest)
+                        {
+                            longest = extralen;
+                            tohtoribest = tohtorinum;
+                        }
+                }
+                if(longest)
+                {
+                    /*
+                    fprintf(stderr, "String %u(",potilasnum);
+                    fprintf(stderr, DispString(pagestrings[potilasnum]).c_str());
+                    fprintf(stderr, ") depends on string %u(",tohtoribest);
+                    fprintf(stderr, DispString(pagestrings[tohtoribest]).c_str());
+                    fprintf(stderr, ")\n");
+                    */
+                    belong.insert(pair<unsigned,unsigned> (potilasnum, tohtoribest));
+                }
+            }
+            /* Nyt noissa mapeissa on listattu, kuka
+             * tarvitsee ket‰kin. Tarvitsemisketjut
+             * eiv‰t voi muodostaa ympyr‰‰, joten nyt
+             * pit‰‰ vain asettaa elementit siihen
+             * j‰rjestykseen, miss‰ ensinn‰ ovat ne,
+             * ketk‰ eiv‰t tarvitse mit‰‰n. Sen j‰lkeen
+             * ne, jotka tarvitsevat, lis‰t‰‰n erikseen
+             * muokaten pointtereita.
+             */
+            
+            set<unsigned> done;
+            while(done.size() != pagestrings.size())
+            {
+                for(unsigned stringnum=0; stringnum<pagestrings.size(); ++stringnum)
+                {
+                    if(done.find(stringnum) != done.end())continue;
+                    multimap<unsigned,unsigned>::const_iterator i = belong.find(stringnum);
+                    // If this string does not require any other string
+                    if(i == belong.end())
+                    {
+                        pageoffs[stringnum] = WriteZPtr(ROM, Touched, pageoffs[stringnum], pagestrings[stringnum]);
+                        done.insert(stringnum);
+                    }
+                    else
+                    {
+                        set<unsigned>::const_iterator p = done.find(i->second);
+                        if(p != done.end()) /* The depending string has already been dumped */
+                        {
+                            unsigned b = i->second;
+                            //fprintf(stderr, "Reusing pointer!\n");
+                            pageoffs[stringnum] = WriteZPtr(ROM, Touched, pageoffs[stringnum], pagestrings[stringnum],
+                                                    pageoffs[b] + pagestrings[b].size()-pagestrings[stringnum].size());
+                            done.insert(stringnum);
+                        }
+                    }
+                }
+            }
+            
+            if(i == strings.end())break;
+            pagestrings.clear();
+            pageoffs.clear();
+        }
+        prevpage = i->first >> 16;
+        
+        string s = i->second.str;
+        
+        if(i->second.type == stringdata::zptr16)
+        {
+            unsigned char replacement[2];
+            replacement[0] = 0x21;
+            replacement[1] = 0;
+
+            vector<string>::const_iterator l;
+            for(l = replacedict.begin(); l != replacedict.end(); ++l)
+            {
+                s = str_replace(*l, (const char *)replacement, s);
+                ++replacement[0];
+                if(replacement[0] == 0xA0)replacement[0] = 0xF1;
+            }
+        }
+        
+        pagestrings.push_back(s);
+        pageoffs.push_back(i->first);
+    }
+    
+    /* Now write the patches */
+    FILE *fp = fopen("ctpatch-nohdr.ips", "wb");
+    FILE *fp2 = fopen("ctpatch-hdr.ips", "wb");
+    fwrite("PATCH", 1, 5, fp);
+    fwrite("PATCH", 1, 5, fp2);
+    /* Format:   24bit offset, 16-bit size, then data; repeat */
+    for(unsigned a=0; a<Touched.size(); ++a)
+    {
+        if(!Touched[a])continue;
+        putc((a>>16)&255, fp);
+        putc((a>> 8)&255, fp);
+        putc((a    )&255, fp);
+        putc(((a+512)>>16)&255, fp2);
+        putc(((a+512)>> 8)&255, fp2);
+        putc(((a+512)    )&255, fp2);
+        unsigned offs=a, c=0;
+        while(a < Touched.size() && Touched[a])
+            ++c, ++a;
+        putc((c>> 8)&255, fp);
+        putc((c    )&255, fp);
+        putc((c>> 8)&255, fp2);
+        putc((c    )&255, fp2);
+        fwrite(&ROM[offs], 1, c, fp);
+        fwrite(&ROM[offs], 1, c, fp2);
+    }
+    fwrite("EOF",   1, 5, fp);
+    fwrite("EOF",   1, 5, fp2);
+    fclose(fp);
+    fclose(fp2);
+}
+
+void insertor::ReportFreeSpace() const
+{
+    fprintf(stderr, "Free space:");
+    freespacemap::const_iterator i;
+    unsigned total=0;
+    for(i=freespace.begin(); i!=freespace.end(); ++i)
+    {
+        freespaceset::const_iterator j;
+        unsigned thisfree = 0, hunkcount = 0;
+        for(j=i->second.begin(); j!=i->second.end(); ++j)
+        {
+            thisfree += j->second;
+            ++hunkcount;
+        }
+        total += thisfree;
+        if(thisfree)
+        {
+            fprintf(stderr, " %02X:%u/%u", i->first, thisfree, hunkcount);
+        }
+    }
+    fprintf(stderr, " - total: %u bytes\n", total);
+}
+
+string insertor::DispString(const string &s) const
 {
     string result;
     for(unsigned a=0; a<s.size(); ++a)
@@ -354,13 +382,12 @@ string insertor::DispString(const string &s)
         else
         {
             c = (unsigned char)s[a];
-            char Buf[64];
             if(c == 5) result += "[nl]";
             else if(c == 6) result += "[nl3]";
             else if(c == 11) result += "[pause]";
             else if(c == 12) result += "[pause3]";
-            //else if(c == 0) result += "[end]";
-            else { sprintf(Buf, "[%02X]", c); result += Buf; }
+            else if(c == 0) result += "[end]"; // Uuh?
+            else { char Buf[8]; sprintf(Buf, "[%02X]", c); result += Buf; }
         }
     }
     return result;
@@ -372,19 +399,6 @@ static bool dictsorter(const string &a, const string &b)
     if(a.size() < b.size())return false;
     if(a < b)return true;
     return false;
-}
-
-/* This is DarkForce's hashing code */
-static unsigned hashstr(const char *s, unsigned len)
-{
-    unsigned h = 0;
-    for(unsigned a=0; a<len; ++a)
-    {
-        unsigned char c = s[a];
-        c = h ^ c;
-        h ^= (c * 707106);
-    }
-    return (h&0x0000FF00) | ((h>>16)&0xFF);
 }
 
 /* Build the dictionary. */
@@ -406,16 +420,16 @@ void insertor::MakeDictionary()
     
     if(rebuild_dict)
     {
+        replacedict.clear();
         dict.clear();
+        
         time_t begin = time(NULL);
         fprintf(stderr,
-        	"Rebuilding the dictionary. This will take probably a long time!\n"
-        	"You should take a lunch break or something now.\n"
+            "Rebuilding the dictionary. This will take probably a long time!\n"
+            "You should take a lunch break or something now.\n"
         );
         for(unsigned substrcount=0; substrcount<dictsize; ++substrcount)
         {
-            //map<unsigned, unsigned> substringtable;
-            //map<unsigned, string>   hashtable;
             map<string, unsigned> substringtable;
             
             fprintf(stderr, "Finding substrings... %u/%u", substrcount+1, dictsize);
@@ -455,25 +469,34 @@ void insertor::MakeDictionary()
                 {
                     unsigned c=0;
                     /* And are each length */
+                    unsigned speco=0, spaco=0, nospaco=0;
                     for(unsigned b=a; b<s.size(); ++b)
                     {
                         unsigned char ch = s[b];
                         /* But can't contain all possible bytes */
-                        if(ch < 0xA0) // || ch == 0xEF)
-                            break;
+                        if(ch < 0x20)break;
+                        if((ch >= 0x21 && ch < 0xA0) || ch == 0xF1)
+                        {
+                        	if(speco >= MaxDictRecursLen)break;
+                        	++speco;
+                        }
+                        else if(ch == 0xEF)
+                        {
+                        	if(spaco >= 1 && nospaco > 0)break;
+                        	++spaco;
+                        }
+                        else
+                        {
+                        	if(spaco > 1)break;
+                        	++nospaco;
+                        }
+                        
                         if(++c >= 2)
                         {
                             /* Cumulate the substring usage counter by its length */
-                            substringtable[s.substr(a,c)] += c; /*
-                            unsigned hash = hashstr(s.c_str()+a, c);
-                            substringtable[hash] += c;
-                            if(hashtable.find(hash) == hashtable.end())
-                            {
-                                const string substr = s.substr(a, c);
-                                hashtable.insert(pair<unsigned,string> (hash,substr));
-                            } */
+                            substringtable[s.substr(a,c)] += c;
                         }
-                        if(c >= 16)break;
+                        if(c >= MaxDictWordLen)break;
                     }
                 }
             }
@@ -481,7 +504,7 @@ void insertor::MakeDictionary()
             fprintf(stderr, "\r%8u substrings; ", substringtable.size());
             
             //map<unsigned, unsigned>::const_iterator bestj = substringtable.end();
-            map<string, unsigned>::const_iterator j,bestj = substringtable.end();
+            map<string, unsigned>::const_iterator j,bestj;
             
             /* Now find the substring that has the biggest score */
             int bestscore=0;
@@ -489,7 +512,7 @@ void insertor::MakeDictionary()
                 j != substringtable.end();
                 ++j)
             {
-                const string &word = j->first;//hashtable[j->first];
+                const string &word = j->first;
                 int realscore = j->second - (j->second / word.size());
                 if(realscore > bestscore)
                 {
@@ -499,23 +522,38 @@ void insertor::MakeDictionary()
             }
             
             /* Add it to dictionary */
-            const string &bestword = bestj->first; //hashtable[bestj->first];
+            const string &bestword = bestj->first;
+            //int bestscore = bestj->second;
             
-            printf("$%u:\t%s; score: %u\n", dict.size(), DispString(bestword).c_str(), bestscore);
-            /*fprintf(stderr, "%4u: '", bestscore);
-            fprintf(stderr, DispString(bestword).c_str());
-            fprintf(stderr, "'%30c", '\n');*/
+            string dictword;
+            for(unsigned a=0; a<bestword.size(); ++a)
+            {
+            	unsigned char c = bestword[a];
+            	if(c >= 0x21 && c < 0xA0)
+            		dictword += dict[c-0x21];
+            	else if(c == 0xF1)
+            		dictword += dict[0x7F];
+            	else
+            		dictword += (char)c;
+            }
+
+            printf("$%u:\t%s; score: %u\n", dict.size(), DispString(dictword).c_str(), bestscore);
             fflush(stdout);
-            
-            dictbytes += bestword.size()+1;
-            dict.push_back(bestword);
             
             /* Remove the selected substring from the source strings,
              * so that it won't be used in any other substrings.
              * It would mess up the statistics otherwise.
              */
+            unsigned char replacement[2];
+            replacement[0] = 0x21 + dict.size();
+            replacement[1] = '\0';
+            if(replacement[0] == 0xA0)replacement[0] = 0xF1;
             for(l = stringlist.begin(); l != stringlist.end(); ++l)
-                *l = str_replace(bestword, "?", *l);
+                *l = str_replace(bestword, (const char *)replacement, *l);
+
+            dictbytes += bestword.size()+1;
+            dict.push_back(dictword);
+            replacedict.push_back(bestword);
         }
     }
     else
@@ -540,6 +578,7 @@ void insertor::MakeDictionary()
                 *l = str_replace(bestword, "?", *l);
         }
         if(col)putc('\n', stderr);
+        replacedict = dict;
     }
 
     unsigned resultsize=0;
@@ -826,7 +865,7 @@ void insertor::LoadFile(FILE *fp)
             
             if(!label)
                 fprintf(stderr, "Loading strings for %s", header.c_str());
-            static char cursbuf[4]="-/|\\",curspos=0;
+            static char cursbuf[]="-/|\\",curspos=0;
             fprintf(stderr,"%c\010",cursbuf[++curspos&3]);
             if(c == '*')fputs(" \n", stderr);
            
@@ -839,10 +878,10 @@ void insertor::LoadFile(FILE *fp)
 
 int main(void)
 {
-	fprintf(stderr,
-		"Chrono Trigger script insertor version "VERSION"\n"
-		"Copyright (C) 1992,2002 Bisqwit (http://bisqwit.iki.fi/)\n");
-	
+    fprintf(stderr,
+        "Chrono Trigger script insertor version "VERSION"\n"
+        "Copyright (C) 1992,2002 Bisqwit (http://bisqwit.iki.fi/)\n");
+    
     insertor ins;
     
     ins.LoadCharSet();
@@ -854,7 +893,11 @@ int main(void)
     
     ins.MakeDictionary();
     
+    ins.ReportFreeSpace();
+
     ins.WriteROM();
+    
+    ins.ReportFreeSpace();
     
     return 0;
 }
