@@ -77,6 +77,9 @@ namespace
 
 const char *getcharset()
 {
+#if 0
+    fprintf(stderr, "Character set asked - returning '%s'\n", CharSet.c_str());
+#endif
     return CharSet.c_str();
 }
 
@@ -94,7 +97,17 @@ ucs4 getucs4(unsigned char chronochar)
 // Note: Returns 0 for nonpresentible chars.
 unsigned char getchronochar(ucs4 c)
 {
-    return characterset.find(c);
+    unsigned char result = characterset.find(c);
+    if(result == 0)
+    {
+        fprintf(stderr, "Error: Irrepresentible character '%c' (%X)\n", c, c);
+    }
+    else if(result < 0x100 - get_num_chronochars())
+    {
+        fprintf(stderr, "Error: Character %02X ('%c', %X) is outside visible character range\n",
+            result, c, c);
+    }
+    return result;
 }
 
 unsigned get_num_chronochars()

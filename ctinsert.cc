@@ -22,8 +22,8 @@ namespace
         FILE *fp = fopen(fn, "wb");
         if(!fp)
         {
-        	perror(fn);
-        	return;
+            perror(fn);
+            return;
         }
         fwrite("PATCH", 1, 5, fp);
 
@@ -58,9 +58,9 @@ namespace
 
 const string DispString(const string &s)
 {
+    static wstringOut conv(getcharset());
+
     string result;
-    wstringOut conv;
-    conv.SetSet(getcharset());
     for(unsigned a=0; a<s.size(); ++a)
     {
         unsigned char c = s[a];

@@ -227,7 +227,7 @@ namespace
             }
         }
         
-        Conjugatemap.Work(result, DispString(result));
+        Conjugatemap.Work(result);
         
 #if 0
         fprintf(stdout, "Rivita('%s')\n"
@@ -449,7 +449,7 @@ void insertor::LoadFile(FILE *fp)
             for(unsigned a=0; a<content.size(); ++a)
             {
                 map<string, char>::const_iterator i;
-                unsigned char c = content[a];
+                ucs4 c = content[a];
                 for(unsigned testlen=3; testlen<=5; ++testlen)
                     if(symbols != NULL && (i = symbols->find
                         (code = WstrToAsc(content.substr(a, testlen)))
@@ -501,7 +501,10 @@ void insertor::LoadFile(FILE *fp)
                     }
                 }
                 else
-                    newcontent += getchronochar(c);
+                {
+                    unsigned char chronoc = getchronochar(c);
+                    newcontent += chronoc;
+                }
             GotCode: ;
             }
             

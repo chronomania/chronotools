@@ -56,7 +56,7 @@ void Conjugatemap::Load()
             string key = str_replace(name, person, s);
             for(unsigned a=0; a<key.size(); ++a)
                 if(key[a] != person)
-                    key[a] = getchronochar(key[a]);
+                    key[a] = getchronochar((unsigned char)key[a]);
 
 #if 0
             fprintf(stderr, "Key '%s'(%s) = '%s' (%02X)\n",
@@ -122,7 +122,7 @@ Conjugatemap::Conjugatemap()
     fprintf(stderr, "Built conjugator-map\n");
 }
 
-void Conjugatemap::Work(string &s, const string &plaintext)
+void Conjugatemap::Work(string &s)
 {
     for(formlist::iterator
         i = forms.begin();
@@ -155,8 +155,8 @@ namespace
         Conjugatemap::formlist::const_iterator i;
         for(i=forms.begin(); i!=forms.end(); ++i)
         {
-        	if(!i->used) continue;
-        	
+            if(!i->used) continue;
+            
             SNEScode::RelativeBranch branchSkip = code.PrepareRelativeBranch();
             code.Set8bit_M();
             code.EmitCode(0xC9, i->prefix); //cmp a, *

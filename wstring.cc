@@ -17,6 +17,13 @@ wstringOut::wstringOut() : charset(midset)
     tester = iconv_open(charset.c_str(), midset);
 }
 
+wstringOut::wstringOut(const char *setname) : charset(midset)
+{
+    converter = iconv_open(charset.c_str(), midset);
+    tester = iconv_open(charset.c_str(), midset);
+    SetSet(setname);
+}
+
 wstringOut::~wstringOut()
 {
     iconv_close(converter);
@@ -190,7 +197,7 @@ wstring AscToWstr(const string &s)
 {
     wstring result;
     for(unsigned a=0; a<s.size(); ++a)
-        result += (ucs4) s[a];
+        result += (ucs4) (unsigned char) s[a];
     return result;
 }
 

@@ -41,6 +41,7 @@ public:
     string charset;
     
     wstringOut();
+    wstringOut(const char *setname);
     ~wstringOut();
     
     void SetSet(const char *setname);

@@ -11,7 +11,7 @@ class Conjugatemap
 public:
     Conjugatemap();
 
-    void Work(string &s, const string &plaintext);
+    void Work(string &s);
 
     typedef map<string, unsigned char> datamap_t;
 
@@ -31,7 +31,7 @@ private:
     void Work(string &s, form &form);
     void Load();
 public:
-	const formlist &GetForms() const { return forms; }
+    const formlist &GetForms() const { return forms; }
 };
 
 extern Conjugatemap Conjugatemap;

@@ -35,10 +35,12 @@ include Makefile.sets
 # VERSION 1.1.8  syntax changes in the compiler, optimizations
 # VERSION 1.1.9  support for font/dictionary size skew
 # VERSION 1.1.10 new configuration system. Time to squash bugs.
+# VERSION 1.1.11 configuration works, font-enhancement works.
 
-OPTIM=-O3
+#OPTIM=-O3
+OPTIM=-O0
 
-VERSION=1.1.10
+VERSION=1.1.11
 ARCHFILES=xray.c xray.h \
           viewer.c \
           ctcset.cc ctcset.hh \
@@ -101,7 +103,7 @@ makeips: makeips.cc
 unmakeips: unmakeips.cc
 	$(CXX) -g -O -Wall -W -pedantic -o $@ $^
 
-sramdump: sramdump.cc wstring.o
+sramdump: sramdump.cc config.o confparser.o wstring.o
 	$(CXX) -g -O -Wall -W -pedantic -o $@ $^
 base62: base62.cc
 	$(CXX) -g -O -Wall -W -pedantic -o $@ $^
@@ -112,7 +114,7 @@ base62: base62.cc
 
 ctpatch-hdr.ips ctpatch-nohdr.ips: \
 		ctinsert \
-		ct.txt ct.code ct16fn.tga ct8fn.tga
+		ct.txt ct.code ct16fn.tga ct8fn.tga ct.cfg
 	./ctinsert
 
 chrono-patched.smc: unmakeips ctpatch-hdr.ips chrono-dumpee.smc
@@ -120,7 +122,7 @@ chrono-patched.smc: unmakeips ctpatch-hdr.ips chrono-dumpee.smc
 
 snes9xtest: chrono-patched.smc FORCE
 	#~/src/snes9x/bisq-1.39/Gsnes9x -stereo -alt -m 256x256[C32/32] -r 7 chrono-patched.smc
-	~/snes9x -stereo -alt -y 4 -r 7 chrono-patched.smc
+	~/snes9x -stereo -alt -y 3 -r 7 chrono-patched.smc
 
 snes9xtest2: chrono-patched.smc FORCE
 	~/snes9x -r 0 chrono-patched.smc

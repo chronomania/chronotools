@@ -170,7 +170,7 @@ namespace
 void insertor::PatchROM(ROM &ROM)
 {
     fprintf(stderr, "Initializing all free space to zero...\n");
-    
+
     set<unsigned> pages = freespace.GetPageList();
     for(set<unsigned>::const_iterator i = pages.begin(); i != pages.end(); ++i)
     {
@@ -182,14 +182,13 @@ void insertor::PatchROM(ROM &ROM)
             for(unsigned a=0; a < j->len; ++a) ROM.Write(offs+a, 0);
         }
     }
-    
+
     WriteStrings(ROM);
-    Write8pixfont(ROM);
-    Write12pixfont(ROM);
-    WriteDictionary(ROM);
+    Write8pixfont(ROM); //works
+    Write12pixfont(ROM); //works
+    WriteDictionary(ROM); //?
     
     GenerateCode(); 
-    
     WriteCode(ROM);
 }
 
@@ -304,7 +303,7 @@ void insertor::WriteDictionary(ROM &ROM)
     ROM.Write(DictAddr_Ofs+0, dictaddr & 255);
     ROM.Write(DictAddr_Ofs+1, (dictaddr >> 8) & 255);
     ROM.Write(DictAddr_Seg_1, 0xC0 | dictpage);
-    ROM.Write(DictAddr_Seg_1, 0xC0 | dictpage);
+    ROM.Write(DictAddr_Seg_2, 0xC0 | dictpage);
 }
 
 void insertor::WriteStrings(ROM &ROM)
