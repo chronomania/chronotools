@@ -62,9 +62,3 @@ void ROM::SetZero(unsigned addr, unsigned len, const std::string& why)
 {
     for(unsigned a=0; a < len; ++a) Write(addr + a, 0);
 }
-
-
-void PutAscii(const string&) {}
-void StartBlock(const char*, const string&, unsigned) {}
-void StartBlock(const string&, const string& ) {}
-void EndBlock() {}

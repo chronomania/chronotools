@@ -122,7 +122,6 @@ void freespacemap::VerboseDump() const
             
             unsigned pos = (page << 16) | recpos;
             
-            /* & 0x3FFFFF removed from here */
             MarkFree(pos, reclen, "free");
         }
     }
@@ -145,7 +144,6 @@ void freespacemap::Report() const
         total += thisfree;
         if(thisfree)
         {
-            /* & 0x3F removed from here */
             fprintf(stderr, " %02X:%u/%u", i->first, thisfree, hunkcount);
         }
     }
@@ -211,7 +209,6 @@ void freespacemap::Add(unsigned page, unsigned begin, unsigned length)
 }
 void freespacemap::Add(unsigned longaddr, unsigned length)
 {
-    /* & 0x3F removed from here */
     Add(longaddr >> 16, longaddr & 0xFFFF, length);
 }
 

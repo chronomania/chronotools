@@ -5,6 +5,7 @@
 #include "strload.hh"
 #include "logfiles.hh"
 #include "rangeset.hh"
+#include "scriptfile.hh"
 
 using namespace std;
 
@@ -38,15 +39,8 @@ namespace
                 else if(!col)fprintf(log, "%5u ", ptrnum);
                 if(!col)
                 {
-                    const unsigned noffs = where;
-                    for(unsigned k=62*62*62; ; k/=62)
-                    {
-                        unsigned dig = (noffs/k)%62;
-                        if(dig < 10) fputc('0' + dig, log);
-                        else if(dig < 36) fputc('A' + (dig-10), log);
-                        else fputc('a' + (dig-36), log);
-                        if(k==1)break;
-                    }
+                    string label = Base62Label(where);
+                    fprintf(log, "%s", label.c_str());
                 }
                 if(col == maxco/2)fputc(' ', log);
                 fprintf(log, " $%04X-%04X", target, target+bytes-1);
@@ -156,29 +150,27 @@ const vector<ctstring> LoadPStrings(unsigned offset, unsigned count,
     return result;
 }
 
-const ctstring LoadZString(unsigned offset,
+const ctstring LoadZString(unsigned beginoffs,
                            unsigned &bytes,
                            const string& what,
                            const extrasizemap_t& extrasizes)
 {
     ctstring foundstring;
 
-    const unsigned beginoffs = offset;
-    unsigned endoffs=beginoffs;
-    
-    for(unsigned p=offset; ; ++p)
+    unsigned endoffs;
+    for(unsigned p=beginoffs; ; ++p)
     {
-        endoffs = p+1;
+        endoffs=p+1;
         
         if(ROM[p] == 0) break;
+        
         unsigned int byte = ROM[p];
         
         /* FIXME: Invent a better way to see this */
-        if(extrasizes.size() == 1)
+        if(extrasizes.size() == 2)
         {
             if(byte == 1 || byte == 2)
             {
-                ++endoffs;
                 byte = byte*256 + ROM[++p];
             }
         }
@@ -196,9 +188,12 @@ const ctstring LoadZString(unsigned offset,
     
     bytes = endoffs - beginoffs;
     
-    //printf("\n;Loaded %u bytes from $%06X\n", foundstring.size()+1, offset);
+#if 0
+    printf("\n;Loaded %u bytes (%u characters) from $%06X\n",
+        bytes, foundstring.size(), beginoffs);
+#endif
     
-    MarkFree(offset, bytes, what);
+    MarkFree(beginoffs, bytes, what);
     
     return foundstring;
 }
@@ -207,6 +202,32 @@ const vector<ctstring> LoadZStrings(unsigned offset, unsigned count,
                                     const string& what,
                                     const extrasizemap_t& extrasizes)
 {
+    const string what_p = what+" pointers";
+    const string what_d = what+" data";
+    
+    bool relocated = false;
+    unsigned real_offset = offset;
+
+    if(ROM[offset] == 255
+    && ROM[offset+1] == 255)
+    {
+        /* relocated string table! */
+        
+        unsigned new_offset = ROM[offset+2] | (ROM[offset+3] << 8) | (ROM[offset+4] << 16);
+        new_offset = SNES2ROMaddr(new_offset);
+        
+        FILE*log = GetLogFile("mem", "log_addrs");
+        if(log)
+            fprintf(log, "-- Table %06X seems to be relocated to %06X\n",
+                offset, new_offset);
+        
+        relocated = true;
+        
+        MarkProt(offset, 5, what_p);
+        
+        offset = new_offset;
+    }
+
     const unsigned segment = offset >> 16;
     const unsigned base = segment << 16;
 
@@ -214,15 +235,12 @@ const vector<ctstring> LoadZStrings(unsigned offset, unsigned count,
     result.reserve(count);
     set<unsigned> offsetlist;
     
-    const string what_p = what+" pointers";
-    const string what_d = what+" data";
-
 #if LOADZ_DEBUG
     TableDumper logger(what_p, offset);
 #endif
     unsigned first_offs = offset;
     unsigned last_offs  = first_offs;
-    for(unsigned a=0; !count || a<count; ++a, offset += 2)
+    for(unsigned a=0; !count || a<count; ++a, offset += 2, real_offset += 2)
     {
         const unsigned stringptr = ROM[offset] + 256*ROM[offset + 1];
         
@@ -237,7 +255,7 @@ const vector<ctstring> LoadZStrings(unsigned offset, unsigned count,
         ctstring foundstring = LoadZString(stringptr+base, bytes, what_d, extrasizes);
 
 #if LOADZ_DEBUG
-        logger.AddPtr(a, offset, stringptr, bytes);
+        logger.AddPtr(a, real_offset, stringptr, bytes);
 #endif
         
 #if LOADZ_EXTRASPACE
@@ -253,7 +271,14 @@ const vector<ctstring> LoadZStrings(unsigned offset, unsigned count,
         result.push_back(foundstring);
     }
 
-    MarkProt(first_offs, last_offs-first_offs, what_p);
+    if(relocated)
+    {
+        MarkFree(first_offs, last_offs-first_offs, what_p);
+    }
+    else
+    {
+        MarkProt(first_offs, last_offs-first_offs, what_p);
+    }
 
 #if LOADZ_DEBUG
     logger.Finish(offset);

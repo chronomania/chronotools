@@ -177,8 +177,11 @@ int main(int argc, const char *const *argv)
         putc((a     )&255, resultfile);
         
         unsigned offs=a, c=0;
-        while(a < ROM.size() && Touched[a] && c < MaxHunkSize)
+        while(a < ROM.size() && Touched[a])
+        {
+            if(c == MaxHunkSize) { --a; break; }
             ++c, ++a;
+        }
         
         putc((c>> 8)&255, resultfile);
         putc((c    )&255, resultfile);

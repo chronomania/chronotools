@@ -68,8 +68,7 @@ private:
     referlist refers;
     
     /* For relocated (by table relocation) strings */
-    typedef vector<pair<unsigned,unsigned> > tablelist;
-    tablelist tables;
+    unsigned table_counter;
     
     vector<ctstring> dict;
     

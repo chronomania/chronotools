@@ -114,6 +114,7 @@ DEPDIRS = utils/
 # VERSION 1.13.0 added support for expansion to 48 Mbit or 64 Mbit
 # VERSION 1.13.1 added support for free relocation of all script text
 # VERSION 1.13.2 is a minor bugfix to the expansion patch
+# VERSION 1.13.3 is a bugfix to the checksum fixer
 
 #OPTIM=-Os
 # -fshort-enums
@@ -126,7 +127,7 @@ OPTIM=-O3
 
 CXXFLAGS += -I.
 
-VERSION=1.13.2
+VERSION=1.13.3
 ARCHFILES=utils/xray.cc utils/xray.h \
           utils/viewer.c \
           utils/vwftest.cc \
@@ -254,7 +255,7 @@ ctdump: \
 # Chrono Trigger patch generator program
 ctinsert: \
 		ctinsert.o script.o wrap.o msginsert.o \
-		space.o writeout.o \
+		space.o writeout.o scriptfile.o \
 		dictionary.o images.o fonts.o typefaces.o \
 		rom.o dataarea.o snescode.o pageptrlist.o \
 		conjugate.o o65.o o65linker.o rommap.o refer.o \

@@ -1007,24 +1007,33 @@ void insertor::DictionaryCompress()
     unsigned origsize = CalculateScriptSize();
 
     if(rebuild_dict) RebuildDictionary();
-
-    ApplyDictionary();
+    
+    const bool apply_dictionary = GetConf("dictionary", "apply");
+    if(apply_dictionary)
+    {
+        ApplyDictionary();
+    }
 
     unsigned resultsize = CalculateScriptSize();
 
     unsigned dictbytes = 0;
     for(unsigned a=0; a<dict.size(); ++a)dictbytes += CalcSize(dict[a]) + 1;
     
-    fprintf(stderr, "> Original script size: %u bytes; new script size: %u bytes\n"
-                    "> Saved: %u bytes (%.1f%% off); dictionary size: %u bytes\n",
-        origsize,
-        resultsize,
-        origsize-resultsize,
-        (origsize-resultsize)*100.0/origsize,
-        dictbytes);
+    if(apply_dictionary)
+    {
+        fprintf(stderr, "> Original script size: %u bytes; new script size: %u bytes\n"
+                        "> Saved: %u bytes (%.1f%% off); dictionary size: %u bytes\n",
+            origsize,
+            resultsize,
+            origsize-resultsize,
+            (origsize-resultsize)*100.0/origsize,
+            dictbytes);
+    }
 
     if(rebuild_dict)
     {
+        if(!apply_dictionary) resultsize = CalculateScriptSize();
+        
         FILE *log = GetLogFile("dictionary", "outputfn");
 
         if(log)

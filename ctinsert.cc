@@ -68,9 +68,7 @@ namespace
                 unsigned count = MaxHunkSize;
                 if(count > left) count = left;
                 
-                /*
-                fprintf(stderr, "Writing %u(of %u) @ %06X\n", count, left, addr);
-                */
+                //fprintf(stderr, "Writing %u(of %u) @ %06X\n", count, left, addr);
                 
                 if(addr == IPS_EOF_MARKER)
                 {

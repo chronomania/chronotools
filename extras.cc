@@ -26,7 +26,8 @@ namespace
     {
         extrasizemap_t& extrasizes = Extras_12;
         
-        extrasizes[0x12] = 1;
+        extrasizes[0x12] = 1; // monster/item
+        extrasizes[0x03] = 1; // delay
     }
     
     class Loader

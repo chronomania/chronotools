@@ -23,11 +23,12 @@ RoomScriptFunctionB8:
 	
 	phx
 	 ; Increment address by 2
-	 lda $2B : inc : inc : sta $2B
+	 ldx $2B : inx : inx : stx $2B
 	 ; Load word
-	 lda [$2B] : tax
+	 lda [$2B]
 	 ; Increment address by 2
-	 lda $2B : inc : inc : sta $2B
+	 inx : inx : stx $2B
+	 tax
 	 SET_8_BIT_A()
 	 ; Load byte
 	 lda [$2B]

@@ -466,8 +466,7 @@ void insertor::LoadFile(FILE *fp)
                 
                 if(header[0] == 'Z')
                 {
-                    tables.push_back(make_pair(0, 0));
-                    model.tab_id = tables.size();
+                    model.tab_id = ++table_counter;
                 }
                 
                 model.type = stringdata::zptr12;
@@ -691,7 +690,7 @@ void insertor::LoadFile(FILE *fp)
             || model.type == stringdata::monster
               )
             {
-                // Mark the space unused already at this moment
+                // Mark the space unused already
                 freespace.Add(label, model.width);
             }
             
@@ -827,6 +826,22 @@ void insertor::WriteFixedStrings()
     }
 }
 
+namespace
+{
+    struct ScriptStat
+    {
+        unsigned begin;
+        unsigned size;
+    public:
+        ScriptStat() : begin(0), size(0) {}
+        void Update(unsigned addr)
+        {
+            if(!size || begin > addr) begin = addr;
+            size += 2;
+        }
+    };
+}
+
 void insertor::WriteOtherStrings()
 {
     /* Identify relocated string tables */
@@ -836,6 +851,9 @@ void insertor::WriteOtherStrings()
     map<unsigned, PagePtrList> pagemap;
     map<unsigned, PagePtrList> refmap;
     map<unsigned, PagePtrList> tabmap;
+    
+    map<unsigned, ScriptStat> refstats;
+    vector<ScriptStat> tables(table_counter);
     
     for(stringlist::const_iterator i=strings.begin(); i!=strings.end(); ++i)
     {
@@ -859,14 +877,13 @@ void insertor::WriteOtherStrings()
             {
                 refmap[i->ref_id].AddItem(data, i->address & 0xFFFF);
                 freespace.Add(i->address, 2);
+                
+                refstats[i->ref_id-1].Update(i->address);
             }
             else if(i->tab_id)
             {
                 tabmap[i->tab_id].AddItem(data, i->address & 0xFFFF);
-                
-                pair<unsigned,unsigned>& tab = tables[i->tab_id-1];
-                if(tab.second == 0 || i->address < tab.first) tab.first = i->address;
-                tab.second += 2;
+                tables[i->tab_id-1].Update(i->address);
             }
             else
                 pagemap[i->address >> 16].AddItem(data, i->address & 0xFFFF);
@@ -889,11 +906,17 @@ void insertor::WriteOtherStrings()
     {
         unsigned ref_id = i->first - 1;
         
+        unsigned table_bytes = refstats[ref_id].size;
+        unsigned table_start = refstats[ref_id].begin;
+
         char Symbol[64]; sprintf(Symbol, "reloc_ref_%u_zstring", ref_id);
         MessageLoadingItem(Symbol);
         
         MessageWorking();
-        i->second.Create(*this, Symbol/*description*/, Symbol/*tablename*/);
+        i->second.Create(*this,
+                         Symbol/*description*/,
+                         table_start,
+                         Symbol/*tablename*/);
         
         const list<ReferMethod>& refs = refers[ref_id];
         for(list<ReferMethod>::const_iterator
@@ -912,11 +935,14 @@ void insertor::WriteOtherStrings()
         char Symbol[64]; sprintf(Symbol, "reloc_tab_%u_zstring", tab_id);
         MessageLoadingItem(Symbol);
         
-        MessageWorking();
-        i->second.Create(*this, Symbol/*description*/, Symbol/*tablename*/);
+        unsigned table_bytes = tables[tab_id].size;
+        unsigned table_start = tables[tab_id].begin;
         
-        unsigned table_bytes = tables[tab_id].second;
-        unsigned table_start = tables[tab_id].first;
+        MessageWorking();
+        i->second.Create(*this,
+                         Symbol/*description*/,
+                         table_start,
+                         Symbol/*tablename*/);
         
         if(table_bytes < 5)
         {
