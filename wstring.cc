@@ -110,6 +110,12 @@ wstringIn::wstringIn() : charset(midset)
     converter = iconv_open(midset, charset.c_str());
 }
 
+wstringIn::wstringIn(const char *setname) : charset(midset)
+{
+    converter = iconv_open(midset, charset.c_str());
+    SetSet(setname);
+}
+
 wstringIn::~wstringIn()
 {
     iconv_close(converter);

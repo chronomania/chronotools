@@ -96,8 +96,7 @@ static void DumpZStrings(const unsigned offs, unsigned len, bool dolf=true)
 
     printf("*z;%u pointerstrings (12pix font)\n", strings.size());
 
-    wstringOut conv;
-    conv.SetSet(getcharset());    
+    wstringOut conv(getcharset());    
     for(unsigned a=0; a<strings.size(); ++a)
     {
         string line = conv.putc('$');
@@ -170,8 +169,7 @@ static void Dump8Strings(const unsigned offs, unsigned len=0)
 
     printf("*r;%u pointerstrings (8pix font)\n", strings.size());
 
-    wstringOut conv;
-    conv.SetSet(getcharset());    
+    wstringOut conv(getcharset());    
     for(unsigned a=0; a<strings.size(); ++a)
     {
         string line = conv.putc('$');
@@ -350,8 +348,7 @@ static void DumpFStrings(unsigned offs, unsigned len, unsigned maxcount=0)
     printf("*l%u;%u fixed length strings (length: %u bytes)\n",
         len, strings.size(), len);
 
-    wstringOut conv;
-    conv.SetSet(getcharset());
+    wstringOut conv(getcharset());
 
     for(unsigned a=0; a<strings.size(); ++a)
     {
@@ -383,8 +380,7 @@ static void LoadDict(unsigned offs, unsigned len)
     printf("*d;dictionary (%u substrings)\n",
         strings.size());
 
-    wstringOut conv;
-    conv.SetSet(getcharset());
+    wstringOut conv(getcharset());
 
     for(unsigned a=0; a<strings.size(); ++a)
     {

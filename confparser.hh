@@ -4,11 +4,12 @@
 #include <cstdio>
 #include <string>
 #include <vector>
+#include <map>
 
 using std::FILE;
+using std::map;
 
 #include "wstring.hh"
-#include "hash.hh"
 
 class ConfParser
 {
@@ -59,7 +60,7 @@ class ConfParser
      private:
         friend class ConfParser;
         std::string SectName;
-        typedef hash_map<std::string, Field> FieldMap;
+        typedef map<std::string, Field> FieldMap;
         FieldMap fields;
     };
 
@@ -72,7 +73,7 @@ class ConfParser
     void ParseSection(class CharIStream& is, const std::string& secName);
     bool ParseField(class CharIStream& is, Field& field, bool);
 
-    typedef hash_map<std::string, Section> SecMap;
+    typedef map<std::string, Section> SecMap;
     SecMap sections;
 };
 

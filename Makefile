@@ -43,18 +43,20 @@ include Makefile.sets
 # VERSION 1.2.4  8pix system deciphered, more bugs introduced
 # VERSION 1.2.5  characterset enlarged by 512, only vwf8 bugs still
 # VERSION 1.2.6  using nonstandard hash_map for greatly improved performance
+# VERSION 1.2.7  creating another compiler
 
 OPTIM=-O3
 #OPTIM=-O0
 #OPTIM=-O0 -pg -fprofile-arcs
 #LDFLAGS += -pg -fprofile-arcs
 
-VERSION=1.2.6
+VERSION=1.2.7
 ARCHFILES=xray.c xray.h \
           viewer.c \
           ctcset.cc ctcset.hh \
           miscfun.cc miscfun.hh \
           space.cc space.hh \
+          crc32.cc crc32.h \
           wstring.cc wstring.hh \
           readin.cc wrap.cc writeout.cc \
           settings.hh \
@@ -78,6 +80,7 @@ ARCHFILES=xray.c xray.h \
           progdesc.php \
           spacefind.cc base62.cc sramdump.cc \
           binpacker.tcc binpacker.hh \
+          compiler2.cc compiler2-parser.inc \
           hash.hh \
           README transnotes.txt Makefile.sets
 
@@ -128,6 +131,12 @@ base62: base62.cc
 vwftest: \
 		vwftest.cc tgaimage.o fonts.o config.o \
 		confparser.o ctcset.o wstring.o
+	$(CXX) -g -O -Wall -W -pedantic -o $@ $^
+
+compiler2.o: compiler2.cc
+	$(CXX) -g -o $@ -c $< $(CXXOPTS) -O0 -fno-default-inline
+	
+comp2test: compiler2.o config.o confparser.o ctcset.o wstring.o
 	$(CXX) -g -O -Wall -W -pedantic -o $@ $^
 
 #ct.txt: ctdump chrono-dumpee.smc

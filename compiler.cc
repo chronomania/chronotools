@@ -711,8 +711,7 @@ const FunctionList Compile(FILE *fp)
     
     if(1) // Read file to ucs4string
     {
-        wstringIn conv;
-        conv.SetSet(getcharset());
+        wstringIn conv(getcharset());
         
         for(;;)
         {

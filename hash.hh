@@ -8,6 +8,7 @@
 #include <string>
 
 #include <ext/hash_map>
+#include <ext/hash_set>
 using namespace __gnu_cxx;
 
 using std::basic_string;
@@ -30,12 +31,22 @@ namespace __gnu_cxx
     }
   };
 }
+struct BitSwapHashFon
+{
+  size_t operator() (unsigned n) const
+  {
+    unsigned rot = n&31;
+    return (n << rot) | (n >> (32-rot));
+  }
+};
 
 #else
 
 #include <map>
+#include <set>
 
 #define hash_map std::map
+#define hash_set std::set
 
 #endif // USE_HASH
 

@@ -26,7 +26,7 @@ using namespace std;
 
 #if WSTRING_METHOD == 0
 typedef wchar_t ucs4;
-#define wstring ucs4string
+#define ucs4string wstring
 #endif
 #if WSTRING_METHOD >= 1
 typedef unsigned int ucs4;
@@ -81,6 +81,7 @@ public:
     string charset;
     
     wstringIn();
+    wstringIn(const char *setname);
     ~wstringIn();
     
     void SetSet(const char *setname);
@@ -172,4 +173,9 @@ namespace std
 }
 #endif
 
+#undef wstring
+#define wstring USE_ucs4string_NOT_wstring
+#undef _GLIBCPP_USE_WCHAR_T
+
 #endif
+

@@ -15,6 +15,7 @@ class stringoffsmap: public vector<stringoffsdata>
 {
 public:
     // parasite -> host
+    // changing the hash function doesn't help here
     typedef hash_map<unsigned, unsigned> neederlist_t;
     neederlist_t neederlist;
     
