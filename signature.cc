@@ -36,8 +36,7 @@ void insertor::GenerateSignatureCode()
     unsigned code_addr = freespace.FindFromAnyPage(code_size);
     code.LocateCode(code_addr);
     
-    code.LinkSym("TILEDATA_SEG",  (imgdata_addr >> 16) | 0xC0);
-    code.LinkSym("TILEDATA_OFFS", (imgdata_addr & 0xFFFF));
+    code.LinkSym("TILEDATA_ADDR", imgdata_addr | 0xC00000);
     
     //code.LinkSym("PAL_0", image.GetPalEntry(0)); - 0 never used
     code.LinkSym("PAL_1", image.GetPalEntry(1));

@@ -1,6 +1,7 @@
 #include <cstdio>
 #include <set>
 #include <list>
+#include <cctype>
 
 #include "ctinsert.hh"
 #include "wstring.hh"

@@ -1,3 +1,6 @@
+#ifndef bqt65asmObjectHH
+#define bqt65asmObjectHH
+
 #include <map>
 #include <list>
 #include <vector>
@@ -5,19 +8,69 @@
 
 class Object
 {
-    typedef std::map<std::string, unsigned> LabelList;
-    
+public:
+    enum SegmentSelection
+    {
+        CODE,
+        DATA,
+        ZERO,
+        BSS
+    };
+
     class Segment
     {
-        // level
-        std::map<unsigned, LabelList> labels;
+    public:
+	    typedef std::map<std::string, unsigned> LabelList;
+        typedef std::map<unsigned, LabelList> LabelMap;
+    private:
+        LabelMap labels;
         std::vector<unsigned char> content;
+
+        template<typename T>
+        class Relocdata
+        {
+        public:
+            typedef T                        Type;
+            typedef Object::SegmentSelection SegType;
+            typedef std::string              VarType;
+            
+            typedef std::pair<SegType, T> FixupType;
+            typedef std::pair<T, VarType> RelocType;
+            
+            typedef std::vector<FixupType> FixupList;
+            typedef std::vector<RelocType> RelocList;
+            
+            FixupList Fixups;
+            RelocList Relocs;
+        public:
+            void AddFixup(SegType s, T addr) { Fixups.push_back(FixupType(s, addr)); }
+            void AddReloc(T addr, const VarType& s) { Relocs.push_back(RelocType(addr, s)); }
+        };
+
+    public:
+        // too lazy to make handler-functions for all these
+        
+        typedef std::pair<unsigned,unsigned> r2_t;
+        
+        typedef Relocdata<unsigned> R16_t;    R16_t R16;       // addr
+        typedef Relocdata<unsigned> R16lo_t;  R16lo_t R16lo;   // addr
+        typedef Relocdata<r2_t>     R16hi_t;  R16hi_t R16hi;   // addr,lowpart
+        typedef Relocdata<r2_t>     R24seg_t; R24seg_t R24seg; // addr,offspart
+        typedef Relocdata<unsigned> R24_t;    R24_t R24;       // addr
 
     public:
         void AddByte(unsigned char byte);
         
+        void SetByte(unsigned offset, unsigned char byte);
+        
         unsigned GetPos() const { return content.size(); }
-
+        
+        unsigned GetBase() const { return 0; }
+        unsigned GetSize() const { return content.size(); }
+        
+        const std::vector<unsigned char>& GetContent() const { return content; }
+        
+        const LabelMap& GetLabels() const { return labels; }
         const LabelList& GetLabels(unsigned level) { return labels[level]; }
 
         void ClearLabels(unsigned level);
@@ -28,16 +81,10 @@ class Object
                        unsigned& result) const;
         
         bool FindLabel(const std::string& name) const;
+        
+        void DumpLabels() const;
     };
-    
-    enum SegmentSelection
-    {
-        CODE,
-        DATA,
-        ZERO,
-        BSS
-    };
-    
+private:
     class Fixup
     {
         SegmentSelection homeseg;
@@ -59,7 +106,15 @@ class Object
             type(t), value(v), ref(r) { }
     
         bool IsResolved() const { return ref.empty(); }
+
         const std::string& GetName() const { return ref; }
+        char GetType() const { return type; }
+        long GetValue() const { return value; }
+        
+        SegmentSelection GetHomeSeg() const { return homeseg; }
+        SegmentSelection GetTargetSeg() const { return targetseg; }
+        unsigned GetHomeOffset() const { return homeoffset; }
+        unsigned GetTargetOffset() const { return targetoffset; }
 
         void Resolved(SegmentSelection s, unsigned o);
 
@@ -75,7 +130,8 @@ class Object
     SegmentSelection CurSegment;
     
     void DumpFixups() const;
-    
+    void DumpLabels() const;
+
 private:
     Segment& GetSeg();
     
@@ -108,4 +164,8 @@ public:
     void Link();
     
     void Dump();
+    
+    void WriteOut(std::FILE* fp);
 };
+
+#endif

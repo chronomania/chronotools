@@ -25,7 +25,7 @@ int main(void)
     printf(" Write_4bit is at %06X\n", tmp.GetSymAddress("Write_4bit"));
     printf(" NextTile is at %06X\n", tmp.GetSymAddress("NextTile"));
     
-    tmp.LinkSym("WIDTH_SEG", 0xFF);
+    tmp.LinkSym("WIDTH_ADDR", 0xFF1234);
     
     tmp.Verify();
     

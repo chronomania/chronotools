@@ -146,6 +146,7 @@ Copypaste from the Makefile:
 # VERSION 1.6.4  battle tech lister almost done; dumper: partial jap ROM support
 # VERSION 1.6.5  is working on an assembler
 # VERSION 1.6.6  has an almost working assembler
+# VERSION 1.6.7  has a complete assembler, doesn't require xa65 anymore
 </pre>
 
 ", '1. Program list' => "
@@ -213,6 +214,13 @@ compares two ROMs and produces a patch file in IPS format.
 
 <a href=\"/src/unmakeips.cc\">unmakeips</a>
 reads a ROM and an IPS file and produces a patched ROM file.
+
+", '1.1.1. assemble' => "
+
+An xa65-compatible 65816 assembler program.<br>
+Full source code can be found in its separate package at
+<a href=\"http://bisqwit.iki.fi/source/snescom.html\"
+  >http://bisqwit.iki.fi/source/snescom.html</a> .
 
 ", '1.1.1. xray' => "
 
@@ -371,9 +379,11 @@ but to get the full system and support,
 you have to <a href=\"#copying\">contact me with email</a>.
 </blockquote>
 <p>
-The VWF8 code requires an assembler,
-<a href=\"http://www.google.fi/search?q=xa65\">xa65</a>.
-It can be found in Debian and compiled for other systems.
+The VWF8 code requires an assembler.
+Previously it had to be <a href=\"http://www.google.fi/search?q=xa65\">xa65</a>
+(which can be found in Debian and compiled for other systems), but now
+Chronotools has its
+<a href=\"http://bisqwit.iki.fi/source/snescom.html\">own assembler</a>.
 
 ", 'copying:1. Copying' => "
 
@@ -389,8 +399,8 @@ Let's see what kind of problems it causes.</em>
 
 ", 'parts:1.1. If you only are interested in some features/parts' => "
 
-This system doesn't contain much reusable material, although
-it now does contain some separate assembly code.<br>
+This system doesn't contain much reusable material,
+although it now does contain some separate assembly code.<br>
 I have made my own systems to compile and link code.<br>
 If you're uncertain, <a href=\"#copying\">send me email and explain your situation</a>.
 
@@ -400,6 +410,8 @@ If you're uncertain, <a href=\"#copying\">send me email and explain your situati
  <li><a href=\"http://bisqwit.iki.fi/ctfin/\">Bisqwit's
   Finnish Chrono Trigger translation project</a>
   (uses these tools)</li>
+ <li><a href=\"http://bisqwit.iki.fi/source/snescom.html\">snescom</a>
+  - xa65-compatible 65816 assembler with free source code</li>
  <li><a href=\"http://bisqwit.iki.fi/jutut/ctcset.html\">Chrono Trigger
   technical document</a>
   (publicly available information that these tools base on)</li>

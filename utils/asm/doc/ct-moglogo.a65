@@ -1,0 +1,208 @@
+; Part of Chronotools - http://bisqwit.iki.fi/source/chronotools.html
+;
+; Copyright (C) 1992,2003 Bisqwit (http://iki.fi/bisqwit/)
+;
+; This code inserts the logo to the intro screen.
+;
+; To be assembled with snescom.
+;    http://bisqwit.iki.fi/source/snescom.html
+;
+
+; External symbols - defined by the linker:
+;   TILEDATA_ADDR
+;   PAL_0 PAL_1 PAL_2 ... PAL_E PAL_F
+
+
+#define TEMP_OFFS $E000
+#define TEMP_SEG  $7F
+
+#define VRAM_TILES $6000
+#define VRAM_BMAPS $5000
+
+; 16 by 5 tiles.
+#define X_SIZE     16
+#define Y_SIZE     5
+
+#define FIRST_TILE  $0A0
+#define PALETTE_NUM 1
+
+; Palette $00= pendulum
+; Palette $01= free for use
+; Palette $02= "TRIGGER"
+; Palette $09= "RONO"
+
+#define TILEHEADER  $2000 + ($400*PALETTE_NUM)
+;#define FIRST_POS  $01A0 < correct if you use bg0,VRAM_TILES=$6800
+#define FIRST_POS   $02F0
+#define Y_INCREMENT $0020
+
+.text
+
+; Define functions for handling the bitness...
+#define SET_8_BIT_A()   sep #$20 : .as
+#define SET_16_BIT_A()  rep #$20 : .al
+#define SET_8_BIT_X()   sep #$10 : .xs
+#define SET_16_BIT_X()  rep #$10 : .xl
+
+#define SET_8_BIT_AX()  sep #$30 : .xs : .as
+#define SET_16_BIT_AX() rep #$30 : .xl : .al
+
+
+show_moglogo:
+.(
+        .al
+        .xl
+        phb
+        phd
+        pha
+         ; A=$0180 X=$0500 Y=$0000 S=$06DA
+         ; If this isn't the case, we were called from
+         ; some other palette-fading function than the
+         ; intro. But is this really safe?
+         cmp #$0180
+         bne Wrong
+         cpx #$0500
+         bne Wrong
+         cpy #$0000
+         bne Wrong
+         tsx
+         cpx #$06DA-3-1-2-2  ;JSL,PHB,PHD,PHA
+         bne Wrong
+         
+         bra Continue
+
+Wrong:   brl End
+Continue:
+         lda #$0300
+         tcd
+         lda #!TILEDATA_ADDR
+         sta $00
+         lda #TEMP_OFFS
+         sta $03
+         SET_8_BIT_A()
+         lda #^TILEDATA_ADDR
+         sta $02
+         lda #TEMP_SEG
+         sta $05
+
+         ; Call decompressor
+         .byt $22,$57,$05,$C3 ; jsl $C30557
+         
+         ; Now TEMP_SEG.TEMP_OFFS contains the GFX.
+         
+         ; We only have to put it to the PPU. Hmm...
+         ; BG0; VOffset=65465, HOffset=65488, W=64, H=32, TS=8, BA=0x6400, TA=0x5000
+         
+         ; The NMI runs these DMAs:
+         ;DMA[7]= read Mode= 0 0x000700->0x2134 Bytes= 512 (inc) V-Line=234 VALUE= E0
+         ;DMA[7]= write Mode= 1 0x000C00->0x2118 Bytes= 128 (inc) V-Line=238 VRAM= 7000 (1,0) word
+         ;DMA[7]= write Mode= 0 0x7E2200->0x2122 Bytes= 512 (inc) V-Line=226 CGRAM= 00 (0)
+         ;DMA[7]= write Mode= 0 0x000700->0x2104 Bytes= 544 (inc) V-Line=230 OBJADDR= 0000
+         
+         ; So now. Just simply...
+         
+         SET_8_BIT_A()
+         lda #$00
+         pha
+         plb  ;now addressing page $00
+         
+         ldx #VRAM_BMAPS + (FIRST_TILE*16)
+         stx $2116  ; tell PPU where we'll write
+
+         ldy #$1801 ; $18 = $2118; mode = writing words to dev
+         sty $4370  ; dma config setup
+         
+         lda #TEMP_SEG
+         ldx #TEMP_OFFS
+         ldy $06    ; decompressor handily gave us the size
+         stx $4372  ; dma config source
+         sta $4374
+         sty $4375  ; dma config size
+
+         lda #$80
+         sta $420B  ; dma 7 proceed
+         
+         ; There. Bitmaps sent. Now do tiles.
+         
+         SET_16_BIT_A()
+         
+         ldx #VRAM_TILES + FIRST_POS
+         lda #FIRST_TILE + TILEHEADER
+         ldy #Y_SIZE
+  yloop: ;; yloop-begin
+          stx $2116  ; address for PPU
+          phx
+           ldx #$0000
+  xloop:   ;; xloop-begin
+            .byt $9F
+            .word TEMP_OFFS
+            .byt TEMP_SEG  ;sta (TEMP_SEG<<16)+TEMP_OFFS,x
+            inx
+            inx
+            inc
+            ;; xloop-before-end
+            cpx #X_SIZE*2
+            bcc xloop
+           ;; xloop-end
+           
+           pha
+            SET_8_BIT_A()
+            ldx #TEMP_OFFS
+            stx $4372  ; dma config source
+            ldx #X_SIZE*2
+            stx $4375  ; dma config size
+            
+            lda #$80
+            sta $420B ;dma 7 proceed
+            SET_16_BIT_A()
+           pla
+          plx
+          pha
+           ; $00 = $0300 - used by decompressor, good temp.
+           lda #Y_INCREMENT
+           stx $00
+           clc
+           adc $00
+           tax
+          pla
+         ;; yloop-before-end
+         dey
+         bne yloop
+         ;; yloop-end
+
+         SET_16_BIT_AX()
+         
+         lda #$7E7E
+         pha
+         plb
+         plb
+         
+         ; The game loads all 16 palettes from $7E2200 each frame
+         ;PAL_0 not used. It's transparent.
+         lda #PAL_1 : sta $2202+(PALETTE_NUM*32)
+         lda #PAL_2 : sta $2204+(PALETTE_NUM*32)
+         lda #PAL_3 : sta $2206+(PALETTE_NUM*32)
+         lda #PAL_4 : sta $2208+(PALETTE_NUM*32)
+         lda #PAL_5 : sta $220A+(PALETTE_NUM*32)
+         lda #PAL_6 : sta $220C+(PALETTE_NUM*32)
+         lda #PAL_7 : sta $220E+(PALETTE_NUM*32)
+         lda #PAL_8 : sta $2210+(PALETTE_NUM*32)
+         lda #PAL_9 : sta $2212+(PALETTE_NUM*32)
+         lda #PAL_A : sta $2214+(PALETTE_NUM*32)
+         lda #PAL_B : sta $2216+(PALETTE_NUM*32)
+         lda #PAL_C : sta $2218+(PALETTE_NUM*32)
+         lda #PAL_D : sta $221A+(PALETTE_NUM*32)
+         lda #PAL_E : sta $221C+(PALETTE_NUM*32)
+         lda #PAL_F : sta $221E+(PALETTE_NUM*32)
+
+End:    ; Arrives here if we weren't supposed to put up the logo here.
+        pla
+        plp
+        pld
+        
+        ; Overwrote these 4 bytes at $FDE695
+        tax
+        lda #$0000
+        
+        rtl
+.)

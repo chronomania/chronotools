@@ -1,3 +1,6 @@
+#include <map>
+
+#include "assemble.hh"
 #include "object.hh"
 
 void Object::Segment::AddByte(unsigned char byte)
@@ -6,16 +9,28 @@ void Object::Segment::AddByte(unsigned char byte)
     content.push_back(byte);
 }
 
+void Object::Segment::SetByte(unsigned offset, unsigned char byte)
+{
+    if(offset >= content.size())
+    {
+        std::fprintf(stderr, "Internal error: Attempt to SetByte(%u,0x%02X) when limit is %u\n",
+            offset, byte, content.size());
+        return;
+    }
+    content[offset] = byte;
+}
+
+
 void Object::Segment::ClearLabels(unsigned level)
 {
-    std::map<unsigned, LabelList>::iterator i = labels.find(level);
+    LabelMap::iterator i = labels.find(level);
     if(i != labels.end()) i->second.clear();
 }
 
 bool Object::Segment::FindLabel(const std::string& name, unsigned level,
                                 unsigned& result) const
 {
-    std::map<unsigned, LabelList>::const_iterator i = labels.find(level);
+    LabelMap::const_iterator i = labels.find(level);
     if(i == labels.end()) return false;
     LabelList::const_iterator j = i->second.find(name);
     if(j == i->second.end()) return false;
@@ -25,7 +40,7 @@ bool Object::Segment::FindLabel(const std::string& name, unsigned level,
 
 bool Object::Segment::FindLabel(const std::string& name) const
 {
-    for(std::map<unsigned, LabelList>::const_iterator
+    for(LabelMap::const_iterator
         i = labels.begin();
         i != labels.end(); ++i)
     {
@@ -40,14 +55,33 @@ void Object::Segment::DefineLabel(unsigned level, const std::string& name)
     labels[level][name] = GetPos();
 }
 
+void Object::Segment::DumpLabels() const
+{
+    for(LabelMap::const_iterator
+        i = labels.begin();
+        i != labels.end(); ++i)
+    {
+        for(LabelList::const_iterator
+            j = i->second.begin();
+            j != i->second.end();
+            ++j)
+        {
+            std::fprintf(stderr, " %04X [%u]%s\n",
+                j->second, i->first, j->first.c_str());
+        }
+    }
+}
+
 void Object::Fixup::Resolved(SegmentSelection s, unsigned o)
 {
     targetseg    = s;
     targetoffset = o;
     
+#if 0
     std::fprintf(stderr,
-        "Label '%s' (type %c, offs %04X, value %ld) defined as %04X\n",
+        "Ref '%s' (type %c, offs %04X, value %ld) resolved as %04X\n",
             ref.c_str(), type, homeoffset, value, targetoffset);
+#endif
     
     ref.clear();
 }
@@ -61,13 +95,6 @@ void Object::Fixup::Dump() const
             (int)targetseg, targetoffset);
     else
         std::fprintf(stderr, " - Var '%s' - unresolved\n", ref.c_str());
-}
-
-void Object::DumpFixups() const
-{
-    std::list<Fixup>::const_iterator i;
-    for(i=Fixups.begin(); i!=Fixups.end(); ++i)
-        i->Dump();
 }
 
 Object::Segment& Object::GetSeg()
@@ -124,36 +151,30 @@ void Object::CheckFixups()
             }
         }
     }
-#if 0
-    // 1. Find where the "ref" refers to
-    
-    switch(prefix)
-    {
-        case FORCE_LOBYTE:
-        case FORCE_HIBYTE:
-        case FORCE_ABSWORD:
-        case FORCE_LONG:
-        case FORCE_SEGBYTE:
-        case FORCE_REL8:
-        case FORCE_REL16:
-            break;
-    }
-#endif
 }
 
 void Object::StartScope()
 {
     ++CurScope;
-    CodeSeg.ClearLabels(CurScope-1);
-    DataSeg.ClearLabels(CurScope-1);
-    ZeroSeg.ClearLabels(CurScope-1);
-    BssSeg.ClearLabels(CurScope-1);
 }
 
 void Object::EndScope()
 {
     CheckFixups();
 
+    if(CurScope > 0)
+    {
+        // Forget the labels of this level.
+        
+        // But never forget the global-level labels.
+        if(CurScope > 1)
+        {
+            CodeSeg.ClearLabels(CurScope-1);
+            DataSeg.ClearLabels(CurScope-1);
+            ZeroSeg.ClearLabels(CurScope-1);
+            BssSeg.ClearLabels(CurScope-1);
+        }
+    }
     --CurScope;
 }
 
@@ -190,11 +211,440 @@ void Object::DefineLabel(const std::string& label)
     GetSeg().DefineLabel(scopenum, s);
 }
 
+void Object::DumpFixups() const
+{
+    std::list<Fixup>::const_iterator i;
+    for(i=Fixups.begin(); i!=Fixups.end(); ++i)
+        i->Dump();
+}
+
+void Object::DumpLabels() const
+{
+    std::fprintf(stderr, "Labels in TEXT segment:\n"); CodeSeg.DumpLabels();
+    std::fprintf(stderr, "Labels in DATA segment:\n"); DataSeg.DumpLabels();
+    std::fprintf(stderr, "Labels in ZERO segment:\n"); ZeroSeg.DumpLabels();
+    std::fprintf(stderr, "Labels in  BSS segment:\n");  BssSeg.DumpLabels();
+}
+
 void Object::Link()
 {
+    std::list<Fixup>::iterator i;
+    for(i=Fixups.begin(); i!=Fixups.end(); ++i)
+    {
+        const Fixup& fix = *i;
+        
+        // Select the segment we're going to tamper with
+        CurSegment = fix.GetHomeSeg();
+        
+        const unsigned     address = fix.GetHomeOffset();
+        
+        const SegmentSelection seg = fix.GetTargetSeg();
+        const unsigned        offs = fix.GetTargetOffset();
+              long           value = fix.GetValue();
+        const std::string&    name = fix.GetName();
+        
+        if(!fix.IsResolved())
+        {
+            if(CurSegment != CODE && CurSegment != DATA)
+            {
+                std::fprintf(stderr,
+                    "Error: Unresolved symbol references (like this '%s')"
+                    " are only allowed in the TEXT and DATA segments.\n",
+                        name.c_str());
+                continue;
+            }
+        }
+        else
+        {
+            value += offs;
+        }
+        
+        switch(fix.GetType())
+        {
+            case FORCE_LOBYTE:
+            {
+                if(fix.IsResolved())
+                    GetSeg().R16lo.AddFixup(seg, address);
+                else
+                    GetSeg().R16lo.AddReloc(address, name);
+
+                GetSeg().SetByte(address, value & 0xFF);
+                break;
+            }
+            case FORCE_HIBYTE:
+            {
+                Segment::R16hi_t::Type data(address, value & 0xFF);
+                if(fix.IsResolved())
+                    GetSeg().R16hi.AddFixup(seg, data);
+                else
+                    GetSeg().R16hi.AddReloc(data, name);
+
+                GetSeg().SetByte(address, (value >> 8) & 0xFF);
+                break;
+            }
+            case FORCE_ABSWORD:
+            {
+                if(fix.IsResolved())
+                    GetSeg().R16.AddFixup(seg, address);
+                else
+                    GetSeg().R16.AddReloc(address, name);
+
+                GetSeg().SetByte(address,   value & 0xFF);
+                GetSeg().SetByte(address+1, (value >> 8) & 0xFF);
+                break;
+            }
+            case FORCE_LONG:
+            {
+                if(fix.IsResolved())
+                    GetSeg().R24.AddFixup(seg, address);
+                else
+                    GetSeg().R24.AddReloc(address, name);
+
+                GetSeg().SetByte(address,   value & 0xFF);
+                GetSeg().SetByte(address+1, (value >> 8) & 0xFF);
+                GetSeg().SetByte(address+2, (value >> 16) & 0xFF);
+                break;
+            }
+            case FORCE_SEGBYTE:
+            {
+                Segment::R24seg_t::Type data(address, value & 0xFFFF);
+                
+                if(fix.IsResolved())
+                    GetSeg().R24seg.AddFixup(seg, data);
+                else
+                    GetSeg().R24seg.AddReloc(data, name);
+
+                GetSeg().SetByte(address, (value >> 16) & 0xFF);
+                break;
+            }
+            case FORCE_REL8:
+            {
+                if(!fix.IsResolved())
+                {
+                    std::fprintf(stderr,
+                        "Error: Unresolved short relative '%s'\n", name.c_str()
+                                );
+                    break;
+                }
+                
+                const long diff = value - (long)address - 1;
+                
+                if(diff < -0x80 || diff >= 0x80)
+                {
+                    std::fprintf(stderr,
+                        "Error: Short jump out of range (%ld)\n", diff);
+                }
+                
+                GetSeg().SetByte(address, diff & 0xFF);
+                
+                break;
+            }
+            case FORCE_REL16:
+            {
+                if(!fix.IsResolved())
+                {
+                    std::fprintf(stderr,
+                        "Error: Unresolved near relative '%s'\n", name.c_str()
+                                );
+                    break;
+                }
+
+                const long diff = value - (long)address - 2;
+                
+                if(diff < -0x8000 || diff >= 0x8000)
+                {
+                    std::fprintf(stderr,
+                        "Error: Near jump out of range (%ld)\n", diff);
+                }
+                
+                GetSeg().SetByte(address,   diff & 0xFF);
+                GetSeg().SetByte(address+1, (diff >> 8) & 0xFF);
+                
+                break;
+            }
+        }
+    }
+}
+
+namespace
+{
+    void PutC(unsigned char c, std::FILE* fp)
+    {
+        std::fputc(c, fp);
+    }
+    void PutS(const char* s, unsigned n, std::FILE* fp)
+    {
+        for(unsigned a=0; a<n; ++a)
+            PutC(s[a], fp);
+    }
+    void PutW(unsigned short w, std::FILE* fp)
+    {
+        PutC(w & 255, fp);
+        PutC(w >> 8,  fp);
+    }
+    
+    struct Unresolved
+    {
+        std::map<std::string, unsigned> str2num;
+        std::vector<std::string> num2str;
+        unsigned size() const { return num2str.size(); }
+        
+        void Add(const std::string& name)
+        {
+            if(str2num.find(name) != str2num.end()) return;
+            str2num[name] = num2str.size();
+            num2str.push_back(name);
+        }
+        
+        void Put(std::FILE* fp)
+        {
+            PutW(size(), fp);
+            for(unsigned a=0; a<size(); ++a)
+                PutS(num2str[a].c_str(), num2str[a].size()+1, fp);
+        }
+        
+        unsigned Find(const std::string& s) const
+        {
+            return str2num.find(s)->second;
+        }
+    };
+    
+    unsigned char GetSegmentID(Object::SegmentSelection s)
+    {
+        switch(s)
+        {
+            case Object::CODE: return 2;
+            case Object::DATA: return 3;
+            case Object::ZERO: return 5;
+            case Object::BSS:  return 4;
+        }
+        return 1; /* eep */
+    }
+    
+    typedef std::map<unsigned, std::string> RelocMap;
+    
+    void PutReloc(const Object::Segment& seg,
+                  struct Unresolved& syms,
+                  std::FILE* fp)
+    {
+        // Address-sorted table of relocs in binary format.
+        RelocMap relocs;
+        
+        #define WalkList(type, which) \
+            for(Object::Segment::type##_t::which##List::const_iterator \
+                i = seg.type.which##s.begin(); \
+                i != seg.type.which##s.end(); \
+                ++i)
+
+        WalkList(R16lo, Fixup)
+        {
+            std::string result;
+            result += char(0x20 | GetSegmentID(i->first));
+            relocs[i->second] = result;
+        }
+
+        WalkList(R16, Fixup)
+        {
+            std::string result;
+            result += char(0x80 | GetSegmentID(i->first));
+            relocs[i->second] = result;
+        }
+
+        WalkList(R24, Fixup)
+        {
+            std::string result;
+            result += char(0xC0 | GetSegmentID(i->first));
+            relocs[i->second] = result;
+        }
+
+        WalkList(R16hi, Fixup)
+        {
+            std::string result;
+            result += char(0x40 | GetSegmentID(i->first));
+            result += char(i->second.second);
+            relocs[i->second.first] = result;
+        }
+
+        WalkList(R24seg, Fixup)
+        {
+            std::string result;
+            result += char(0xA0 | GetSegmentID(i->first));
+            result += char(i->second.second & 255);
+            result += char(i->second.second >> 8);
+            relocs[i->second.first] = result;
+        }
+
+        WalkList(R16lo, Reloc)
+        {
+            std::string result;
+            unsigned n = syms.Find(i->second);
+            result += char(0x20);
+            result += char(n & 255);
+            result += char(n >> 8);
+            relocs[i->first] = result;
+        }
+        
+        WalkList(R16, Reloc)
+        {
+            std::string result;
+            unsigned n = syms.Find(i->second);
+            result += char(0x80);
+            result += char(n & 255);
+            result += char(n >> 8);
+            relocs[i->first] = result;
+        }
+        
+        WalkList(R24, Reloc)
+        {
+            std::string result;
+            unsigned n = syms.Find(i->second);
+            result += char(0xC0);
+            result += char(n & 255);
+            result += char(n >> 8);
+            relocs[i->first] = result;
+        }
+
+        WalkList(R16hi, Reloc)
+        {
+            std::string result;
+            unsigned n = syms.Find(i->second);
+            result += char(0x40);
+            result += char(n & 255);
+            result += char(n >> 8);
+            result += char(i->first.second);
+            relocs[i->first.first] = result;
+        }
+
+        WalkList(R24seg, Reloc)
+        {
+            std::string result;
+            unsigned n = syms.Find(i->second);
+            result += char(0xA0);
+            result += char(n & 255);
+            result += char(n >> 8);
+            result += char(i->first.second & 255);
+            result += char(i->first.second >> 8);
+            relocs[i->first.first] = result;
+        }
+        
+        int addr = -1;
+        for(RelocMap::const_iterator i = relocs.begin(); i != relocs.end(); ++i)
+        {
+            int new_addr = i->first;
+            int diff = new_addr - addr;
+            if(diff <= 0)
+            {
+                std::fprintf(stderr, "Eep, diff=%d\n", diff);
+            }
+            while(diff > 254)
+            {
+                PutC(255, fp);
+                diff -= 254;
+            }
+            PutC(diff, fp);
+            addr = new_addr;
+            PutS(i->second.data(), i->second.size(), fp);
+        }
+        PutC(0, fp);
+    }
+    
+    void PutLabels(const Object::Segment& seg,
+                   Object::SegmentSelection segtype,
+                   std::FILE* fp)
+    {
+        const unsigned char segid = GetSegmentID(segtype);
+        
+        typedef Object::Segment::LabelMap LabelMap;
+        const LabelMap& labels = seg.GetLabels();
+        
+        // Count labels
+        unsigned count = 0;
+        for(LabelMap::const_iterator i = labels.begin(); i != labels.end(); ++i)
+        {
+            count += i->second.size();
+        }
+        
+        PutW(count, fp);
+        
+        // Put labels
+        for(LabelMap::const_iterator i = labels.begin(); i != labels.end(); ++i)
+        {
+            for(Object::Segment::LabelList::const_iterator
+                j = i->second.begin();
+                j != i->second.end();
+                ++j)
+            {
+                unsigned addr           = j->second;
+                const std::string& name = j->first;
+                
+                PutS(name.c_str(), name.size()+1, fp);
+                PutC(segid, fp);
+                PutW(addr,  fp);
+            }
+        }
+    }
+};
+
+void Object::WriteOut(std::FILE* fp)
+{
+    static const unsigned short Mode
+        = 0x8000   // 65816
+        | 0x1000;  // object, not exe
+    
+    // Put O65 header
+    PutS("\1\0o65\0", 6, fp);
+    
+    // Put Mode
+    PutW(Mode, fp);
+    
+    //text
+    PutW(CodeSeg.GetBase(), fp);
+    PutW(CodeSeg.GetSize(), fp);
+    //data
+    PutW(DataSeg.GetBase(), fp);
+    PutW(DataSeg.GetSize(), fp);
+    //bss
+    PutW(BssSeg.GetBase(), fp);
+    PutW(BssSeg.GetSize(), fp);
+    //zero
+    PutW(ZeroSeg.GetBase(), fp);
+    PutW(ZeroSeg.GetSize(), fp);
+    
+    // stack size
+    PutW(0x0000, fp);
+    
+    // no custom headers
+    PutC(0, fp);
+    
+    std::fwrite(&CodeSeg.GetContent()[0], CodeSeg.GetSize(), 1, fp);
+    std::fwrite(&DataSeg.GetContent()[0], DataSeg.GetSize(), 1, fp);
+    
+    Unresolved syms;
+    
+    // Find unresolved symbols
+    for(std::list<Fixup>::const_iterator
+        i=Fixups.begin(); i!=Fixups.end(); ++i)
+    {
+        if(!i->IsResolved())
+        {
+            const std::string& ref = i->GetName();
+            syms.Add(ref);
+        }
+    }
+    
+    syms.Put(fp);
+    
+    PutReloc(CodeSeg, syms, fp);
+    PutReloc(DataSeg, syms, fp);
+    
+    PutLabels(CodeSeg, Object::CODE, fp);
+    PutLabels(DataSeg, Object::DATA, fp);
+    PutLabels(ZeroSeg, Object::ZERO, fp);
+    PutLabels( BssSeg, Object::BSS,  fp);
 }
 
 void Object::Dump()
 {
     DumpFixups();
+    DumpLabels();
 }

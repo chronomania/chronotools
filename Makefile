@@ -8,7 +8,7 @@ include Makefile.sets
 #CXXFLAGS += -Ilibiconv
 #LDFLAGS += -Llibiconv -liconv
 
-DEPDIRS = utils/ utils/asm/
+DEPDIRS = utils/ utils/asm/ utils/asm/argh/
 
 # VERSION 1.0.3  was the first working! :D
 # VERSION 1.0.4  handled fixed strings too
@@ -69,15 +69,16 @@ DEPDIRS = utils/ utils/asm/
 # VERSION 1.6.4  battle tech lister almost done; dumper: partial jap ROM support
 # VERSION 1.6.5  is working on an assembler
 # VERSION 1.6.6  has an almost working assembler
+# VERSION 1.6.7  has a complete assembler, doesn't require xa65 anymore
 
 OPTIM=-O3
 #OPTIM=-O0
 #OPTIM=-O0 -pg -fprofile-arcs
 #LDFLAGS += -pg -fprofile-arcs
 
-CXXFLAGS += -I.
+CXXFLAGS += -I. -Iutils/asm/argh
 
-VERSION=1.6.6
+VERSION=1.6.7
 ARCHFILES=utils/xray.cc utils/xray.h \
           utils/viewer.c \
           utils/vwftest.cc \
@@ -127,12 +128,30 @@ ARCHFILES=utils/xray.cc utils/xray.h \
           \
           utils/compiler2.cc utils/compiler2-parser.inc utils/ct.code2 \
           utils/o65test.cc utils/dumpo65.cc \
+          \
           utils/asm/assemble.cc utils/asm/insgen.cc \
           utils/asm/tristate \
           utils/asm/expr.cc utils/asm/expr.hh \
           utils/asm/insdata.cc utils/asm/insdata.hh \
           utils/asm/parse.cc utils/asm/parse.hh \
           utils/asm/object.cc utils/asm/object.hh \
+          utils/asm/precompile.cc utils/asm/precompile.hh \
+          utils/asm/main.cc \
+          \
+          utils/asm/COPYING utils/asm/Makefile.sets utils/asm/progdesc.php \
+          utils/asm/README.html utils/asm/depfun.mak utils/asm/Makefile \
+          utils/asm/docmaker.php \
+          utils/asm/doc/o65.cc utils/asm/doc/o65.hh \
+          utils/asm/doc/o65linker.cc utils/asm/doc/o65linker.hh \
+          utils/asm/doc/dumpo65.cc utils/asm/doc/testi.cc \
+          utils/asm/doc/ct-vwf8.a65 utils/asm/doc/ct-moglogo.a65 \
+          \
+          utils/asm/argh/argh.cc utils/asm/argh/argh.hh \
+          utils/asm/argh/argh.h utils/asm/argh/argh-c.inc \
+          utils/asm/argh/docmaker.php utils/asm/argh/progdesc.php \
+          utils/asm/argh/Makefile utils/asm/argh/depfun.mak \
+          utils/asm/argh/Makefile.sets \
+          utils/asm/argh/COPYING utils/asm/argh/README.html \
           \
           README transnotes.txt Makefile.sets \
           \
@@ -142,7 +161,6 @@ ARCHFILES=utils/xray.cc utils/xray.h \
           \
           etc/ct.cfg etc/ct.code
           
-
 EXTRA_ARCHFILES=\
           ct.cfg ct_try.txt \
           ct-moglogo.a65 \
@@ -193,16 +211,17 @@ ctinsert: \
 		dictionary.o images.o compress.o \
 		fonts.o typefaces.o extras.o \
 		rom.o snescode.o signature.o \
-		conjugate.o vwf8.o o65.o compiler.o symbols.o \
+		conjugate.o vwf8.o o65.o o65linker.o \
+		compiler.o symbols.o \
 		logfiles.o settings.o \
 		config.o confparser.o ctcset.o wstring.o
 	$(CXX) -o $@ $^ $(LDFLAGS) -lm
 
-ct-vwf8.o65: ct-vwf8.a65
-	./xa -o $@ $< -R -c -w
+ct-vwf8.o65: ct-vwf8.a65 utils/assemble
+	utils/assemble $< -o $@
 
-ct-moglogo.o65: ct-moglogo.a65
-	./xa -o $@ $< -R -c -w
+ct-moglogo.o65: ct-moglogo.a65 utils/assemble
+	utils/assemble $< -o $@
 
 utils/makeips: utils/makeips.cc
 	$(CXX) -o $@ $^
@@ -254,13 +273,12 @@ utils/dumpo65: utils/dumpo65.o
 utils/ctxtview: utils/ctxtview.o settings.o rommap.o
 	$(CXX) $(CXXFLAGS) -g -O -Wall -W -pedantic -o $@ $^ $(LDFLAGS)
 
-utils/assemble: \
-		utils/asm/assemble.o \
-		utils/asm/expr.o \
-		utils/asm/parse.o \
-		utils/asm/insdata.o \
-		utils/asm/object.o
-	$(CXX) $(CXXFLAGS) -g -O -Wall -W -pedantic -o $@ $^ $(LDFLAGS)
+utils/assemble: FORCE
+	$(MAKE) -C utils/asm snescom
+	ln -sf utils/asm/snescom $@
+
+utils/asm/argh/libargh.a: FORCE
+	$(MAKE) -C utils/asm/argh libargh.a
 
 
 #ct.txt: ctdump chrono-dumpee.smc

@@ -408,8 +408,6 @@ namespace
             fprintf(stderr, "Error: Arrange(): More patients than doctors\n");
         }
         
-        charset_t::const_iterator i = slots.begin();
-        
         set<ctchar> slots2;
         for(charset_t::const_iterator i = slots.begin(); i != slots.end(); ++i)
             slots2.insert(*i);

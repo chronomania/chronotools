@@ -45,10 +45,8 @@ void insertor::GenerateVWF8code()
         code_size,       0xC00000 | Code_Address
            );
 
-    vwf8_code.LinkSym("WIDTH_ADDR",  (WidthTab_Address | 0xC00000));
-    
-    vwf8_code.LinkSym("TILEDATA_SEG",  (TileTab_Address >> 16) | 0xC0);
-    vwf8_code.LinkSym("TILEDATA_OFFS", (TileTab_Address & 0xFFFF));
+    vwf8_code.LinkSym("WIDTH_ADDR",   WidthTab_Address | 0xC00000);
+    vwf8_code.LinkSym("TILEDATA_ADDR", TileTab_Address | 0xC00000);
     
 #if 0
     DrawS_2bit = vwf8_code.GetSymAddress(WstrToAsc(GetConf("vwf8", "b2_draws")));

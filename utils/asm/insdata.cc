@@ -36,16 +36,18 @@ const unsigned AddrModeCount = sizeof(AddrModes) / sizeof(AddrModes[0]);
 
 const struct ins ins[] =
 {
-  { ".(",  "sb"}, // start block, no params
-  { ".)",  "eb"}, // end block, no params
-  { ".al", "al"}, // A=16bit
-  { ".as", "as"}, // A=8bit
-  { ".xl", "xl"}, // X=16bit
-  { ".xs", "xs"}, // X=8bit
-  { ".text", "gt"}, // Select seG TEXT
-  { ".data", "gd"}, // Select seG DATA
-  { ".zero", "gz"}, // Select seG ZERO
-  { ".bss",  "gb"}, // Select seG BSS
+    // IMPORTANT: Alphabetical sorting!
+
+  { ".(",  "sb" }, // start block, no params
+  { ".)",  "eb" }, // end block, no params
+  { ".al", "al" }, // A=16bit
+  { ".as", "as" }, // A=8bit
+  { ".bss",  "gb" }, // Select seG BSS
+  { ".data", "gd" }, // Select seG DATA
+  { ".text", "gt" }, // Select seG TEXT
+  { ".xl", "xl" }, // X=16bit
+  { ".xs", "xs" }, // X=8bit
+  { ".zero", "gz" }, // Select seG ZERO
   
   // ins     0  1  2  3  4  5  6  7  8  9 10 11 12 13 14 15 16 17 18 19 20 21 22 23 24
   { "adc", "--'69'--'--'--'--'65'75'--'72'61'71'67'77'6D'7D'79'6F'7F'63'73'--'--'--'--"},
@@ -92,7 +94,8 @@ const struct ins ins[] =
   { "nop", "EA'--'--'--'--'--'--'--'--'--'--'--'--'--'--'--'--'--'--'--'--'--'--'--'--"},
   { "ora", "--'09'--'--'--'--'05'15'--'12'01'11'07'17'0D'1D'19'0F'1F'03'13'--'--'--'--"},
   { "pea", "--'--'--'--'--'--'--'--'--'--'--'--'--'--'F4'--'--'--'--'--'--'--'--'--'--"},
-  { "pei", "--'D4'--'--'--'--'--'--'--'--'--'--'--'--'--'--'--'--'--'--'--'--'--'--'--"},
+           // For convenience, pei allows $12 or ($12).
+  { "pei", "--'--'--'--'--'--'D4'--'--'D4'--'--'--'--'--'--'--'--'--'--'--'--'--'--'--"},
   { "per", "--'--'--'--'--'62'--'--'--'--'--'--'--'--'--'--'--'--'--'--'--'--'--'--'--"},
   { "pha", "48'--'--'--'--'--'--'--'--'--'--'--'--'--'--'--'--'--'--'--'--'--'--'--'--"},
   { "phb", "8B'--'--'--'--'--'--'--'--'--'--'--'--'--'--'--'--'--'--'--'--'--'--'--'--"},
