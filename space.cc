@@ -1,6 +1,7 @@
 #include <cstdio>
 
 #include "space.hh"
+#include "logfiles.hh"
 #include "binpacker.hh"
 
 using namespace std;
@@ -14,13 +15,21 @@ freespacemap::freespacemap() : quiet(false)
 
 unsigned freespacemap::Find(unsigned page, unsigned length)
 {
+    FILE *log = GetLogFile("mem", "log_addrs");
+
     iterator mapi = find(page);
     if(mapi == end())
     {
         if(!quiet)
-        fprintf(stderr,
-            "Page %02X is FULL! No %u bytes of free space there!\n",
-            page, length);
+        {
+            fprintf(stderr,
+                "Page %02X is FULL! No %u bytes of free space there!\n",
+                page, length);
+            if(log)
+            fprintf(log,
+                "Page %02X is FULL! No %u bytes of free space there!\n",
+                page, length);
+        }
         return NOWHERE;
     }
     freespaceset &spaceset = mapi->second;
@@ -36,7 +45,7 @@ unsigned freespacemap::Find(unsigned page, unsigned length)
             unsigned pos = reci->pos;
             // Found exact match!
             spaceset.erase(reci);
-            if(spaceset.size() == 0)
+            if(spaceset.empty())
                 erase(mapi);
             return pos;
         }
@@ -59,9 +68,16 @@ unsigned freespacemap::Find(unsigned page, unsigned length)
     if(!bestscore)
     {
         if(!quiet)
-        fprintf(stderr,
-            "Can't find %u bytes of free space in page %02X! (Total left: %u)\n",
-            length, page, Size(page));
+        {
+            unsigned size = Size(page);
+            fprintf(stderr,
+                "Can't find %u bytes of free space in page %02X! (Total left: %u)\n",
+                length, page, size);
+            if(log)
+            fprintf(log,
+                "Can't find %u bytes of free space in page %02X! (Total left: %u)\n",
+                length, page, size);
+        }
         return NOWHERE;
     }
     
@@ -191,16 +207,22 @@ void freespacemap::Del(unsigned page, unsigned begin, unsigned length)
         if(jend  > end)  news.insert(freespacerec(end, jend-end));
     }
     list.insert(news.begin(), news.end());
-    if(!list.size()) erase(i);
+    if(list.empty()) erase(i);
 }
 
 bool freespacemap::Organize(vector<freespacerec> &blocks, unsigned pagenum)
 {
+    FILE *log = GetLogFile("mem", "log_addrs");
+
     const_iterator i = find(pagenum);
     if(i == end())
     {
         if(!quiet)
+        {
             fprintf(stderr, "ERROR: Page %02X is totally empty.\n", pagenum);
+            if(log)
+            fprintf(log, "ERROR: Page %02X is totally empty.\n", pagenum);
+        }
         return true;
     }
     
@@ -232,8 +254,13 @@ bool freespacemap::Organize(vector<freespacerec> &blocks, unsigned pagenum)
     if(totalspace < totalsize)
     {
         if(!quiet)
-        fprintf(stderr, "ERROR: Page %02X doesn't have %u bytes of space (only %u there)!\n",
-            pagenum, totalsize, totalspace);
+        {
+            fprintf(stderr, "ERROR: Page %02X doesn't have %u bytes of space (only %u there)!\n",
+                pagenum, totalsize, totalspace);
+            if(log)
+            fprintf(log, "ERROR: Page %02X doesn't have %u bytes of space (only %u there)!\n",
+                pagenum, totalsize, totalspace);
+        }
     }
     
     vector<unsigned> organization = PackBins(holes, items);
@@ -260,12 +287,18 @@ bool freespacemap::Organize(vector<freespacerec> &blocks, unsigned pagenum)
     }
     if(Errors)
         if(!quiet)
-        fprintf(stderr, "ERROR: Organization failed\n");
+        {
+            fprintf(stderr, "ERROR: Organization failed\n");
+            if(log)
+            fprintf(log, "ERROR: Organization failed\n");
+        }
     return Errors;
 }
 
 bool freespacemap::OrganizeToAnyPage(vector<freespacerec> &blocks)
 {
+    FILE *log = GetLogFile("mem", "log_addrs");
+
     vector<unsigned> items;
     vector<unsigned> holes;
     vector<unsigned> holepages;
@@ -298,8 +331,13 @@ bool freespacemap::OrganizeToAnyPage(vector<freespacerec> &blocks)
     if(totalspace < totalsize)
     {
         if(!quiet)
-        fprintf(stderr, "ERROR: No %u bytes of space available (only %u there)!\n",
-            totalsize, totalspace);
+        {
+            fprintf(stderr, "ERROR: No %u bytes of space available (only %u there)!\n",
+                totalsize, totalspace);
+            if(log)
+            fprintf(log, "ERROR: No %u bytes of space available (only %u there)!\n",
+                totalsize, totalspace);
+        }
     }
     
     vector<unsigned> organization = PackBins(holes, items);
@@ -327,7 +365,11 @@ bool freespacemap::OrganizeToAnyPage(vector<freespacerec> &blocks)
     }
     if(Errors)
         if(!quiet)
-        fprintf(stderr, "ERROR: Organization failed\n");
+        {
+            fprintf(stderr, "ERROR: Organization failed\n");
+            if(log)
+            fprintf(log, "ERROR: Organization failed\n");
+        }
     return Errors;
 }
 
@@ -377,6 +419,8 @@ bool freespacemap::OrganizeToAnySamePage(vector<freespacerec> &blocks, unsigned 
 
 unsigned freespacemap::FindFromAnyPage(unsigned length)
 {
+    FILE *log = GetLogFile("mem", "log_addrs");
+
     unsigned leastfree=0, bestpage=0; bool first=true;
     for(const_iterator i=begin(); i!=end(); ++i)
     {
@@ -397,6 +441,8 @@ unsigned freespacemap::FindFromAnyPage(unsigned length)
     if(first)
     {
         fprintf(stderr, "No %u-byte free space block available!\n", length);
+        if(log)
+            fprintf(log, "No %u-byte free space block available!\n", length);
         return NOWHERE;
     }
     return Find(bestpage, length) | (bestpage << 16);

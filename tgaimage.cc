@@ -4,6 +4,14 @@ using namespace std;
 
 #include "tgaimage.hh"
 
+namespace
+{
+    void TgaPutB(FILE *fp, unsigned c) { fputc(c, fp); }
+    void TgaPutW(FILE *fp, unsigned c) { fputc(c&255, fp); fputc(c >> 8, fp); } 
+    void TgaPutP(FILE *fp, unsigned r,unsigned g,unsigned b)
+    { TgaPutB(fp,r); TgaPutB(fp,g); TgaPutB(fp,b); }
+}
+
 TGAimage::TGAimage(const string &filename)
     : xdim(0), ydim(0), xsize(8), ysize(8), xbox(32)
 {
@@ -41,6 +49,38 @@ TGAimage::TGAimage(unsigned x, unsigned y, unsigned char color)
 {
 }
 
+void TGAimage::Save(const string &fn)
+{
+    FILE *fp = fopen(fn.c_str(), "wb");
+    if(!fp) { perror(fn.c_str()); return; }
+    
+    TgaPutB(fp, 0); // id field len
+    TgaPutB(fp, 1); // color map type
+    TgaPutB(fp, 1); // image type code
+    TgaPutW(fp, 0); // palette start
+    TgaPutW(fp, 6); // palette size
+    TgaPutB(fp, 24);// palette bitness
+    TgaPutW(fp, 0);    TgaPutW(fp, 0);
+    TgaPutW(fp, xdim); TgaPutW(fp, ydim);
+    TgaPutB(fp, 8); // pixel bitness
+    TgaPutB(fp, 0); //misc
+    
+    // border color:
+    TgaPutP(fp, 128,128,128);
+    // colours 0..3
+    TgaPutP(fp, 192,192,192);
+    TgaPutP(fp,  32, 48,128);
+    TgaPutP(fp,  40, 72,192);
+    TgaPutP(fp,  60, 90,255);
+    // filler
+    TgaPutP(fp, 255,255,255);
+    
+    for(unsigned y=ydim; y-->0; )
+        fwrite(&data[y*xdim], 1, xdim, fp);
+    
+    fclose(fp);
+}
+
 const vector<char> TGAimage::getbox(unsigned boxnum) const
 {
     const unsigned boxposx = (boxnum%xbox) * (xsize+1) + 1;
@@ -66,4 +106,9 @@ const vector<char> TGAimage::getbox(unsigned boxnum) const
 unsigned TGAimage::getboxcount() const
 {
     return (ydim-1)*(xdim-1) / (ysize+1) / (xsize+1);
+}
+
+void TGAimage::PSet(unsigned x,unsigned y, unsigned char value)
+{
+    data[y*xdim + x] = value;
 }

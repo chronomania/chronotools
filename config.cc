@@ -19,6 +19,8 @@ namespace
         ConfigLoader()
         {
             FILE *fp = fopen("ct.cfg", "rt");
+            char Buf[8192];
+            setbuffer(fp,Buf,sizeof Buf);
 
             config.Parse(fp);
 

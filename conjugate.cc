@@ -17,9 +17,8 @@ void Conjugatemap::Load()
     for(unsigned a=0; a<elems.size(); a += 2)
     {
         form tmp;
-        const wstring func = elems[a];
-        
-        const string data = WstrToAsc(elems[a+1]);
+        const wstring &func = elems[a];
+        const wstring &data = elems[a+1];
         
         tmp.func   = func;
         tmp.used   = false;
@@ -28,40 +27,42 @@ void Conjugatemap::Load()
         for(unsigned b=0; b<data.size(); ++b)
         {
             if(data[b] == ' ' || data[b] == '\n'
-            || data[b] == '\r' || data[b] == '\n') continue;
+            || data[b] == '\r' || data[b] == '\t') continue;
             
-            const char *name = "...";
-            switch(data[b])
+            ctchar person = 0x13;
+            switch(WcharToAsc(data[b]))
             {
-                case 'c': name="Crono"; break;
-                case 'm': name="Marle"; break;
-                case 'l': name="Lucca"; break;
-                case 'r': name="Robo"; break;
-                case 'f': name="Frog"; break;
-                case 'a': name="Ayla"; break;
-                case 'u': name="Magus"; break;
-                case 'e': name="Epoch"; break;
-                case '1': name="[member1]"; break;
-                case '2': name="[member2]"; break;
-                case '3': name="[member3]"; break;
+                case 'c': person=0x13; break;
+                case 'm': person=0x14; break;
+                case 'l': person=0x15; break;
+                case 'r': person=0x16; break;
+                case 'f': person=0x17; break;
+                case 'a': person=0x18; break;
+                case 'u': person=0x19; break;
+                case 'e': person=0x20; break;
+                case '1': person=0x1B; break;
+                case '2': person=0x1C; break;
+                case '3': person=0x1D; break;
                 default:
                     fprintf(stderr, "In configuration: Unknown person '%c'\n", data[b]);
             }
             unsigned c = ++b;
-            while(b < data.size() && data[b] != ',') ++b;
+            while(b < data.size() && WcharToAsc(data[b]) != ',') ++b;
             
-            string s = data.substr(c, b-c);
+            wstring s = data.substr(c, b-c);
             
-            unsigned char person = Symbols[16].find(AscToWstr(name))->second;
-            string key = str_replace(name, person, s);
-            for(unsigned a=0; a<key.size(); ++a)
-                if(key[a] != person)
-                    key[a] = getchronochar((unsigned char)key[a]);
-
-#if 0
-            fprintf(stderr, "Key '%s'(%s) = '%s' (%02X)\n",
-                key.c_str(), s.c_str(), name, person);
-#endif
+            const wstring &name = Symbols.GetRev(16).find(person)->second;
+            
+            ctstring key;
+            for(unsigned a=0; a<s.size(); ++a)
+                if(s.compare(a, name.size(), name) == 0)
+                {
+                    key += person;
+                    a += name.size() - 1;
+                }
+                else
+                    key += getchronochar(s[a]);
+            
             tmp.data[key] = person;
         }
         
@@ -69,21 +70,9 @@ void Conjugatemap::Load()
     }
 }
 
-namespace
+void Conjugatemap::Work(ctstring &s, form &form)
 {
-    vector<unsigned char> GetAllowedBytesList()
-    {
-        vector<unsigned char> result;
-        const ConfParser::ElemVec& elems = GetConf("conjugator", "bytes").Fields();
-        for(unsigned a=0; a<elems.size(); ++a)
-            result.push_back(elems[a].IField);
-        return result;
-    }
-}
-
-void Conjugatemap::Work(string &s, form &form)
-{
-    static const vector<unsigned char> AllowedBytes = GetAllowedBytesList();
+    static const vector<ctchar> AllowedBytes = GetConjugateBytesList();
     
     datamap_t::const_iterator i;
     for(i=form.data.begin(); i!=form.data.end(); ++i)
@@ -97,7 +86,8 @@ void Conjugatemap::Work(string &s, form &form)
             {
                 unsigned ind = 0;
                 for(formlist::const_iterator j=forms.begin(); j!=forms.end(); ++j)
-                    if(j->used) ++ind;
+                    if(j->used)
+                        ++ind;
                 
                 if(ind >= AllowedBytes.size())
                 {
@@ -111,11 +101,15 @@ void Conjugatemap::Work(string &s, form &form)
                 
                 form.used   = true;
                 form.prefix = AllowedBytes[ind];
+                
+                fprintf(stderr, "  Assigned 0x%04X for %s\n",
+                    form.prefix,
+                    WstrToAsc(form.func).c_str());
             }
             
-            string tmp;
-            tmp += (char)form.prefix; // conjugater id
-            tmp += (char)i->second;   // character id
+            ctstring tmp;
+            tmp += form.prefix; // conjugater id
+            tmp += i->second;   // character id
             
             // a = b + i->first.size();
             
@@ -132,7 +126,7 @@ Conjugatemap::Conjugatemap()
     fprintf(stderr, "Built conjugator-map\n");
 }
 
-void Conjugatemap::Work(string &s)
+void Conjugatemap::Work(ctstring &s)
 {
     for(formlist::iterator
         i = forms.begin();
@@ -168,9 +162,9 @@ namespace
             if(!i->used) continue;
             
             SNEScode::RelativeBranch branchSkip = code.PrepareRelativeBranch();
-            code.Set8bit_M();
-            code.EmitCode(0xC9, i->prefix); //cmp a, *
-            code.EmitCode(0xD0, 0);         //bne
+            code.Set16bit_M();
+            code.EmitCode(0xC9, i->prefix&255, i->prefix>>8); //cmp a, prefix
+            code.EmitCode(0xD0, 0);                           //bne
             branchSkip.FromHere();
             
             if(true)
@@ -204,6 +198,7 @@ namespace
             branchSkip.Proceed();
         }
         
+        code.Set8bit_M();
         SNEScode::FarToNearCall call = code.PrepareFarToNearCall();
         call.Proceed(DialogDrawFunctionAddr | 0xC00000);   /* call */
         
@@ -242,4 +237,13 @@ void insertor::GenerateConjugatorCode()
     Functions.RequireFunction(ConjFuncName);
     
     LinkAndLocate(Functions);
+}
+
+const vector<ctchar> GetConjugateBytesList()
+{
+    vector<ctchar> result;
+    const ConfParser::ElemVec& elems = GetConf("conjugator", "bytes").Fields();
+    for(unsigned a=0; a<elems.size(); ++a)
+        result.push_back(elems[a].IField);
+    return result;
 }

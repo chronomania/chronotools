@@ -247,6 +247,14 @@ LET left c
 RETURN
 
 # Outputs the stem of the word for partitive conjugation.
+# Sample results:
+#     +'t
+#     +:ä
+#     +:a
+#     +:t
+#     +t
+#  -ki+e
+#     +i
 FUNCTION HardStem
 VAR Len c
 CALL_GET Length Len
@@ -286,6 +294,12 @@ OUT 'i'
 RETURN
 
 # Outputs the stem of the word for most conjugation.
+# Sample results:
+#     +'
+#     +:
+#   -s+kse
+# -xxi+xi
+#     +i
 FUNCTION SoftStem
 VAR Len
 REG chr

@@ -230,3 +230,67 @@ int Whex(ucs4 p)
     return -1;
 }
 
+int ucs4cmp(const ucs4* s1, const ucs4* s2, size_t n)
+{
+    for(unsigned c=0; c<n; ++c)
+        if(s1[c] != s2[c])
+            return s1[c] < s2[c] ? -1 : 1;
+    return 0;
+}
+
+size_t ucs4len(const ucs4* s)
+{
+    size_t result=0;
+    while(*s) { ++result; ++s; }
+    return result;
+}
+
+const ucs4* ucs4chr(const ucs4* s, const ucs4 a, size_t n)
+{
+    for(unsigned c=0; c<n; ++c)if(s[c]==a)return s+c;
+    return 0;
+}
+
+ucs4* ucs4cpy(ucs4* s1, const ucs4* s2, size_t n)
+{
+    for(unsigned c=0; c<n; ++c)s1[c] = s2[c];
+    return s1;
+}
+
+ucs4* ucs4move(ucs4* s1, const ucs4* s2, unsigned n)
+{
+    if(s1 < s2) return ucs4cpy(s1,s2,n);
+    for(unsigned c=n; c-->0; )s1[c] = s2[c];
+    return s1;
+}
+
+ucs4* ucs4set(ucs4* s, ucs4 a, size_t n)
+{
+    for(unsigned c=0; c<n; ++c) s[c] = a;
+    return s;
+}
+
+#if WSTRING_METHOD==3
+namespace std
+{
+  template<> 
+  int char_traits<ucs4>::
+  compare(const ucs4* s1, const ucs4* s2, size_t n)
+  { return ucs4cmp(s1,s2, n); }
+  
+  template<>
+  ucs4* char_traits<ucs4>::
+  copy(ucs4* s1, const ucs4* s2, size_t n)
+  { return ucs4cpy(s1, s2, n); }
+  
+  template<>
+  ucs4* char_traits<ucs4>::
+  move(ucs4* s1, const ucs4* s2, size_t n)
+  { return ucs4move(s1, s2, n); }
+  
+  template<>
+  ucs4* char_traits<ucs4>::
+  assign(ucs4* s, size_t n, ucs4 a)
+  { return ucs4set(s, a, n); }
+}
+#endif

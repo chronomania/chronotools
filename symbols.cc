@@ -3,21 +3,24 @@
 #include "symbols.hh"
 #include "config.hh"
 
-void Symbols::AddSym(const wstring &sym, char c, int targets)
+void Symbols::AddSym(const wstring &sym, ctchar c, int targets)
 {
-    // 16 instead of 12 because 12 = 8+4, and 8 is already used :)
-    if(targets&2)symbols2[sym]=c;
-    if(targets&8)symbols8[sym]=c;
-    if(targets&16)symbols16[sym]=c;
+    // 16 instead of 12 because 12 = 8+4, and 8 is already used.
+    if(targets&2) { symbols2[sym]=c;  rev2[c]=sym; }
+    if(targets&8) { symbols8[sym]=c;  rev8[c]=sym; }
+    if(targets&16){ symbols16[sym]=c; rev16[c]=sym; }
 }
 
 void Symbols::Load()
 {
     int targets=0;
 
+    // Define macro with string
+    #define defrsym(sym, c) AddSym(AscToWstr(sym), static_cast<ctchar>(c), targets);
+
     // Define macro
-    #define defsym(sym, c) AddSym(AscToWstr(#sym),static_cast<char>(c),targets);
-                           
+    #define defsym(sym, c) defrsym(#sym,c)
+
     // Define bracketed macro
     #define defbsym(sym, c) defsym([sym], c)
     
@@ -47,6 +50,7 @@ void Symbols::Load()
     // (See $C2:58CB in assembler code)
     
     defbsym(member,      0x11) // Varies, user definable
+    
     // 0x12 is tech/monster, handled elseway
     defsym(Crono,        0x13) // User definable
     defsym(Marle,        0x14) // User definable
@@ -77,7 +81,7 @@ void Symbols::Load()
           const wstring &sym = elems[a+1];
           unsigned value     = elems[a];
           //fprintf(stderr, "Defining sym8 '%s' as 0x%02X\n", WstrToAsc(sym).c_str(),value);
-          AddSym(sym, (char)value, 8);
+          AddSym(sym, static_cast<ctchar> (value), 2+8);
       }
     }
     
@@ -87,7 +91,7 @@ void Symbols::Load()
           const wstring &sym = elems[a+1];
           unsigned value     = elems[a];
           //fprintf(stderr, "Defining sym12 '%s' as 0x%02X\n", WstrToAsc(sym).c_str(),value);
-          AddSym(sym, (char)value, 16);
+          AddSym(sym, static_cast<ctchar> (value), 16);
       }
     }
 
@@ -95,14 +99,27 @@ void Symbols::Load()
     //fprintf(stderr, "%u 16pix symbols loaded\n", symbols16.size());
 }
 
-const map<wstring, char> &Symbols::operator[] (unsigned ind) const
+const Symbols::type& Symbols::GetMap(unsigned ind) const
 {
     switch(ind)
     {
+        default:
+            fprintf(stderr, "Internal error: requested symbols[%u]\n", ind);
         case 2: return symbols2;
         case 8: return symbols8;
-        case 16:
-        default: return symbols16;
+        case 16:return symbols16;
+    }
+}
+
+const Symbols::revtype& Symbols::GetRev(unsigned ind) const
+{
+    switch(ind)
+    {
+        default:
+            fprintf(stderr, "Internal error: requested rev-symbols[%u]\n", ind);
+        case 2: return rev2;
+        case 8: return rev8;
+        case 16:return rev16;
     }
 }
 

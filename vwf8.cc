@@ -481,6 +481,7 @@ namespace
 
         code.EmitCode(0x80, 0);                // BRA loop
         Loop.FromHere();
+        code.BitnessAnything();
         
         Done.ToHere();
         
@@ -693,6 +694,7 @@ namespace
         code.EmitCode(0xD0, 3);          // BNE - continue
         code.EmitCode(0x82, 0,0);        // BRL - zero, quit
         Zero.FromHere();
+        code.BitnessAnything();
         
 #if 1
         // Go and draw the character
@@ -706,6 +708,7 @@ namespace
         code.EmitCode(0xF0, 3);          // BEQ - end
         code.EmitCode(0x82, 0,0);        // BRL - loop
         Loop.FromHere();
+        code.BitnessAnything();
         
         Zero.ToHere();
         

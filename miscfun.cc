@@ -4,42 +4,6 @@ using std::memcmp;
 
 #include "miscfun.hh"
 
-string str_replace(const string &search, unsigned char with, const string &where)
-{
-    string result;
-    for(unsigned a=0; a < where.size(); )
-    {
-        unsigned b = where.find(search, a);
-        if(b == where.npos)
-        {
-            result += where.substr(a);
-            break;
-        }
-        result += where.substr(a, b-a);
-        result += static_cast<char> (with);
-        a = b + search.size();
-    }
-    return result;
-}
-
-wstring str_replace(const wstring &search, const wstring &with, const wstring &where)
-{
-    wstring result;
-    for(unsigned a=0; a < where.size(); )
-    {
-        unsigned b = where.find(search, a);
-        if(b == where.npos)
-        {
-            result += where.substr(a);
-            break;
-        }
-        result += where.substr(a, b-a);
-        result += with;
-        a = b + search.size();
-    }
-    return result;
-}
-
 const char *mempos(const char *haystack,unsigned haysize,
                    const char *needle,  unsigned needlesize)
 {

@@ -1,4 +1,5 @@
 #include <cstdio>
+#include <exception>
 
 using namespace std;
 
@@ -11,6 +12,8 @@ namespace
 {
     void GeneratePatch(ROM &ROM, unsigned offset, const char *fn)
     {
+        fprintf(stderr, "Creating %s\n", fn);
+        
         unsigned MaxHunkSize = GetConf("patch", "maxhunksize");
 
         /*
@@ -43,11 +46,15 @@ namespace
             // Size is "c" in both.
             putc((c>> 8)&255, fp);
             putc((c    )&255, fp);
-            fwrite(&ROM[offs], 1, c, fp);
+            int ret = fwrite(&ROM[offs], 1, c, fp);
+            if(ret < 0 || ret != (int)c)
+            {
+                fprintf(stderr, " fwrite failed: %d != %d - this patch will be broken.\n", ret, c);
+                perror("fwrite");
+            }
         }
         fwrite("EOF",   1, 3, fp);
         fclose(fp);
-        fprintf(stderr, "Created %s\n", fn);
     }
     void GeneratePatches(ROM &ROM)
     {
@@ -56,14 +63,14 @@ namespace
     }
 }
 
-const string DispString(const string &s)
+const string DispString(const ctstring &s)
 {
     static wstringOut conv(getcharset());
 
     string result;
     for(unsigned a=0; a<s.size(); ++a)
     {
-        unsigned char c = s[a];
+        ctchar c = s[a];
         ucs4 u = getucs4(c);
         if(u != ilseq)
         {
@@ -90,151 +97,20 @@ const string DispString(const string &s)
     return result;
 }
 
-void stringoffsmap::GenerateNeederList()
-{
-    neederlist.clear();
-    
-    for(unsigned parasitenum=0; parasitenum < size(); ++parasitenum)
-    {
-        const string &parasite = (*this)[parasitenum].str;
-        for(unsigned hostnum = 0; hostnum < size(); ++hostnum)
-        {
-            // Can't depend on self
-            if(hostnum == parasitenum) { Continue: continue; }
-            // If the host depends on this "parasite", skip it
-            neederlist_t::iterator i;
-            for(unsigned tmp=hostnum;;)
-            {
-                i = neederlist.find(tmp);
-                if(i == neederlist.end()) break;
-                tmp = i->second;
-                // Host depends on "parasite", skip this
-                if(tmp == parasitenum) { goto Continue; }
-            }
-            
-            const string &host = (*this)[hostnum].str;
-            if(host.size() < parasite.size())
-                continue;
-            
-            unsigned extralen = host.size()-parasite.size();
-            if(parasite == host.substr(extralen))
-            {
-                for(;;)
-                {
-                    i = neederlist.find(hostnum);
-                    if(i == neederlist.end()) break;
-                    // Our "host" depends on someone else.
-                    // Take his host instead.
-                    hostnum = i->second;
-                }
-                
-                neederlist[parasitenum] = hostnum;
-                
-                // Now if there are parasites referring to this one
-                for(i=neederlist.begin(); i!=neederlist.end(); ++i)
-                    if(i->second == parasitenum)
-                    {
-                        // rerefer them to this one's host
-                        i->second = hostnum;
-                    }
-
-                break;
-            }
-        }
-    }
-    
-    /* Nyt mapissa on listattu, kuka tarvitsee ketäkin. */
-
-#if 0
-    typedef map<string, vector<unsigned> > needertmp_t;
-    needertmp_t needertmp;
-    for(neederlist_t::const_iterator j = neederlist.begin(); j != neederlist.end(); ++j)
-    {
-        needertmp[(*this)[j->first].str].push_back(j->first);
-    }
-    for(needertmp_t::const_iterator j = needertmp.begin(); j != needertmp.end(); ++j)
-    {
-        unsigned hostnum = 0;
-        const vector<unsigned> &tmp = j->second;
-
-        unsigned c=0;
-        fprintf(stderr, "String%s", tmp.size()==1 ? "" : "s");
-        for(unsigned a=0; a<tmp.size(); ++a)
-        {
-            hostnum = neederlist[tmp[a]];
-            if(++c > 15) { fprintf(stderr, "\n   "); c=0; }
-            fprintf(stderr, " %u", tmp[a]);
-        }
-        
-        fprintf(stderr, " (%s) depend%s on string %u(%s)\n",
-            DispString(j->first).c_str(),
-            tmp.size()==1 ? "s" : "", hostnum,
-            DispString((*this)[hostnum].str).c_str());
-    }
-#endif
-}
-
-const set<unsigned> insertor::GetZStringPageList() const
-{
-    set<unsigned> result;
-    for(stringmap::const_iterator i=strings.begin(); i!=strings.end(); ++i)
-    {
-        unsigned page = i->first >> 16;
-        switch(i->second.type)
-        {
-            case stringdata::fixed:
-                // This is not a pointer
-                continue;
-            case stringdata::zptr8:
-            case stringdata::zptr12:
-                // These are ok
-                break;
-            // If we omitted something, compiler should warn
-        }
-        result.insert(page);
-    }
-    return result;
-}
-
-const stringoffsmap insertor::GetZStringList(unsigned pagenum) const
-{
-    stringoffsmap result;
-    for(stringmap::const_iterator i=strings.begin(); i!=strings.end(); ++i)
-    {
-        unsigned page = i->first >> 16;
-        if(page != pagenum) continue;
-        switch(i->second.type)
-        {
-            case stringdata::fixed:
-                // This is not a pointer
-                continue;
-            case stringdata::zptr8:
-            case stringdata::zptr12:
-                // These are ok
-                break;
-            // If we omitted something, compiler should warn
-        }
-        stringoffsdata tmp;
-        tmp.str  = i->second.str;
-        tmp.offs = i->first;
-        result.push_back(tmp);
-    }
-    return result;
-}
-
-
 int main(void)
 {
+    std::set_terminate (__gnu_cxx::__verbose_terminate_handler);
+
     fprintf(stderr,
         "Chrono Trigger script insertor version "VERSION"\n"
         "Copyright (C) 1992,2003 Bisqwit (http://iki.fi/bisqwit/)\n");
     
     insertor *ins = new insertor;
     
-    string font8fn  = WstrToAsc(GetConf("font",   "font8fn"));
-    string font8vfn = WstrToAsc(GetConf("font",   "font8vfn"));
-    string font12fn = WstrToAsc(GetConf("font",   "font12fn"));
-    string scriptfn = WstrToAsc(GetConf("readin", "scriptfn"));
+    const string font8fn  = WstrToAsc(GetConf("font",   "font8fn"));
+    const string font8vfn = WstrToAsc(GetConf("font",   "font8vfn"));
+    const string font12fn = WstrToAsc(GetConf("font",   "font12fn"));
+    const string scriptfn = WstrToAsc(GetConf("readin", "scriptfn"));
     
     // Font loading must happen before script loading,
     // or script won't be properly paragraph-wrapped.
@@ -242,9 +118,10 @@ int main(void)
     ins->LoadFont8v(font8vfn);
     ins->LoadFont12(font12fn);
     
-    FILE *fp = fopen(scriptfn.c_str(), "rt");
+    {FILE *fp = fopen(scriptfn.c_str(), "rt");
+    char Buf[8192];setbuffer(fp,Buf,sizeof Buf);
     ins->LoadFile(fp);
-    fclose(fp);
+    fclose(fp);}
     
     ins->DictionaryCompress();
     

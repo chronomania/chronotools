@@ -41,29 +41,34 @@ include Makefile.sets
 # VERSION 1.2.2  vwf stability++, also techniques now vwf. Scrolling bugs.
 # VERSION 1.2.3  lots of more translation
 # VERSION 1.2.4  8pix system deciphered, more bugs introduced
+# VERSION 1.2.5  characterset enlarged by 512, only vwf8 bugs still
 
 OPTIM=-O3
 #OPTIM=-O0
 #OPTIM=-O0 -pg -fprofile-arcs
 #LDFLAGS += -pg -fprofile-arcs
 
-VERSION=1.2.4
+VERSION=1.2.5
 ARCHFILES=xray.c xray.h \
           viewer.c \
           ctcset.cc ctcset.hh \
           miscfun.cc miscfun.hh \
           space.cc space.hh \
           wstring.cc wstring.hh \
-          readin.cc \
+          readin.cc wrap.cc writeout.cc \
           settings.hh \
           rom.cc rom.hh \
+          rommap.cc rommap.hh \
+          strload.cc strload.hh \
           fonts.cc fonts.hh \
+          logfiles.cc logfiles.hh \
           conjugate.cc conjugate.hh \
+          stringoffs.cc stringoffs.hh \
           compiler.cc compiler.hh \
           symbols.cc symbols.hh \
           tgaimage.cc tgaimage.hh \
-          ctdump.cc ctinsert.cc \
-          ctinsert.hh writeout.cc \
+          ctdump.cc \
+          ctinsert.cc ctinsert.hh \
           makeips.cc unmakeips.cc \
           vwf8.cc vwftest.cc \
           config.cc config.hh \
@@ -92,14 +97,17 @@ xray: xray.o
 viewer: viewer.o
 	$(CC) -o $@ $^ $(LDFLAGS) -lslang
 
-ctdump: ctdump.o miscfun.o config.o confparser.o ctcset.o wstring.o
-	$(CXX) -o $@ $^
+ctdump: \
+		ctdump.o rommap.o strload.o tgaimage.o symbols.o \
+		miscfun.o config.o confparser.o ctcset.o wstring.o
+	$(CXX) -o $@ $^ $(LDFLAGS)
 
 ctinsert: \
-		ctinsert.o miscfun.o readin.o \
-		tgaimage.o space.o writeout.o \
+		ctinsert.o miscfun.o readin.o wrap.o \
+		tgaimage.o space.o writeout.o stringoffs.o \
 		dictionary.o fonts.o rom.o snescode.o \
 		conjugate.o vwf8.o compiler.o symbols.o \
+		logfiles.o \
 		config.o confparser.o ctcset.o wstring.o
 	$(CXX) -o $@ $^ $(LDFLAGS) -lm
 
@@ -121,7 +129,7 @@ vwftest: \
 	$(CXX) -g -O -Wall -W -pedantic -o $@ $^
 
 #ct.txt: ctdump chrono-dumpee.smc
-#	./ctdump >ct_tmp.txt || rm -f ct_tmp.txt && false
+#	./ctdump < chrono-dumpee.smc >ct_tmp.txt || rm -f ct_tmp.txt && false
 #	mv ct_tmp.txt ct.txt
 
 ctpatch-hdr.ips ctpatch-nohdr.ips: \
@@ -130,12 +138,12 @@ ctpatch-hdr.ips ctpatch-nohdr.ips: \
 		ct16fn.tga ct8fn.tga ct8fnFIv.tga
 	time ./ctinsert
 
-chrono-patched.smc: unmakeips ctpatch-hdr.ips chrono-dumpee.smc
-	./unmakeips ctpatch-hdr.ips <chrono-dumpee.smc >chrono-patched.smc 2>/dev/null
+chrono-patched.smc: unmakeips ctpatch-hdr.ips chrono-uncompressed.smc
+	./unmakeips ctpatch-hdr.ips <chrono-uncompressed.smc >chrono-patched.smc 2>/dev/null
 
 snes9xtest: chrono-patched.smc FORCE
 	#~/src/snes9x/bisq-1.39/Gsnes9x -stereo -alt -m 256x256[C32/32] -r 7 chrono-patched.smc
-	./snes9x-debug -stereo -alt -y 2 -r 7 chrono-patched.smc
+	./snes9x-debug -stereo -alt -y 1 -r 7 chrono-patched.smc
 
 snes9xtest2: chrono-patched.smc FORCE
 	./snes9x-debug -r 0 chrono-patched.smc

@@ -7,6 +7,8 @@
 using std::vector;
 using std::string;
 
+#include "ctcset.hh"
+
 class Font12data
 {
     vector<unsigned char> widths;
@@ -19,7 +21,7 @@ public:
     inline const vector<unsigned char> &GetTab1() const { return tiletab1; }
     inline const vector<unsigned char> &GetTab2() const { return tiletab2; }
 
-    inline unsigned GetWidth(unsigned char CharNum) const { return widths.at(CharNum); }
+    inline unsigned GetWidth(ctchar CharNum) const { return widths.at(CharNum); }
 };
 
 class Font8data

@@ -123,6 +123,7 @@ $C2:58BA C9 A0       CMP A, $A0                         A:003D X:0000 Y:001F D:0
 $C2:58BC 90 12       BCC $58D0                          A:003D X:0000 Y:001F D:0200 DB:00 PB:C2
 
 // Merkki oli siis >= 0xA0. Tulostetaan se!
+;Tähän päädytään myös, jos merkki oli $01/$02...
 $C2:58BE C2 20       REP $20                            A:00F8 X:0000 Y:001F D:0200 DB:00 PB:C2
 ; Talteen 16-bittisenä
 $C2:58C0 85 35       STA [$00:D+$35]      ;$00:0235     A:00F8 X:0000 Y:001F D:0200 DB:00 PB:C2

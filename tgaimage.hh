@@ -19,5 +19,7 @@ public:
     
     const vector<char> getbox(unsigned boxnum) const;
     unsigned getboxcount() const;
+    
+    void Save(const string &fn);
+    void PSet(unsigned x,unsigned y, unsigned char value);
 };
-

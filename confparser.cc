@@ -56,7 +56,7 @@ ucs4 ConfParser::CharIStream::getC()
         
         CLEARSTR(cache);
         cacheptr = 0;
-        while(!cache.size())
+        while(cache.empty())
         {
             int c = fgetc(fp);
             if(c == EOF)break;
@@ -64,13 +64,13 @@ ucs4 ConfParser::CharIStream::getC()
             cache = conv.putc(c);
         }
         // So now cache may be of arbitrary size.
-        if(!cache.size()) return (ucs4)EOF;      
+        if(cache.empty()) return (ucs4)EOF;      
     }
 }
 
 bool ConfParser::CharIStream::good()
 {
-    if(cache.size()) return true;
+    if(!cache.empty()) return true;
     if(nextChar != (ucs4)EOF) return true;
     return false;
 }

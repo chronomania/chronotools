@@ -145,31 +145,42 @@ translated to 65c816 assembly on demand.
 
 ", '1.1. Font/dictionary skew' => "
 
-In the script code, there are different 223 bytes available for the script.
+It's quite complicated to explain, but shortly said:
 <p>
 In normal Chrono Trigger,
 <ul>
  <li>127 of them are assigned to the dictionary used to compress the script.</li>
- <li>96 of them are
+ <li><b>96</b> of them are
      <a href=\"/src/chronotools-16en.png\">visible symbols</a>.</li>
 </ul>
-Which means that you can only have 96 different characters.
-Take A-Z, a-z, 0-9 and punctuation symbols and count how
-many you have left for umlauts and accents.
 <p>
-My insertor however allows to skew that ratio so
-that the dictionary may be smaller and font bigger.
+In Chronotools,
+<ul>
+ <li>Dictionary size may be anything between 0-223</li>
+ <li>The amount of different characters the script
+     may use is <b>735</b> minus dictionary size.</li>
+ <li>Though, 8pix strings (items, techs, monsters, character names and so on)
+     can only use about 128 different characters.</li>
+</ul>
 <p>
-However, shrinking the dictionary means that the script
-compresses worse, and could probably not fit in the ROM.<br>
-It might still be a lifesaver for someone
-doing an Estonian or Portuguese translation.
+There are drawbacks though.
+<ul>
+ <li>Shrinking the dictionary gives more available characters,
+     but makes compression worse. This could cause the script
+     not fit in the ROM.</li>
+ <li>Extracharacters (anything above 223 minus dictionary size)
+     require twice the space of normal characters. This has
+     similar effect as above.</li>
+</ul>
+
+Despite these hazards this system might be a lifesaver
+for someone doing an Estonian, Portuguese or even Thai translation.
 <p>
-If you are translating to a language that utilizes <em>lots</em> of
+If you are translating to a language that utilizes thousands of
 different symbols, like Chinese, you might want to try to base on the
 Japanese version instead. This utility pack bases on the
 English version.<br>
-(Sorry, I can't help you with the Japanese ROM.)
+(Sorry, I can't help you with issues regarding the Japanese ROM.)
 
 ", '1.1. Automatic paragraph wrapping' => "
 
@@ -177,6 +188,12 @@ The program takes automatically care of proper line
 lengths, so you don't have to risk running into unexpected
 too-long-lines or making too short lines in paranoia.<br>
 You can force line breaks, but you don't have to.
+
+", '1.1. Very configurable' => "
+
+I have tried to put almost everything in text-only config files
+instead of hardcoding it in the programs. You won't be depending
+on me to do little updates for your purposes.
 
 ", '1. Copying' => "
 
@@ -246,6 +263,7 @@ Copypaste from the Makefile:
 # VERSION 1.2.2  vwf stability++, also techniques now vwf. Scrolling bugs.
 # VERSION 1.2.3  lots of more translation
 # VERSION 1.2.4  8pix system deciphered, more bugs introduced
+# VERSION 1.2.5  characterset enlarged by 512, only vwf8 bugs still
 </pre>
 
 ", '1. See also' => "

@@ -7,31 +7,17 @@
 #include "space.hh"
 #include "fonts.hh"
 #include "snescode.hh"
+#include "ctcset.hh"
 
 using namespace std;
 
-struct stringoffsdata
-{
-    string   str;
-    unsigned offs;
-};
-class stringoffsmap: public vector<stringoffsdata>
-{
-public:
-    // parasite -> host
-    typedef map<unsigned, unsigned> neederlist_t;
-    neederlist_t neederlist;
-    
-    void GenerateNeederList();
-};
-
-const string DispString(const string &s);
+const string DispString(const ctstring &s);
 
 class insertor
 {
     struct stringdata
     {
-        string str;
+        ctstring str;
         enum { zptr8, zptr12, fixed } type;
         unsigned width; // used if type==fixed;
     };
@@ -41,8 +27,7 @@ class insertor
     
     list<SNEScode> codes;
     
-    vector<string> dict;
-    unsigned dictsize;
+    vector<ctstring> dict;
     
     Font8data Font8;
     Font8data Font8v;
@@ -60,7 +45,7 @@ public:
 
     void DictionaryCompress();
 
-    unsigned GetFont12width(unsigned char chronoch) const;
+    unsigned GetFont12width(ctchar chronoch) const;
     
     void PatchROM(class ROM &ROM);
 
@@ -78,10 +63,13 @@ private:
     void ApplyDictionary();
     void RebuildDictionary();
     
+    const ctstring ParseScriptEntry(const wstring &input, const stringdata &model) const;
+    const ctstring WrapDialogLines(const ctstring &dialog) const;
+    
     // Get list of pages having zstrings
     const set<unsigned> GetZStringPageList() const;
     // Get zstrings of page
-    const stringoffsmap GetZStringList(unsigned pagenum) const;
+    const class stringoffsmap GetZStringList(unsigned pagenum) const;
 
     unsigned CalculateScriptSize() const;
     

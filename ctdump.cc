@@ -1,427 +1,89 @@
 #include <cstdio>
 #include <vector>
 #include <string>
-#include <iostream>
-#include <set>
 #include <map>
+#include <unistd.h>
 
 /* I am sorry for the spaghettiness of this small program... */
-
-#ifdef linux
-/* We use memory mapping in Linux. It's fast. */
-#include <sys/mman.h>
-#define USE_MMAP 1
-#endif
-
-#define LOADP_DEBUG      1
-#define LOADZ_DEBUG      1
-//#define LOADZ_EXTRASPACE 1
-//#define LOADP_EXTRASPACE 1
 
 using namespace std;
 
 #include "ctcset.hh"
-#include "miscfun.hh"
 #include "settings.hh"
+#include "rommap.hh"
+#include "strload.hh"
+#include "tgaimage.hh"
+#include "symbols.hh"
+#include "config.hh"
 
-static unsigned char *ROM;
-static vector<bool> protect;
-static vector<bool> space;
-static vector<wstring> substrings;
+static wstring dict[256];
 
-static const bool TryFindExtraSpace = false;
-static const unsigned ExtraSpaceMinLen = 128;
-
-static void MarkingError(const set<unsigned> &errlist, const char *type)
+static const wstring Disp8Char(ctchar k)
 {
-    set<unsigned>::const_iterator i;
+    const Symbols::revtype &symbols = Symbols.GetRev(2);
     
-    bool begun=false;
-    unsigned first=0;
-    unsigned prev=0;
+    Symbols::revtype::const_iterator i = symbols.find(k);
     
-    for(i=errlist.begin(); ; ++i)
-    {
-        if(i == errlist.end() || (begun && prev < *i-1))
-        {
-            fprintf(stderr, "Error: %06X-%06X already marked %s\n", first,prev, type);
-            begun = false;
-            if(i == errlist.end()) break;
-        }
+    if(i != symbols.end())
+        return i->second;
+
+    if(k == 0x2D) return AscToWstr(":");
         
-        if(!begun) { begun = true; first = *i; }
-        prev = *i;
-    }
-}
-static void ShowProtMap()
-{
-    static const char *const types[4] = {"?","free","protected","ERROR"};
-    
-    fprintf(stderr, "Prot/free map:\n");
-    unsigned romsize = space.size();
-    
-    bool begun=false;
-    unsigned first=0;
-    unsigned lasttype=0;
-    
-    for(unsigned a=0; a<=romsize; ++a)
+    ucs4 tmp = getucs4(k);
+    if(tmp == ilseq)
     {
-        unsigned type = 0;
-        if(a == romsize
-        || (begun && lasttype != (type = (space[a]?1:0) + (protect[a]?2:0)))
-          )
-        {
-            fprintf(stderr, "  %06X-%06X: %s (%u bytes)\n",
-                first,a-1, types[lasttype], a-first);
-            begun = false;
-            if(a == romsize) break;
-        }
-        if(!begun) { begun = true; first=a; }
-        lasttype = type;
-    }
-}
-
-static void MarkFree(unsigned begin, unsigned length)
-{
-    set<unsigned> error;
-    //fprintf(stderr, "Marking %u bytes free at %06X\n", length, begin);
-    for(; length>0; --length)
-    {
-        if(protect[begin]) error.insert(begin);
-        space[begin++] = true;
+        char Buf[32];
+        sprintf(Buf, "[%02X]", k);
+        return AscToWstr(Buf);
     }
     
-    if(error.size()) MarkingError(error, "protected, attempted to free");
-}
-
-static void MarkProt(unsigned begin, unsigned length)
-{
-    set<unsigned> error;
-    
-    //fprintf(stderr, "Marking %u bytes protected at %06X\n", length, begin);
-    for(; length>0; --length)
-    {
-        if(space[begin]) error.insert(begin);
-        protect[begin++] = true;
-    }
-
-    if(error.size()) MarkingError(error, "free, attempted to protect");
-}
-
-static void LoadROM()
-{
-    fprintf(stderr, "Loading ROM...");
-    unsigned hdrskip = 0;
-    const char *fn = "chrono-dumpee.smc";
-    FILE *fp = fopen(fn, "rb");
-    if(!fp)
-    {
-        perror(fn);
-        return;
-    }
-    char HdrBuf[512];
-    fread(HdrBuf, 1, 512, fp);
-    if(HdrBuf[1] == 2)
-    {
-        hdrskip = 512;
-    }
-    fseek(fp, 0, SEEK_END);
-    unsigned romsize = ftell(fp)-hdrskip;
-    ROM = NULL;
-#ifdef USE_MMAP
-    /* This takes about 0.0001s on my computer over nfs */
-    ROM = (unsigned char *)mmap(NULL, romsize, PROT_READ, MAP_PRIVATE, fileno(fp), hdrskip);
-#endif
-    /* mmap could have failed, so revert to reading */
-    if(ROM == (unsigned char*)(-1))
-    {
-        /* This takes about 5s on my computer over nfs */
-        ROM = new unsigned char [romsize];
-        fseek(fp, hdrskip, SEEK_SET);
-        fread(ROM, 1, romsize, fp);
-    }
-    fclose(fp);
-    fprintf(stderr, " done");
-    space.clear();
-    space.resize(romsize);
-    protect.clear();
-    protect.resize(romsize);
-    fprintf(stderr, "\n");
-}
-
-// Load an array of pascal style strings
-static const vector<string> LoadPStrings(unsigned offset, unsigned count)
-{
-    unsigned segment = offset & 0xFF0000;
-    vector<string> result(count);
-#if LOADP_DEBUG
-    const unsigned maxco=10;
-    unsigned col=maxco;
-#endif
-    MarkProt(offset, count*2);
-    for(unsigned a=0; a<count; ++a)
-    {
-        unsigned stringptr = ROM[offset] + 256*ROM[offset + 1];
-        
-#if LOADP_DEBUG
-        if(col==maxco){printf(";ptr%2u ", a);col=0;}
-        else if(!col)printf(";%5u ", a);
-        if(maxco==10 && col==5)putchar(' ');
-        printf(" $%04X", stringptr);
-        if(++col == maxco) { printf("\n"); col=0; }
-#endif
-        
-        stringptr += segment;
-        result[a] = string((const char *)&ROM[stringptr] + 1, ROM[stringptr]);
-        offset += 2;
-        
-        MarkFree(stringptr, result[a].size()+1);
-
-#ifdef LOADP_EXTRASPACE
-        unsigned freebytepos=stringptr + result[a].size()+1;
-        unsigned freebytecount=0;
-        for(unsigned freebyte=freebytepos;
-            ROM[freebyte] == 0x00 //zero
-         || ROM[freebyte] == 0xFF //space
-         || ROM[freebyte] == 0xEF //also space
-         ; ++freebyte,++freebytecount);
-        MarkFree(freebytepos, freebytecount);
-#endif
-    }
-#if LOADP_DEBUG
-    if(col)printf("\n");
-#endif
+    wstring result;
+    result += tmp;
     return result;
 }
 
-static string LoadZString(unsigned offset, const map<unsigned,unsigned> &extrasizes)
+static const wstring Disp12Char(ctchar k)
 {
-    string foundstring;
-    
-    for(unsigned p=offset; ; ++p)
-    {
-        if(ROM[p] == 0) break;
-        unsigned byte = ROM[p];
-        foundstring += (char)byte;
-        
-        map<unsigned,unsigned>::const_iterator i;
-        i = extrasizes.find(byte);
-        if(i != extrasizes.end())
-        {
-            unsigned extra = i->second;
-            while(extra-- > 0)
-                foundstring += (char)ROM[++p];
-        }
-    }
-    
-    //printf("\n;Loaded %u bytes from $%06X\n", foundstring.size()+1, offset);
-    
-    MarkFree(offset, foundstring.size() + 1);
-    
-    return foundstring;
-}
-
-// Load an array of C style strings
-static const vector<string> LoadZStrings(unsigned offset, unsigned count,
-                                         const map<unsigned,unsigned> &extrasizes)
-{
-    const unsigned segment = offset >> 16;
-    const unsigned base = segment << 16;
-
-    vector<string> result;
-    result.reserve(count);
-#if LOADZ_DEBUG
-    const unsigned maxco=10;
-    unsigned col=maxco;
-#endif
-    set<unsigned> offsetlist;
-    
-    unsigned firstoffs = 0x10000, lastoffs = 0, lastlen = 0;
-    for(unsigned a=0; !count || a<count; ++a)
-    {
-        const unsigned stringptr = ROM[offset] + 256*ROM[offset + 1];
-        
-        // Jos tämä osoite on listattu jo kertaalleen, break.
-        if(offsetlist.find(offset & 0xFFFF) != offsetlist.end())
-            break;
-
-        MarkProt(offset, 2);
-        offsetlist.insert(stringptr);
-        
-#if LOADZ_DEBUG
-        if(col==maxco){printf(";ptr%2u ", a);col=0;}
-        else if(!col)printf(";%5u ", a);
-        if(maxco==10 && col==5)putchar(' ');
-        printf(" $%04X", stringptr);
-        if(++col == maxco) { printf("\n"); col=0; }
-#endif
-        
-        string foundstring = LoadZString(stringptr+base, extrasizes);
-        
-        if(stringptr < firstoffs) firstoffs = stringptr;
-        if(stringptr > lastoffs)
-        {
-            lastoffs=  stringptr;
-            lastlen = foundstring.size();
-        }
-        
-#ifdef LOADZ_EXTRASPACE
-        unsigned freebytepos=stringptr + base + foundstring.size();
-        unsigned freebytecount=0;
-        for(unsigned freebyte=freebytepos;
-            ROM[freebyte] == 0x00 //zero
-         || ROM[freebyte] == 0xFF //space
-         || ROM[freebyte] == 0xEF //also space
-         ; ++freebyte,++freebytecount);
-        MarkFree(freebytepos, freebytecount);
-#endif
-        result.push_back(foundstring);
-        
-        offset += 2;
-    }
-#if LOADZ_DEBUG
-    if(col)printf("\n");
-#endif
-    return result;
-}
-
-// Load an array of fixed length strings
-static const vector<string> LoadFStrings(unsigned offset, unsigned len, unsigned maxcount=0)
-{
-    string str((const char *)&ROM[offset]);
-    unsigned count = str.size() / len + 1;
-    if(maxcount && count > maxcount)count = maxcount;
-    vector<string> result(count);
-    for(unsigned a=0; a<count; ++a)
-        result[a] = str.substr(a*len, len);
-    return result;
-}
-
-static void FindEndSpaces(void)
-{
-    fprintf(stderr, "Finding free space...");
-    unsigned pagecount = (space.size()+0xFFFF) >> 16;
-    for(unsigned page=0; page<pagecount; ++page)
-    {
-        unsigned pageend = (page+1) << 16;
-        if(pageend >= space.size()) pageend = space.size();
-        unsigned pagebegin = (page << 16);
-        unsigned pagesize = pageend - pagebegin;
-        
-        //const char *beginptr = (const char *)&ROM[pagebegin];
-        //const char *endptr   = (const char *)&ROM[pageend];
-        unsigned size = pagesize;
-        
-        static const char blanks[] = {0x00, (char)0xEF, (char)0xFF};
-        
-        for(unsigned blank=0; blank < sizeof(blanks); ++blank)
-        {
-            unsigned blanklen=0;
-            for(unsigned blapos=pagebegin; blapos<pageend; ++blapos)
-            {
-                if(ROM[blapos] == blanks[blank])
-                {
-                    ++blanklen;
-                    if(blanklen == ExtraSpaceMinLen)
-                    {
-                        for(unsigned a=0; a<ExtraSpaceMinLen; ++a)
-                            space[blapos-(ExtraSpaceMinLen-1)+a] = true;
-                    }
-                    if(blanklen >= ExtraSpaceMinLen)
-                        space[blapos] = true;
-                }
-                else
-                    blanklen=0;
-            }
-#if 0
-            vector<char> BlankBuf(64, blanks[blank]);
-            
-            const char *ptr = mempos(beginptr, size, &BlankBuf[0], BlankBuf.size());
-            if(!ptr)continue;
-            
-            for(unsigned blapos = (ptr-beginptr);
-                ROM[pagebegin+blapos] == blanks[blank]
-             && blapos < pageend; ++blapos)
-            {
-                space[pagebegin+blapos] = true;
-            }
-#endif
-        }
-    }
-    fprintf(stderr, " done\n");
-}
-
-static wstring Disp8Char(unsigned char k)
-{
+    // Override these special ones to get proper formatting:
     switch(k)
     {
-        // 0x00..0x1F: blank
-        case 0x20: return AscToWstr("[bladesymbol]");
-        case 0x21: return AscToWstr("[bowsymbol]");
-        case 0x22: return AscToWstr("[gunsymbol]");
-        case 0x23: return AscToWstr("[armsymbol]");
-        case 0x24: return AscToWstr("[swordsymbol]");
-        case 0x25: return AscToWstr("[fistsymbol]");
-        case 0x26: return AscToWstr("[scythesymbol]");
-        case 0x27: return AscToWstr("[helmsymbol]");
-        case 0x28: return AscToWstr("[armorsymbol]");
-        case 0x29: return AscToWstr("[ringsymbol]");
-        // 0x2A: "H"
-        // 0x2B: "M"
-        // 0x2C: "P"
-        // 0x2D: ":"
-        case 0x2D: return AscToWstr(":");
-        case 0x2E: return AscToWstr("[shieldsymbol]");
-        case 0x2F: return AscToWstr("[starsymbol]");
-        // 0x30..: empty
-        
-        /*
-        case 0x62: return AscToWstr("[handpart1]");
-        case 0x63: return AscToWstr("[handpart1]");
-        case 0x67: return AscToWstr("[hpmeter0]");
-        case 0x68: return AscToWstr("[hpmeter1]");
-        case 0x69: return AscToWstr("[hpmeter2]");
-        case 0x6A: return AscToWstr("[hpmeter3]");
-        case 0x6B: return AscToWstr("[hpmeter4]");
-        case 0x6C: return AscToWstr("[hpmeter5]");
-        case 0x6D: return AscToWstr("[hpmeter6]");
-        case 0x6E: return AscToWstr("[hpmeter7]");
-        case 0x6F: return AscToWstr("[hpmeter8]");
-        */
-        
-        default:
-        {
-            ucs4 tmp = getucs4(k);
-            if(tmp == ilseq)
-            {
-                char Buf[32];
-                sprintf(Buf, "[%02X]", k);
-                return AscToWstr(Buf);
-            }
-            else
-            {
-                wstring result;
-                result += tmp;
-                return result;
-            }
-        }
+        case 0x05: return AscToWstr("[nl]\n");
+        case 0x06: return AscToWstr("[nl]\n   ");
+        case 0x07: return AscToWstr("[pausenl]\n");
+        case 0x08: return AscToWstr("[pausenl]\n   ");
+        case 0x09: return AscToWstr("\n[cls]\n");
+        case 0x0A: return AscToWstr("\n[cls]\n   ");
+        case 0x0B: return AscToWstr("\n[pause]\n");
+        case 0x0C: return AscToWstr("\n[pause]\n   ");
     }
-}
+    
+    const Symbols::revtype &symbols = Symbols.GetRev(16);
+    
+    Symbols::revtype::const_iterator i = symbols.find(k);
+    
+    if(i != symbols.end())
+        return i->second;
 
-static void DumpTable(const vector<string> &tab, wstring (*Disp)(unsigned char))
-{
-    for(unsigned a=0; a<tab.size(); ++a)
+    // Note:
+    // The character names
+    // (Crono,Marle,Lucca,Robo,Frog,Ayla,Magus,Nadia,Epoch)
+    // are quite obfuscated in the ROM. We use hardcoded
+    // symbol map instead of trying to decipher the ROM.
+    
+    if(!dict[k].empty())
+        return dict[k];
+
+    ucs4 tmp = getucs4(k);
+    if(tmp == ilseq)
     {
-        const string &s = tab[a];
-        printf("$%u:", a);
-        wstringOut conv;
-        conv.SetSet(getcharset());
-
-        string line;
-        for(unsigned b=0; b<s.size(); ++b)
-            line += conv.puts(Disp(s[b]));
-        puts(line.c_str());
+        char Buf[32];
+        sprintf(Buf, "[%02X]", k);
+        return AscToWstr(Buf);
     }
+
+    wstring result;
+    result += tmp;
+    return result;
 }
 
 static void DumpZStrings(const unsigned offs, unsigned len, bool dolf=true)
@@ -430,7 +92,7 @@ static void DumpZStrings(const unsigned offs, unsigned len, bool dolf=true)
     
     map<unsigned,unsigned> extrasizes;
     extrasizes[0x12] = 1;
-    vector<string> strings = LoadZStrings(offs, len, extrasizes);
+    vector<ctstring> strings = LoadZStrings(offs, len, extrasizes);
 
     printf("*z;%u pointerstrings (12pix font)\n", strings.size());
 
@@ -451,7 +113,7 @@ static void DumpZStrings(const unsigned offs, unsigned len, bool dolf=true)
         line += conv.putc(':');
         if(dolf) line += conv.putc('\n');
         
-        const string &s = strings[a];
+        const ctstring &s = strings[a];
 
         for(unsigned b=0; b<s.size(); ++b)
         {
@@ -479,24 +141,7 @@ static void DumpZStrings(const unsigned offs, unsigned len, bool dolf=true)
                 }
                 default:
                 {
-                    unsigned char k = s[b];
-                    
-                    if(substrings[k].size())
-                        line += conv.puts(substrings[k]);
-                    else
-                    {
-                        ucs4 tmp = getucs4(k);
-                        if(tmp == ilseq)
-                        {
-                            char Buf[32];
-                            sprintf(Buf, "[%02X]", k);
-                            line += conv.puts(AscToWstr(Buf));
-                        }
-                        else
-                        {
-                            line += conv.putc(tmp);
-                        }
-                    }
+                    line += conv.puts(Disp12Char(s[b]));
                 }
             }
         }
@@ -521,7 +166,7 @@ static void Dump8Strings(const unsigned offs, unsigned len=0)
     extrasizes[10] = 1;
     extrasizes[11] = 2+2;
     extrasizes[12] = 1+2;
-    vector<string> strings = LoadZStrings(offs, len, extrasizes);
+    vector<ctstring> strings = LoadZStrings(offs, len, extrasizes);
 
     printf("*r;%u pointerstrings (8pix font)\n", strings.size());
 
@@ -541,7 +186,7 @@ static void Dump8Strings(const unsigned offs, unsigned len=0)
         }
         line += conv.putc(':');
         
-        string s = strings[a];
+        ctstring s = strings[a];
 
         unsigned attr=0;
         for(unsigned b=0; b<s.size(); ++b)
@@ -582,7 +227,7 @@ Retry:
                     {
                         unsigned addr = ((c1&0x3F) << 16) + c2;
                         
-                        string str = LoadZString(addr, extrasizes);
+                        ctstring str = LoadZString(addr, extrasizes);
                         
                         //line += conv.putc(AscToWchar('{')); //}
                         
@@ -701,7 +346,7 @@ Retry:
 static void DumpFStrings(unsigned offs, unsigned len, unsigned maxcount=0)
 {
     fprintf(stderr, "Dumping strings at %06X...", offs);
-    vector<string> strings = LoadFStrings(offs, len, maxcount);
+    vector<ctstring> strings = LoadFStrings(offs, len, maxcount);
     printf("*l%u;%u fixed length strings (length: %u bytes)\n",
         len, strings.size(), len);
 
@@ -722,7 +367,7 @@ static void DumpFStrings(unsigned offs, unsigned len, unsigned maxcount=0)
         }
         line += conv.putc(':');
         
-        const string &s = strings[a];
+        const ctstring &s = strings[a];
 
         for(unsigned b=0; b<s.size(); ++b)
             line += conv.puts(Disp8Char(s[b]));
@@ -734,9 +379,9 @@ static void DumpFStrings(unsigned offs, unsigned len, unsigned maxcount=0)
 
 static void LoadDict(unsigned offs, unsigned len)
 {
-    vector<string> strings = LoadPStrings(offs, len);
-    printf("*d%u ;%u substrings in dictionary\n",
-        strings.size(), strings.size());
+    vector<ctstring> strings = LoadPStrings(offs, len);
+    printf("*d;dictionary (%u substrings)\n",
+        strings.size());
 
     wstringOut conv;
     conv.SetSet(getcharset());
@@ -748,7 +393,7 @@ static void LoadDict(unsigned offs, unsigned len)
         
         string line = conv.puts(AscToWstr(Buf));
         
-        const string &s = strings[a];
+        const ctstring &s = strings[a];
 
         for(unsigned b=0; b<s.size(); ++b)
             line += conv.puts(Disp8Char(s[b]));
@@ -757,87 +402,13 @@ static void LoadDict(unsigned offs, unsigned len)
     
     for(unsigned a=0; a<strings.size(); ++a)
     {
-        const string &s = strings[a];
+        const ctstring &s = strings[a];
         wstring tmp;
         for(unsigned b=0; b<s.size(); ++b)tmp += getucs4(s[b]);
-        substrings[a + 0x21] = tmp;
+        dict[a + 0x21] = tmp;
     }
 
     printf("\n\n");
-}
-
-static void ListSpaces(void)
-{
-    fprintf(stderr, "Dumping free space list...");
-    unsigned pagecount = (space.size()+0xFFFF) >> 16;
-    for(unsigned page=0; page<pagecount; ++page)
-    {
-        unsigned pageend = (page+1) << 16;
-        if(pageend >= space.size()) pageend = space.size();
-        unsigned pagesize = pageend - (page << 16);
-        
-        bool freehere = false;
-        unsigned ptr = (page<<16);
-        for(unsigned p=0; p<pagesize; ++p, ++ptr)
-        {
-            unsigned freebegin = p;
-            while(p < pagesize && space[ptr])
-                ++ptr, ++p;
-                
-            if(freebegin < p)
-            {
-                if(!freehere)
-                {
-                    printf("*s%02X ;Free space in segment $%02X:\n", page, page);
-                    freehere = true;
-                }
-                printf("$%04X:%04X ; %u\n", freebegin, p, p-freebegin);
-            }
-        }
-        if(freehere)
-            printf("\n\n");
-    }
-    fprintf(stderr, " done\n");
-}
-
-static void TgaPutB(FILE *fp, unsigned c) { fputc(c, fp); }
-static void TgaPutW(FILE *fp, unsigned c) { fputc(c&255, fp); fputc(c >> 8, fp); } 
-static void TgaPutP(FILE *fp, unsigned r,unsigned g,unsigned b)
-{ TgaPutB(fp,r);TgaPutB(fp,g);TgaPutB(fp,b); }
-static void OutImage(const string &fntemplate,
-                     unsigned xdim, unsigned ydim,
-                     const vector<char> &pixels)
-{
-    string filename = fntemplate + ".tga";
-    
-    FILE *fp = fopen(filename.c_str(), "wb");
-    if(!fp) { perror(filename.c_str()); return; }
-    
-    TgaPutB(fp, 0); // id field len
-    TgaPutB(fp, 1); // color map type
-    TgaPutB(fp, 1); // image type code
-    TgaPutW(fp, 0); // palette start
-    TgaPutW(fp, 6); // palette size
-    TgaPutB(fp, 24);// palette bitness
-    TgaPutW(fp, 0);    TgaPutW(fp, 0);
-    TgaPutW(fp, xdim); TgaPutW(fp, ydim);
-    TgaPutB(fp, 8); // pixel bitness
-    TgaPutB(fp, 0); //misc
-    
-    // border color:
-    TgaPutP(fp, 128,128,128);
-    // colours 0..3
-    TgaPutP(fp, 192,192,192);
-    TgaPutP(fp,  32, 48,128);
-    TgaPutP(fp,  40, 72,192);
-    TgaPutP(fp,  60, 90,255);
-    // filler
-    TgaPutP(fp, 255,255,255);
-    
-    for(unsigned y=ydim; y-->0; )
-        fwrite(&pixels[y*xdim], 1, xdim, fp);
-    
-    fclose(fp);
 }
 
 static void Dump8x8sprites(unsigned spriteoffs, unsigned count)
@@ -852,7 +423,7 @@ static void Dump8x8sprites(unsigned spriteoffs, unsigned count)
     const char palette[] = {1,2,3,4};
     const char bordercolor=0;
     
-    vector<char> pixels (xpixdim * ypixdim, bordercolor);
+    TGAimage image(xpixdim, ypixdim, bordercolor);
     
     MarkProt(spriteoffs, count*2);
     
@@ -868,21 +439,21 @@ static void Dump8x8sprites(unsigned spriteoffs, unsigned count)
             unsigned char byte2 = ROM[offs+1];
             offs += 2;
             for(unsigned x=0; x<8; ++x)
-                pixels[(xpos + x) + xpixdim * ypos] = 
-                   palette
+                image.PSet(xpos+x, ypos, palette
                     [((byte1 >> (7-x))&1)
-                  | (((byte2 >> (7-x))&1) << 1)];
+                  | (((byte2 >> (7-x))&1) << 1)]);
         }
     }
 
-    OutImage("ct8fn", xpixdim, ypixdim, pixels);
+    image.Save(WstrToAsc(GetConf("dumper", "font8fn")));
+
     fprintf(stderr, " done\n");
 }
 
-static void DumpFont(unsigned skip, unsigned offs1, unsigned offs2, unsigned sizeoffs)
+static void DumpFont(unsigned begin,unsigned end, unsigned offs1, unsigned offs2, unsigned sizeoffs)
 {
     fprintf(stderr, "Dumping 12pix font...");
-    const unsigned count = 0x100 - skip;
+    const unsigned count = (end+1) - begin;
     
     unsigned maxwidth = 12;
     
@@ -896,9 +467,9 @@ static void DumpFont(unsigned skip, unsigned offs1, unsigned offs2, unsigned siz
     const char bordercolor=0;
     const char fillercolor=5;
     
-    vector<char> pixels (xpixdim * ypixdim, bordercolor);
+    TGAimage image(xpixdim, ypixdim, bordercolor);
     
-    for(unsigned a=skip; a<0x100; ++a)
+    for(unsigned a=begin; a<=end; ++a)
     {
         unsigned hioffs = offs1 + 24 * a;
         unsigned looffs = offs2 + 24 * (a >> 1);
@@ -908,8 +479,8 @@ static void DumpFont(unsigned skip, unsigned offs1, unsigned offs2, unsigned siz
         if(width > maxwidth)width = maxwidth;
         for(unsigned y=0; y<12; ++y)
         {
-            unsigned xpos = ((a-skip)%xdim) * (maxwidth+1) + 1;
-            unsigned ypos = ((a-skip)/xdim) * (maxwidth+1) + 1+y;
+            unsigned xpos = ((a-begin)%xdim) * (maxwidth+1) + 1;
+            unsigned ypos = ((a-begin)/xdim) * (maxwidth+1) + 1+y;
             
             unsigned char byte1 = ROM[hioffs];
             unsigned char byte2 = ROM[hioffs+1];
@@ -930,75 +501,31 @@ static void DumpFont(unsigned skip, unsigned offs1, unsigned offs2, unsigned siz
                             }
                 }
                 
-                pixels[(xpos + x) + xpixdim * ypos] = 
-                    palette
+                image.PSet(xpos+x, ypos, palette
                      [((byte1 >> (7-(x&7)))&1)
-                   | (((byte2 >> (7-(x&7)))&1) << 1)];
+                   | (((byte2 >> (7-(x&7)))&1) << 1)]);
             }
             for(unsigned x=width; x<12; ++x)
-                pixels[(xpos + x) + xpixdim * ypos] = fillercolor;
+                image.PSet(xpos+x, ypos, fillercolor);
         }
     }
     
-    OutImage("ct16fn", xpixdim, ypixdim, pixels);
-    fprintf(stderr, " done\n");
-}
+    image.Save(WstrToAsc(GetConf("dumper", "font12fn")));
 
-static void PatchSubStrings()
-{
-    // 0x01 and 0x02 are doublebyte things.
-    // They eat the next character and use it
-    // as a pointer to somewhere. Seems like
-    // in the English version this has absolutely
-    // no use whatsoever. Very variable width lines
-    // seen using this.
-    // 0x03 is delay
-    // 0x04 seems to do nothing
-    substrings[0x05] = AscToWstr("[nl]\n");
-    substrings[0x06] = AscToWstr("[nl]\n   ");
-    substrings[0x07] = AscToWstr("[pausenl]\n");
-    substrings[0x08] = AscToWstr("[pausenl]\n   ");
-    substrings[0x09] = AscToWstr("\n[cls]\n");
-    substrings[0x0A] = AscToWstr("\n[cls]\n   ");
-    substrings[0x0B] = AscToWstr("\n[pause]\n");
-    substrings[0x0C] = AscToWstr("\n[pause]\n   ");
-    substrings[0x0D] = AscToWstr("[num8]");
-    substrings[0x0E] = AscToWstr("[num16]");
-    substrings[0x0F] = AscToWstr("[num32]");
-    // 0x10 seems to do nothing
-    substrings[0x11] = AscToWstr("[member]");
-    // These names are hardcoded because the ROM was quite
-    // obfuscated here. Same for Nadia and Epoch later.
-    substrings[0x13] = AscToWstr("Crono");
-    substrings[0x14] = AscToWstr("Marle");
-    substrings[0x15] = AscToWstr("Lucca");
-    substrings[0x16] = AscToWstr("Robo");
-    substrings[0x17] = AscToWstr("Frog");
-    substrings[0x18] = AscToWstr("Ayla");
-    substrings[0x19] = AscToWstr("Magus");
-    // 0x1A is the nick Ayla calls Crono
-    substrings[0x1A] = AscToWstr("[crononick]");
-    substrings[0x1B] = AscToWstr("[member1]");
-    substrings[0x1C] = AscToWstr("[member2]");
-    substrings[0x1D] = AscToWstr("[member3]");
-    substrings[0x1E] = AscToWstr("Nadia");
-    substrings[0x1F] = AscToWstr("[item]");
-    substrings[0x20] = AscToWstr("Epoch");
-    // 21..9F are filled by LoadDict()
-    // A0..FF are the character set
-    substrings[0xEE] = AscToWstr("[musicsymbol]");
-    substrings[0xF0] = AscToWstr("[heartsymbol]");
-    substrings[0xF1] = AscToWstr("...");
+    fprintf(stderr, " done\n");
 }
 
 static void Dump12Font()
 {
     unsigned char A0 = ROM[FirstChar_Address];
     
+    unsigned Offset = ROM[WidthTab_Offset_Addr];
+    if(Offset == 0x20) Offset = 0; // ctfin puts $20 here (sep $20 instead of sbc $A0)
+    
     unsigned WidthPtr = ROM[WidthTab_Address_Ofs+0]
                      + (ROM[WidthTab_Address_Ofs+1]<<8)
                      + ((ROM[WidthTab_Address_Seg] & 0x3F) << 16)
-                     - ROM[WidthTab_Offset_Addr];
+                     - Offset;
     
     unsigned FontSeg = ROM[Font12_Address_Seg] & 0x3F;
     unsigned FontPtr1 = ROM[Font12a_Address_Ofs+0]
@@ -1010,11 +537,13 @@ static void Dump12Font()
     
     if(FontPtr2 != FontPtr1 + 0x1800)
     {
-        fprintf(stderr, "Error: We probably have wrong ROM.\n"
-                        "%06X != %06X+1800\n", FontPtr2, FontPtr1);
+        fprintf(stderr,
+            "Warning: This isn't the original ROM.\n"
+            "The high part of 12pix font isn't immediately after the low part:\n"
+            "    %06X != %06X+1800\n", FontPtr2, FontPtr1);
     }
     
-    DumpFont(A0, FontPtr1, FontPtr2, WidthPtr);
+    DumpFont(0,0x2FF, FontPtr1, FontPtr2, WidthPtr);
     
     MarkFree(FontPtr1, 256*24);
     MarkFree(FontPtr2, 256*12);
@@ -1028,17 +557,30 @@ static void DoLoadDict()
                     + (ROM[DictAddr_Ofs+1] << 8)
                    + ((ROM[DictAddr_Seg_1] & 0x3F) << 16);
 
-    unsigned char A0 = ROM[WidthTab_Offset_Addr];
+    unsigned char A0 = ROM[FirstChar_Address];
     
-    unsigned n = A0-0x21;  // For A0, that is 127.
+    fprintf(stderr, "Dictionary end byte for this ROM is $%02X...\n", A0);
+
+    unsigned dictsize = A0-0x21;  // For A0, that is 127.
     
-    LoadDict(DictPtr, n);
+    LoadDict(DictPtr, dictsize);
 
     // unprotect the dictionary because it will be relocated.
-    for(unsigned a=0; a<n*2; ++a)protect[DictPtr+a]=false;
+    UnProt(DictPtr, dictsize*2);
     
-    MarkFree(DictPtr, n*2);
+    MarkFree(DictPtr, dictsize*2);
 }
+
+static void LoadROM()
+{
+    if(isatty(fileno(stdin)))
+    {
+        fprintf(stderr, "Usage: ./ctdump < romfile > scriptfile\n");
+        return;
+    }
+    LoadROM(stdin);
+}
+
 
 int main(void)
 {
@@ -1048,8 +590,6 @@ int main(void)
     
     LoadROM();
 
-    substrings.resize(256);
-    
     printf("; Note: There is a one byte sequence for [nl] and three spaces.\n"
            ";       Don't attempt to save space by removing those spaces,\n"
            ";       you will only make things worse...\n"
@@ -1058,8 +598,6 @@ int main(void)
           );
     
     DoLoadDict();
-    
-    PatchSubStrings();
     
     // 
     puts(";items");
@@ -1079,7 +617,7 @@ int main(void)
     DumpFStrings(0x0C6500, 11); // monsters
 
     puts(";Weapon Helmet Armor Accessory");
-    DumpFStrings(0x02A3BA, 10);
+    DumpFStrings(0x02A3BA, 10, 4);
 
     puts(";Location titles");
     DumpZStrings(0x06F400, 112, false);
@@ -1168,7 +706,7 @@ int main(void)
     puts(";Item types");
     Dump8Strings(0x3FB310, 242);
 
-    puts(";Status screen string");
+    puts(";Status screen strings");
     
     Dump8Strings(0x3FC457, 61);
     
@@ -1176,20 +714,19 @@ int main(void)
     DumpZStrings(0x3FCF3B, 7);
     
     puts(";Configuration");
-    DumpZStrings(0x3FD3FE, 50);
+    DumpZStrings(0x3FD3FE, 50, false);
     
     puts(";Era list");
     Dump8Strings(0x3FD396, 8);
     
     puts(";Episode list");
-    Dump8Strings(0x3FD03E, 27);
+    DumpZStrings(0x3FD03E, 27, false);
     
     Dump8x8sprites(Font8_Address, 256);
     
     Dump12Font();
     
-    if(TryFindExtraSpace)
-        FindEndSpaces();
+    FindEndSpaces();
 
     ListSpaces();
     

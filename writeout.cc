@@ -1,8 +1,12 @@
+#include <string>
+
 #include "ctinsert.hh"
 #include "rom.hh"
 #include "ctcset.hh"
 #include "settings.hh"
 #include "config.hh"
+#include "logfiles.hh"
+#include "stringoffs.hh"
 
 namespace
 {
@@ -16,7 +20,7 @@ namespace
     (
         ROM &ROM,
         unsigned pointeraddr, // 24-bit
-        const string &string,
+        const ctstring &str,
         unsigned spaceptr     // 16-bit
     )
     {
@@ -26,15 +30,17 @@ namespace
         
         WritePtr(ROM, pointeraddr, spaceptr);
         
+        const string data = GetString(str);
+        
 #if 0
         fprintf(stderr, "Wrote %u bytes at %06X->%04X\n",
-            string.size()+1, pointeraddr, spaceptr);
+            data.size()+1, pointeraddr, spaceptr);
 #endif
         
         spaceptr += page<<16;
-        ROM.Write(spaceptr, string.size());
-        for(unsigned a=0; a<string.size(); ++a)
-            ROM.Write(spaceptr+a+1, string[a]);
+        ROM.Write(spaceptr, data.size());
+        for(unsigned a=0; a<data.size(); ++a)
+            ROM.Write(spaceptr+a+1, data[a]);
         
         return spaceptr & 0xFFFF;
     }
@@ -43,7 +49,7 @@ namespace
     (
         ROM &ROM,
         unsigned pointeraddr, //24-bit
-        const string &string,
+        const ctstring &str,
         unsigned spaceptr     // 16-bit
     )
     {
@@ -53,17 +59,19 @@ namespace
         
         WritePtr(ROM, pointeraddr, spaceptr);
         
+        const string data = GetString(str);
+        
 #if 0
         fprintf(stderr, "Wrote %u bytes at %06X->%04X: ",
-            string.size()+1, pointeraddr, spaceptr);
+            data.size()+1, pointeraddr, spaceptr);
         fprintf(stderr, DispString(string).c_str());
         fprintf(stderr, "\n");
 #endif
         
         spaceptr += page<<16;
-        for(unsigned a=0; a<string.size(); ++a)
-            ROM.Write(spaceptr+a, string[a]);
-        ROM.Write(spaceptr+string.size(), 0);
+        for(unsigned a=0; a<data.size(); ++a)
+            ROM.Write(spaceptr+a, data[a]);
+        ROM.Write(spaceptr+data.size(), 0);
         return spaceptr & 0xFFFF;
     }
 
@@ -74,8 +82,10 @@ namespace
          freespacemap &freespace
         )
     {
-        pagestrings.GenerateNeederList();
+        FILE *log = GetLogFile("mem", "log_addrs");
 
+        pagestrings.GenerateNeederList();
+        
         const stringoffsmap::neederlist_t &neederlist = pagestrings.neederlist;
         
         if(true) /* First do hosts */
@@ -93,30 +103,31 @@ namespace
 
             unsigned todobytes=0;
             for(unsigned a=0; a<todo.size(); ++a)
-                todobytes += pagestrings[todo[a]].str.size() + 1;
+                todobytes += CalcSize(pagestrings[todo[a]].str) + 1;
 
-            fprintf(stderr, "Page %02X: Writing %u strings (%u bytes) and reusing %u\n",
-                page, todo.size(), todobytes, reusenum);
+            if(log)
+                fprintf(log, "  Page %02X: Writing %u strings (%u bytes) and reusing %u\n",
+                    page, todo.size(), todobytes, reusenum);
 
             vector<freespacerec> Organization(todo.size());
             for(unsigned a=0; a<todo.size(); ++a)
-                Organization[a].len = pagestrings[todo[a]].str.size() + 1;
+                Organization[a].len = CalcSize(pagestrings[todo[a]].str) + 1;
             
             freespace.Organize(Organization, page);
             
             unsigned unwritten = 0;
             for(unsigned a=0; a<todo.size(); ++a)
             {
-                unsigned stringnum = todo[a];
-                unsigned ptroffs = pagestrings[stringnum].offs;
-                const string &str = pagestrings[stringnum].str;
+                unsigned stringnum  = todo[a];
+                unsigned ptroffs    = pagestrings[stringnum].offs;
+                const ctstring &str = pagestrings[stringnum].str;
 
                 unsigned spaceptr = Organization[a].pos;
                 if(spaceptr == NOWHERE) ++unwritten;
                 pagestrings[stringnum].offs = WriteZPtr(ROM, ptroffs, str, spaceptr);
             }
-            if(unwritten)
-                fprintf(stderr, "%u string%s unwritten\n", unwritten, unwritten==1?"":"s");
+            if(unwritten && log)
+                fprintf(log, "  %u string%s unwritten\n", unwritten, unwritten==1?"":"s");
         }
         
         if(true) /* Then do parasites */
@@ -129,14 +140,15 @@ namespace
                 unsigned parasitenum = i->first;
                 unsigned hostnum     = i->second;
 
-                unsigned hostoffs = pagestrings[hostnum].offs;
+                unsigned hostoffs   = pagestrings[hostnum].offs;
                         
-                unsigned ptroffs = pagestrings[parasitenum].offs;
-                const string &str = pagestrings[parasitenum].str;
+                unsigned ptroffs    = pagestrings[parasitenum].offs;
+                const ctstring &str = pagestrings[parasitenum].str;
                 
                 if(hostoffs == NOWHERE)
                 {
-                    fprintf(stderr, "Host %u doesn't exist! ", hostnum);
+                    if(log)
+                        fprintf(log, "  Host %u doesn't exist! ", hostnum);
                     
                     // Try find another host
                     for(hostnum=0; hostnum<pagestrings.size(); ++hostnum)
@@ -145,7 +157,7 @@ namespace
                         if(neederlist.find(hostnum) != neederlist.end()) continue;
                         // Skip unwritten ones
                         if(pagestrings[hostnum].offs == NOWHERE) continue;
-                        const string &host = pagestrings[hostnum].str;
+                        const ctstring &host = pagestrings[hostnum].str;
                         // Impossible host?
                         if(host.size() < str.size()) continue;
                         unsigned extralen = host.size() - str.size();
@@ -155,19 +167,20 @@ namespace
                     }
                     if(hostoffs == NOWHERE)
                     {
-                        fprintf(stderr, "String %u wasn't written.\n", parasitenum);
+                        if(log)
+                            fprintf(log, "  String %u wasn't written.\n", parasitenum);
                         continue;
                     }
-                    fprintf(stderr, "Substitute %u assigned for %u.\n",
-                        hostnum, parasitenum);
+                    if(log)
+                        fprintf(log, "  Substitute %u assigned for %u.\n",
+                            hostnum, parasitenum);
                 }
 
-                const string &host = pagestrings[hostnum].str;
+                const ctstring &host = pagestrings[hostnum].str;
                 
                 unsigned place = hostoffs + host.size()-str.size();
                 
-                ROM.Write(ptroffs,   place&255);
-                ROM.Write(ptroffs+1, place>>8 );
+                WritePtr(ROM, ptroffs, place);
             }
         }
     }
@@ -216,12 +229,10 @@ void insertor::WriteCode(ROM &ROM) const
     for(i=codes.begin(); i!=codes.end(); ++i)
         ROM.AddPatch(*i);
 
-/*
     // SEP+JSR takes 5 bytes. We overwrote it
     // with 4 bytes (see conjugate.cc).
     // Patch with NOP.
     ROM.Write(ConjugatePatchAddress + 4, 0xEA);
-*/
     
     // Testataan item-listaa
     //ROM.Write(0x02EFB4, 0xA9);
@@ -243,11 +254,12 @@ void insertor::Write8vpixfont(ROM &ROM)
     const vector<unsigned char> &widths  = Font8v.GetWidths();
     const vector<unsigned char> &tiletab = Font8v.GetTiles();
     
+    fprintf(stderr, "Writing 8-pix VWF... ");
+
     unsigned WidthTab_Address = freespace.FindFromAnyPage(widths.size());
     unsigned TileTab_Address  = freespace.FindFromAnyPage(tiletab.size());
     
-    fprintf(stderr, "Writing 8-pix VWF... "
-                    "(%u bytes at %02X:%04X,"
+    fprintf(stderr, "(%u bytes at %02X:%04X,"
                     " %u bytes at %02X:%04X)\n",
         widths.size(),   0xC0 | (WidthTab_Address >> 16), WidthTab_Address & 0xFFFF,
         tiletab.size(),  0xC0 | (TileTab_Address >> 16), TileTab_Address  & 0xFFFF
@@ -292,7 +304,10 @@ void insertor::Write12pixfont(ROM &ROM)
     const vector<unsigned char> &tiletab1 = Font12.GetTab1();
     const vector<unsigned char> &tiletab2 = Font12.GetTab2();
     
-    unsigned tilecount   = get_num_chronochars();
+    fprintf(stderr, "Writing 12-pix font... ");
+
+    unsigned tilecount  = get_num_chronochars() + get_num_extrachars();
+    unsigned font_begin = 0x100 - get_num_chronochars();
     
     vector<freespacerec> Organization(2);
     Organization[0].len = tiletab1.size();
@@ -306,8 +321,7 @@ void insertor::Write12pixfont(ROM &ROM)
 
     unsigned WidthTab_Address = freespace.FindFromAnyPage(tilecount);
     
-    fprintf(stderr, "Writing 12-pix font... "
-                    "(%u bytes at %02X:%04X,"
+    fprintf(stderr, "(%u bytes at %02X:%04X,"
                     " %u bytes at %02X:%04X,"
                     " %u bytes at %02X:%04X)\n",
         tilecount,        0xC0 | (WidthTab_Address >> 16), WidthTab_Address & 0xFFFF,
@@ -316,40 +330,73 @@ void insertor::Write12pixfont(ROM &ROM)
            );
     
     // patch font engine
-    tmp = WidthTab_Address - (0x100-tilecount);
+    tmp = WidthTab_Address - font_begin;
     ROM.Write(WidthTab_Address_Ofs+0, tmp & 255);
     ROM.Write(WidthTab_Address_Ofs+1, (tmp >> 8) & 255);
     ROM.Write(WidthTab_Address_Seg, 0xC0 | ((tmp >> 16) & 255));
     
-    // patch font engine
-    ROM.Write(WidthTab_Offset_Addr, 0);
     // patch dialog engine
-    ROM.Write(FirstChar_Address, 0x100-tilecount);
+    ROM.Write(FirstChar_Address, font_begin);
     
-    tmp = addr1 - (0x100-tilecount)*24;
+    /*
+     C2:5E1E:
+        0  A9 00          - lda a, $00
+        2  EB             - xba
+        3  38             - sec
+        4  A5 35          - lda [$00:D+$35]
+        6  E9 A0          - sbc a, $A0
+        8  AA             - tax
+        9  18             - clc
+       10  BF E6 60 C2    - lda $C2:($60E6+x)
+       14
+       
+       Will be changed to:
+           
+        0  C2 20          - rep $20
+        2  EA             - nop
+        3  EA             - nop
+        4  A5 35          * lda [$00:D+$35]
+        6  E2 20          - sep $20
+        8  AA             * tax
+        9  18             * clc
+       10  BF E6 60 C2    * lda $C2:($60E6+x)
+       14
+       
+       Now widthtab may have more than 256 items.
+    */
+
+    // patch font engine
+    ROM.Write(WidthTab_Offset_Addr-7, 0xC2); // rep $20
+    ROM.Write(WidthTab_Offset_Addr-6, 0x20);
+    ROM.Write(WidthTab_Offset_Addr-5, 0xEA); // nop
+    ROM.Write(WidthTab_Offset_Addr-4, 0xEA); // nop
+    ROM.Write(WidthTab_Offset_Addr-1, 0xE2); // sep $20
+    ROM.Write(WidthTab_Offset_Addr  , 0x20);
+
+    tmp = addr1 - font_begin * 24;
     // patch font engine
     ROM.Write(Font12a_Address_Ofs+0, tmp & 255);
     ROM.Write(Font12a_Address_Ofs+1, (tmp >> 8) & 255);
     ROM.Write(Font12_Address_Seg, 0xC0 | ((tmp >> 16) & 255));
-    tmp = addr2 - (0x100-tilecount)*12;
+    tmp = addr2 - font_begin * 12;
     ROM.Write(Font12b_Address_Ofs+0, tmp & 255);
     ROM.Write(Font12b_Address_Ofs+1, (tmp >> 8) & 255);
     
-    for(unsigned a=0; a<tilecount; ++a)
-        ROM.Write(WidthTab_Address+a, Font12.GetWidth(a));
-    
     for(unsigned a=0; a<tiletab1.size(); ++a) ROM.Write(addr1+a, tiletab1[a]);
     for(unsigned a=0; a<tiletab2.size(); ++a) ROM.Write(addr2+a, tiletab2[a]);
+
+    for(unsigned a=0; a<tilecount; ++a) ROM.Write(WidthTab_Address+a, Font12.GetWidth(a));
 }
 
 void insertor::WriteDictionary(ROM &ROM)
 {
     unsigned size = 0;
-    for(unsigned a=0; a<dictsize; ++a)size += dict[a].size() + 1;
+    unsigned dictsize = dict.size();
+    for(unsigned a=0; a<dictsize; ++a)size += CalcSize(dict[a]) + 1;
 
     vector<freespacerec> Organization(dictsize + 1);
     for(unsigned a=0; a<dictsize; ++a)
-        Organization[a].len = dict[a].size() + 1;
+        Organization[a].len = CalcSize(dict[a]) + 1;
     
     Organization[dictsize] = dictsize*2;
 
@@ -373,6 +420,7 @@ void insertor::WriteDictionary(ROM &ROM)
 
 void insertor::WriteStrings(ROM &ROM)
 {
+    fprintf(stderr, "Writing fixed-length strings...\n");
     for(stringmap::const_iterator i=strings.begin(); i!=strings.end(); ++i)
     {
         switch(i->second.type)
@@ -380,20 +428,25 @@ void insertor::WriteStrings(ROM &ROM)
             case stringdata::fixed:
             {
                 unsigned pos = i->first;
-                const string &s = i->second.str;
+                const ctstring &s = i->second.str;
                 
-                if(s.size() > i->second.width)
-                    fprintf(stderr, "Warning: Fixed string at %06X: len(%u) > space(%u)... '%s'\n",
-                    pos, s.size(), i->second.width, DispString(s).c_str());
+                unsigned size = CalcSize(s);
                 
-                unsigned size = s.size();
-                if(size > i->second.width) size = i->second.width;
+                if(size > i->second.width)
+                {
+#if 0
+                    fprintf(stderr, "  Warning: Fixed string at %06X: len(%u) > space(%u)... '%s'\n",
+                        pos, size, i->second.width, DispString(s).c_str());
+#endif
+                    size = i->second.width;
+                }
                 
                 // Filler must be 255, or otherwise following problems occur:
                 //     item listing goes zigzag
                 //     12pix item/tech/mons text in battle has garbage (char 0 in font).
 
                 unsigned a;
+                // These shouldn't contain extrachars.
                 for(a=0; a<size; ++a)          ROM.Write(pos++, s[a]);
                 for(; a < i->second.width; ++a)ROM.Write(pos++, 255);
                 break;
@@ -405,12 +458,13 @@ void insertor::WriteStrings(ROM &ROM)
                 break;
             }
             // If we omitted something, the compiler should warn
-       }
-   }
+        }
+    }
    
-   set<unsigned> zpages = GetZStringPageList();
-   for(set<unsigned>::const_iterator i=zpages.begin(); i!=zpages.end(); ++i)
-   {
+    fprintf(stderr, "Writing other strings...\n");
+    set<unsigned> zpages = GetZStringPageList();
+    for(set<unsigned>::const_iterator i=zpages.begin(); i!=zpages.end(); ++i)
+    {
        stringoffsmap pagestrings = GetZStringList(*i);
        WritePageZ(ROM, *i, pagestrings, freespace);
     }

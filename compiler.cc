@@ -285,6 +285,7 @@ namespace
 
             CODE.EmitCode(0x82, 0,0); // BRL- Jump to end
             endbranch->FromHere();
+            CODE.BitnessAnything();
         }
         void BOOLEAN_RETURN(bool value)
         {
@@ -326,7 +327,7 @@ namespace
             unsigned val = 0;
             
             if(name[0] == '\'')
-                val = (unsigned char) getchronochar((ucs4)name[1]);
+                val = getchronochar(name[1]);
             else
                 val = strtol(WstrToAsc(name).c_str(), NULL, 10);
             
@@ -344,16 +345,8 @@ namespace
             aVarState.Invalidate();
 #endif
             
-            if(val < 256)
-            {
-                CODE.Set8bit_M();
-                CODE.EmitCode(0xA9, val); // LDA A, imm8
-            }
-            else
-            {
-                CODE.Set16bit_M();
-                CODE.EmitCode(0xA9, val&255, val>>8); // LDA A, imm16
-            }
+            CODE.Set16bit_M();
+            CODE.EmitCode(0xA9, val&255, val>>8); // LDA A, imm16
         }
         void STORE_VAR(const wstring &name)
         {
@@ -428,6 +421,7 @@ namespace
             CODE.EmitCode(0x90, 3);   // BCC- Jump to if true
             CODE.EmitCode(0x82, 0,0); // BRL- Jump to "else"
             b.FromHere();
+            CODE.BitnessAnything();
             AddBranch(b, indent);
         }
         void COMPARE_EQUAL(const wstring &name, unsigned indent)
@@ -444,6 +438,7 @@ namespace
             CODE.EmitCode(0xF0, 3);   // BEQ- Jump to if eq
             CODE.EmitCode(0x82, 0,0); // BRL- Jump to "else"
             b.FromHere();
+            CODE.BitnessAnything();
             AddBranch(b, indent);
         }
         void COMPARE_ZERO(const wstring &name, unsigned indent)
@@ -457,6 +452,7 @@ namespace
             CODE.EmitCode(0xF0, 3);   // BEQ- Jump to if zero
             CODE.EmitCode(0x82, 0,0); // BRL- Jump to "else"
             b.FromHere();
+            CODE.BitnessAnything();
             AddBranch(b, indent);
         }
         void COMPARE_GREATER(const wstring &name, unsigned indent)
@@ -473,15 +469,17 @@ namespace
             CODE.EmitCode(0xB0, 3);   // BCS- Jump to if greater or equal
             CODE.EmitCode(0x82, 0,0); // BRL- Jump to "else"
             b.FromHere();
+            CODE.BitnessAnything();
             CODE.EmitCode(0xD0, 3);   // BCS- Jump to n-eq too (leaving only "greater")
             CODE.EmitCode(0x82, 0,0); // BRL- Jump to "else"
             b.FromHere();
+            CODE.BitnessAnything();
             
             AddBranch(b, indent);
         }
         void SELECT_CASE(const wstring &cset, unsigned indent)
         {
-            if(!cset.size()) return;
+            if(cset.empty()) return;
             
             CheckCodeStart();
 
@@ -491,7 +489,9 @@ namespace
             SNEScode::RelativeBranch into = CODE.PrepareRelativeBranch();
             for(unsigned a=0; a<cset.size(); ++a)
             {
-                unsigned char c = getchronochar((unsigned char)cset[a]);
+                // FIXME: Ensure we won't mess up with extrachars here.
+                // Names can only contain 8bit chars!
+                ctchar c = getchronochar(cset[a]);
                 CODE.Set8bit_M();
                 CODE.EmitCode(0xC9, c);   // CMP A, imm8            
                 CODE.EmitCode(0xF0, 0);   // BEQ - Jump to if equal
@@ -502,6 +502,7 @@ namespace
                     // If this was the last comparison, do the "else" here.
                     CODE.EmitCode(0x82, 0,0); // BRL- Jump to "else"
                     b.FromHere();
+                    CODE.BitnessAnything();
                 }
             }
             into.ToHere();
@@ -532,6 +533,7 @@ namespace
              CODE.EmitCode(0xA9, 0x4D, 0x2C);    // Load Epoch address $2C4D
              CODE.EmitCode(0x80, 0);             // BRA - jump to character name handling
              branchEpoch.FromHere();
+             CODE.BitnessAnything();
 
              branchNonEpoch.ToHere();
              // No Epoch
@@ -546,6 +548,7 @@ namespace
              CODE.EmitCode(0xBF,0x80,0x29,0x7E); // haetaan memberin numero
              CODE.EmitCode(0x80, 0);    // BRA - skip to mul2
              branchMemberSkip.FromHere();
+             CODE.BitnessAnything();
              
              branchNonMember.ToHere();
              // No member
@@ -581,11 +584,14 @@ namespace
         void OUTBYTE_BIG_CODE()
         {
             CODE.Set16bit_X();
-            CODE.Set8bit_M();
-            CODE.EmitCode(0xDA); // PHX
+            CODE.Set16bit_M();
+            
+            // FIXME: tulostetaan vain 8-bittisiä...
+            CODE.EmitCode(0x29, 0xFF, 0x00);       //AND A, $00FF
+            CODE.EmitCode(0xDA);                   //PHX
             
              // Tässä välissä eivät muuttujaviittaukset toimi.
-             CODE.EmitCode(0x85, 0x35); //sta [$00:D+$35]
+             CODE.EmitCode(0x85, 0x35);            //STA [$00:D+$35]
              SNEScode::FarToNearCall call = CODE.PrepareFarToNearCall();
              
              // call back the routine
@@ -618,6 +624,7 @@ namespace
             CODE.EmitCode(0xD0, 3);    // bne - jatketaan looppia, jos nonzero
             CODE.EmitCode(0x82, 0,0);  // brl - jump pois loopista.
             loopend->FromHere();
+            CODE.BitnessAnything();
 #ifdef OPTIMIZE_A
             Invalidate_A();
 #endif
@@ -634,6 +641,7 @@ namespace
             CODE.EmitCode(0xE8);      // inx
             CODE.EmitCode(0x82, 0,0); // brl - jump back to loop
             loopbegin->FromHere();
+            CODE.BitnessAnything();
             
             // loop end is here.        
             loopend->ToHere();
@@ -693,7 +701,7 @@ const FunctionList Compile(FILE *fp)
             while(b<file.size() && file[b]!='\n') ++b;
             Buf = file.substr(a, b-a); a = b+1;
         }
-        if(!Buf.size()) continue;
+        if(Buf.empty()) continue;
         
         unsigned indent=0;
         vector<wstring> words;
@@ -712,10 +720,10 @@ const FunctionList Compile(FILE *fp)
                 if(spacepos+1 >= rest.size()) { CLEARSTR(rest); break; }
                 rest = rest.substr(spacepos+1);
             }
-            if(rest.size()) { words.push_back(rest); CLEARSTR(rest); }
+            if(!rest.empty()) { words.push_back(rest); CLEARSTR(rest); }
         }
         
-        if(!words.size())
+        if(words.empty())
         {
             fprintf(stderr, "Weird, '%s' is empty line?\n",
                 WstrToAsc(Buf).c_str());
