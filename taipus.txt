@@ -1,4 +1,4 @@
-#
+1#
 # This file is derived from taipus.cc, and attempts to describe
 # the algorithm so that it's translatable in asm.
 #
@@ -7,7 +7,7 @@
 #
 #  :B name
 #     declare function returning boolean, handles character name
-#  :Q name
+#  :Q name c
 #     declare function returning boolean, parameter is byte (assigned to 'c')
 #  :I name
 #     declare function returning byte
@@ -57,12 +57,12 @@
 #  OUT name
 #     Outputs character in name
 
-:Q IsVowel
+:Q IsVowel c
 ? aeiouy‰ˆÂÈAEIOUYƒ÷≈…0123456
   TRUE
 FALSE
 
-:Q IsKPT
+:Q IsKPT c
 ? kKpPtT
   TRUE
 FALSE
@@ -197,7 +197,7 @@ ci LastChar3 c
       TRUE
 FALSE
 
-:Q OutWord
+:Q OutWord c
 VAR Hint
 s Hint c
 {

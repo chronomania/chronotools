@@ -178,6 +178,7 @@ Copypaste from the Makefile:
 # VERSION 1.0.21 more translation, some documentation, font palette changes.
 # VERSION 1.0.22 more translation, autowrapping support, conjugation detection code
 # VERSION 1.1.0  did some assembly hacking, support for code patching
+# VERSION 1.1.1  conjugating conjugating conjugating... work goes on
 </pre>
 
 ", '1. See also' => "

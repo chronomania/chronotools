@@ -22,15 +22,18 @@ include Makefile.sets
 # VERSION 1.0.22 more translation, autowrapping support, conjugation detection code
 # VERSION 1.1.0  did some assembly hacking, support for code patching
 # VERSION 1.1.1  conjugating conjugating conjugating... work goes on
+# VERSION 1.1.2  and so on
 
-VERSION=1.1.1
+VERSION=1.1.2
 ARCHFILES=xray.c xray.h \
           viewer.c \
           ctcset.cc ctcset.hh \
           miscfun.cc miscfun.hh \
           space.cc space.hh \
           wstring.cc wstring.hh \
-          readin.cc rom.hh \
+          readin.cc \
+          autoptr \
+          rom.cc rom.hh \
           fonts.cc fonts.hh \
           conjugate.cc conjugate.hh \
           symbols.cc symbols.hh \

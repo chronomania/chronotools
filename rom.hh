@@ -17,7 +17,7 @@ class ROM
     
     // Writes a subroutine. Remember to terminate it with LONG-RETURN!
     void AddSubRoutine(unsigned target, const vector<unsigned char> &code);
-    
+
 public:
     ROM(unsigned size) : Data(size, 0), Touched(size, false)
     {
@@ -31,7 +31,7 @@ public:
     const unsigned size() const { return Data.size(); }
     bool touched(unsigned ind) const { return Touched[ind]; }
     
-    void AddCall(unsigned address, const SNEScode &code);
+    void AddPatch(const SNEScode &code);
 };
 
 #endif

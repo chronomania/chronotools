@@ -170,7 +170,7 @@ static const SNEScode GetTestCode()
     //      C2:58C4
     
 #define TRY_DOUBLE 1  // Print two characters instead of one?
-#define MODIFY 0      // Modify the character to a bit?
+#define MODIFY 1      // Modify the character to a bit?
 
 #if TRY_DOUBLE && MODIFY
     // save A
@@ -179,36 +179,38 @@ static const SNEScode GetTestCode()
 
 #if MODIFY
     // modify the character
-    code.AddCode(0xE2, 0x20); //sep $20
+    code.Set8bit();
     code.AddCode(0xA9, 0xA8); //lda a, $A8
     code.AddCode(0x85, 0x35); //sta [$00:D+$35]
 #endif
 
 #if TRY_DOUBLE
     // prepare the framework for a farcall to a near routine
-    FarCall call = code.PrepareFarCall();
+    void *call = code.PrepareFarToNearCall();
     // overwrites a and pushes stuff
 
     // call back the routine
-    code.AddCode(0xC2, 0x20); //rep $20
+    code.Set16bit();
     code.AddCode(0xA5, 0x35); //lda [$00:D+$35]
     
-    code.ProceedFarCall(call, 0xC25DC8);
+    code.ProceedFarToNearCall(call, 0xC25DC8);
 
 #if MODIFY
     // restore A
     code.AddCode(0x68);       //pla
 
     // restore character
-    code.AddCode(0xE2, 0x20); //sep $20
+    code.Set8bit();
     code.AddCode(0x85, 0x35); //sta [$00:D+$35]
 #endif
 #endif
 
     // be ready to return to the routine
-    code.AddCode(0xC2, 0x20); //rep $20
+    code.Set16bit();
     code.AddCode(0xA5, 0x35); //lda [$00:D+$35]
     code.AddCode(0x6B);       //rtl
+    
+    code.AddCallFrom(0xC25DC4);
     
     return code;
 }
@@ -216,7 +218,7 @@ static const SNEScode GetTestCode()
 
 void insertor::GenerateCode()
 {
-#if 0
+#if 1
     SNEScode code = GetTestCode();
     
     unsigned address = freespace.FindFromAnyPage(code.size());

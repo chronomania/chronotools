@@ -200,9 +200,8 @@ void insertor::WriteCode(ROM &ROM) const
     fprintf(stderr, "Writing code...\n");
     
     list<SNEScode>::const_iterator i;
-    
     for(i=codes.begin(); i!=codes.end(); ++i)
-	    ROM.AddCall(0xC25DC4, *i);
+        ROM.AddPatch(*i);
 }
 
 void insertor::Write8pixfont(ROM &ROM) const
