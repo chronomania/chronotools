@@ -14,7 +14,8 @@ Tools aiding in
 
 ", '1.1. ctdump' => "
 
-<img src=\"http://bisqwit.iki.fi/src/chronotools-bat.png\" align=right alt=\"sample\">
+<img src=\"http://bisqwit.iki.fi/src/chronotools-bat.png\"
+     align=right alt=\"sample\" style=\"padding-right:10px\" >
 
 Dumps the script and fonts from a given ROM.<br>
 Requires <code>chrono-dumpee.smc</code>.<br>

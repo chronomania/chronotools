@@ -1,4 +1,4 @@
-1#
+#
 # This file is derived from taipus.cc, and attempts to describe
 # the algorithm so that it's translatable in asm.
 #
@@ -65,29 +65,28 @@ FALSE
 FALSE
 
 :B IsFront
-VAR Hint1 Hint2 Hint3
-s Hint1 0
-s Hint2 0
-s Hint3 0
+VAR VowelType FoundE Finalguess
+s VowelType 0
+s FoundE 0
+s Finalguess 0
 {
+s Finalguess 1
 ? aouAOU02368
-  s Hint1 1
-  s Hint3 1
+  s VowelType 1
 ? ‰ˆyƒ÷Y14579
-  s Hint1 2
-  s Hint3 1
+  s VowelType 2
 ? eiÈEI…
-  s Hint2 1
-  s Hint3 1
+  s FoundE 1
 ? hkqÂHKQ≈
-  s Hint3 0
+  s Finalguess 0
 }
-> Hint1 0
-  = Hint1 2
-    TRUE
-> Hint2 0
+= VowelType 2
   TRUE
-= Hint3 1
+= VowelType 1
+  FALSE
+= FoundE 1
+  TRUE
+= Finalguess 1
   TRUE
 FALSE
 
@@ -130,25 +129,27 @@ s Hint1 0
 RETURN Hint1
 
 :B IsAbbrev
-VAR Hint1 Hint2 Hint3 Hint4
+# C6:F000
+VAR Len Vowels WasVowel ElseFlag
 {
-  + Hint1
-  s Hint4 0
+  + Len
+  s ElseFlag 1
   ? aeiouy‰ˆÂÈAEIOUYƒ÷≈…
-    s Hint2 1
-    s Hint3 1
-    s Hint4 1
+    s Vowels 1
+    s WasVowel 1
+    s ElseFlag 0
   ? 0123456789
-    = Hint3 1
-      s Hint2 0
-    s Hint3 0
-    s Hint4 1
-  = Hint4 0
-    s Hint3 0
+# Number after a vowel means "no vowels"
+    = WasVowel 1
+      s Vowels 0
+    s WasVowel 0
+    s ElseFlag 0
+  = ElseFlag 1
+    s WasVowel 0
 }
-= Hint1 1
+= Len 1
   TRUE
-= Hint2 0
+= Vowels 0
   TRUE
 FALSE
 
@@ -239,10 +240,11 @@ cv OutWord Len
 cv OutByte 'i'
 RET
 
+# C6:F2C2
 :B SoftStem
 VAR Len Hint
 ci Length Len
-#s Len 5
+# C6:F2CF
 cb IsAbbrev
   cv OutWord Len
   cv OutByte ':'
@@ -254,6 +256,7 @@ cb IsEs
   cv OutByte 's'
   cv OutByte 'e'
   RET
+# C6:F34D
 cb EndWithVowel
   cb DoubleHard
     - Len
@@ -287,29 +290,29 @@ cv OutByte 'n'
 RET
 
 :B Do_A
-#cf HardStem
-#cf Out_A
+cf HardStem
+cf Out_A
 RET
 
 :B Do_LLA
-#cf SoftStem
-#cv OutByte 'l'
-#cv OutByte 'l'
-#cf Out_A
+cf SoftStem
+cv OutByte 'l'
+cv OutByte 'l'
+cf Out_A
 RET
 
 :B Do_LLE
-#cf SoftStem
-#cv OutByte 'l'
-#cv OutByte 'l'
-#cv OutByte 'e'
+cf SoftStem
+cv OutByte 'l'
+cv OutByte 'l'
+cv OutByte 'e'
 RET
 
 :B Do_STA
-#cf SoftStem
-#cv OutByte 's'
-#cv OutByte 't'
-#cf Out_A
+cf SoftStem
+cv OutByte 's'
+cv OutByte 't'
+cf Out_A
 RET
 
 # -- End --

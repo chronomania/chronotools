@@ -24,8 +24,11 @@ include Makefile.sets
 # VERSION 1.1.1  conjugating conjugating conjugating... work goes on
 # VERSION 1.1.2  and so on
 # VERSION 1.1.3  and so on... almost working! "case" still doesn't work.
+# VERSION 1.1.4  conjugating finally works!
 
-VERSION=1.1.3
+OPTIM=-O3
+
+VERSION=1.1.4
 ARCHFILES=xray.c xray.h \
           viewer.c \
           ctcset.cc ctcset.hh \
@@ -94,7 +97,8 @@ compiletest: compiletest.cc compiler.o snescode.o ctcset.o wstring.o
 	$(CXX) -g -O -Wall -W -pedantic -o $@ $^
 
 ct.txt: ctdump chrono-dumpee.smc
-	./ctdump >ct.txt
+	./ctdump >ct_tmp.txt || rm -f ct_tmp.txt && false
+	mv ct_tmp.txt ct.txt
 
 ctpatch-hdr.ips ctpatch-nohdr.ips: \
 		ctinsert ct.txt taipus.txt \

@@ -74,7 +74,7 @@ class Assembler
     {
         unsigned varcount = vars.size();
         if(varcount >= 2) CODE.Set16bit_M();
-        CODE.AddCode(0x08);     // PHP
+        //CODE.AddCode(0x08);     // PHP
         while(varcount >= 2)
         {
             CODE.AddCode(0x48); // PHA
@@ -107,7 +107,7 @@ class Assembler
             CODE.AddCode(0x7A); // PLY
             varcount -= 1;
         }
-        CODE.AddCode(0x28);     // PLP
+        //CODE.AddCode(0x28);     // PLP
         
         FINISH_BRANCHES();
         CODE.AddCode(0x6B);     // RTL
@@ -229,7 +229,7 @@ public:
         else if(name[0] == '\'')
         {
             CODE.Set8bit_M();
-            unsigned char c = getchronochar(name[1]);
+            unsigned char c = getchronochar((unsigned char)name[1]);
             CODE.AddCode(0xA9, c); // LDA A, imm8
         }
         else
@@ -251,6 +251,7 @@ public:
     {
         CheckCodeStart();
         // store A to var
+        CODE.Set8bit_M();
         CODE.AddCode(0x83, GetStackOffset(name)); // STA [00:s+n]
     }
     void INC_VAR(const string &name)
@@ -279,6 +280,7 @@ public:
         // leave A unmodified and issue call to function
         CODE.AddCode(0x22, 0,0,0);
         cursub->requires[name].insert(CODE.size() - 3);
+        CODE.BitnessUnknown();
         
         CODE.Set16bit_X();
         CODE.AddCode(0xFA); // PLX
@@ -345,30 +347,40 @@ public:
         CheckCodeStart();
 
         // process subblock if A is in any of given chars
-        CODE.Set8bit_M();
         Branch b = CODE.PrepareRelativeLongBranch();
+        
+        SNEScode::RelativeBranch into = CODE.PrepareRelativeBranch();
         for(unsigned a=0; a<cset.size(); ++a)
         {
-            unsigned char c = getchronochar(cset[a]);
-            CODE.AddCode(0xC9, c);   // CMP A, imm8
-            CODE.AddCode(0xF0, 3);   // BEQ - Jump to if equal
-            CODE.AddCode(0x82, 0,0); // BRL- Jump to "else"
-            b.FromHere();
+            unsigned char c = getchronochar((unsigned char)cset[a]);
+            CODE.Set8bit_M();
+            CODE.AddCode(0xC9, c);   // CMP A, imm8            
+            CODE.AddCode(0xF0, 0);   // BEQ - Jump to if equal
+            into.FromHere();
+            
+            if(a+1 == cset.size())
+            {
+                // If this was the last comparison, do the "else" here.
+                CODE.AddCode(0x82, 0,0); // BRL- Jump to "else"
+                b.FromHere();
+            }
             // FIXME: Tämä ei toimi oikein!
         }
+        into.ToHere();
+        into.Proceed();
         AddBranch(b, indent);
     }
     void START_CHARNAME_LOOP()
     {
         CheckCodeStart();
         
+        loopbegin = new Branch(CODE.PrepareRelativeLongBranch());
+        loopend   = new Branch(CODE.PrepareRelativeLongBranch());
+        
         // Alkuarvo loopille
         CODE.Set16bit_M();
         CODE.AddCode(0xA9,0x00,0x00);      // LDA $0000
         CODE.AddCode(0xAA);                // TAX
-        
-        loopbegin = new Branch(CODE.PrepareRelativeLongBranch());
-        loopend   = new Branch(CODE.PrepareRelativeLongBranch());
         
         loopbegin->ToHere();
         
@@ -376,10 +388,13 @@ public:
 
         // X talteen tämän touhun ajaksi:
         CODE.Set16bit_X();
+        CODE.Set16bit_M();
         CODE.AddCode(0xDA); // PHX
          // Huom. Tässä välissä eivät muuttujaviittaukset toimi.
          SNEScode::RelativeBranch branchNonEpoch = CODE.PrepareRelativeBranch();
          SNEScode::RelativeBranch branchEpoch    = CODE.PrepareRelativeBranch();
+         CODE.AddCode(0xA9,0x00,0x00);  // lda $0000
+         CODE.AddCode(0xA8);            // tay
          CODE.Set8bit_M();
          CODE.AddCode(0xA7, 0x31); // Id of the name
          CODE.AddCode(0xC9, 0x20); // If it's Epoch
@@ -387,26 +402,26 @@ public:
          branchNonEpoch.FromHere();
          // Yes, Epoch.
          CODE.Set16bit_M();
-         CODE.AddCode(0xA9,0x00,0x00);      // lda $0000
-         CODE.AddCode(0xA8);                // tay
          CODE.AddCode(0xA9, 0x4D, 0x2C);    // Load Epoch address $2C4D
          CODE.AddCode(0x80, 0);             // bra
          branchEpoch.FromHere();
+         branchNonEpoch.ToHere();
+         CODE.Set8bit_M();
          CODE.AddCode(0x38, 0xE9, 0x13); // a-=$13
          CODE.AddCode(0x0A, 0xAA);       // x=a*2
          CODE.Set16bit_M();
          CODE.AddCode(0xBF,0xD8,0x5F,0xC2); // haetaan pointteri nimeen
          branchEpoch.ToHere();
-         branchEpoch.Proceed();
-         branchNonEpoch.Proceed();
+         CODE.Set16bit_M();
          CODE.AddCode(0x8D,0x37,0x02);      // tallennetaan offset ($0237)
          CODE.Set8bit_M();
          CODE.AddCode(0xA9,0x7E);           // tallennetaan segment ($0239)
          CODE.AddCode(0x8D,0x39,0x02);
+         branchEpoch.Proceed();
+         branchNonEpoch.Proceed();
         CODE.Set16bit_X();
-        CODE.AddCode(0xFA); // PLX
-        
         CODE.Set16bit_M();
+        CODE.AddCode(0xFA); // PLX
         CODE.AddCode(0x9B); // TXY
         
         // Hakee merkin hahmon nimestä
@@ -441,11 +456,10 @@ public:
         // outputs character in A
         
         CODE.Set16bit_X();
+        CODE.Set8bit_M();
         CODE.AddCode(0xDA); // PHX
         
          // Tässä välissä eivät muuttujaviittaukset toimi.
-
-         CODE.Set8bit_M();
          CODE.AddCode(0x85, 0x35); //sta [$00:D+$35]
          SNEScode::FarToNearCall call = CODE.PrepareFarToNearCall();
          
@@ -454,6 +468,7 @@ public:
          CODE.AddCode(0xA5, 0x35); //lda [$00:D+$35]
          
          call.Proceed(0xC25DC8);
+         CODE.BitnessUnknown();
 
         CODE.Set16bit_X();
         CODE.AddCode(0xFA); // PLX
@@ -492,6 +507,8 @@ const FunctionList Compile(FILE *fp)
         }
         
         if(!words.size()) continue;
+        
+        if(words[0][0] == '#') continue;
         
         Asm.BRANCH_LEVEL(indent);
         

@@ -167,96 +167,101 @@ class Conjugatemap Conjugatemap;
 #include "ctinsert.hh"
 #include "compiler.hh"
 
-static const SubRoutine GetConjugateCode()
+namespace
 {
-    SubRoutine result;
-    SNEScode &code = result.code;
-    
-#define CALL_OLD \
-    { \
-        SNEScode::FarToNearCall call = code.PrepareFarToNearCall(); \
-        code.Set16bit_M(); \
-        code.AddCode(0xA5, 0x35); /* lda $0235 */\
-        call.Proceed(0xC25DC8);   /* call */\
-    }
-
-    SNEScode::RelativeBranch branchOut = code.PrepareRelativeBranch();
-    
-    const map<CnjType, unsigned char> &prefixes = Conjugatemap.GetPref();
-    
-    bool first = true;
-    
-    map<CnjType, unsigned char>::const_iterator i;
-    for(i=prefixes.begin(); i!=prefixes.end(); ++i)
+    const SubRoutine GetConjugateCode()
     {
-        SNEScode::RelativeBranch branchSkip = code.PrepareRelativeBranch();
-        if(first) code.Set8bit_M();
-        code.AddCode(0xC9, i->second); //cmp a, *
-        code.AddCode(0xD0, 0);         //bne
-        branchSkip.FromHere();
+        SubRoutine result;
+        SNEScode &code = result.code;
         
-        if(true)
-        {
-            const char *funcname = "?";
-            switch(i->first)
-            {
-                case Cnj_N:   funcname = "Do_N"; break;
-                case Cnj_A:   funcname = "Do_A"; break;
-                case Cnj_LLA: funcname = "Do_LLA"; break;
-                case Cnj_LLE: funcname = "Do_LLE"; break;
-                case Cnj_STA: funcname = "Do_STA"; break;
-            }
-            
-            code.AddCode(0x22, 0,0,0);
-            result.requires[funcname].insert(code.size() - 3);
-            
-            // FIXME: Add call to the function
-
-            if(first)
-            {
-                branchOut.ToHere();
-                
-                code.Set16bit_M();
-                
-                // increment the pointer (skip the name printing)
-                code.AddCode(0xE6, 0x31);
-
-                // pop 3 bytes, then do RTL although
-                // was called with JSR, not JSL...
-                code.Set8bit_M();
-                code.AddCode(0x68, 0x68); // pha - pop the offset we're not using
-                code.AddCode(0x68);       // pha - pop the segment
-                code.Set16bit_X();
-                code.AddCode(0xFA); // plx - get local return address
-                code.AddCode(0x48); // pha - push segment
-                code.AddCode(0xDA); // phx - push the address
-                
-                // And return.
-                code.AddCode(0x6B);       //rtl
-                
-                first = false;
-            }
-            else
-            {
-                code.AddCode(0x80, 0); // bra - jump out
-                branchOut.FromHere();
-            }
+    #define CALL_OLD \
+        { \
+            SNEScode::FarToNearCall call = code.PrepareFarToNearCall(); \
+            code.Set16bit_M(); \
+            code.AddCode(0xA5, 0x35); /* lda $0235 */\
+            call.Proceed(0xC25DC8);   /* call */\
+            code.BitnessUnknown(); \
         }
-        branchSkip.ToHere();
-        branchSkip.Proceed();
+
+        SNEScode::RelativeBranch branchOut = code.PrepareRelativeBranch();
+        
+        const map<CnjType, unsigned char> &prefixes = Conjugatemap.GetPref();
+        
+        bool first = true;
+        
+        map<CnjType, unsigned char>::const_iterator i;
+        for(i=prefixes.begin(); i!=prefixes.end(); ++i)
+        {
+            SNEScode::RelativeBranch branchSkip = code.PrepareRelativeBranch();
+            if(first) code.Set8bit_M();
+            code.AddCode(0xC9, i->second); //cmp a, *
+            code.AddCode(0xD0, 0);         //bne
+            branchSkip.FromHere();
+            
+            if(true)
+            {
+                const char *funcname = "?";
+                switch(i->first)
+                {
+                    case Cnj_N:   funcname = "Do_N"; break;
+                    case Cnj_A:   funcname = "Do_A"; break;
+                    case Cnj_LLA: funcname = "Do_LLA"; break;
+                    case Cnj_LLE: funcname = "Do_LLE"; break;
+                    case Cnj_STA: funcname = "Do_STA"; break;
+                }
+                
+                code.AddCode(0x22, 0,0,0);
+                result.requires[funcname].insert(code.size() - 3);
+                code.BitnessUnknown();
+                
+                // FIXME: Add call to the function
+
+                if(first)
+                {
+                    branchOut.ToHere();
+                    
+                    code.Set16bit_M();
+                    
+                    // increment the pointer (skip the name printing)
+                    code.AddCode(0xE6, 0x31);
+
+                    // pop 3 bytes, then do RTL although
+                    // was called with JSR, not JSL...
+                    code.Set8bit_M();
+                    code.AddCode(0x68, 0x68); // pha - pop the offset we're not using
+                    code.AddCode(0x68);       // pha - pop the segment
+                    code.Set16bit_X();
+                    code.AddCode(0xFA); // plx - get local return address
+                    code.AddCode(0x48); // pha - push segment
+                    code.AddCode(0xDA); // phx - push the address
+                    
+                    // And return.
+                    code.AddCode(0x6B);       //rtl
+                    
+                    first = false;
+                }
+                else
+                {
+                    code.AddCode(0x80, 0); // bra - jump out
+                    branchOut.FromHere();
+                }
+            }
+            branchSkip.ToHere();
+            branchSkip.Proceed();
+        }
+        
+        // Ready to return
+        code.Set16bit_M();
+        code.AddCode(0xA5, 0x35); //lda [$00:D+$35]
+        code.AddCode(0x6B);       //rtl
+
+        branchOut.Proceed();
+
+        // This function will be called from.
+        code.AddCallFrom(0xC25DC4);
+        
+        return result;
     }
-    
-    // Ready to return
-    code.Set16bit_M();
-    code.AddCode(0xA5, 0x35); //lda [$00:D+$35]
-    code.AddCode(0x6B);       //rtl
-
-    branchOut.Proceed();
-
-    // This function will be called from.
-    code.AddCallFrom(0xC25DC4);
-    
-    return result;
 }
 
 void insertor::GenerateCode()
