@@ -21,7 +21,7 @@ game to their own language.
 So here's what you do if you want to translate Chrono Trigger.
 
 <ul>
- <li><a href=\"#download\">Download</a> Chronotools.</li>
+ <li><a href=\"#download\">Download</a> Chronotools. (Source code on this site. Windows binaries available upon request.)</li>
  <li>You need the Chrono Trigger English ROM. (You won't get it from me.)</li>
  <li>You dump the script and images from the ROM using
      <a href=\"#ctdump\">ctdump</a>, included in Chronotools.</li>
@@ -155,6 +155,7 @@ Copypaste from the Makefile:
 # VERSION 1.9.0  unified some configuration parts; added crononick-code support
 # VERSION 1.9.1  improved the signature feature; added checksum and ROM name feature
 # VERSION 1.9.2  has only documentation updates
+# VERSION 1.9.3  includes the forgotten snescode and dictionary modules.
 </pre>
 
 ", '1. Program list' => "

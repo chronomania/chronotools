@@ -8,11 +8,12 @@ CXX=g++
 CPPFLAGS=-DVERSION=\"$(VERSION)\" -pipe -g
 #         -fmessage-length=0
 
-WARNINGS=-Wall -W -pedantic \
-    -Wundef -Wcast-qual -Wpointer-arith -Wstrict-prototypes \
-    -Wconversion -Wmissing-prototypes -Wwrite-strings \
-    -Wsign-compare -Wredundant-decls
-#   -Wtraditional -Wcast-align
+WARNINGS=-Wall -W
+#    -pedantic \
+#    -Wundef -Wcast-qual -Wpointer-arith -Wstrict-prototypes \
+#    -Wconversion -Wmissing-prototypes -Wwrite-strings \
+#    -Wsign-compare -Wredundant-decls \
+#    -Wtraditional -Wcast-align
 
 # C specific warnings
 CCOPTS=$(WARNINGS) -Waggregate-return -Wshadow -Winline

@@ -89,6 +89,7 @@ DEPDIRS = utils/
 # VERSION 1.9.0  unified some configuration parts; added crononick-code support
 # VERSION 1.9.1  improved the signature feature; added checksum and ROM name feature
 # VERSION 1.9.2  has only documentation updates
+# VERSION 1.9.3  includes the forgotten snescode and dictionary modules.
 
 OPTIM=-O3
 #OPTIM=-O0
@@ -97,7 +98,7 @@ OPTIM=-O3
 
 CXXFLAGS += -I.
 
-VERSION=1.9.2
+VERSION=1.9.3
 ARCHFILES=utils/xray.cc utils/xray.h \
           utils/viewer.c \
           utils/vwftest.cc \
@@ -120,6 +121,8 @@ ARCHFILES=utils/xray.cc utils/xray.h \
           wstring.cc wstring.hh \
           readin.cc wrap.cc writeout.cc \
           settings.cc settings.hh \
+          snescode.cc snescode.hh \
+          dictionary.cc \
           rom.cc rom.hh \
           rommap.cc rommap.hh \
           strload.cc strload.hh \

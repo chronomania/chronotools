@@ -61,7 +61,7 @@ const string wstringOut::puts(const ucs4string &s) const
         char OutBuf[4096], *outptr = OutBuf;
         unsigned outsize = sizeof OutBuf;
         size_t retval = iconv(converter,
-                              const_cast<const char **> (&input),
+                              const_cast<char **> (&input),
                               &left,
                               &outptr,
                               &outsize);
@@ -97,7 +97,7 @@ bool wstringOut::isok(ucs4 p) const
     unsigned outsize = sizeof OutBuf;
     unsigned insize = sizeof(p);
     size_t retval = iconv(tester,
-                          const_cast<const char **> (&tmp),
+                          const_cast<char **> (&tmp),
                           &insize,
                           &outptr,
                           &outsize);
@@ -150,7 +150,7 @@ const ucs4string wstringIn::puts(const string &s) const
         char OutBuf[4096], *outptr = OutBuf;
         unsigned outsize = sizeof OutBuf;
         size_t retval = iconv(converter,
-                              const_cast<const char **> (&input),
+                              const_cast<char **> (&input),
                               &left,
                               &outptr,
                               &outsize);

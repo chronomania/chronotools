@@ -53,7 +53,8 @@ void Symbols::Load()
     defsym(Crono,        0x13) // User definable
     defsym(Marle,        0x14) // User definable
     defsym(Lucca,        0x15) // User definable
-    defsym(Robo,         0x16) // User definable
+    // FIXME: Make this configurable
+    defsym(Robos,        0x16) // User definable
     defsym(Frog,         0x17) // User definable
     defsym(Ayla,         0x18) // User definable
     defsym(Magus,        0x19) // User definable
