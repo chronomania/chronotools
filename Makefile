@@ -61,6 +61,7 @@ DEPDIRS = utils/
 # VERSION 1.5.1  vwf8 optimizations, assembly experiments
 # VERSION 1.5.2  compressed graphics support: decompressor and compressor
 # VERSION 1.5.3  better graphics compressor
+# VERSION 1.5.4  another archive-only version
 
 OPTIM=-O3
 #OPTIM=-O0
@@ -69,7 +70,7 @@ OPTIM=-O3
 
 CXXFLAGS += -I.
 
-VERSION=1.5.3
+VERSION=1.5.4
 ARCHFILES=utils/xray.c utils/xray.h \
           utils/viewer.c \
           utils/vwftest.cc \

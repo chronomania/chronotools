@@ -9,7 +9,7 @@
 
 #define NO_GAINLESS_SHUFFLING_AROUND 1
 #define FONT12_DEBUG_LOADING         0
-#define DISPLAY_REARRANGE_DETAILS    1
+#define DISPLAY_REARRANGE_DETAILS    0
 #define DUMP_FREE_MAPS               0
 
 namespace

@@ -1,5 +1,7 @@
 #include "rom.hh"
 
+#define DEBUG_ADDING_SUB 0
+
 // Far call takes four bytes:
 //     22 63 EA C0 = JSL $C0:$EA63
 
@@ -28,7 +30,7 @@ void ROM::AddCall(unsigned codeaddress, unsigned target)
 
 void ROM::AddSubRoutine(unsigned target, const vector<unsigned char> &code)
 {
-#if 1
+#if DEBUG_ADDING_SUB
     fprintf(stderr, "- Adding subroutine at %02X:%04X (%u bytes)\n",
         0xC0 | (target >> 16), target & 0xFFFF,
         code.size());

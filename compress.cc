@@ -3,7 +3,7 @@
 //#define DEBUG_DECOMPRESS
 //#define DEBUG_COMPRESS
 
-#define MAX_RECURSION 0       // anything over 1 is mad
+#define MAX_RECURSION 0         // anything over 1 is mad
 //#define LITERAL_FOLLOWUP_ONLY //- speeds up recursion
 
 #define SUPER_POSITIONS //- good good
@@ -20,18 +20,18 @@ class Compressor
     const unsigned max_offset;
     const unsigned min_length;
     const unsigned max_length;
-    
+
     vector<unsigned> saving_offset;
     vector<unsigned> saving_len;
-    
+
     unsigned char FirstControlByte;
     unsigned char OtherControlByte;
-    
+
     mutable bool Only8bits;
 #ifdef SUPER_POSITIONS
     mutable bool AllSuperPositions;
 #endif
-    
+
     class result_t
     {
         // Actual result
