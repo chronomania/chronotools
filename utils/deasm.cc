@@ -3,12 +3,14 @@
 #include <stack>
 #include <cctype>
 #include <cstdarg>
+#include <algorithm>
 #include <set>
 #include <map>
 
 #include "insdata.hh"
 #include "rommap.hh"
 #include "tristate"
+#include "autoptr"
 
 //dummy, used by rommap.o
 void PutAscii(const string& ) {}
@@ -313,28 +315,36 @@ namespace
         bool B_modified;
         bool terminated;
         std::set<unsigned> modified_mem;
+        std::set<unsigned> labels_seen;
+        bool dummy;
         
         Output(): A_modified(false),
                   X_modified(false),
                   Y_modified(false),
                   D_modified(false),
                   B_modified(false),
-                  terminated(false)
+                  terminated(false),
+                  dummy(false)
         {
         }
         
-        void Combine(const Output& b)
+        void Clear(bool DummyRun)
         {
-            code += b.code;
-            A_modified = A_modified || b.A_modified;
-            X_modified = X_modified || b.X_modified;
-            Y_modified = Y_modified || b.Y_modified;
-            D_modified = D_modified || b.D_modified;
-            B_modified = B_modified || b.B_modified;
-            modified_mem.insert(b.modified_mem.begin(), b.modified_mem.end());
+            A_modified = X_modified = Y_modified = D_modified = B_modified = false;
+            terminated = false;
+            dummy = DummyRun;
+            modified_mem.clear();
+            code = "";
         }
     };
     
+/*
+    struct Expr: public ptrable
+    {
+        bool is_16bit;
+    };
+    struct Expr: public 
+*/
     struct Machine
     {
         class Value;
@@ -425,12 +435,14 @@ namespace
                 Undefine();
                 value = "[";
                 value = value + BuildAddr(addr, where) + "]";
+                is_const = false;
             }
-            void SetLL(unsigned addr, addrmode where) // [[addr]]
+            void SetLL(unsigned addr, addrmode where) // [word[addr]]
             {
                 Undefine();
-                value = "[[";
+                value = "[word[";
                 value = value + BuildAddr(addr, where) + "]]";
+                is_const = false;
             }
             void SetRL(unsigned addr,  addrmode where, Register& reg) // [addr+reg]
             {
@@ -438,33 +450,38 @@ namespace
                 value = "[";
                 value = value + BuildAddr(addr, where) + "+" + reg.UseValue() + "]";
                 Depend(reg);
+                is_const = false;
             }
-            void SetRLL(unsigned addr, addrmode where, Register& reg) // [[addr+reg]]
+            void SetRLL(unsigned addr, addrmode where, Register& reg) // [word[addr+reg]]
             {
                 Undefine();
-                value = "[[";
+                value = "[word[";
                 value = value + BuildAddr(addr, where) + "+" + reg.UseValue() + "]]";
                 Depend(reg);
+                is_const = false;
             }
-            void SetLRL(unsigned addr, addrmode where, Register& reg) // [[addr]+reg]
+            void SetLRL(unsigned addr, addrmode where, Register& reg) // [word[addr]+reg]
             {
                 Undefine();
-                value = "[[";
+                value = "[word[";
                 value = value + BuildAddr(addr, where) + "]+" + reg.UseValue() + "]";
                 Depend(reg);
+                is_const = false;
             }
-            void LSetLL(unsigned addr, addrmode where) // [[addr]]
+            void LSetLL(unsigned addr, addrmode where) // [long[addr]]
             {
                 Undefine();
                 value = "[long[";
                 value = value + BuildAddr(addr, where) + "]]";
+                is_const = false;
             }
-            void LSetLRL(unsigned addr, addrmode where, Register& reg) // [[addr]+reg]
+            void LSetLRL(unsigned addr, addrmode where, Register& reg) // [long[addr]+reg]
             {
                 Undefine();
                 value = "[long[";
                 value = value + BuildAddr(addr, where) + "]+" + reg.UseValue() + "]";
                 Depend(reg);
+                is_const = false;
             }
             
             const std::string Display() const
@@ -490,7 +507,8 @@ namespace
             void SetRegister(const Register& reg)
             {
                 Undefine();
-                value = reg.GetName();
+                value    = reg.GetName();
+                is_const = false;
                 Depend(reg);
             }
             
@@ -556,7 +574,7 @@ namespace
             
             void Depend(const Register& reg)
             {
-                deps.insert(&reg);
+                if(!reg.defined) deps.insert(&reg);
             }
 
             std::set<const Register*> deps;
@@ -569,7 +587,9 @@ namespace
             bool defined;
             Machine& machine;
             
-            Register(Machine& m): machine(m)
+            // defined-flag is set to "true" here so that
+            // the NewValue() call in Undefine() won't do anything.
+            Register(Machine& m): defined(true), machine(m)
             {
                 Undefine();
             }
@@ -580,6 +600,8 @@ namespace
             }
             void operator=(const Register& b)
             {
+                //machine.UndependRegs(*this);
+
                 value     = b.value;
                 displayed = b.displayed;
                 defined   = b.defined;
@@ -587,6 +609,8 @@ namespace
             
             void Undefine()
             {
+                NewValue();
+                
                 //machine.printf("<Undefine %s>\n", GetName().c_str());
                 displayed = false;
                 defined   = false;
@@ -601,6 +625,8 @@ namespace
             
             void Add(int num)
             {
+                NewValue();
+
                 value.Add(num);
                 Loaded();
                 machine.carry = maybe;
@@ -611,6 +637,8 @@ namespace
             }
             void Add(const labeldata& label, tristate bitness)
             {
+                NewValue();
+
                 value.Add(BuildValue(label));
                 value.SetBitness(bitness);
                 Loaded();
@@ -618,6 +646,8 @@ namespace
             }
             void Sub(const labeldata& label, tristate bitness)
             {
+                NewValue();
+
                 value.Sub(BuildValue(label));
                 value.SetBitness(bitness);
                 Loaded();
@@ -625,12 +655,16 @@ namespace
             }
             void And(const labeldata& label, tristate bitness)
             {
+                NewValue();
+
                 value.And(BuildValue(label));
                 value.SetBitness(bitness);
                 Loaded();
             }
             void Or(const labeldata& label, tristate bitness)
             {
+                NewValue();
+
                 value.Or(BuildValue(label));
                 value.SetBitness(bitness);
                 Loaded();
@@ -638,18 +672,29 @@ namespace
             
             void Load(const labeldata& label, tristate bitness)
             {
+                if(!label.IsImmed())
+                {
+                    // immeds are usually stored somewhere,
+                    // so don't flush it right now...
+                    NewValue();
+                }
+
                 value = BuildValue(label);
                 value.SetBitness(bitness);
                 Loaded();
             }
             void Load(const Value& v, tristate bitness)
             {
+                NewValue();
+
                 value = v;
                 value.SetBitness(bitness);
                 Loaded();
             }
             void Load(const Register& reg, tristate bitness)
             {
+                NewValue();
+
                 Load(reg.value, bitness);
                 Loaded();
             }
@@ -672,19 +717,24 @@ namespace
             {
                 // Vasta silloin kun rekisterin uutta arvoa tarvitaan,
                 // viittaukset vanhaan arvoon puretaan.
-                machine.UndependRegs(*this);
+                //machine.UndependRegs(*this);
                 
                 displayed = true;
                 return value.Display();
             }
             const std::string UseValue()
             {
-                if(!value.IsConst())
+                if(false && defined && !value.IsConst())
                 {
                     // If this register contains a value of memory address
                     // and is going to be used in referring to another memory
                     // address, flush the assignment and refer to the register
                     // name only.
+                    
+                    machine.printf(
+                        ";%s deflashing for memory reference\n",
+                        GetName().c_str());
+                    
                     machine.DisplayRegister(*this);
                     Undefine();
                 }
@@ -696,11 +746,11 @@ namespace
                 {
                     /**/
                     machine.printf(
-                        ";oops - %s not allowed to depend on %s\n",
+                        ";%s undepending because of %s\n",
                         GetName().c_str(),
                         reg.GetName().c_str());
                     /**/
-                    value.Undepend(reg); // prevent a loop
+                    value.Undepend(reg); // prevent a loop in DisplayRegister()
                     
                     machine.DisplayRegister(*this);
                     Undefine();
@@ -718,6 +768,10 @@ namespace
                 
                 machine.compare.Op1 = this;
                 machine.compare.type = Compare::AUTO;
+            }
+            void NewValue()
+            {
+                if(!defined) machine.UndependRegs(*this);
             }
             
             //void operator= (const Register&);
@@ -775,7 +829,7 @@ namespace
             if(label.IsUnIndexedAddr())
             {
                 output.modified_mem.insert(label.op1val);
-                reg.UseValue();
+                //reg.UseValue();
                 
                 memory[label.op1val] = reg.value;
                 memory[label.op1val].SetBitness(bitness);
@@ -832,7 +886,11 @@ namespace
         {
             if(label.IsUnIndexedAddr())
             {
-                output.modified_mem.insert(label.op1val);
+                Value tmp;
+                tmp.Set(0);
+                memory[label.op1val] = tmp;
+                memory[label.op1val].SetBitness(bitness);
+                return;
             }
 
             Value target = ParseAddress(label);
@@ -893,7 +951,14 @@ namespace
         }
         void OutputIfPL(bool positive)
         {
-            OutputIf(positive ? "pl" : "mi");
+            if(compare.type == Compare::AUTO)
+            {
+                compare.Op2.Set(compare.Op1->value.is_16bit.is_true() ? 0x8000 : 0x80);
+                compare.type = Compare::BIT;
+                OutputIfEQ(!positive);
+            }
+            else
+                OutputIf(positive ? "pl" : "mi");
         }
         void OutputCall(const std::string& label, bool is_far)
         {
@@ -988,16 +1053,28 @@ namespace
         
         void DisplayModifiedRegs(const Output& instruction)
         {
-            if(instruction.A_modified) { printf(";A modified\n");/*UndependRegs(A);*/ }
-            if(instruction.X_modified) { printf(";X modified\n");/*UndependRegs(X);*/ }
-            if(instruction.Y_modified) { printf(";Y modified\n");/*UndependRegs(Y);*/ }
-            if(instruction.D_modified) { printf(";D modified\n");/*UndependRegs(D);*/ }
-            if(instruction.B_modified) { printf(";B modified\n");/*UndependRegs(B);*/ }
-            if(instruction.A_modified) { DisplayRegister(A); if(compare.Op1 == &A) A.Undefine(); }
-            if(instruction.X_modified) { DisplayRegister(X); if(compare.Op1 == &X) X.Undefine(); }
-            if(instruction.Y_modified) { DisplayRegister(Y); if(compare.Op1 == &Y) Y.Undefine(); }
-            if(instruction.D_modified) { DisplayRegister(D); }
-            if(instruction.B_modified) { DisplayRegister(B); }
+           #if 0
+            if(instruction.A_modified && compare.Op1 != &A)
+            {
+                printf(";A modified\n");/*UndependRegs(A);*/DisplayRegister(A);
+            }
+            if(instruction.X_modified && compare.Op1 != &X)
+            {
+                printf(";X modified\n");/*UndependRegs(A);*/DisplayRegister(X);
+            }
+            if(instruction.Y_modified && compare.Op1 != &Y)
+            {
+                printf(";Y modified\n");/*UndependRegs(A);*/DisplayRegister(Y);
+            }
+            if(instruction.D_modified)
+            {
+                printf(";D modified\n");/*UndependRegs(D);*/DisplayRegister(D);
+            }
+            if(instruction.B_modified)
+            {
+                printf(";B modified\n");/*UndependRegs(B);*/DisplayRegister(B);
+            }
+           #endif
             for(std::set<unsigned>::const_iterator
                 i = instruction.modified_mem.begin();
                 i != instruction.modified_mem.end();
@@ -1005,7 +1082,10 @@ namespace
             {
                 printf(";mem %X modified\n", *i);
                 memorymap::iterator j = memory.find(*i);
-                if(j != memory.end()) { DisplayMem(j); memory.erase(j); }
+                if(j != memory.end())
+                    { DisplayMem(j); memory.erase(j); }
+                else
+                    printf(";but not found\n");
             }
         }
         
@@ -1017,6 +1097,8 @@ namespace
             else if(addr < 0x10000) target.SetL(addr, Value::Data);
             else target.SetL(addr, Value::Abs);
             OutputAssign(target.Display(), i->second.Display());
+            
+            output.modified_mem.insert(addr);
         }
         
         void UndependRegs(const Register& reg)
@@ -1031,6 +1113,8 @@ namespace
                 j=i;++j;
                 if(i->second.Depends(reg))
                 {
+                    printf(";mem %X undepending because of %s\n",
+                        i->first, reg.GetName().c_str());
                     DisplayMem(i);
                     memory.erase(i);
                 }
@@ -1076,26 +1160,75 @@ namespace
             printf("\t%*s", ind, "");
         }
 
-        void OutputEndIf(bool simple=true)
+        void OutputEndIf()
         {
             Indent(-2);
             DisplayIndent();
-            printf("end if ;%s\n", simple?"simple":"unsimple");
+            printf("end if\n");
+        }
+        void OutputElse()
+        {
+            Indent(-2);
+            DisplayIndent();
+            printf("else\n");
+            Indent(2);
         }
         
-        void OutputEndIf(const Machine& tempmachine)
+        void CombineOutput(const Output& b)
         {
-            OutputEndIf(false);
+            if(b.A_modified) { output.A_modified = true; A.Undefine(); }
+            if(b.X_modified) { output.X_modified = true; X.Undefine(); }
+            if(b.Y_modified) { output.Y_modified = true; Y.Undefine(); }
+            if(b.D_modified) { output.D_modified = true; D.Undefine(); }
+            if(b.B_modified) { output.B_modified = true; B.Undefine(); }
+        }
+        
+        void FinishIf(const Machine& tempmachine)
+        {
+            output.code += tempmachine.output.code;
             
-            if(A.value != tempmachine.A.value) { A.Undefine(); }
-            if(X.value != tempmachine.X.value) { X.Undefine(); }
-            if(Y.value != tempmachine.Y.value) { Y.Undefine(); }
-            if(D.value != tempmachine.D.value) { D.Undefine(); }
-            if(B.value != tempmachine.B.value) { B.Undefine(); }
-            // FIXME: modify "compare" too
+            OutputEndIf();
             
-            // If carry is not known the same in both
-            if(!(carry != tempmachine.carry).is_false()) carry = maybe;
+            if(!tempmachine.output.terminated)
+            {
+                CombineOutput(tempmachine.output);
+                // FIXME: modify "compare" too
+            
+                // If carry is not known the same in both
+                if(!(carry != tempmachine.carry).is_false()) carry = maybe;
+            }
+            
+            output.labels_seen.insert(tempmachine.output.labels_seen.begin(),
+                                      tempmachine.output.labels_seen.end());
+        }
+        void FinishIf(const Machine& tempmachine, const Machine& tempmachine2)
+        {
+            output.code += tempmachine.output.code;
+            
+            OutputElse();
+            
+            output.code += tempmachine2.output.code;
+            
+            OutputEndIf();
+            
+            bool saved_dummy = output.dummy;
+            const std::string saved_code = output.code;
+            output = tempmachine.output;
+            output.dummy = saved_dummy;
+            output.code = saved_code;
+            CombineOutput(tempmachine2.output);
+            output.terminated = output.terminated && tempmachine2.output.terminated;
+            
+            if(!output.terminated)
+            {
+                // FIXME: modify "compare" too
+            
+                // If carry is not known the same in both
+                if(!(carry != tempmachine.carry).is_false()) carry = maybe;
+            }
+            
+            output.labels_seen.insert(tempmachine2.output.labels_seen.begin(),
+                                      tempmachine2.output.labels_seen.end());
         }
         
         void OutputAsm(unsigned addr, const labeldata& label)
@@ -1224,12 +1357,16 @@ namespace
         
         void printf(const char* fmt, ...)
         {
+            if(output.dummy) return;
+            
             char Buf[4096];
             va_list ap;
             va_start(ap, fmt);
             std::vsnprintf(Buf, sizeof(Buf), fmt, ap);
             va_end(ap);
             output.code += Buf;
+            
+            //std::fprintf(stderr, "%s", Buf);
         }
         
     private:
@@ -1240,11 +1377,11 @@ namespace
                   const unsigned first_address,
                   unsigned terminate_at=0)
     {
-        // Return value:
-        //   true=Did a "rts" or something
-        //   false=No, was terminated
-    
-        std::set<unsigned> seen; // For infinite loops
+        static unsigned ind=0;
+        std::fprintf(stderr, "%*s", ind++, "");
+        std::fprintf(stderr, "LoadCode($%06X, $%06X, dummy=%s)\n",
+            first_address, terminate_at,
+            machine.output.dummy?"true":"false");
         
         unsigned address = first_address;
         for(;;)
@@ -1262,15 +1399,16 @@ namespace
             const labeldata& label = i->second;
             
             if(address == terminate_at
-            || seen.find(address) != seen.end())
+            || machine.output.labels_seen.find(address)
+            != machine.output.labels_seen.end())
             {
                 machine.DisplayRegs();
-                machine.OutputAsm(address, label);
+                //machine.OutputAsm(address, label);
                 machine.DisplayIndent();
                 machine.printf("--BREAK %X\n", address);
                 break;
             }
-            seen.insert(address);
+            machine.output.labels_seen.insert(address);
             
             unsigned next_addr = label.nextlabel;
 
@@ -1386,45 +1524,117 @@ namespace
                  || label.op == "bmi"
                  || label.op == "bpl")
             {
-                bool positive = label.op == "beq"
-                             || label.op == "bcc"
-                             || label.op == "bpl";
-                
-                Machine tempmachine = machine;
-                
-                tempmachine.output = Output();
-
-                tempmachine.OutputIf("...");
-                LoadCode(tempmachine, label.nextlabel, label.otherbranch);
-                
-                machine.DisplayModifiedRegs(tempmachine.output);
-                
-                if(label.op == "beq" || label.op == "bne")
-                    machine.OutputIfEQ(!positive);
-                else if(label.op == "bcc" || label.op == "bcs")
-                    machine.OutputIfCC(!positive);
-                else if(label.op == "bmi" || label.op == "bpl")
-                    machine.OutputIfPL(!positive);
-                
-                tempmachine = machine;
-                tempmachine.output = Output();
-                
-                LoadCode(tempmachine, label.nextlabel, label.otherbranch);
-                
-                machine.output.Combine(tempmachine.output);
-
-                if(tempmachine.output.terminated)
+                if(machine.output.dummy)
                 {
-                    // If it returned true, we don't have to worry
-                    // about register states modified
-                    machine.OutputEndIf();
+                    // Simplify so recursion won't take eternities
+                    
+                    machine.DisplayRegs();
+                    machine.OutputIf("...");
+                    
+                    Machine tempmachine = machine;
+                    tempmachine.output.Clear(true);
+                    LoadCode(tempmachine, label.nextlabel, label.otherbranch);
+                    machine.FinishIf(tempmachine);
+                    
+                    next_addr = label.otherbranch;
                 }
                 else
                 {
-                    machine.OutputEndIf(tempmachine);
+                    bool positive = label.op == "beq"
+                                 || label.op == "bcc"
+                                 || label.op == "bpl";
+                    
+                    Machine tempmachine = machine; tempmachine.output.Clear(true);
+                    Machine tempmachine2 = tempmachine;
+                    
+                    /* Step 1: Do a dry run to see which
+                     * registers / memory addresses are handled
+                     */
+                    tempmachine.OutputIf("...");
+
+                    unsigned iflabel    = label.nextlabel;
+                    unsigned elselabel  = label.otherbranch;
+                    unsigned endiflabel = label.otherbranch;
+                    
+                    LoadCode(tempmachine, iflabel, endiflabel);
+                    LoadCode(tempmachine2, elselabel, terminate_at);
+                    
+                    std::set<unsigned> crossing;
+                    std::set_intersection
+                      ( tempmachine.output.labels_seen.begin(),
+                        tempmachine.output.labels_seen.end(),
+                        tempmachine2.output.labels_seen.begin(),
+                        tempmachine2.output.labels_seen.end(),
+                        std::inserter(crossing, crossing.begin())
+                      );
+                    if(!crossing.empty())
+                    {
+                        endiflabel  = *crossing.begin();
+                        machine.printf("; endif=%X\n", endiflabel);
+                        
+                        // Revisit the code, because the ranges are now shorter.
+                        tempmachine = machine; tempmachine.output.Clear(true);
+                        tempmachine2 = tempmachine;
+                        LoadCode(tempmachine, iflabel, endiflabel);
+                        LoadCode(tempmachine2, elselabel, endiflabel);
+                    }
+                    else
+                    {
+                        // Else-part was not contiguous after this.
+                        // Thus, clear it so it won't affect the
+                        // DisplayModifiedRegs -call.
+                        tempmachine2.output = Output();
+                    }
+                    
+                    /* Step 2: Flush the registers which were
+                     * seen as modified
+                     */
+                    machine.DisplayModifiedRegs(tempmachine.output);
+                    machine.DisplayModifiedRegs(tempmachine2.output);
+                    
+                    if(label.nextlabel == endiflabel
+                    || machine.output.labels_seen.find(label.nextlabel)
+                    != machine.output.labels_seen.end())
+                    {
+                        // negate the jump because the "if" part was empty
+                        positive = !positive;
+                        unsigned tmp = iflabel;
+                        iflabel = elselabel;
+                        elselabel = tmp;
+                    }
+                    
+                    /* Step 3: Do a real run with the branch */
+                    if(label.op == "beq" || label.op == "bne")
+                        machine.OutputIfEQ(!positive);
+                    else if(label.op == "bcc" || label.op == "bcs")
+                        machine.OutputIfCC(!positive);
+                    else if(label.op == "bmi" || label.op == "bpl")
+                        machine.OutputIfPL(!positive);
+                    
+                    tempmachine = machine;
+                    tempmachine.output.Clear(false);
+                    
+                    LoadCode(tempmachine, iflabel, endiflabel);
+
+                    if(endiflabel == elselabel)
+                    {
+                        machine.FinishIf(tempmachine);
+                    }
+                    else
+                    {
+                        tempmachine2 = machine;
+                        tempmachine2.output.Clear(false);
+                        tempmachine2.output.labels_seen = tempmachine.output.labels_seen;
+                        
+                        LoadCode(tempmachine2, elselabel, endiflabel);
+
+                        machine.FinishIf(tempmachine, tempmachine2);
+                    }
+                    if(machine.output.terminated) break;
+                    
+                    /* Done */
+                    next_addr = endiflabel;
                 }
-                
-                next_addr = label.otherbranch;
             }
             else
             {
@@ -1434,6 +1644,9 @@ namespace
             address = next_addr;
         }
         machine.DisplayRegs();
+        
+        std::fprintf(stderr, "%*s", --ind, "");
+        std::fprintf(stderr, "pop\n");
     }
 
     void DisplayRoutine(unsigned first_address, const std::string& name)

@@ -99,6 +99,7 @@ DEPDIRS = utils/
 # VERSION 1.11.0 has technological updates and new item list code with VWF8
 # VERSION 1.11.1 adds the documentation core
 # VERSION 1.11.2 is a backup before anything catastrophic happens
+# VERSION 1.11.3 is another backup
 
 OPTIM=-O3
 #OPTIM=-O0
@@ -107,7 +108,7 @@ OPTIM=-O3
 
 CXXFLAGS += -I.
 
-VERSION=1.11.2
+VERSION=1.11.3
 ARCHFILES=utils/xray.cc utils/xray.h \
           utils/viewer.c \
           utils/vwftest.cc \
