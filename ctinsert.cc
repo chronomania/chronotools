@@ -17,7 +17,7 @@ using namespace std;
 #include "miscfun.hh"
 
 static const bool rebuild_dict             = false;
-static const bool sort_dictionary          = true;
+static const bool sort_dictionary          = !true;
 static const unsigned MaxDictWordLen       = 20;
 static const unsigned MaxDictRecursLen     = 3;
 static const unsigned DictMaxSpacesPerWord = 4;
@@ -163,9 +163,9 @@ public:
         ROM[pointeraddr  ] = spaceptr & 255;
         ROM[pointeraddr+1] = spaceptr >> 8;
         
-        //fprintf(stderr, "Wrote %u bytes at %06X->%04X: ", string.size()+1, pointeraddr, spaceptr);
-        //fprintf(stderr, DispString(string).c_str());
-        //fprintf(stderr, "\n");
+        /*fprintf(stderr, "Wrote %u bytes at %06X->%04X: ", string.size()+1, pointeraddr, spaceptr);
+        fprintf(stderr, DispString(string).c_str());
+        fprintf(stderr, "\n");*/
         
         spaceptr += page<<16;
         for(unsigned a=0; a<=string.size(); ++a)
@@ -308,23 +308,6 @@ void insertor::WriteROM()
         
         string s = i->second.str;
         
-        #if 0
-        if(i->second.type == stringdata::zptr16)
-        {
-            unsigned char replacement[2];
-            replacement[0] = 0x21;
-            replacement[1] = 0;
-
-            vector<string>::const_iterator l;
-            for(l = replacedict.begin(); l != replacedict.end(); ++l)
-            {
-                s = str_replace(*l, (const char *)replacement, s);
-                ++replacement[0];
-                if(replacement[0] == 0xA0)replacement[0] = 0xF1;
-            }
-        }
-        #endif
-        
         pagestrings.push_back(s);
         pageoffs.push_back(i->first);
     }
@@ -401,6 +384,7 @@ string insertor::DispString(const string &s) const
             else if(c == 11) result += "[pause]";
             else if(c == 12) result += "[pause3]";
             else if(c == 0) result += "[end]"; // Uuh?
+            else if(c == 0xF1) result += "...";
             else { char Buf[8]; sprintf(Buf, "[%02X]", c); result += Buf; }
         }
     }
@@ -454,7 +438,7 @@ void insertor::MakeDictionary()
 
             unsigned tickpos=0;
 
-			/* Calculate the ROM usage for the strings per page */
+            /* Calculate the ROM usage for the strings per page */
             map<unsigned, unsigned> usageperpage;
 
             /* Note: This code is really copypaste from WriteROM() */
@@ -515,8 +499,10 @@ void insertor::MakeDictionary()
                 const unsigned page = i->first >> 16;
                 
                 /* Weight value for this string is how urgent the compression is */
-                const double importance = usageperpage[page] / (double)spaceperpage[page];
+                double importance = usageperpage[page] / (double)spaceperpage[page];
                 const string &s = i->second.str;
+                
+                importance *= importance;
 
                 if(tickpos)
                     --tickpos;
@@ -548,7 +534,7 @@ void insertor::MakeDictionary()
                         /* But can't contain all possible bytes      */
                         /* (Dictionary words can't contain [nl] etc) */
                         if(ch <= 0x20)break;
-                        if((ch >= 0x21 && ch < 0xA0) || ch == 0xF1)
+                        if(ch >= 0x21 && ch < 0xA0)
                         {
                             if(speco >= MaxDictRecursLen)break;
                             ++speco;
@@ -608,8 +594,6 @@ void insertor::MakeDictionary()
                 unsigned char c = bestword[a];
                 if(c >= 0x21 && c < 0xA0)
                     dictword += dict[c-0x21];
-                else if(c == 0xF1)
-                    dictword += dict[0x7F];
                 else
                     dictword += (char)c;
             }
@@ -624,7 +608,6 @@ void insertor::MakeDictionary()
             unsigned char replacement[2];
             replacement[0] = 0x21 + dict.size();
             replacement[1] = '\0';
-            if(replacement[0] == 0xA0)replacement[0] = 0xF1;
 
             for(stringmap::iterator i=strings.begin(); i!=strings.end(); ++i)
             {
@@ -639,30 +622,43 @@ void insertor::MakeDictionary()
     }
     else
     {
+        fprintf(stderr,
+            "Applying dictionary. This will take some seconds at most.\n"
+        );
         if(sort_dictionary)
             sort(dict.begin(), dict.end(), dictsorter);
         unsigned col=0;
+        vector<string> replacements;
         for(unsigned d=0; d<dict.size(); ++d)
         {
-            const string &bestword = dict[d];
+            const string &dictword = dict[d];
+            
+            unsigned char replacement[2];
+            replacement[1] = '\0';
 
+            string bestword = dictword;
+            for(unsigned c=0; c<d; ++c)
+            //for(unsigned c=d; c-->0; )
+            {
+                replacement[0] = 0x21 + c;
+                bestword = str_replace(replacements[c], (const char *)replacement, bestword);
+            }
+            
             fprintf(stderr, "'%s%*c",
-                DispString(bestword).c_str(),
-                bestword.size()-12, '\'');
+                DispString(dictword).c_str(),
+                dictword.size()-12, '\'');
             if(++col==6){col=0;putc('\n',stderr);}
             
             dictbytes += bestword.size()+1;
             
-            unsigned char replacement[2];
             replacement[0] = 0x21 + d;
-            replacement[1] = '\0';
-            if(replacement[0] == 0xA0)replacement[0] = 0xF1;
-
+            
             for(stringmap::iterator i=strings.begin(); i!=strings.end(); ++i)
             {
                 if(i->second.type != stringdata::zptr16) continue;
                 i->second.str = str_replace(bestword, (const char *)replacement, i->second.str);
             }
+            replacements.push_back(bestword);
         }
         if(col)putc('\n', stderr);
         replacedict = dict;
@@ -747,6 +743,7 @@ void insertor::LoadSymbols()
     targets=16;
     defbsym(musicsymbol, 0xEE)
     defbsym(heartsymbol, 0xF0)
+    defsym(...,          0xF1)
     
     #undef defsym
 
@@ -907,7 +904,7 @@ void insertor::LoadFile(FILE *fp)
             {
                 map<string, char>::const_iterator i;
                 char c = content[a];
-                for(unsigned testlen=4; testlen<=5; ++testlen)
+                for(unsigned testlen=3; testlen<=5; ++testlen)
                     if(symbols != NULL && (i = symbols->find(code = content.substr(a, testlen))) != symbols->end())
                     {
                         a += testlen-1;

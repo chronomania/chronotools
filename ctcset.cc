@@ -10,7 +10,6 @@ const char characterset[256] =
     "ghijklmnopqrstuvwxyz0123456789!?"   // C0
 //  "/«»:&()'.,=-+%¶ ¶¶¶#¶¶¶¶¶¶¶¶¶¶¶_";  // E0
     "/«»:&()'.,=-+%¶ ¶¶¶#¶åäöÅÄÖéÉ¶¶_";  // E0
-
-    // !?/#
-    // =-+%
-    // "":&()'., 
+    
+    // Alin rivi:
+    // / `` '' : & ( ) ' . , = _ + % nuotti väli sydän ... ääretön risuaita

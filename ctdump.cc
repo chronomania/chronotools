@@ -301,9 +301,8 @@ static void LoadDict(unsigned offs, unsigned len)
         offs>>16, offs&0xFFFF, hmm.size(), hmm.size());
     
     DumpTable(hmm, Disp8Char);
-
-    substrings[0xF1] = hmm[127];
-    for(unsigned a=0; a<hmm.size()-1; ++a)
+    
+    for(unsigned a=0; a<hmm.size(); ++a)
         substrings[a + 0x21] = hmm[a];
 
     printf("\n\n");
@@ -407,6 +406,49 @@ static const string revtrans(const char *s)
     return result;
 }
 
+static void Dump8x8sprites(unsigned spriteoffs, unsigned count)
+{
+	unsigned offs = spriteoffs;
+	for(unsigned a=0; a<count; ++a)
+	{
+		for(unsigned y=0; y<8; ++y)
+		{
+			unsigned char byte1 = ROM[offs];
+			unsigned char byte2 = ROM[offs+1];
+			offs += 2;
+			for(unsigned x=0; x<8; ++x)
+				putchar(".coO"
+					[((byte1 >> (7-x))&1) | (((byte2 >> (7-x))&1) << 1)]
+				);
+			putchar('\n');
+			fflush(stdout);
+		}
+		putchar('\n');
+	}
+}
+static void DumpFont(unsigned spriteoffs, unsigned sizeoffs, unsigned count)
+{
+	unsigned offs = spriteoffs;
+	for(unsigned a=0; a<count; ++a)
+	{
+		unsigned width = ROM[sizeoffs + a];
+		printf("[%u]\n", width); fflush(stdout);
+		for(unsigned y=0; y<12; ++y)
+		{
+			unsigned char byte1 = ROM[offs];
+			unsigned char byte2 = ROM[offs+1];
+			offs += 2;
+			for(unsigned x=0; x<=width; ++x)
+				putchar(".coO"
+					[((byte1 >> (7-x))&1) | (((byte2 >> (7-x))&1) << 1)]
+				);
+			putchar('\n');
+		}
+		putchar('\n');
+		fflush(stdout);
+	}
+}
+
 int main(void)
 {
 	fprintf(stderr,
@@ -414,6 +456,7 @@ int main(void)
 		"Copyright (C) 1992,2002 Bisqwit (http://bisqwit.iki.fi/)\n");
 	
     LoadROM();
+#if 1
     substrings.resize(256);
     
     printf("; Note: There is a one byte sequence for [nl] and three spaces.\n"
@@ -423,7 +466,9 @@ int main(void)
            ";\n"
           );
     
-    LoadDict(0x1EFA00, 128);
+    // Don't load "..."
+    LoadDict(0x1EFA00, 127);
+
     // We hardcode these because the
     // ROM was a bit obfuscated here...
     substrings[0x13] = revtrans("Crono");
@@ -436,6 +481,8 @@ int main(void)
 
     substrings[0x1E] = revtrans("Nadia");
     substrings[0x20] = revtrans("Epoch");
+    
+    substrings[0xF1] = revtrans("...");
 
     // 
     puts(";items");
@@ -560,6 +607,13 @@ int main(void)
     
     if(TryFindExtraSpace)
         FindEndSpaces();
+
+#else
+
+    //Dump8x8sprites(0x3F9360, 142);
+    DumpFont(0x3F2F60, 0x260E5, 64);
+
+#endif
 
     ListSpaces();
 }
