@@ -304,38 +304,38 @@ Handle16bytes_0:
         ; Two bytes at time - thus only 8 iterations.
         IT:IT:IT:IT : IT:IT:IT:IT
         #undef IT
-        bra EndHandle16bytes
+        brl EndHandle16bytes
 Handle16bytes_1:
         ; P_TILEBUF1 = 0xxxxxxx P_TILEBUF2 = x0000000  - do swap;1 lsr
         ; The loop is partially unrolled.
         #define IT .as : lda [P_FONT],y : xba : lda #$00 : SET_16_BIT_A() : lsr : REST()
         IT:IT:IT:IT  :  IT:IT:IT:IT  :  IT:IT:IT:IT  :  IT:IT:IT:IT
         #undef IT
-        bra EndHandle16bytes
+        brl EndHandle16bytes
 Handle16bytes_2:
         ; P_TILEBUF1 = 00xxxxxx P_TILEBUF2 = xx000000  - do swap;2 lsr
         #define IT .as : lda [P_FONT],y : xba : lda #$00 : SET_16_BIT_A() : lsr : lsr : REST()
         IT:IT:IT:IT  :  IT:IT:IT:IT  :  IT:IT:IT:IT  :  IT:IT:IT:IT
         #undef IT
-        bra EndHandle16bytes
+        brl EndHandle16bytes
 Handle16bytes_3:
         ; P_TILEBUF1 = 000xxxxx P_TILEBUF2 = xxx00000  - do swap;3 lsr
         #define IT .as : lda [P_FONT],y : xba : lda #$00 : SET_16_BIT_A() : lsr : lsr : lsr : REST()
         IT:IT:IT:IT  :  IT:IT:IT:IT  :  IT:IT:IT:IT  :  IT:IT:IT:IT
         #undef IT
-        bra EndHandle16bytes
+        brl EndHandle16bytes
 Handle16bytes_4:
         ; P_TILEBUF1 = 0000xxxx P_TILEBUF2 = xxxx0000  - do 4 asl
         #define IT SET_16_BIT_A() : lda [P_FONT],y : and #$00FF : asl : asl : asl : asl : REST()
         IT:IT:IT:IT  :  IT:IT:IT:IT  :  IT:IT:IT:IT  :  IT:IT:IT:IT
         #undef IT
-        bra EndHandle16bytes
+        brl EndHandle16bytes
 Handle16bytes_5:
         ; P_TILEBUF1 = 00000xxx P_TILEBUF2 = xxxxx000  - do 3 asl
         #define IT SET_16_BIT_A() : lda [P_FONT],y : and #$00FF : asl : asl : asl : REST()
         IT:IT:IT:IT  :  IT:IT:IT:IT  :  IT:IT:IT:IT  :  IT:IT:IT:IT
         #undef IT
-        bra EndHandle16bytes
+        brl EndHandle16bytes
 Handle16bytes_6:
         ; P_TILEBUF1 = 000000xx P_TILEBUF2 = xxxxxx00  - do 2 asl
         #define IT SET_16_BIT_A() : lda [P_FONT],y : and #$00FF : asl : asl : REST()
@@ -471,6 +471,32 @@ DrawS_setup_common:
         sta W_DATASIZE
         rts
 
+
+DrawS_initnondma:
+        SET_16_BIT_A()
+        phb
+        phb
+        pla              ;target page in hi&lo
+        sta P_TILEBUF1+1 ;writes to +1 and +2
+        sta P_TILEBUF2+1 ;writes to +1 and +2
+        
+        lda #TILEBUF     ;target offs = tilebuf
+        sta P_TILEBUF1   ;   initialize P_TILEBUF1
+
+        lda #$0000
+        tay
+      - ;loop
+        ; If you want to unroll, choices are 1/2/4/8 lines
+        sta (P_TILEBUF1),y : iny : iny
+        sta (P_TILEBUF1),y : iny : iny
+        sta (P_TILEBUF1),y : iny : iny
+        sta (P_TILEBUF1),y : iny : iny
+        cpy W_DATASIZE
+        bcc -
+
+        SET_8_BIT_A()
+        bra DrawS_init_common
+
 DrawS_initdma:
         SET_8_BIT_A()
         
@@ -537,30 +563,6 @@ DrawS_init_common:
         lda W_TILENUM
         rts
 
-DrawS_initnondma:
-        SET_16_BIT_A()
-        phb
-        phb
-        pla              ;target page in hi&lo
-        sta P_TILEBUF1+1 ;writes to +1 and +2
-        sta P_TILEBUF2+1 ;writes to +1 and +2
-        
-        lda #TILEBUF     ;target offs = tilebuf
-        sta P_TILEBUF1   ;   initialize P_TILEBUF1
-
-        lda #$0000
-        tay
-      - ;loop
-        ; If you want to unroll, choices are 1/2/4/8 lines
-        sta (P_TILEBUF1),y : iny : iny
-        sta (P_TILEBUF1),y : iny : iny
-        sta (P_TILEBUF1),y : iny : iny
-        sta (P_TILEBUF1),y : iny : iny
-        cpy W_DATASIZE
-        bcc -
-
-        SET_8_BIT_A()
-        bra DrawS_init_common
 
 Trans:
         ; Font8v has been shrunk a bit.

@@ -178,6 +178,8 @@ Copypaste from the Makefile:
 # VERSION 1.10.2 creates more useful information when dumping
 # VERSION 1.10.3 has technological updates but broken VWF8
 # VERSION 1.11.0 has technological updates and new item list code with VWF8
+# VERSION 1.11.1 adds the documentation core
+# VERSION 1.11.2 is a backup before anything catastrophic happens
 </pre>
 
 Users of previous versions are advised to do the following:

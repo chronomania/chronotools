@@ -25,7 +25,8 @@
  *    maybe  true   maybe   maybe   maybe  false   maybe
  *
  * Note:
- *   b || !b  doesn't equal to true, if b is "maybe".
+ *   If b is "maybe", b || !b  doesn't equal to true.
+ *   "maybe" = "maybe not".
  *
  * Copyright (C) 1992,2003 Bisqwit (http://iki.fi/bisqwit/)
  *

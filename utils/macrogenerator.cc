@@ -172,27 +172,27 @@ void FindPatterns(codevec_t& data)
                 if(eqmap.find(w) == eqmap.end()
                 && patterns[w].find(WildCard) != patterns[w].npos)
                 {
-                	char pname[32]; std::sprintf(pname, "_p_%u", w);
-                	if(p++) def += ',';
-                	def += pname;
+                    char pname[32]; std::sprintf(pname, "_p_%u", w);
+                    if(p++) def += ',';
+                    def += pname;
                 }
             def += ") ";
             
             for(unsigned w=0; w<patterns.size(); ++w)
             {
-            	if(w > 0) def += " : ";
-            	
-            	std::string cmd = patterns[w];
-            	unsigned a = cmd.find(WildCard);
-            	if(a != cmd.npos)
-        	    {
-        	        unsigned p = w;
-        	        if(eqmap.find(p) != eqmap.end()) p = eqmap[p];
-        	        char pname[32]; std::sprintf(pname, "_p_%u", p);
-        	        unsigned len = std::string(pname).size();
-        	        cmd.replace(a, 1, pname, 0, len);
-        	    }
-            	def += cmd;
+                if(w > 0) def += " : ";
+                
+                std::string cmd = patterns[w];
+                unsigned a = cmd.find(WildCard);
+                if(a != cmd.npos)
+                {
+                    unsigned p = w;
+                    if(eqmap.find(p) != eqmap.end()) p = eqmap[p];
+                    char pname[32]; std::sprintf(pname, "_p_%u", p);
+                    unsigned len = std::string(pname).size();
+                    cmd.replace(a, 1, pname, 0, len);
+                }
+                def += cmd;
             }
             
             data.push_front(def);
@@ -204,7 +204,7 @@ void FindPatterns(codevec_t& data)
                 std::vector<std::string> eyes(width);
                 for(unsigned w=0; w<width; ++w)
                 {
-                	//std::cerr << "*pos=(" << *pos << ")\n";
+                    //std::cerr << "*pos=(" << *pos << ")\n";
                     eyes[w] = GetEye(patterns[w], *pos);
                     vec_it next = pos; ++next;
                     if(w > 0) data.erase(pos);
@@ -214,8 +214,8 @@ void FindPatterns(codevec_t& data)
                 std::string cmd = macroname;
                 cmd += '(';
                 for(unsigned w=0; w<width; ++w)
-                	if(!eyes[w].empty()
-                	&& eqset.find(w) == eqset.end())
+                    if(!eyes[w].empty()
+                    && eqset.find(w) == eqset.end())
                     {
                         if(w) cmd += ',';
                         cmd += eyes[w];
@@ -327,7 +327,7 @@ void FindPatterns(codevec_t& data)
                         if(pos == data.end()) break;
                         
                         for(it_it k=itset.begin(); k!=itset.end(); ++k)
-                        	if(*k == pos) goto Fail;
+                            if(*k == pos) goto Fail;
                         
                         ExpandPattern(newpats[n], *pos0++, *pos++);
                     }
@@ -419,7 +419,7 @@ int main(void)
     FindPatterns(data);
     
     for(vec_it i = data.begin(); i != data.end(); ++i)
-    	std::cout << *i << std::endl;
+        std::cout << *i << std::endl;
 
     return 0;
 };

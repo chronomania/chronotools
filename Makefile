@@ -98,6 +98,7 @@ DEPDIRS = utils/
 # VERSION 1.10.3 has technological updates but broken VWF8
 # VERSION 1.11.0 has technological updates and new item list code with VWF8
 # VERSION 1.11.1 adds the documentation core
+# VERSION 1.11.2 is a backup before anything catastrophic happens
 
 OPTIM=-O3
 #OPTIM=-O0
@@ -106,7 +107,7 @@ OPTIM=-O3
 
 CXXFLAGS += -I.
 
-VERSION=1.11.1
+VERSION=1.11.2
 ARCHFILES=utils/xray.cc utils/xray.h \
           utils/viewer.c \
           utils/vwftest.cc \
@@ -123,6 +124,8 @@ ARCHFILES=utils/xray.cc utils/xray.h \
           utils/codegen.cc utils/codegen.hh \
           utils/casegen.cc utils/casegen.hh \
           utils/macrogenerator.cc utils/macrogenerator.hh \
+          utils/deasm.cc utils/assemble.hh \
+          utils/insdata.cc utils/insdata.hh \
           \
           autoptr \
           \
@@ -208,21 +211,15 @@ PROGS=\
 	utils/makeips \
 	utils/unmakeips \
 	utils/fixchecksum \
-	utils/facegenerator \
-	utils/base62 \
-	utils/sramdump \
-	utils/rearrange \
-	utils/spacefind \
-        utils/comprtest \
-	utils/vwftest \
-	utils/dumpo65 \
-	utils/o65test \
-	utils/viewer \
 	utils/compile \
+	utils/deasm \
+	utils/base62 \
+	utils/viewer \
 	utils/xray
 
 all: $(PROGS)
 
+# Chrono Trigger data dumping program
 ctdump: \
 		ctdump.o scriptfile.o rommap.o strload.o \
 		dumptext.o dumpfont.o dumpgfx.o msgdump.o \
@@ -231,6 +228,7 @@ ctdump: \
 		 config.o confparser.o ctcset.o wstring.o
 	$(CXX) $(LDOPTS) -o $@ $^ $(LDFLAGS)
 
+# Chrono Trigger patch generator program
 ctinsert: \
 		ctinsert.o readin.o wrap.o msginsert.o \
 		space.o writeout.o stringoffs.o \
@@ -242,12 +240,106 @@ ctinsert: \
 		 config.o confparser.o ctcset.o wstring.o
 	$(CXX) $(LDOPTS) -o $@ $^ $(LDFLAGS) -lm
 
+# Conjugator/crononick code compiler
+utils/compile: \
+		utils/compiler.o utils/casegen.o \
+		utils/codegen.o utils/macrogenerator.o \
+		symbols.o \
+		config.o confparser.o ctcset.o wstring.o
+	$(CXX) $(LDOPTS) $(CXXFLAGS) -g -O -Wall -W -pedantic -o $@ $^ $(LDFLAGS)
+utils/compiler: FORCE
+	@echo Make utils/compile instead\!
+
+
+# Patch generator
+utils/makeips: utils/makeips.cc
+	$(CXX) $(LDOPTS) -o $@ $^
+
+# Patch applier
+utils/unmakeips: utils/unmakeips.cc
+	$(CXX) $(LDOPTS) -g -O -Wall -W -pedantic -o $@ $^
+
+# ROM checksum fixer in the patch file
+utils/fixchecksum: utils/fixchecksum.cc
+	$(CXX) $(LDOPTS) -g -O -Wall -W -pedantic -o $@ $^
+
+
+# ROM graphics viewer
+utils/xray: utils/xray.o compress.o
+	$(CXX) $(LDOPTS) $(CXXFLAGS) -g -O -Wall -W -pedantic -o $@ $^ $(LDFLAGS) -lggi
+
+# ROM text viewer
+utils/viewer: utils/viewer.o
+	$(CC) $(LDOPTS) -o $@ $^ $(LDFLAGS) -lslang
+
+# A certain disassembler (not generic)
+utils/deasm: utils/deasm.o utils/insdata.o rommap.o
+	$(CXX) $(LDOPTS) $(CXXFLAGS) -g -O -Wall -W -pedantic -o $@ $^ $(LDFLAGS)
+
+# Cursive/bold typeface font generator (obsolete)
+utils/facegenerator: utils/facegenerator.o tgaimage.o
+	$(CXX) $(LDOPTS) $(CXXFLAGS) -g -O -Wall -W -pedantic -o $@ $^ $(LDFLAGS)
+
+# Base62 - base10 converter
+utils/base62: utils/base62.cc
+	$(CXX) $(LDOPTS) $(CXXFLAGS) -g -O -Wall -W -pedantic -o $@ $^ $(LDFLAGS)
+
+# SRAM dumping program (obsolete)
+utils/sramdump: utils/sramdump.o config.o confparser.o ctcset.o wstring.o
+	$(CXX) $(LDOPTS) $(CXXFLAGS) -g -O -Wall -W -pedantic -o $@ $^ $(LDFLAGS)
+
+
+
+# Script reformatter (not generic)
+utils/rearrange: utils/rearrange.o
+	$(CXX) $(LDOPTS) $(CXXFLAGS) -g -O -Wall -W -pedantic -o $@ $^ $(LDFLAGS)
+
+# O65 tester (not generic)
+utils/o65test: utils/o65test.o o65.o wstring.o
+	$(CXX) $(LDOPTS) $(CXXFLAGS) -g -O -Wall -W -pedantic -o $@ $^ $(LDFLAGS)
+
+# O65 dumper (not generic)
+utils/dumpo65: utils/dumpo65.o
+	$(CXX) $(LDOPTS) $(CXXFLAGS) -g -O -Wall -W -pedantic -o $@ $^ $(LDFLAGS)
+
+# ROM script text viewer, intended to view the jap. ROM (incomplete)
+utils/ctxtview: utils/ctxtview.o settings.o rommap.o
+	$(CXX) $(LDOPTS) $(CXXFLAGS) -g -O -Wall -W -pedantic -o $@ $^ $(LDFLAGS)
+
+# Compression tests (not generic, obsolete)
+utils/comprtest: utils/comprtest.o rommap.o compress.o
+	$(CXX) $(LDOPTS) $(CXXFLAGS) -g -O -Wall -W -pedantic -o $@ $^ $(LDFLAGS)
+utils/comprtest2: utils/comprtest2.o compress.o
+	$(CXX) $(LDOPTS) $(CXXFLAGS) -g -O -Wall -W -pedantic -o $@ $^ $(LDFLAGS)
+
+# Second compiler version (not generic, incomplete, obsolete)
+utils/compiler2.o: utils/compiler2.cc
+	$(CXX) $(LDOPTS) -g -o $@ -c $< $(CXXFLAGS) -O0 -fno-default-inline
+utils/comp2test: utils/compiler2.cc config.o confparser.o ctcset.o wstring.o
+	$(CXX) $(LDOPTS) $(CXXFLAGS) -g -O -Wall -W -pedantic -o $@ $^ $(LDFLAGS)
+
+# Binpacker test (obsolete)
+utils/spacefind: utils/spacefind.o
+	$(CXX) $(LDOPTS) -o $@ $^ $(LDFLAGS) -lm
+
+# VWF8 test program (obsolete)
+utils/vwftest: \
+		utils/vwftest.o tgaimage.o \
+		fonts.o typefaces.o extras.o conjugate.o o65.o settings.o \
+		snescode.o symbols.o space.o logfiles.o o65linker.o \
+		config.o confparser.o ctcset.o wstring.o
+	$(CXX) $(LDOPTS) $(CXXFLAGS) -g -O -Wall -W -pedantic -o $@ $^ $(LDFLAGS)
+
+
+
+
+# Generic rule to create .o65 out from .a65
 %.o65: %.a65
 	snescom -J -Wall -o $@ $< 
 
+# Rules for creating ct-conj.o65
 ct-conj1.a65: ct-conj.code utils/compile
 	utils/compile $< $@
-
 # ct-conj.o65 is build in a strange way.
 ct-conj.o65: ct-conj1.a65 ct-conj.a65
 	sed 's/#\([^a-z]\)/§\1/g;s/;.*//' < ct-conj1.a65 > .tmptmp
@@ -256,6 +348,7 @@ ct-conj.o65: ct-conj1.a65 ct-conj.a65
 	snescom -J -Wall -o $@ .tmptmp2
 	rm -f .tmptmp .tmptmp2
 
+# Rules for creating ct-crononick.o65
 ct-crononick1.a65: ct-crononick.code utils/compile
 	utils/compile $< $@
 ct-crononick.o65: ct-crononick1.a65 ct-crononick.a65
@@ -265,77 +358,17 @@ ct-crononick.o65: ct-crononick1.a65 ct-crononick.a65
 	snescom -J -Wall -o $@ .tmptmp2
 	rm -f .tmptmp .tmptmp2
 
-utils/makeips: utils/makeips.cc
-	$(CXX) $(LDOPTS) -o $@ $^
-utils/fixchecksum: utils/fixchecksum.cc
-	$(CXX) $(LDOPTS) -g -O -Wall -W -pedantic -o $@ $^
-utils/unmakeips: utils/unmakeips.cc
-	$(CXX) $(LDOPTS) -g -O -Wall -W -pedantic -o $@ $^
-
-utils/spacefind: utils/spacefind.o
-	$(CXX) $(LDOPTS) -o $@ $^ $(LDFLAGS) -lm
-
-
-utils/viewer: utils/viewer.o
-	$(CC) $(LDOPTS) -o $@ $^ $(LDFLAGS) -lslang
-
-utils/sramdump: utils/sramdump.o config.o confparser.o ctcset.o wstring.o
-	$(CXX) $(LDOPTS) $(CXXFLAGS) -g -O -Wall -W -pedantic -o $@ $^ $(LDFLAGS)
-utils/base62: utils/base62.cc
-	$(CXX) $(LDOPTS) $(CXXFLAGS) -g -O -Wall -W -pedantic -o $@ $^ $(LDFLAGS)
-utils/compile: \
-		utils/compiler.o utils/casegen.o \
-		utils/codegen.o utils/macrogenerator.o \
-		symbols.o \
-		config.o confparser.o ctcset.o wstring.o
-	$(CXX) $(LDOPTS) $(CXXFLAGS) -g -O -Wall -W -pedantic -o $@ $^ $(LDFLAGS)
-utils/compiler: FORCE
-		@echo Make utils/compile instead\!
-utils/vwftest: \
-		utils/vwftest.o tgaimage.o \
-		fonts.o typefaces.o extras.o conjugate.o o65.o settings.o \
-		snescode.o symbols.o space.o logfiles.o o65linker.o \
-		config.o confparser.o ctcset.o wstring.o
-	$(CXX) $(LDOPTS) $(CXXFLAGS) -g -O -Wall -W -pedantic -o $@ $^ $(LDFLAGS)
-utils/facegenerator: \
-		utils/facegenerator.o tgaimage.o
-	$(CXX) $(LDOPTS) $(CXXFLAGS) -g -O -Wall -W -pedantic -o $@ $^ $(LDFLAGS)
-
-utils/compiler2.o: utils/compiler2.cc
-	$(CXX) $(LDOPTS) -g -o $@ -c $< $(CXXFLAGS) -O0 -fno-default-inline
-	
-utils/comp2test: utils/compiler2.cc config.o confparser.o ctcset.o wstring.o
-	$(CXX) $(LDOPTS) $(CXXFLAGS) -g -O -Wall -W -pedantic -o $@ $^ $(LDFLAGS)
-
-utils/comprtest: utils/comprtest.o rommap.o compress.o
-	$(CXX) $(LDOPTS) $(CXXFLAGS) -g -O -Wall -W -pedantic -o $@ $^ $(LDFLAGS)
-utils/rearrange: utils/rearrange.o
-	$(CXX) $(LDOPTS) $(CXXFLAGS) -g -O -Wall -W -pedantic -o $@ $^ $(LDFLAGS)
-
-utils/comprtest2: utils/comprtest2.o compress.o
-	$(CXX) $(LDOPTS) $(CXXFLAGS) -g -O -Wall -W -pedantic -o $@ $^ $(LDFLAGS)
-
-utils/xray: utils/xray.o compress.o
-	$(CXX) $(LDOPTS) $(CXXFLAGS) -g -O -Wall -W -pedantic -o $@ $^ $(LDFLAGS) -lggi
-
-utils/o65test: utils/o65test.o o65.o wstring.o
-	$(CXX) $(LDOPTS) $(CXXFLAGS) -g -O -Wall -W -pedantic -o $@ $^ $(LDFLAGS)
-
-utils/dumpo65: utils/dumpo65.o
-	$(CXX) $(LDOPTS) $(CXXFLAGS) -g -O -Wall -W -pedantic -o $@ $^ $(LDFLAGS)
-
-utils/ctxtview: utils/ctxtview.o settings.o rommap.o
-	$(CXX) $(LDOPTS) $(CXXFLAGS) -g -O -Wall -W -pedantic -o $@ $^ $(LDFLAGS)
 
 
 DOCS/%: FORCE
-	@make "ARCHNAME=${ARCHNAME}" -C DOCS `echo $@|sed 's|^[^/]*/||'`
+	@make -s "ARCHNAME=${ARCHNAME}" -C DOCS `echo $@|sed 's|^[^/]*/||'`
 
 #ct.txt: ctdump chrono-dumpee.smc
 #	./ctdump chrono-dumpee.smc >ct_tmp.txt || rm -f ct_tmp.txt && false
 #	mv ct_tmp.txt ct.txt
 
-winzip: ctdump ctinsert
+# Build a very small windows archive (ctdump only)
+winzip: ctdump
 	rm -f ctdump.exe
 	ln ctdump ctdump.exe
 	i586-mingw32msvc-strip ctdump.exe
@@ -343,12 +376,14 @@ winzip: ctdump ctinsert
 	rm -f ctdump.exe
 	mv -f $(ARCHNAME)-ctdump-win32.zip /WWW/src/arch/
 
+# Build a windows archive
 fullzip: \
 		ctdump ctinsert \
 		utils/unmakeips utils/makeips utils/fixchecksum \
 		utils/base62 utils/compile \
 		utils/facegenerator \
 		utils/o65test utils/dumpo65 \
+		utils/deasm \
 		etc/ct.cfg etc/ct.code \
 		DOCS/README.html \
 		README.TXT

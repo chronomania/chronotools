@@ -260,7 +260,7 @@ void LoadROM(FILE *fp)
     }
     fseek(fp, 0, SEEK_END);
     unsigned romsize = ftell(fp)-hdrskip;
-    fprintf(stderr, " %u bytes...", romsize);
+    fprintf(stderr, " $%X bytes...", romsize);
     ROM = NULL;
 #ifdef USE_MMAP
     /* This takes about 0.0001s on my computer over nfs */

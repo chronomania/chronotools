@@ -310,74 +310,74 @@ namespace
         BlockComment(";battle messages, part 2 (remember to check for wrapping)\n");
         DumpZStrings(0x0CCBC9, "bat", 227, false);
         
-        BlockComment(";600ad (castle, masa+mune, naga-ette)\n");
-        BlockComment(";12kbc daltonstuff\n");
+        BlockComment(";600ad (castle, masa+mune, naga-ette)\n"
+                     ";12kbc daltonstuff\n");
         DumpZStrings(0x18D000, "dialog", 78);
         
         BlockComment(";65Mbc\n");
         DumpZStrings(0x18DD80, "dialog", 254);
         
-        BlockComment(";2300ad (factory, sewer, belthasar)\n");
-        BlockComment(";65Mbc azalastuff\n");
-        BlockComment(";slideshow-ending\n");
+        BlockComment(";2300ad (factory, sewer, belthasar)\n"
+                     ";65Mbc azalastuff\n"
+                     ";slideshow-ending\n");
         DumpZStrings(0x1EC000, "dialog", 187);
         
-        BlockComment(";1000ad (towns, castle)\n");
-        BlockComment(";600ad (towns)\n");
-        BlockComment(";2300ad (factory)\n");
+        BlockComment(";1000ad (towns, castle)\n"
+                     ";600ad (towns)\n"
+                     ";2300ad (factory)\n");
         DumpZStrings(0x1EE300, "dialog", 145);
 
-        BlockComment(";1000ad (Lucca's home)\n");
-        BlockComment(";2300ad (factory)\n");
-        BlockComment(";1000ad (rainbow shell trial)\n");
+        BlockComment(";1000ad (Lucca's home)\n" 
+                     ";2300ad (factory)\n"
+                     ";1000ad (rainbow shell trial)\n");
         DumpZStrings(0x36A000, "dialog", 106);
 
-        BlockComment(";no Crono -ending\n");
-        BlockComment(";happy ending (castle)\n");
+        BlockComment(";no Crono -ending\n"
+                     ";happy ending (castle)\n");
         DumpZStrings(0x36B230, "dialog", 144);
 
-        BlockComment(";1000ad (various indoors)\n");
-        BlockComment(";600ad (various indoors)\n");
-        BlockComment(";2300ad (various indoors)\n");
+        BlockComment(";1000ad (various indoors)\n"
+                     ";600ad (various indoors)\n"
+                     ";2300ad (various indoors)\n");
         DumpZStrings(0x370000, "dialog", 456);
 
-        BlockComment(";2300ad (various indoors)\n");
-        BlockComment(";end of time (gaspar's stories, Spekkio etc)\n");
-        BlockComment(";600ad (Ozzie's scenes, Magus battle, castle)\n");
-        BlockComment(";1999ad Lavos scenes\n");
-        BlockComment(";12kbc various scenes\n");
-        BlockComment(";1000ad castle scenes\n");
+        BlockComment(";2300ad (various indoors)\n"
+                     ";end of time (gaspar's stories, Spekkio etc)\n"
+                     ";600ad (Ozzie's scenes, Magus battle, castle)\n"
+                     ";1999ad Lavos scenes\n"
+                     ";12kbc various scenes\n"
+                     ";1000ad castle scenes\n");
         DumpZStrings(0x374900, "dialog", 1203);
 
-        BlockComment(";1000ad jail scenes\n");
-        BlockComment(";600ad bridge battle stuff\n");
-        BlockComment(";1000ad (melchior, medina village)\n");
-        BlockComment(";65Mbc\n");
-        BlockComment(";12kbc\n");
-        BlockComment(";600ad (Toma stuff, Marco&Fiona stuff)\n");
-        BlockComment(";1000ad (Cyrus stuff)\n");
-        BlockComment(";Black Omen\n");
+        BlockComment(";1000ad jail scenes\n"
+                     ";600ad bridge battle stuff\n"
+                     ";1000ad (melchior, medina village)\n"
+                     ";65Mbc\n"
+                     ";12kbc\n"
+                     ";600ad (Toma stuff, Marco&Fiona stuff)\n"
+                     ";1000ad (Cyrus stuff)\n"
+                     ";Black Omen\n");
         DumpZStrings(0x384650, "dialog", 678);
 
-        BlockComment(";600ad (Cathedral, other indoors)\n");
-        BlockComment(";12kbc (out- and indoors)\n");
+        BlockComment(";600ad (Cathedral, other indoors)\n"
+                     ";12kbc (out- and indoors)\n");
         DumpZStrings(0x39B000, "dialog", 444);
 
-        BlockComment(";1000ad (fair, the trial, castle)\n");
-        BlockComment(";600ad (Frog scenes)\n");
-        BlockComment(";12kbc\n");
-        BlockComment(";2300ad (death's peak)\n");
+        BlockComment(";1000ad (fair, the trial, castle)\n"
+                     ";600ad (Frog scenes)\n"
+                     ";12kbc\n"
+                     ";2300ad (death's peak)\n");
         DumpZStrings(0x3CBA00, "dialog", 399);
 
-        BlockComment(";Dreamteam etc\n");
-        BlockComment(";Forest scene\n");
+        BlockComment(";Dreamteam etc\n"
+                     ";Forest scene\n");
         DumpZStrings(0x3F4460, "dialog", 81);
         
         BlockComment(";12kbc cities\n");
         DumpZStrings(0x3F5860, "dialog", 85);
 
-        BlockComment(";Ayla's home (after the defeat of Magus)\n");
-        BlockComment(";earthbound islands\n");
+        BlockComment(";Ayla's home (after the defeat of Magus)\n"
+                     ";earthbound islands\n");
         DumpZStrings(0x3F6B00, "dialog", 186);
 
         BlockComment(";battle tutorials, Zeal stuff, fair stuff\n");
