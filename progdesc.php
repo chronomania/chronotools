@@ -205,21 +205,17 @@ Copypaste from the Makefile:
 # VERSION 1.14.1 fixes the checksum generator problem and stabilizes the windows port.
 # VERSION 1.14.2 fixes a bug related to Lucca's SightScope with long monster names.
 # VERSION 1.14.3 supports changing the character names! Do a redump with ctdump and see.
+# VERSION 1.15.0.0 preliminary support for location events.
+# VERSION 1.15.0.1 improved compression. Configuration file changes.
 </pre>
 
 To use the character name changing feature, do a redump with ctdump
 and copypaste the <code>*c</code> and <code>*s1B</code> blocks to your
 script.
-
-<!--Users of previous versions are advised to do the following:
-<ul>
- <li>Compare the old <tt>etc/ct.cfg</tt>
-     with the new one to see what changes
-     are required to update their configuration files.</li>
- <li>Do a redump with <tt>ctdump</tt> and
-     see if their script file needs any converting.
-     (It's not required, but it's tidier now.)</li>
-</ul-->
+ <p>
+Users of versions prior to 1.15.0.1: Note the changed format of
+<code>packedimage</code> and <code>add_image</code> settings in
+the configuration file!
 
 ", '1. Program list' => "
 

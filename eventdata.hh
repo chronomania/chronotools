@@ -16,8 +16,6 @@ public:
     EventCode();
     ~EventCode();
     
-    void InitDecode(unsigned offset, unsigned char opcode);
-    
     struct DecodeResult
     {
         std::string code;
@@ -30,8 +28,6 @@ public:
         std::string label_name;
         unsigned    label_value;
     };
-    
-    DecodeResult DecodeBytes(const unsigned char* data, unsigned maxlength);
     
     struct EncodeResult
     {
@@ -46,12 +42,19 @@ public:
         unsigned    label_position;
         bool        label_forward;
     };
-    EncodeResult EncodeCommand(const std::string& cmd);
+    
+    const DecodeResult
+    DecodeBytes(unsigned offset, const unsigned char* data, unsigned maxlength);
+    
+    const EncodeResult
+    EncodeCommand(const std::string& cmd);
 
+public:
+    struct DecodingState
+    {
+        unsigned dialogbegin;
+    } DecodeState;
 private:
     EventCode(const EventCode& );
     void operator=(const EventCode& );
-
-private:
-    class EvParameterHandler* ev;
 };

@@ -36,7 +36,7 @@ public:
         const_iterator(const Cont& c): data(c) { }
         
         bool operator==(const const_iterator& b) const { return i == b.i; }
-        bool operator!=(const const_iterator& b) const { return i != b.i; }
+        bool operator!=(const const_iterator& b) const { return !operator==(b); }
         void operator++ ();
         void operator-- ();
         
@@ -73,6 +73,9 @@ public:
     unsigned size() const { return data.size(); }
     bool empty() const { return data.empty(); }
     void clear() { data.clear(); }
+    
+    bool operator==(const rangeset& b) const { return data == b.data; }
+    bool operator!=(const rangeset& b) const { return !operator==(b); }
     
     // default copy cons. and assign-op. are fine
 };

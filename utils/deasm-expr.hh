@@ -205,7 +205,7 @@ public:
             case And: p1->Dump(); std::printf(" & "); p2->Dump(); break;
             case AndNot: p1->Dump(); std::printf(" & ~ "); p2->Dump(); break;
             case Xor: p1->Dump(); std::printf(" xor "); p2->Dump(); break;
-            case Div: p1->Dump(); std::printf(" /"); p2->Dump(); break;
+            case Div: p1->Dump(); std::printf(" / "); p2->Dump(); break;
             case Mod: p1->Dump(); std::printf(" mod "); p2->Dump(); break;
             case Mul: p1->Dump(); std::printf(" * "); p2->Dump(); break;
             case Cmp: std::printf("cmp "); p1->Dump(); std::printf(", "); p2->Dump(); break;

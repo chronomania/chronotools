@@ -23,7 +23,9 @@ public:
             for(unsigned b=0; b<AddrModeCount; ++b)
             {
                 unsigned opnum=256;
-                std::sscanf(ins[a].opcodes + b*3, "%X", &opnum);
+                const char *opptr = ins[a].opcodes + b*3;
+                if(!*opptr) break;
+                std::sscanf(opptr, "%X", &opnum);
                 
                 if(opnum < 256)
                 {
@@ -266,7 +268,7 @@ void FixReps()
             if(!p)
             {
                 // Defining to "nop" is easier than deleting it.
-                label.op       = "nop";
+                label.op       = "nop (was: "+label.op+")";
                 label.param1   = "";
                 label.op1size = label.op1val = label.addrmode = 0;
             }

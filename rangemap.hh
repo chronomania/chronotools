@@ -27,7 +27,7 @@ class rangemap
         void clear() { val=Value(); nil=true; }
         bool is_nil() const { return nil; }
         bool operator==(const Valueholder& b) const { return nil==b.nil && val==b.val; }
-        bool operator!=(const Valueholder& b) const { return nil!=b.nil || val!=b.val; }
+        bool operator!=(const Valueholder& b) const { return !operator==(b); }
         const Value& get_value() const { return val; }
     };
     typedef rangecollection<Key, Valueholder> Cont;
@@ -44,7 +44,7 @@ public:
         const_iterator(const Cont& c): data(c) { }
         
         bool operator==(const const_iterator& b) const { return i == b.i; }
-        bool operator!=(const const_iterator& b) const { return i != b.i; }
+        bool operator!=(const const_iterator& b) const { return !operator==(b); }
         void operator++ ();
         void operator-- ();
         
@@ -71,7 +71,7 @@ public:
     void set(const Key& pos, const Value& v) { set(pos, pos+1, v); }
     
     /* Returns a reference to the given position */
-    Value& operator[] (const Key& pos);
+//    Value& operator[] (const Key& pos);
     
     /* Find the range that has this value */
     const_iterator find(const Key& v) const { return ConstructIterator(data.find(v)); }
@@ -84,6 +84,9 @@ public:
     unsigned size() const { return data.size(); }
     bool empty() const { return data.empty(); }
     void clear() { data.clear(); }
+    
+    bool operator==(const rangemap& b) const { return data == b.data; }
+    bool operator!=(const rangemap& b) const { return !operator==(b); }
     
     // default copy cons. and assign-op. are fine
 };

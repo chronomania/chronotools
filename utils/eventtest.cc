@@ -74,7 +74,8 @@ public:
 public:
     void CreateLabels()
     {
-        bool ContainsEmpties = false;
+        bool ContainsEmpties = true;//false;
+        
         for(linemap::const_iterator i=lines.begin(); i!=lines.end(); ++i)
             if(i->second.Command.empty())
                 { ContainsEmpties = true; break; }
@@ -198,8 +199,6 @@ static void DumpEvent(vector<Byte> Data)
     Data.erase(Data.begin()); // erase first byte.
     
     unsigned offs = 0;
-    printf("- Number of actors: %u\n", n_actors);
-    
     EventCode decoder;
     EventRecord record;
     
@@ -232,29 +231,25 @@ static void DumpEvent(vector<Byte> Data)
         }
     }
     
+    printf("- Number of actors: %u - size: %04X\n", n_actors, Data.size());
+    
     while(offs < Data.size())
     {
         const unsigned address = offs;
-        Byte command = GetByte();
-
         EventRecord::LineRecord& line = record.lines[address];
 
         std::string text;
         
-        //{ char Buf[64]; sprintf(Buf, "{%02X}", command); text += Buf; }
-        /*unsigned size = tmp.nbytes;
-        printf("%s", text.c_str());
-        printf("\t\t;%02X", Data[offs-1]);
-        for(unsigned a=0; a<size; ++a) printf(" %02X", Data[offs+a]);
-        printf("\n");*/
-        
-        decoder.InitDecode(offs, command);
-        
         EventCode::DecodeResult tmp;
-        tmp = decoder.DecodeBytes(&Data[offs], Data.size()-offs);
+        tmp = decoder.DecodeBytes(address, &Data[address], Data.size()-address);
         
         text += tmp.code;
         offs += tmp.nbytes;
+        
+        unsigned size = tmp.nbytes;
+        text += "(*";
+        for(unsigned a=0; a<size; ++a) text += format(" %02X", Data[address+a]);
+        text += "*)";
         
         line.Command += text;
         if(!tmp.label_name.empty())
@@ -266,6 +261,8 @@ static void DumpEvent(vector<Byte> Data)
     record.CreateLabels();
     
     record.Dump();
+    fflush(stdout);
+    fflush(stderr);
 }
 
 static void LoadEvent(unsigned evno, vector<Byte>& Data)

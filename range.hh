@@ -19,6 +19,8 @@ struct rangetype
     bool operator==(const rangetype& b) const
     { return lower==b.lower&&upper==b.upper; }
     
+    bool operator!=(const rangetype& b) const { return !operator==(b); }
+    
     /* Public accessory functions */
     bool coincides(const rangetype& b) const
     {
@@ -51,6 +53,9 @@ public:
     void clear() { data.clear(); }
     
     const const_iterator find(const Key& v) const;
+
+    bool operator==(const rangecollection& b) const { return data == b.data; }
+    bool operator!=(const rangecollection& b) const { return !operator==(b); }
 };
 
 #include "range.tcc"

@@ -1,4 +1,5 @@
 #include <map>
+#include <list>
 #include <vector>
 #include <cstdio>
 
@@ -1677,6 +1678,141 @@ const char *SongNames[0x53] =
 "{52} 3.01 - Singing Mountain"
 };
 
+namespace
+{
+    struct paramholder: public std::string
+    {
+    private:
+        void operator=(unsigned n);
+        void operator=(unsigned char n);
+        void operator=(char n);
+    public:
+        paramholder& operator= (const std::string& s)
+        { std::string::operator=(s); return *this; }
+    };
+    typedef std::map<std::string, paramholder> parammap;
+
+    /* Prints the string using the format, filling in the parameters. */
+    static const std::string FormatString
+        (const char*const format, const parammap& params)
+    {
+        std::string result;
+        const char* fmtptr = format;
+        while(*fmtptr)
+        {
+            if(*fmtptr == '%')
+            {
+                std::string paramname;
+                while(std::isalnum(*++fmtptr)) paramname += *fmtptr;
+                
+                parammap::const_iterator i = params.find(paramname);
+                if(i == params.end())
+                {
+                    std::fprintf(stderr, "Internal error: Param '%s' not found\n",
+                        paramname.c_str());
+                    continue;
+                }
+                result += i->second;
+                continue;
+            }
+            result += *fmtptr++;
+        }
+        return result;
+    }
+
+    /* Formatting functions */
+    static const std::string FormatNumeric(unsigned n, unsigned bits)
+    {
+        // Vars starting with Object are related to the actor.
+        // Vars starting with Sprite are related to the GFX sprite.
+        switch(n)
+        {
+            case 0x7E016D: return "{ObjectID}";
+            case 0x7E01BD: return "{NumActors}";
+            case 0x7E011F: return "{ExploreMode}";
+            case 0x7E0154: return "{Unknown54}";
+            case 0x7E016B: return "{Unknown6B}";
+            case 0x7E0197: return "{Member1ObjectNo}";
+            case 0x7E0199: return "{Member2ObjectNo}";
+            case 0x7E019B: return "{Member3ObjectNo}";
+            case 0x7E01F8: return "{RandomCounter}";
+            case 0x7E0520: return "{Sprite520}";
+            case 0x7E0521: return "{Sprite521}";
+            case 0x7E0522: return "{Sprite522}";
+            case 0x7E0523: return "{Sprite523}";
+            case 0x7E0524: return "{Sprite524}";
+            case 0x7E0525: return "{Sprite525}";
+            case 0x7E0526: return "{Sprite526}";
+            case 0x7E0527: return "{Sprite527}";
+            case 0x7E0528: return "{Sprite528}";
+            case 0x7E0F81: return "{ObjectPaletteNumber}";
+            case 0x7E1000: return "{ObjectIdentity}";
+            case 0x7E1180: return "{ObjectCodePointer}";
+            case 0x7E1400: return "{ObjectPalettePointer}";
+            case 0x7E1600: return "{ObjectFacing}";
+            case 0x7E1801: return "{ObjectXCoord}";
+            case 0x7E1881: return "{ObjectYCoord}";
+            case 0x7E1A00: return "{ObjectSpeed}";
+            case 0x7E1A01: return "{ObjectMovementLength}";
+            case 0x7E1A81: return "{ObjectDrawingMode}";
+            case 0x7E1B01: return "{ObjectSolidProps}";
+            case 0x7E1C01: return "{ObjectEventFlag}";
+            case 0x7E1C80: return "{ObjectMoveProps}";
+            case 0x7E2980: return "{Member1ID}";
+            case 0x7E2981: return "{Member2ID}";
+            case 0x7E2982: return "{Member3ID}";
+            case 0x7E2983: return "{Member4ID}";
+            case 0x7E2984: return "{Member5ID}";
+            case 0x7E2985: return "{Member6ID}";
+            case 0x7E2986: return "{Member7ID}";
+            case 0x7E2987: return "{Member8ID}";
+            case 0x7E2988: return "{Member9ID}";
+            case 0x7F0000: return "{StoryLineCounter}";
+            case 0x7F0A80: return "{Result}";
+        }
+        return format("%0*X", bits/4, n);
+    }
+
+    static const std::string FormatDialogBegin(unsigned n, unsigned& save_begin)
+    {
+        save_begin = n = ROM2SNESaddr(n);
+        return "$" + EncodeBase62(n, 4);
+    }
+    
+    static const std::string FormatDialogAddr(unsigned n, unsigned saved_begin)
+    {
+        unsigned DialogAddr = saved_begin + n*2;
+        return "$" + EncodeBase62(DialogAddr, 4);
+    }
+
+    static const std::string FormatGoto(unsigned pointer)
+    {
+        return format("{{%04X}}", pointer);
+    }
+    
+    static const std::string FormatOperator(unsigned char op)
+    {
+        static const char* ops[8] = {"==", "!=",
+                                     ">", "<",
+                                     ">=", "<=",
+                                     "&", "|"};
+        return ops[op & 7];
+    }
+    
+    static const std::string FormatBlob(const std::vector<Byte>& data)
+    {
+        std::string result;
+        result += '"';
+        for(unsigned a=0; a<data.size(); ++a)
+        {
+            result += format("[%02X]", data[a]);
+        }
+        result += '"';
+        return result;
+    }
+}
+
+#if 0
 /* EV Parameter Handling Functions */
 class EvParameterHandler
 {
@@ -1700,7 +1836,6 @@ private:
     struct elemdata
     {
         enum { t_byte, t_nibble_hi, t_nibble_lo, t_word, t_long,
-               t_7F0200_2, t_7E1000_B, t_7F0000_B, t_7F0000_W,
                t_operator, t_goto,
                t_dialogbegin,
                t_dialogaddr
@@ -1717,81 +1852,8 @@ private:
         elemmap elems;
     } structure;
     
-    /* A proxy class for std::string
-     * To ensure we don't accidentally
-     * assign an integer into a string. */
-    struct paramholder: public std::string
-    {
-    private:
-        void operator=(unsigned n);
-        void operator=(unsigned char n);
-        void operator=(char n);
-    public:
-        paramholder& operator= (const std::string& s)
-        { std::string::operator=(s); return *this; }
-    };
-    
 protected:
     typedef std::map<std::string, paramholder> parammap;
-
-
-    /* Formatting functions */
-    static const std::string FormatByte(unsigned n)
-    {
-        return format("%02X", n);
-    }
-    static const std::string FormatNibble(unsigned n)
-    {
-        return format("%X", n);
-    }
-    static const std::string FormatWord(unsigned n)
-    {
-        return format("%04X", n);
-    }
-    static const std::string FormatLong(unsigned n)
-    {
-        return format("%06X", n);
-    }
-    const std::string FormatDialogBegin(unsigned n)
-    {
-        dialog_begin = n = ROM2SNESaddr(n);
-        return "$" + EncodeBase62(n, 4);
-    }
-    const std::string FormatDialogAddr(unsigned n)
-    {
-        unsigned DialogAddr = dialog_begin + n*2;
-        return "$" + EncodeBase62(DialogAddr, 4);
-    }
-    const std::string FormatGoto(int offset)
-    {
-        unsigned pointer = offset + dataptr;
-        
-        std::string Buf = format("{{%04X}}", pointer);
-        
-        label.label_value = pointer;
-        label.label_name  = Buf;
-        return Buf;
-    }
-    const std::string FormatOperator(unsigned char op) const
-    {
-        static const char* ops[8] = {"==", "!=",
-                                     ">", "<",
-                                     ">=", "<=",
-                                     "&", "|"};
-        return ops[op & 7];
-    }
-    static const std::string FormatData(const std::vector<Byte>& data)
-    {
-        std::string result;
-        result += '"';
-        for(unsigned a=0; a<data.size(); ++a)
-        {
-            result += format("[%02X]", data[a]);
-        }
-        result += '"';
-        return result;
-    }
-
     /* Throws a dummy exception if fails. */
     static unsigned ScanInt(const std::string& n, long max=0xFFFFFF)
     {
@@ -1870,114 +1932,7 @@ protected:
         return result;
     }
 
-    void DeclareByte(const std::string& paramname, unsigned bytepos)
-    {
-        elemdata tmp;
-        tmp.type    = elemdata::t_byte;
-        tmp.bytepos = bytepos;
-        structure.elems[paramname] = tmp;
-    }
-    void DeclareNibbleHi(const std::string& paramname, unsigned bytepos)
-    {
-        elemdata tmp;
-        tmp.type    = elemdata::t_nibble_hi;
-        tmp.bytepos = bytepos;
-        structure.elems[paramname] = tmp;
-    }
-    void DeclareNibbleLo(const std::string& paramname, unsigned bytepos)
-    {
-        elemdata tmp;
-        tmp.type    = elemdata::t_nibble_lo;
-        tmp.bytepos = bytepos;
-        structure.elems[paramname] = tmp;
-    }
-    void DeclareWord(const std::string& paramname, unsigned bytepos)
-    {
-        elemdata tmp;
-        tmp.type    = elemdata::t_word;
-        tmp.bytepos = bytepos;
-        structure.elems[paramname] = tmp;
-    }
-    void DeclareLong(const std::string& paramname, unsigned bytepos)
-    {
-        elemdata tmp;
-        tmp.type    = elemdata::t_long;
-        tmp.bytepos = bytepos;
-        structure.elems[paramname] = tmp;
-    }
-    void DeclareDialogBegin(const std::string& paramname, unsigned bytepos)
-    {
-        elemdata tmp;
-        tmp.type    = elemdata::t_dialogbegin;
-        tmp.bytepos = bytepos;
-        structure.elems[paramname] = tmp;
-    }
-    void DeclareDialogAddr(const std::string& paramname, unsigned bytepos)
-    {
-        elemdata tmp;
-        tmp.type    = elemdata::t_dialogaddr;
-        tmp.bytepos = bytepos;
-        structure.elems[paramname] = tmp;
-    }
-    void Declare7F0200_2(const std::string& paramname, unsigned bytepos)
-    {
-        elemdata tmp;
-        tmp.type    = elemdata::t_7F0200_2;
-        tmp.bytepos = bytepos;
-        structure.elems[paramname] = tmp;
-    }
-    void Declare7E1000_B(const std::string& paramname, unsigned bytepos)
-    {
-        elemdata tmp;
-        tmp.type    = elemdata::t_7E1000_B;
-        tmp.bytepos = bytepos;
-        structure.elems[paramname] = tmp;
-    }
-    void Declare7F0000_B(const std::string& paramname, unsigned bytepos)
-    {
-        elemdata tmp;
-        tmp.type    = elemdata::t_7F0000_B;
-        tmp.bytepos = bytepos;
-        structure.elems[paramname] = tmp;
-    }
-    void Declare7F0000_W(const std::string& paramname, unsigned bytepos)
-    {
-        elemdata tmp;
-        tmp.type    = elemdata::t_7F0000_W;
-        tmp.bytepos = bytepos;
-        structure.elems[paramname] = tmp;
-    }
-    void DeclareOperator(const std::string& paramname, unsigned bytepos)
-    {
-        elemdata tmp;
-        tmp.type    = elemdata::t_operator;
-        tmp.bytepos = bytepos;
-        structure.elems[paramname] = tmp;
-    }
-    void DeclareGoto(const std::string& paramname, unsigned bytepos, int sign, unsigned offset=0)
-    {
-        elemdata tmp;
-        tmp.type    = elemdata::t_goto;
-        tmp.bytepos = bytepos;
-        tmp.sign    = sign;
-        tmp.offset  = offset;
-        structure.elems[paramname] = tmp;
-    }
-    void DeclareSize(unsigned nbytes)
-    {
-        structure.size = nbytes;
-    }
-
 public:
-    void SetFormat(const char* fmt) { opformat = fmt; }
-    void SetDataPtr(unsigned n)     { dataptr = n;  }
-    unsigned GetDataPtr() const     { return dataptr; }
-    
-    const labeldata QueryGotoUsage() const
-    {
-        return label;
-    }
-
     /* Tests if the given string matches the given format. Returns true if ok. */
     bool CompareFormat(const std::string& string) const
     {
@@ -1985,33 +1940,6 @@ public:
         return ScanParams(string, dummy);
     }
     
-    /* Prints the string using the format, filling in the parameters. */
-    const std::string FormatString(const parammap& params) const
-    {
-        std::string result;
-        const char* fmtptr = opformat;
-        while(*fmtptr)
-        {
-            if(*fmtptr == '%')
-            {
-                std::string paramname;
-                while(std::isalnum(*++fmtptr)) paramname += *fmtptr;
-                
-                parammap::const_iterator i = params.find(paramname);
-                if(i == params.end())
-                {
-                    std::fprintf(stderr, "Internal error: Param '%s' not found\n",
-                        paramname.c_str());
-                    continue;
-                }
-                result += i->second;
-                continue;
-            }
-            result += *fmtptr++;
-        }
-        return result;
-    }
-
     /* Attempts to scan the parameters from the string. Return false if fail. */
     bool ScanParams(const std::string& string, parammap& params) const
     {
@@ -2073,673 +2001,2040 @@ public:
         while(*fmtptr == ' ') ++fmtptr;
         return *fmtptr == '\0';
     }
-
-public:
-    EvParameterHandler()
-    {
-    }
-    
-    virtual ~EvParameterHandler()
-    {
-    }
-
-public:
-    /* Converts parameters to a string. Return value: # bytes eaten */
-    virtual unsigned BytesToString(std::string& result,
-                                   const Byte* data,
-                                   unsigned reserve)
-    {
-        parammap params;
-
-        if(reserve < structure.size)throw false;
-        
-        structure::elemmap::const_iterator i;
-        for(i=structure.elems.begin(); i!=structure.elems.end(); ++i)
-        {
-            const Byte* ptr = data + i->second.bytepos;
-            //printf("i->second.offset=%u, ptr=%p\n", i->second.offset, ptr);
-            
-            switch(i->second.type)
-            {
-                case elemdata::t_byte:
-                    params[i->first] = FormatByte(ptr[0]);
-                    break;
-                case elemdata::t_nibble_hi:
-                    params[i->first] = FormatNibble(ptr[0] >> 4);
-                    break;
-                case elemdata::t_nibble_lo:
-                    params[i->first] = FormatNibble(ptr[0] & 15);
-                    break;
-                case elemdata::t_word:
-                    params[i->first] = FormatWord(ptr[0] | (ptr[1] << 8));
-                    break;
-                case elemdata::t_long:
-                    params[i->first] = FormatLong(ptr[0] | (ptr[1] << 8) | (ptr[2] << 16));
-                    break;
-                case elemdata::t_dialogbegin:
-                    params[i->first] = FormatDialogBegin(ptr[0] | (ptr[1] << 8) | (ptr[2] << 16));
-                    break;
-                case elemdata::t_dialogaddr:
-                    params[i->first] = FormatDialogAddr(ptr[0]);
-                    break;
-                case elemdata::t_7F0200_2:
-                    params[i->first] = FormatLong(0x7F0200 + 2*ptr[0]);
-                    break;
-                case elemdata::t_7E1000_B:
-                    params[i->first] = FormatLong(0x7E1000 + ptr[0]);
-                    break;
-                case elemdata::t_7F0000_B:
-                    params[i->first] = FormatLong(0x7F0000 + ptr[0]);
-                    break;
-                case elemdata::t_7F0000_W:
-                    params[i->first] = FormatLong(0x7F0000 + ptr[0] + (ptr[1] << 8));
-                    break;
-                case elemdata::t_operator:
-                    params[i->first] = FormatOperator(ptr[0]);
-                    break;
-                case elemdata::t_goto:
-                    params[i->first] = FormatGoto(ptr[0] * i->second.sign + i->second.offset);
-                    break;
-            }
-        }
-        
-        result = FormatString(params);
-        return structure.size;
-    }
-    
-    /* Converts a string to bytes. Result vector is not cleared. */
-    /* Throws an exception (a dummy bool value) if fails (vector untouched). */
-    virtual void StringToBytes(const std::string& string,
-                               std::vector<Byte>& result)
-    {
-        parammap params;
-
-        if(!ScanParams(string, params)) throw false;
-        
-        std::vector<Byte> bytes(structure.size);
-
-        structure::elemmap::const_iterator i;
-        for(i=structure.elems.begin(); i!=structure.elems.end(); ++i)
-        {
-            unsigned offset = i->second.bytepos;
-            const std::string& str = params[i->first];
-            
-            switch(i->second.type)
-            {
-                case elemdata::t_byte:
-                {
-                    unsigned n = ScanInt(str, 0xFF);
-                    bytes[offset] = n;
-                    break;
-                }
-                case elemdata::t_nibble_hi:
-                {
-                    unsigned n = ScanInt(str, 0xF);
-                    bytes[offset] |= n << 4;
-                    break;
-                }
-                case elemdata::t_nibble_lo:
-                {
-                    unsigned n = ScanInt(str, 0xF);
-                    bytes[offset] |= n;
-                    break;
-                }
-                case elemdata::t_word:
-                {
-                    unsigned n = ScanInt(str, 0xFFFF);
-                    bytes[offset] = n&255;
-                    bytes[offset+1] = n>>8;
-                    break;
-                }
-                case elemdata::t_dialogbegin:
-                {
-                    unsigned n = ScanDialogBegin(str);
-                    bytes[offset] = n&255;
-                    bytes[offset+1] = (n>>8)&255;
-                    bytes[offset+2] = n>>16;
-                    break;
-                }
-                case elemdata::t_dialogaddr:
-                {
-                    unsigned n = ScanDialogAddr(str);
-                    bytes[offset] = n;
-                    break;
-                }
-                case elemdata::t_long:
-                {
-                    unsigned n = ScanInt(str, 0xFFFFFF);
-                    bytes[offset] = n&255;
-                    bytes[offset+1] = (n>>8)&255;
-                    bytes[offset+2] = n>>16;
-                    break;
-                }
-                case elemdata::t_7F0200_2:
-                {
-                    int n = ScanInt(str, 0xFFFFFF) - 0x7F0200;
-                    if(n < 0 || n > 0x1FF || (n&1)) throw false;
-                    bytes[offset] = n/2;
-                    break;
-                }
-                case elemdata::t_7E1000_B:
-                {
-                    int n = ScanInt(str, 0xFFFF) - 0x7E1000;
-                    if(n < 0 || n > 0xFF) throw false;
-                    bytes[offset] = n;
-                    break;
-                }
-                case elemdata::t_7F0000_B:
-                {
-                    int n = ScanInt(str, 0xFFFF) - 0x7E1000;
-                    if(n < 0 || n > 0xFFFF) throw false;
-                    bytes[offset]   = n&255;
-                    bytes[offset+1] = n>>8;
-                    break;
-                }
-                case elemdata::t_7F0000_W:
-                {
-                    int n = ScanInt(str, 0xFFFF) - 0x7F0000;
-                    if(n < 0 || n > 0xFFFF) throw false;
-                    bytes[offset]   = n&255;
-                    bytes[offset+1] = n>>8;
-                    break;
-                }
-                case elemdata::t_operator:
-                {
-                    unsigned n = ScanOperator(str);
-                    bytes[offset] = n;
-                    break;
-                }
-                case elemdata::t_goto:
-                {
-                    unsigned n = ScanGoto(str, offset, i->second.offset, i->second.sign);
-                    bytes[offset] = n;
-                    break;
-                }
-            }
-        }
-        result.insert(result.end(), bytes.begin(), bytes.end());
-    }
 };
+#endif
 
 namespace
 {
-    #define BEGIN_EVENT(classname) \
-        class classname: public EvParameterHandler { \
-        public: \
-            static EvParameterHandler* Create() { return new classname; }
-               
-    #define END_EVENT() };
-
-    BEGIN_EVENT(EvNoParams)
-        EvNoParams()
-        {
-            DeclareSize(0);
-        }
-    END_EVENT()
-
-    BEGIN_EVENT(EvByteAndTwoNibbles)
-        EvByteAndTwoNibbles()
-        {
-            DeclareByte("0", 0);
-            DeclareNibbleHi("1", 1);
-            DeclareNibbleLo("2", 1);
-            DeclareSize(2);
-        }
-    END_EVENT()
-
-    BEGIN_EVENT(EvTwoBytes)
-        EvTwoBytes()
-        {
-            DeclareByte("0", 0);
-            DeclareByte("1", 1);
-            DeclareSize(2);
-        }
-    END_EVENT()
-
-    BEGIN_EVENT(EvWordAndTwoBytes)
-        EvWordAndTwoBytes()
-        {
-            DeclareWord("0", 0);
-            DeclareByte("1", 2);
-            DeclareByte("2", 3);
-            DeclareSize(4);
-        }
-    END_EVENT()
-
-    BEGIN_EVENT(EvThreeBytes)
-        EvThreeBytes()
-        {
-            DeclareByte("0", 0);
-            DeclareByte("1", 1);
-            DeclareByte("2", 2);
-            DeclareSize(3);
-        }
-    END_EVENT()
-
-    BEGIN_EVENT(EvSixBytes)
-        EvSixBytes()
-        {
-            DeclareByte("0", 0);
-            DeclareByte("1", 1);
-            DeclareByte("2", 2);
-            DeclareByte("3", 3);
-            DeclareByte("4", 4);
-            DeclareByte("5", 5);
-            DeclareSize(6);
-        }
-    END_EVENT()
-
-    BEGIN_EVENT(EvCommandFE)
-        EvCommandFE()
-        {
-            DeclareByte("0", 0); DeclareByte("1", 1); DeclareByte("2", 2);
-            DeclareByte("3", 3); DeclareByte("4", 4); DeclareByte("5", 5);
-            DeclareByte("6", 6); DeclareByte("7", 7); DeclareByte("8", 8);
-            DeclareByte("9", 9); DeclareByte("10",10); DeclareByte("11",11);
-            DeclareByte("12",12); DeclareByte("13",13); DeclareByte("14",14);
-            DeclareByte("15",15); DeclareByte("16",16);
-            DeclareSize(17);
-        }
-    END_EVENT()
-
-    BEGIN_EVENT(EvCommandsE4andE5)
-        EvCommandsE4andE5()
-        {
-            DeclareByte("l", 0);
-            DeclareByte("t", 1);
-            DeclareByte("r", 2);
-            DeclareByte("b", 3);
-            DeclareByte("x", 4);
-            DeclareByte("y", 5);
-            DeclareByte("f", 6);
-            DeclareSize(7);
-        }
-    END_EVENT()
-
-    BEGIN_EVENT(EvTwoWords)
-        EvTwoWords()
-        {
-            DeclareWord("0", 0);
-            DeclareWord("1", 2);
-            DeclareSize(4);
-        }
-    END_EVENT()
-
-    BEGIN_EVENT(EvPosiGoto)
-        EvPosiGoto()
-        {
-            DeclareGoto("0", 0, +1, 0);
-            DeclareSize(1);
-        }
-    END_EVENT()
-
-    BEGIN_EVENT(EvNegaGoto)
-        EvNegaGoto()
-        {
-            DeclareGoto("0", 0, -1, 0);
-            DeclareSize(1);
-        }
-    END_EVENT()
-
-    BEGIN_EVENT(EvOneByte)
-        EvOneByte()
-        {
-            DeclareByte("0", 0);
-            DeclareSize(1);
-        }
-    END_EVENT()
-
-    BEGIN_EVENT(EvOneWord)
-        EvOneWord()
-        {
-            DeclareWord("0", 0);
-            DeclareSize(2);
-        }
-    END_EVENT()
-
-    BEGIN_EVENT(EvOneLong)
-        EvOneLong()
-        {
-            DeclareLong("0", 0);
-            DeclareSize(3);
-        }
-    END_EVENT()
-
-    BEGIN_EVENT(EvLongWithByte)
-        EvLongWithByte()
-        {
-            DeclareLong("long", 0);
-            DeclareByte("byte", 3);
-            DeclareSize(4);
-        }
-    END_EVENT()
-
-    BEGIN_EVENT(EvLongWithWord)
-        EvLongWithWord()
-        {
-            DeclareLong("long", 0);
-            DeclareWord("word", 3);
-            DeclareSize(5);
-        }
-    END_EVENT()
-
-    BEGIN_EVENT(EvLongWith7F0200)
-        EvLongWith7F0200()
-        {
-            DeclareLong("long", 0);
-            Declare7F0200_2("addr", 3);
-            DeclareSize(4);
-        }
-    END_EVENT()
-
-    BEGIN_EVENT(Ev7E1000)
-        Ev7E1000()
-        {
-            Declare7E1000_B("0", 1);
-            DeclareSize(1);
-        }
-    END_EVENT()
-
-    BEGIN_EVENT(Ev7F0200)
-        Ev7F0200()
-        {
-            Declare7F0200_2("0", 0);
-            DeclareSize(1);
-        }
-    END_EVENT()
-
-    BEGIN_EVENT(EvByteWith7F0200)
-        EvByteWith7F0200()
-        {
-            DeclareByte("byte", 0);
-            Declare7F0200_2("addr", 1);
-            DeclareSize(2);
-        }
-    END_EVENT()
-
-    BEGIN_EVENT(EvWordWith7F0200)
-        EvWordWith7F0200()
-        {
-            DeclareByte("word", 0);
-            Declare7F0200_2("addr", 2);
-            DeclareSize(3);
-        }
-    END_EVENT()
-
-    BEGIN_EVENT(Ev7F0000)
-        Ev7F0000()
-        {
-            Declare7F0000_B("0", 0);
-            DeclareSize(1);
-        }
-    END_EVENT()
-
-    BEGIN_EVENT(EvByteWith7F0000)
-        EvByteWith7F0000()
-        {
-            DeclareByte("byte", 0);
-            Declare7F0000_W("addr", 1);
-            DeclareSize(3);
-        }
-    END_EVENT()
-
-    BEGIN_EVENT(EvDialogBegin)
-        EvDialogBegin()
-        {
-            DeclareDialogBegin("0", 0);
-            DeclareSize(3);
-        }
-    END_EVENT()
-
-    BEGIN_EVENT(EvDialogAddr)
-        EvDialogAddr()
-        {
-            DeclareDialogAddr("0", 0);
-            DeclareSize(1);
-        }
-    END_EVENT()
-
-    BEGIN_EVENT(EvDialogAddrWithByte)
-        EvDialogAddrWithByte()
-        {
-            DeclareDialogAddr("0", 0);
-            DeclareByte("1", 1);
-            DeclareSize(2);
-        }
-    END_EVENT()
-
-    BEGIN_EVENT(EvIf12)
-        EvIf12()
-        {
-            Declare7F0200_2("addr", 0);
-            DeclareByte("value", 1);
-            DeclareOperator("op", 2);
-            DeclareGoto("label", 3, +1, 3);
-            DeclareSize(4);
-        }
-    END_EVENT()
-
-    BEGIN_EVENT(EvIf13)
-        EvIf13()
-        {
-            Declare7F0200_2("addr", 0);
-            DeclareWord("value", 1);
-            DeclareOperator("op", 3);
-            DeclareGoto("label", 4, +1, 4);
-            DeclareSize(5);
-        }
-    END_EVENT()
-
-    BEGIN_EVENT(EvIf14And15)
-        EvIf14And15()
-        {
-            Declare7F0200_2("addr1", 0);
-            Declare7F0200_2("addr2", 1);
-            DeclareOperator("op", 2);
-            DeclareGoto("label", 3, +1, 3);
-            DeclareSize(4);
-        }
-    END_EVENT()
-
-    BEGIN_EVENT(EvIf16)
-        virtual unsigned BytesToString(std::string& result, const Byte* data, unsigned reserve)
-        {
-            if(reserve < 4)throw false;
+    template<typename keytype>
+    struct range
+    {
+        keytype lower, upper;
         
-            parammap params;
-            unsigned addr = 0x7E0000 + data[0];
-            if(data[2] & 0x80) addr += 0x100;
-            params["addr"]  = FormatLong(addr);
-            params["value"] = FormatByte(data[1]);
-            params["op"]    = FormatOperator(data[2]);
-            params["label"] = FormatGoto(data[3] + 3);
-            result = FormatString(params);
-            return 4;
-        }
-        virtual void StringToBytes(const std::string& string, std::vector<Byte>& result)
-        {
-            parammap params;
-            if(!ScanParams(string, params)) throw false;
-            
-            long addr = ScanInt(params["addr"]) - 0x7E0000;
-            if(addr < 0) throw false;
-            if(addr > 0x1FF) throw false;
-            unsigned value = ScanInt(params["value"], 0xFF);
-            unsigned op    = ScanOperator(params["op"]);
-            int label      = ScanGoto(params["label"], 3, 3, +1);
-            if(addr&0x100) op |= 0x80;
-            result.push_back(addr&0xFF);
-            result.push_back(value);
-            result.push_back(op);
-            result.push_back(label);
-        }
-    END_EVENT()
-
-    BEGIN_EVENT(EvTwo7F0200)
-        EvTwo7F0200()
-        {
-            Declare7F0200_2("0", 0);
-            Declare7F0200_2("1", 1);
-            DeclareSize(2);
-        }
-    END_EVENT()
-
-    BEGIN_EVENT(EvFour7F0200)
-        EvFour7F0200()
-        {
-            Declare7F0200_2("0", 0);
-            Declare7F0200_2("1", 1);
-            Declare7F0200_2("2", 2);
-            Declare7F0200_2("3", 3);
-            DeclareSize(4);
-        }
-    END_EVENT()
-
-    BEGIN_EVENT(Ev7F0000And7F0200)
-        Ev7F0000And7F0200()
-        {
-            Declare7F0000_W("0", 0);
-            Declare7F0200_2("1", 2);
-            DeclareSize(3);
-        }
-    END_EVENT()
-
-    BEGIN_EVENT(Ev7F0200And7F0000)
-        Ev7F0200And7F0000()
-        {
-            Declare7F0200_2("0", 0);
-            Declare7F0000_W("1", 1);
-            DeclareSize(3);
-        }
-    END_EVENT()
-
-    BEGIN_EVENT(EvIfOneByte)
-        EvIfOneByte()
-        {
-            DeclareByte("0",     0);
-            DeclareGoto("label", 1, +1, 1);
-            DeclareSize(2);
-        }
-    END_EVENT()
-
-    BEGIN_EVENT(EvIfOneWord)
-        EvIfOneWord()
-        {
-            DeclareWord("0",     0);
-            DeclareGoto("label", 2, +1, 2);
-            DeclareSize(3);
-        }
-    END_EVENT()
-
-    BEGIN_EVENT(EvCommands65And66)
-        virtual unsigned BytesToString(std::string& result, const Byte* data, unsigned reserve)
-        {
-            if(reserve < 2)throw false;
+        //range(keytype v): lower(v),upper(v) {}
+        range(keytype l,keytype u): lower(l),upper(u) {}
         
-            parammap params;
-            params["byte"] = FormatByte(data[0] & 0x7F);
-            
-            unsigned addr = 0x7E0000 + data[1] + (data[0] & 0x80)*2;
-            params["addr"]  = FormatLong(addr);
-
-            result = FormatString(params);
-            return 2;
-        }
-        virtual void StringToBytes(const std::string& string, std::vector<Byte>& result)
+        /*bool operator< (keytype b) const
         {
-            parammap params;
-            if(!ScanParams(string, params)) throw false;
-            
-            long addr = ScanInt(params["addr"]) - 0x7E0000;
-            if(addr < 0) throw false;
-            if(addr > 0x1FF) throw false;
-            unsigned byte  = ScanInt(params["byte"], 0x7F);
-            if(addr & 0x100) byte |= 0x80;
-            
-            result.push_back(addr&0xFF);
-            result.push_back(byte);
-        }
-    END_EVENT()
-
-    BEGIN_EVENT(EvCommand4E)
-        virtual unsigned BytesToString(std::string& result, const Byte* data, unsigned reserve)
+            return upper < b;
+        }*/
+        bool operator< (const range& b) const
         {
-            if(reserve < 5)throw false;
+            return lower < b.lower;
+        }
+        /*bool operator== (keytype b) const
+        {
+            return Contains(b);
+        }*/
+        bool operator== (const range& b) const
+        {
+            return lower==b.lower && upper==b.upper;
+        }
         
-            parammap params;
-            params["long"]  = FormatLong(data[0] | (data[1] << 8) | (data[2] << 16));
-            unsigned length = (data[3] | (data[4] << 8)) - 2;
+        bool Contains(keytype b) const { return lower<=b && upper>=b; }
+    };
+    template<typename keytype, typename valuetype>
+    class simple_rangemap: public std::multimap<range<keytype>, valuetype>
+    {
+    public:
+    };
+}
 
-            if(reserve < 5+length)throw false;
-        
-            std::vector<Byte> blob(data+5, data+5+length);
-            params["data"] = FormatData(blob);
-            result = FormatString(params);
-            return 5+length;
-        }
-        virtual void StringToBytes(const std::string& string, std::vector<Byte>& result)
+class EvCommands
+{
+private:
+    class ElemData
+    {
+    public:
+        enum typetype
         {
-            parammap params;
-            if(!ScanParams(string, params)) throw false;
-            unsigned lval = ScanInt(params["long"], 0xFFFFFF);
-            if(lval < 0x7E0000 || lval > 0x7FFFFF) throw false;
-            std::vector<Byte> blob = ScanData(params["data"]);
-            unsigned length = blob.size() + 2;
-            result.push_back(lval&255);
-            result.push_back((lval>>8)&255);
-            result.push_back(lval>>16);
-            result.push_back(length&255);
-            result.push_back(length>>8);
-            result.insert(result.end(), blob.begin(), blob.end());
-        }
-    END_EVENT()
+            t_trivial,
+            t_nibble_hi,
+            t_nibble_lo,
+            t_goto,
+            t_operator,
+            t_blob,
+            t_dialogbegin,
+            t_dialogaddr
+        };
+    
+        ElemData(unsigned nb, unsigned mi,unsigned ma,unsigned ad,int sh)
+            : bytepos(0), type(t_trivial), name(NULL),
+              n_bytes(nb),min(mi),max(ma),add(ad),shift(sh),
+              highbit_trick(false), sign(0),offset(0) {}
+        
+        ElemData(unsigned char b)
+            : bytepos(0), type(t_trivial),name(NULL),
+              n_bytes(1),min(b),max(b),add(0),shift(0),
+              highbit_trick(false), sign(0),offset(0) {}
 
-    BEGIN_EVENT(EvCommandF1)
-        virtual unsigned BytesToString(std::string& result, const Byte* data, unsigned reserve)
+        ElemData& DeclareHighbit()
         {
-            if(reserve < 1)throw false;
+            highbit_trick = true;
+            return *this;            
+        }
         
-            parammap params;
-            params["index"]    = FormatByte(data[0]);
-            if(data[0])
+        ElemData& SetName(const char* n)
+        {
+            name = n;
+            return *this;            
+        }
+        
+        ElemData& SetBytePos(unsigned n) { bytepos = n; return *this; }
+        
+        ElemData& SetType(typetype t, int sgn=0, unsigned offs=0)
+        {
+            type   = t;
+            sign   = sgn;
+            offset = offs;
+            return *this;
+        }
+        
+        bool KnowRange(unsigned pos) const
+        {
+            /* Returns true if GetMin() and GetMax() can be used */
+            if(n_bytes >= 1 && n_bytes <= 3
+            && pos >= bytepos && pos < bytepos+n_bytes) return true;
+            return false;
+        }
+        unsigned GetMin(unsigned pos) const
+        {
+            /* Return the minimum value an accepted byte
+             * may have at the given position */
+            switch(n_bytes)
             {
-                if(reserve < 2)throw false;
-        
-                params["duration"] = data[0] ? FormatByte(data[1]) : "";
-                result = FormatString(params);
-                return 2;
+                case 1:
+                    return min | (highbit_trick?0x80:0x00);
+                case 2:
+                {
+                    unsigned min_hi = min >> 8, max_hi = max >> 8;
+                    if(pos == bytepos+1) return min_hi | (highbit_trick?0x80:0x00);
+                    if(min_hi != max_hi) return 0x00;
+                    return min & 0xFF;
+                }
+                case 3:
+                {
+                    unsigned min_hi = min >> 16, max_hi = max >> 16;
+                    if(pos == bytepos+2) return min_hi | (highbit_trick?0x80:0x00);
+                    if(min_hi != max_hi) return 0x00;
+                    min_hi = (min >> 8)&0xFF, max_hi = (max >> 8)&0xFF;
+                    if(pos == bytepos+1) return min_hi | (highbit_trick?0x80:0x00);
+                    if(min_hi != max_hi) return 0x00;
+                    return min & 0xFF;
+                }
             }
-            else
-            {
-                params["duration"] = "";
-                result = FormatString(params);
-                return 1;
-            }
+            return 0x00;
         }
-        virtual void StringToBytes(const std::string& string, std::vector<Byte>& result)
+        unsigned GetMax(unsigned pos) const
+        {
+            /* Return the maximum value an accepted byte
+             * may have at the given position */
+            switch(n_bytes)
+            {
+                case 1:
+                    return max | (highbit_trick?0x80:0x00);
+                case 2:
+                {
+                    unsigned min_hi = min >> 8, max_hi = max >> 8;
+                    if(pos == bytepos+1) return max_hi | (highbit_trick?0x80:0x00);
+                    if(min_hi != max_hi) return 0xFF;
+                    return max & 0xFF;
+                }
+                case 3:
+                {
+                    unsigned min_hi = min >> 16, max_hi = max >> 16;
+                    if(pos == bytepos+2) return max_hi | (highbit_trick?0x80:0x00);
+                    if(min_hi != max_hi) return 0xFF;
+                    min_hi = (min >> 8)&0xFF, max_hi = (max >> 8)&0xFF;
+                    if(pos == bytepos+1) return max_hi | (highbit_trick?0x80:0x00);
+                    if(min_hi != max_hi) return 0xFF;
+                    return max & 0xFF;
+                }
+            }
+            return 0xFF;
+        }
+        
+        const char* GetName() const
+        {
+            //if(!name)
+            //{
+            //    fprintf(stderr, "null name\n");
+            //}
+            return name;
+        }
+        
+        const std::string Format() const
+        {
+            if(type != t_trivial)
+            {
+                fprintf(stderr, "type(%u), not trivial\n", type);
+                throw false;
+            }
+            
+            return FormatNumeric(add, n_bytes*8);
+        }
+        
+        struct FormatResult
+        {
+            std::string text;
+            unsigned maxoffs;
+            std::string label_name;
+            unsigned    label_value;
+        };
+            
+        FormatResult Format
+            (unsigned offs, const unsigned char* data, unsigned maxlen,
+             EventCode::DecodingState& state) const
+        {
+            FormatResult result;
+            
+            if(maxlen < bytepos)
+            {
+                fprintf(stderr, "maxlen(%u) bytepos(%u)\n", maxlen, bytepos);
+                throw false;
+            }
+            maxlen -= bytepos; data += bytepos;
+            
+            switch(type)
+            {
+                case t_trivial:
+                {
+                    /* First, read the integer value. */
+                    if(maxlen < n_bytes)
+                    {
+                        fprintf(stderr, "maxlen(%u) < n_bytes(%u)\n", maxlen, n_bytes);
+                        throw false;
+                    }
+                    unsigned value = 0;
+                    for(unsigned n=0; n<n_bytes; ++n) value |= data[n] << (n*8);
+                    
+                    /* When highbit trick is used, there are two rules:
+                     * - The input _must_ have high bit set
+                     * - The interpreted value must _not_ have it.
+                     */
+                    if(highbit_trick)
+                    {
+                        unsigned mask = 1 << (n_bytes * 8 - 1);
+                        if(!(value & mask))
+                        {
+                            fprintf(stderr, "value(%X) & mask(%X)\n", value, mask);
+                            throw false;
+                        }
+                        value &= ~mask;
+                    }
+                    
+                    /* Check ranges. */
+                    if(value < min || value > max)
+                    {
+                        fprintf(stderr, "value(%u) min(%u) max(%u)\n", value, min, max);
+                        throw false;
+                    }
+                    /* Adjust for formatting. */
+                    if(shift < 0) value >>= shift; else value <<= shift;
+                    value += add;
+                    /* Format. */
+                    result.text    = FormatNumeric(value, n_bytes*8);
+                    result.maxoffs = bytepos+n_bytes;
+                    break;
+                }
+                case t_nibble_hi:
+                {
+                    if(maxlen < 1)
+                    {
+                        fprintf(stderr, "maxlen(%u) < n_bytes(%u)\n", maxlen, n_bytes);
+                        throw false;
+                    }
+                    unsigned value = data[0] >> 4;
+                    result.text    = FormatNumeric(value, 4);
+                    result.maxoffs = bytepos+1;
+                    break;
+                }
+                case t_nibble_lo:
+                {
+                    if(maxlen < 1)
+                    {
+                        fprintf(stderr, "maxlen(%u) < n_bytes(%u)\n", maxlen, n_bytes);
+                        throw false;
+                    }
+                    unsigned value = data[0] & 15;
+                    result.text    = FormatNumeric(value, 4);
+                    result.maxoffs = bytepos+1;
+                    break;
+                }
+                case t_goto:
+                {
+                    if(maxlen < 1)
+                    {
+                        fprintf(stderr, "maxlen(%u) < n_bytes(%u)\n", maxlen, n_bytes);
+                        throw false;
+                    }
+                    unsigned value = offs + data[0]*sign + offset;
+                    result.text    = FormatGoto(value);
+                    result.maxoffs = bytepos+1;
+                    result.label_name  = result.text;
+                    result.label_value = value;
+                    break;
+                }
+                case t_operator: //FIXME
+                {
+                    if(maxlen < 1)
+                    {
+                        fprintf(stderr, "maxlen(%u) < n_bytes(%u)\n", maxlen, n_bytes);
+                        throw false;
+                    }
+                    unsigned value = data[0];
+                    result.text    = FormatOperator(value);
+                    result.maxoffs = bytepos+1;
+                    break;
+                }
+                case t_blob:
+                {
+                    if(maxlen < 2)
+                    {
+                        fprintf(stderr, "maxlen(%u) < n_bytes(%u)\n", maxlen, n_bytes);
+                        throw false;
+                    }
+                    unsigned length = data[0] | (data[1] << 8);
+                    data += 2; maxlen -= 2;
+                    if(length < 2) throw false;
+                    length -= 2;
+                    if(maxlen < length)
+                    {
+                        fprintf(stderr, "blob: maxlen(%u) < length(%u)\n", maxlen, length);
+                        throw false;
+                    }
+                    std::vector<Byte> buf(data, data+length);
+                    result.text    = FormatBlob(buf);
+                    result.maxoffs = bytepos+2+length;
+                    break;
+                }
+                case t_dialogbegin:
+                {
+                    if(maxlen < 3)
+                    {
+                        fprintf(stderr, "maxlen(%u) < n_bytes(%u)\n", maxlen, n_bytes);
+                        throw false;
+                    }
+                    unsigned offs = data[0] | (data[1] << 8) | (data[2] << 16);
+                    result.text    = FormatDialogBegin(offs, state.dialogbegin);
+                    result.maxoffs = bytepos + 3;
+                    break;
+                }
+                case t_dialogaddr:
+                {
+                    if(maxlen < 1)
+                    {
+                        fprintf(stderr, "maxlen(%u) < n_bytes(%u)\n", maxlen, n_bytes);
+                        throw false;
+                    }
+                    unsigned offs = data[0];
+                    result.text    = FormatDialogAddr(offs, state.dialogbegin);
+                    result.maxoffs = bytepos + 1;
+                    break;
+                }
+            }
+            return result;
+        }
+    private:
+        unsigned bytepos;
+        
+        typetype type;
+        
+        const char* name;
+        
+        // byte, word, long, memory, dialog begin, dialog addr:
+        unsigned n_bytes; // example: 1
+        unsigned min;  // example: 0x00
+        unsigned max;  // example: 0xFF
+        unsigned add;  // example: 0x7F0200
+        int      shift;// -2=/4, -1=/2, 0=*1, 1=*2, 2=*4
+        
+        bool highbit_trick;
+        
+        // nibble:
+        
+        // goto:
+        int sign;
+        unsigned offset;
+        
+        // operator:
+        
+        // blob:
+    };
+    
+private:
+    class OpcodeTree;
+    
+    class Command
+    {
+    public:
+        Command() {}
+        explicit Command(const char* fmt) : format(fmt) { }
+    
+        void Add(ElemData data, unsigned bytepos)
+        {
+            data.SetBytePos(bytepos);
+            pos_data.push_back(data);
+        }
+    
+        void Add(const ElemData& data)
+        {
+            if(data.GetName() == NULL)
+            {
+                fprintf(stderr, "Adding an 'other data' with null name\n");
+            }
+            other_data.push_back(data);
+        }
+        
+        void PutInto(OpcodeTree& tree, unsigned bytepos=0)
+        {
+            /* Encodes the data into the opcode tree
+             * for optimized retrieval */
+        
+            // Find out which of the options defines the range
+            // for this byte
+            bool found=false;
+            for(unsigned a=0; a<pos_data.size(); ++a)
+            {
+                const ElemData& d = pos_data[a];
+                if(d.KnowRange(bytepos))
+                {
+                    range<unsigned char> r(d.GetMin(bytepos), d.GetMax(bytepos));
+                    
+                    OpcodeTree::maptype::iterator i = tree.data.find(r);
+                    if(i == tree.data.end())
+                    {
+                        OpcodeTree subtree;
+                        PutInto(subtree, bytepos+1);
+                        tree.data.insert(std::make_pair(r, subtree));
+                    }
+                    else
+                    {
+                        OpcodeTree& subtree = i->second;
+                        PutInto(subtree, bytepos+1);
+                    }
+                    found=true;
+                }
+            }
+            // If there were no specialisations, use the current node.
+            if(!found) tree.choices.push_back(*this);
+        }
+        
+        const EventCode::DecodeResult
+        Scan
+            (unsigned offset, const unsigned char* data, unsigned length,
+             EventCode::DecodingState& state) const
         {
             parammap params;
-            if(!ScanParams(string, params)) throw false;
             
-            unsigned index = ScanInt(params["index"], 0xFF);
-            unsigned dura  = 0;
-            if(index) dura = ScanInt(params["duration"], 0xFF);
+            EventCode::DecodeResult result;
             
-            result.push_back(index);
-            if(index)
-                result.push_back(dura);
+            if(data[0] == 0x4E
+            && data[1] == 0x3A
+            && data[2] == 0x20
+            && data[3] == 0x7E)
+            {
+                fprintf(stderr, "Alert\n");
+            }
+            
+            unsigned nbytes = 1;
+            for(unsigned a=0; a<pos_data.size(); ++a)
+            {
+                /* Even if it doesn't have a name, it needs to be decoded
+                 * to get the opcode length properly.
+                 */
+                const char* name = pos_data[a].GetName();
+                
+                ElemData::FormatResult
+                    tmp = pos_data[a].Format(offset, data, length, state);
+                
+                if(name)
+                {
+                    params[name] = tmp.text;
+                }
+                if(!tmp.label_name.empty())
+                {
+                    result.label_name  = tmp.label_name;
+                    result.label_value = tmp.label_value;
+                }
+                if(tmp.maxoffs > nbytes) nbytes = tmp.maxoffs;
+            }
+            for(unsigned a=0; a<other_data.size(); ++a)
+            {
+                const char* name = other_data[a].GetName();
+                if(!name)
+                {
+                    fprintf(stderr, "No name on 'other_data'?\n");
+                    throw false;
+                }
+                params[name] = other_data[a].Format();
+            }
+            
+            result.code   = FormatString(format, params);
+            result.nbytes = nbytes; 
+            return result;
         }
-    END_EVENT()
-
-    BEGIN_EVENT(EvLoopAnimation)
-        EvLoopAnimation()
+        
+    private:
+        const char* format;
+        std::vector<ElemData> pos_data;
+        std::vector<ElemData> other_data;
+    };
+    
+private:
+    class OpcodeTree
+    {
+    public:
+        OpcodeTree() { }
+    
+        typedef simple_rangemap<unsigned char, OpcodeTree> maptype;
+        maptype data;
+        std::vector<Command> choices;
+        
+        void Dump(unsigned indent=0) const
         {
-            DeclareByte("0", 0);
-            DeclareByte("1", 1);
-            DeclareSize(2);
-            
-            // LoopAnimation.
-            
+            if(!choices.empty())
+            {
+                std::fprintf(stderr, "%*s", indent, "");
+                std::fprintf(stderr, "%u choices.\n", choices.size());
+            }
+            for(maptype::const_iterator
+                i = data.begin();
+                i != data.end();
+                ++i)
+            {
+                int lower = i->first.lower, upper = i->first.upper;
+                const OpcodeTree& subtree = i->second;
+                
+                std::fprintf(stderr, "%*s", indent, "");
+                std::fprintf(stderr, "subtree %02X-%02X:\n", lower,upper);
+                subtree.Dump(indent+2);
+            }
+        }
+    };
+    
+private:
+    class Initialize
+    {
+    private:
+        /* formatting */
+        Initialize& operator<< (const char* format)
+        {
+            Flush();
+            cur_command = new Command(format);
+            return *this;
+        }
+
+        /* set byteposition */
+        Initialize& operator<< (int bytepos)
+        {
+            curpos = bytepos;
+            return *this;
+        }
+        
+        /* opcode settings */
+        Initialize& operator>> (const ElemData& data)
+        {
+            if(cur_command) cur_command->Add(data, curpos);
+            return *this;
+        }
+
+        /* settings */
+        Initialize& operator<< (const ElemData& data)
+        {
+            if(cur_command) cur_command->Add(data);
+            return *this;
+        }
+        
+        /* opcode settings */
+        static ElemData DeclareByte(const char* name, unsigned min=0x00, unsigned max=0xFF)
+        {
+            return ElemData(1,min,max,0,0).SetName(name);
+        }
+        static ElemData DeclareWord(const char* name, unsigned min=0x0000, unsigned max=0xFFFF)
+        {
+            return ElemData(2,min,max,0,0).SetName(name);
+        }
+        static ElemData DeclareLong(const char* name, unsigned min=0x000000, unsigned max=0xFFFFFF)
+        {
+            return ElemData(3,min,max,0,0).SetName(name);
+        }
+        static ElemData DeclareNibbleHi(const char* name)
+        {
+            ElemData result(1, 0x00,0xFF, 0,0);
+            result.SetType(ElemData::t_nibble_hi);
+            return result.SetName(name);
+        }
+        static ElemData DeclareNibbleLo(const char* name)
+        {
+            ElemData result(1, 0x00,0xFF, 0,0);
+            result.SetType(ElemData::t_nibble_lo);
+            return result.SetName(name);
+        }
+        static ElemData Declare7E0000_B(const char* name)
+            { return ElemData(1,0x00,0xFF,0x7E0000,0).SetName(name); }
+        static ElemData Declare7E0197_B(const char* name)
+            { return ElemData(1,0x00,0xFF,0x7E0197,0).SetName(name); }
+        static ElemData Declare7E0100_B(const char* name)
+            { return ElemData(1,0x00,0xFF,0x7E0100,0).SetName(name); }
+        static ElemData Declare7F0000_B(const char* name)
+            { return ElemData(1,0x00,0xFF,0x7F0000,0).SetName(name); }
+        static ElemData Declare7F0000_W(const char* name)
+            { return ElemData(2,0x00,0xFFFF,0x7F0000,0).SetName(name); }
+        static ElemData Declare7F0200_2(const char* name)
+            { return ElemData(1,0x00,0xFF,0x7F0200,1).SetName(name); }
+        static ElemData DeclareGoto(const char* name, signed char sign, unsigned offset)
+        {
+            ElemData result(1, 0x00,0xFF, 0,0);
+            result.SetType(ElemData::t_goto, sign, offset);
+            return result.SetName(name);
+        }
+        static ElemData DeclareOperator(const char* name)
+        {
+            ElemData result(1, 0x00,0x7F, 0,0);
+            result.SetType(ElemData::t_operator);
+            return result.SetName(name);
+        }
+        static ElemData DeclareBlob(const char* name)
+        {
+            ElemData result(2, 0x0000,0xFFFF, 0,0);
+            result.SetType(ElemData::t_blob);
+            return result.SetName(name);
+        }
+        static ElemData DeclareDialogBegin(const char* name)
+        {
+            ElemData result(3, 0x000000,0xFFFFFF, 0,0);
+            result.SetType(ElemData::t_dialogbegin);
+            return result.SetName(name);
+        }
+        static ElemData DeclareDialogAddr(const char* name)
+        {
+            ElemData result(1, 0x00,0xFF, 0,0);
+            result.SetType(ElemData::t_dialogaddr);
+            return result.SetName(name);
+        }
+        
+        /* settings */
+        static ElemData DeclareConst(const char* name, unsigned value)
+        { if(value <= 0xFF) return ElemData(1,value,value,value,0).SetName(name);
+          if(value <= 0xFFFF) return ElemData(2,value,value,value,0).SetName(name);
+          if(value <= 0xFFFFFF) return ElemData(3,value,value,value,0).SetName(name);
+          return ElemData(4,value,value,value,0).SetName(name);
+
+          // 7E016D: current actor (object)
+          // 7E01BD: number of objects in scene
+          // 7E15C0: ?
+        }
+
+        static ElemData DeclareProp(const char* name, unsigned address)
+        {
+            // 0F81: Sprite palette number
+            // 1000: ?
+            // 1001: ?
+            // 1100: Identity
+            //         If bit $80 is set, the object is dead
+            //         and its code will not be interpreted.
+            //         #0: member1
+            //         #1: member2
+            //         #2: member3
+            // 1180: object's current code pointer
+            // 1400: Pointer to palette in ROM (offset only, page E4)
+            // 1600: facing
+            // 1601: flag: must update sprite (?)
+            // 1680: current animation
+            // 1681: ?
+            // 1780: ?flag
+            // 1781: ?
+            // 1800: ?flag for x-coord
+            // 1801: X-coordinate
+            // 1880: ?flag for y-coord
+            // 1881: Y-coordinate
+            // 1900: ?
+            // 1980: ?
+            // 1A00: NpcSpeed
+            // 1A01: Length of movement
+            // 1A80: Appears to be a "is moving?" flag
+            // 1A81: Allocated? Drawing mode? 1=on, 0=off, $80=hide
+            // 1B01: NpcSolidProps
+            // 1B80: ?flag
+            // 1B81: ?
+            // 1C00: Current thread number
+            // 1C01: EventFlag
+            // 1C80: NpcMoveProps
+            // 1C81: ?
+            // 7F0580: Thread 0 code pointer (begins as 0)
+            // 7F0600: Thread 1 code pointer (begins as 0)
+            // 7F0680: Thread 2 code pointer (begins as 0)
+            // 7F0700: Thread 3 code pointer (begins as 0)
+            // 7F0780: Thread 4 code pointer (begins as 0)
+            // 7F0800: Thread 5 code pointer (begins as 0)
+            // 7F0880: Thread 6 code pointer (begins as 0)
+            // 7F0900: Thread 7 code pointer (begins as 0)
+            // 7F0980: flag used by opcode $04
+            // 7F0A80: "Result" of various tests
+            // 7F0B01: ?
+            // 7F0B80: ?
+            // 7F0F00: ?
+            if(address <=0x0000FF) address += 0x7E0100; // D page.
+            if(address < 0x7E0000) address += 0x7E0000;
+            return DeclareConst(name, address);
+        }
+        
+        void Init()
+        {
+        *this
+<< "[Next]"
+    << 0 >> 0x00
+    /*
+        A = $1C00 of cur obj
+        If A == 7
+          return and loop
+        X = (A << 7) + (obj number)
+        $7F0580[X] = word(0)
+        <begin>
+         $1C00 of cur obj += 1
+         X += #$80
+         A = $7F0580[X]
+        <while A==0>
+        Execution continues at A
+        return
+    */
+
+<< "[Execution02:%1 [function:%2] [for:%0]]"
+    << 0 >> 0x02
+    << 1 >> DeclareByte("0") // object number whose execution to alter
+    << 2 >> DeclareNibbleHi("1")
+    << 2 >> DeclareNibbleLo("2")
+    /*
+        If ( $1C01 for given obj != #0
+        Or   $1100 for given obj & #$80
+        Or   $1000 for given obj & #$80 )
+        {
+          return
+        }
+        $D9 = $1C00 for given obj // Current thread
+        $DF = hi nibble
+        If $DF == $D9
+        {
+          // Already executing the selected thread
+          return
+        }
+        If $DF >= $D9
+        {
+          // Selecting a thread higher than current
+          
+          // Verify that the thread is undefined
+          $E1 = ($DF << 7) + param1
+          A = $7F0580[$E1]
+          If(!zero)
+          {
+            // Already defined.
+            return
+          }
+          // Define it.
+          $E3 = (param1 << 4) + (lo nibble)*2
+          $7F0580[$E1] = given actor's pointer from $7F2001[$E3]
+        }
+        else
+        {
+          // Returning to a previous thread?
+          
+          // Save current code position
+          $E1 = ($D9 << 7) + param1
+          $7F0580[$E1] = $1180 for given obj
+          
+          // Load new position
+          $E3 = (param1 << 4) + (lo nibble)*2
+          $1180 for given obj = given actor's pointer from $7F2001[$E3]
+          $1C00 for given obj = $DF
+          $1A80 for given obj = 0 (moving flag)
+          $1A01 for given obj = 0 (length of movement)
+        }
+        return
+     */
+     // Note: used by op 05.
+
+<< "[Execution03:%1 [function:%2] [for:%0]]"
+    << 0 >> 0x03
+    << 1 >> DeclareByte("0")
+    << 2 >> DeclareNibbleHi("1")
+    << 2 >> DeclareNibbleLo("2")
+
+    /*
+        if ( $1C01 for given obj != #0 )
+          return, loop
+        
+        If ( $1100 for given obj & #$80
+        Or   $1000 for given obj & #$80 )
+        {
+          return
+        }
+        
+        $D9 = $1C00 for given obj // Current thread
+        $DF = hi nibble
+        If $DF >= $D9
+        {
+          return, loop
+        }
+        
+        // Save current code position
+        $E1 = ($D9 << 7) + param1
+        $7F0580[$E1] = $1180 for given obj
+        
+        // Load new position
+        $E3 = (param1 << 4) + (lo nibble)*2
+        $1180 for given obj = given actor's pointer from $7F2001[$E3]
+        $1C00 for given obj = $DF
+        $1A80 for given obj = 0 (moving flag)
+        $1A01 for given obj = 0 (length of movement)
+        return
+     */
+     // Note: used by op 06.
+
+<< "[Execution04:%1 [function:%2] [for:%0]]"
+    << 0 >> 0x04
+    << 1 >> DeclareByte("0")
+    << 2 >> DeclareNibbleHi("1")
+    << 2 >> DeclareNibbleLo("2")
+    /*
+       A = $7F0980 for _current_ object
+       If(!zero)
+       {
+         @61A7
+         $DB = param1
+         $DC = 0
+
+         $D9 = $1C00 for given obj // Current thread
+         $DF = hi nibble
+         
+         If ( $1100 for given obj & #$80
+         Or   $1000 for given obj & #$80
+         Or   $DF >= $D9 )
+         {
+           $7F0980 for _current_ obj = 0
+           return
+         }
+         return, loop
+       }
+       // Rest of this branch is same as in op 03,
+       // except that in the end it sets
+       $7F0980 for _current_ obj = 1.
+       return
+    */
+     // Note: used by op 07.
+
+<< "[Execution02:%1 [function:%2] [for:%0]]"
+    << 0 >> 0x05
+    << 1 >> Declare7E0197_B("0")//target obj
+    << 2 >> DeclareNibbleHi("1")
+    << 2 >> DeclareNibbleLo("2")
+        // Same as 0x02, but uses object number from table.
+
+<< "[Execution03:%1 [function:%2] [for:%0]]"
+    << 0 >> 0x06
+    << 1 >> Declare7E0197_B("0")//target obj
+    << 2 >> DeclareNibbleHi("1")
+    << 2 >> DeclareNibbleLo("2")
+    // Same as 0x03, but uses object number from table.
+
+<< "[Execution04:%1 [function:%2] [for:%0]]"
+    << 0 >> 0x07
+    << 1 >> Declare7E0197_B("0")//target obj
+    << 2 >> DeclareNibbleHi("1")
+    << 2 >> DeclareNibbleLo("2")
+    // Same as 0x04, but uses object number from table.
+
+<< "[ObjectLetB:%0:%1 [for:current]]"
+    << 0 >> 0x08
+    << DeclareProp("0", 0x1C01)
+    << DeclareConst("1", 1)
+
+<< "[ObjectLetB:%0:%1 [for:current]]"
+    << 0 >> 0x09
+    << DeclareProp("0", 0x1C01)
+    << DeclareConst("1", 0)
+
+<< "[ObjectRemove [for:%0]]"
+    << 0 >> 0x0A
+    << 1 >> DeclareByte("0")
+    // For given obj,
+    //   Sets 1100=$80 (code execution: dead)
+    //   And  1A81=$00 (drawing mode: none)
+
+<< "[ObjectOrB:%0:%1 [for:%2]]"
+    << 0 >> 0x0B
+    << 1 >> DeclareByte("2")
+    << DeclareProp("0", 0x1000)
+    << DeclareConst("1", 0x80)
+
+<< "[ObjectAndB:%0:%1 [for:%2]]"
+    << 0 >> 0x0C
+    << 1 >> DeclareByte("2")
+    << DeclareProp("0", 0x1000)
+    << DeclareConst("1", 0x7F)
+
+<< "[ObjectLetB:%0:%1 [for:current]]"
+    << 0 >> 0x0D
+    << 1 >> DeclareByte("1")
+    << DeclareProp("0", 0x1C80)
+
+<< "[ObjectLetB:%0:%1 [for:current]]"
+    << 0 >> 0x0E
+    << 1 >> DeclareByte("1")
+    << DeclareProp("0", 0x1C81)
+
+<< "[ObjectFacing:%0 [for:current]]"
+    << 0 >> 0x0F
+    << DeclareConst("0", 0) //up
+    // puts 1600=0, 1601=0
+
+<< "[Goto:%label]"
+    << 0 >> 0x10
+    << 1 >> DeclareGoto("label", +1, 1)
+
+<< "[Goto:%label]"
+    << 0 >> 0x11
+    << 1 >> DeclareGoto("label", -1, 1)
+
+<< "[Goto:%label [UnlessB:%addr %op %value]]"
+    << 0 >> 0x12
+    << 1 >> Declare7F0200_2("addr")
+    << 2 >> DeclareByte("value")
+    << 3 >> DeclareOperator("op")
+    << 4 >> DeclareGoto("label", +1, 4)
+
+<< "[Goto:%label [UnlessW:%addr %op %value]]"
+    << 0 >> 0x13
+    << 1 >> Declare7F0200_2("addr")
+    << 2 >> DeclareWord("value")
+    << 4 >> DeclareOperator("op")
+    << 5 >> DeclareGoto("label", +1, 5)
+
+<< "[Goto:%label [UnlessB:%addr1 %op %addr2]]"
+    << 0 >> 0x14
+    << 1 >> Declare7F0200_2("addr1")
+    << 2 >> Declare7F0200_2("addr2")
+    << 3 >> DeclareOperator("op")
+    << 4 >> DeclareGoto("label", +1, 4)
+
+<< "[Goto:%label [UnlessW:%addr1 %op %addr2]]"
+    << 0 >> 0x15
+    << 1 >> Declare7F0200_2("addr1")
+    << 2 >> Declare7F0200_2("addr2")
+    << 3 >> DeclareOperator("op")
+    << 4 >> DeclareGoto("label", +1, 4)
+
+<< "[Goto:%label [UnlessB:%addr %op %value]]"
+    << 0 >> 0x16
+    << 1 >> Declare7E0000_B("addr")
+    << 2 >> DeclareByte("value")
+    << 3 >> DeclareOperator("op")
+    << 4 >> DeclareGoto("label", +1, 4)
+
+<< "[Goto:%label [UnlessB:%addr %op %value]]"
+    << 0 >> 0x16
+    << 1 >> Declare7E0100_B("addr")
+    << 2 >> DeclareByte("value")
+    << 3 >> DeclareOperator("op").DeclareHighbit()
+    << 4 >> DeclareGoto("label", +1, 4)
+
+<< "[ObjectFacing:%0 [for:current]]"
+    << 0 >> 0x17
+    << DeclareConst("0", 1) //down
+    // puts 1600=1, 1601=0
+
+<< "[Goto:%label [IfStorylinePoint:%0]]"
+    << 0 >> 0x18
+    << 1 >> DeclareByte("0")
+    << 2 >> DeclareGoto("label", +1, 2)
+
+<< "[ObjectLetB:%0:%1 [for:current]]"
+    << 0 >> 0x19
+    << 1 >> Declare7F0200_2("1")
+    << DeclareProp("0", 0x7F0A80)
+
+<< "[Goto:%label [UnlessObjectB:%0 == %1 [for:current]]]"
+    << 0 >> 0x1A
+    << 1 >> DeclareByte("1")
+    << 2 >> DeclareGoto("label", +1, 2)
+    << DeclareProp("0", 0x7F0A80)
+
+<< "[ObjectFacing:%0 [for:current]]"
+    << 0 >> 0x1B
+    << DeclareConst("0", 2) //left
+    // puts 1600=2, 1601=0
+
+<< "[ObjectLetB:%0:%1 [for:current]]"
+    << 0 >> 0x1C
+    << 1 >> Declare7F0000_B("1")
+    << DeclareProp("0", 0x7F0A80)
+
+<< "[ObjectFacing:%0 [for:current]]"
+    << 0 >> 0x1D
+    << DeclareConst("0", 3) //right
+    // puts 1600=3, 1601=0
+
+<< "[ObjectFacing:%0 [for:%1]]"
+    << 0 >> 0x1E
+    << 1 >> DeclareByte("1")
+    << DeclareConst("0", 0) //up
+    // puts 1600=0, 1601=0
+
+<< "[ObjectFacing:%0 [for:%1]]"
+    << 0 >> 0x1F
+    << 1 >> DeclareByte("1")
+    << DeclareConst("0", 1) //down
+    // puts 1600=1, 1601=0
+
+<< "[LetB:%0:%1]"
+    << 0 >> 0x20
+    << 1 >> Declare7F0200_2("0")
+    << DeclareConst("1", 0x7E2980) // member1
+
+<< "[Unknown21:%0:%1:%2]"
+    << 0 >> 0x21
+    << 1 >> DeclareByte("0")
+    << 2 >> DeclareByte("1")
+    << 3 >> DeclareByte("2")
+
+<< "[Unknown22:%0:%1:%2]"
+    << 0 >> 0x22
+    << 1 >> DeclareByte("0")
+    << 2 >> DeclareByte("1")
+    << 3 >> DeclareByte("2")
+
+<< "[Unknown23:%addr:%byte]"
+    << 0 >> 0x23
+    << 1 >> DeclareByte("byte")
+    << 2 >> Declare7F0200_2("addr")
+
+<< "[Unknown24:%addr:%byte]"
+    << 0 >> 0x24
+    << 1 >> DeclareByte("byte")
+    << 2 >> Declare7F0200_2("addr")
+
+<< "[ObjectFacing:%0 [for:%1]]"
+    << 0 >> 0x25
+    << 1 >> DeclareByte("1")
+    << DeclareConst("0", 2) //left
+    // puts 1600=2, 1601=0
+
+<< "[ObjectFacing:%0 [for:%1]]"
+    << 0 >> 0x26
+    << 1 >> DeclareByte("1")
+    << DeclareConst("0", 3) //right
+    // puts 1600=3, 1601=0
+
+<< "[Goto:%label [UnlessObjectB:%0 == %1 [for:%2]]]"
+    << 0 >> 0x27
+    << 1 >> DeclareByte("2")
+    << 2 >> DeclareGoto("label", +1, 2)
+    << DeclareConst("1", 0)
+    << DeclareProp("0", 0x7F0F00)
+
+<< "[Goto:%label [IfObjectNearUnknown [for:%0]]]"
+    << 0 >> 0x28
+    << 1 >> DeclareByte("0")
+    << 2 >> DeclareGoto("label", +1, 2)
+    /*
+        $DB = $1D0A >> 1
+        $DD = $1D0E >> 1
+        x = $1801 for given obj
+        y = $1881 for given obj
+        if (x - $DB) in (0, 1, >= 14)
+        or (y - $DD) in (0, 1, >= 13)
+        {
+          @ 668F
+          goto.
+        }
+        return
+     */
+
+<< "[ReptiteEndingText:%0]"
+    << 0 >> 0x29
+    << 1 >> DeclareByte("0")
+
+<< "[OrB:%0:%1]"
+    << 0 >> 0x2A
+    << DeclareConst("0", 0x7E0154)
+    << DeclareConst("1", 4)
+
+<< "[OrB:%0:%1]"
+    << 0 >> 0x2B
+    << DeclareConst("0", 0x7E0154)
+    << DeclareConst("1", 8)
+
+<< "[Unknown2C:%0:%1]"
+    << 0 >> 0x2C
+    << 1 >> DeclareByte("0")
+    << 2 >> DeclareByte("1")
+    /*
+      $1D3F = 0
+      $1D40 = 0
+      $1D92 = 0
+      $1D8F = word(param1*8)
+      $1D91 = word(param2*8)
+      purpose unknown
+    */
+
+<< "[Goto:%label [UnlessW:%0 <> 00]]"
+    << 0 >> 0x2D
+    << 1 >> DeclareGoto("label", +1, 1)
+    << DeclareConst("0", 0x7E01F8)
+
+<< "[PaletteSet:%2:%3 [palette:%1]]"
+    << 0 >> 0x2E
+    << 1 >> DeclareByte("", 0x80, 0x8F) // the actual value matters not.
+    << 2 >> DeclareNibbleHi("1") // palette number
+    << 2 >> DeclareNibbleLo("2") // starting colour
+    << 3 >> DeclareBlob("3")
+    // writes to 7E2200-> and 7E2000->
+    //      
+    //      7E2200 is the 512-byte buffer of palettes.
+    //      DMA 7 writes it to PPU port 2122 (CGRAM) all the time.
+
+<< "[GFXSetup:%0:%1:%2:%3:%4]"
+    << 0 >> 0x2E
+    << 1 >> DeclareByte("0", 0x40, 0x5F) // this value matters
+    << 2 >> DeclareByte("1")
+    << 3 >> DeclareByte("2")
+    << 4 >> DeclareByte("3")
+    << 5 >> DeclareByte("4")
+    /*
+      calls function 4B2C.
+         if carry set, returns
+         if carry clear:
+           $0520[Y] = param0 // 0x40..0x5F.
+           $0521[Y] = param1
+           $0522[Y] = param2
+           $0523[Y] = 8
+           $0524[Y] = 0
+           $0525[Y] = param4
+           $0526[Y] = param0
+           $0527[Y] = ((param3 & 0xF0) >> 4) | (param3 & 0xF0)
+           $0528[Y] = ((param3 & 0x0F) << 4) | (param3 & 0x0F)
+
+        @4B2C: This function is referred often.
+          
+          Y = 0
+          loop:
+            A = $0520[Y]
+            if(zero)
+              return carry-clear
+            Y += #$0C
+          :loop while Y<60
+          return carry-set
+
+     */
+
+<< "[LetW:%0:%1]"
+    << 0 >> 0x2F
+    << 1 >> DeclareWord("1")
+    << DeclareConst("0", 0x0BE3)
+
+<< "[Goto:%label [UnlessB:%0 & %1]]"
+    << 0 >> 0x30
+    << 1 >> DeclareGoto("label", +1, 1)
+    << DeclareConst("0", 0x7E01F8)
+    << DeclareConst("1", 0x02)
+
+<< "[Goto:%label [UnlessB:%0 & %1]]"
+    << 0 >> 0x31
+    << 1 >> DeclareGoto("label", +1, 1)
+    << DeclareConst("0", 0x7E01F8)
+    << DeclareConst("1", 0x80)
+
+<< "[OrB:%0:%1]"
+    << 0 >> 0x32
+    << DeclareConst("0", 0x7E0154)
+    << DeclareConst("1", 0x10)
+
+<< "[ObjectChangePalette:%0 [for:current]]"
+    << 0 >> 0x33
+    << 1 >> DeclareByte("0")
+
+<< "[Goto:%0 [UnlessButtonStatus:A]]"
+    << 0 >> 0x34l
+    << 1 >> DeclareGoto("0", +1, 1)
+    // accesses $F2
+    // Checks for current status of button?
+    // mask $80
+
+<< "[Goto:%0 [UnlessButtonStatus:B]]"
+    << 0 >> 0x35
+    << 1 >> DeclareGoto("0", +1, 1)
+    // mask $08
+
+<< "[Goto:%0 [UnlessButtonStatus:X]]"
+    << 0 >> 0x36
+    << 1 >> DeclareGoto("0", +1, 1)
+    // mask $40
+
+<< "[Goto:%0 [UnlessButtonStatus:Y]]"
+    << 0 >> 0x37
+    << 1 >> DeclareGoto("0", +1, 1)
+    // mask $04
+
+<< "[Goto:%0 [UnlessButtonStatus:L]]"
+    << 0 >> 0x38
+    << 1 >> DeclareGoto("0", +1, 1)
+    // mask $20
+
+<< "[Goto:%0 [UnlessButtonStatus:R]]"
+    << 0 >> 0x39
+    << 1 >> DeclareGoto("0", +1, 1)
+    // accesses $F2
+    // mask $10
+
+<< "[Goto:%0 [UnusedUnknown3B]]"
+    << 0 >> 0x3B
+    << 1 >> DeclareGoto("0", +1, 1)
+    // does something for $50, tests for bit #$02
+
+<< "[Goto:%0 [UnusedUnknown3C]]"
+    << 0 >> 0x3C
+    << 1 >> DeclareGoto("0", +1, 1)
+    // does something for $50, tests for bit #$80
+
+
+// button masks:
+//    $50:
+//      02=left?  80=up?
+//    $51:
+//      01=start, 02=select, 04=y, 08=b
+//      10=r,     20=l,      40=x, 80=a
+
+<< "[Goto:%0 [UnlessButtonPressed:A]]"
+    << 0 >> 0x3F
+    << 1 >> DeclareGoto("0", +1, 1)
+    // accesses $51
+    // Checks if the button has been pressed?
+    // mask $80 
+
+<< "[Goto:%0 [UnlessButtonPressed:B]]"
+    << 0 >> 0x40
+    << 1 >> DeclareGoto("0", +1, 1)
+    // mask $08
+
+<< "[Goto:%0 [UnlessButtonPressed:X]]"
+    << 0 >> 0x41
+    << 1 >> DeclareGoto("0", +1, 1)
+    // mask $40
+
+<< "[Goto:%0 [UnlessButtonPressed:Y]]"
+    << 0 >> 0x42
+    << 1 >> DeclareGoto("0", +1, 1)
+    // mask $04
+
+<< "[Goto:%0 [UnlessButtonPressed:L]]"
+    << 0 >> 0x43
+    << 1 >> DeclareGoto("0", +1, 1)
+    // mask $20
+
+<< "[Goto:%0 [UnlessButtonPressed:R]]"
+    << 0 >> 0x44
+    << 1 >> DeclareGoto("0", +1, 1)
+    // accesses $F1
+    // mask $10
+
+<< "[LetB:%0:%1]"
+    << 0 >> 0x47
+    << 1 >> DeclareByte("1")
+    << DeclareConst("0", 0x7E016B)
+
+<< "[LetB:%addr:%long]"
+    << 0 >> 0x48
+    << 1 >> DeclareLong("long")
+    << 4 >> Declare7F0200_2("addr")
+
+<< "[LetW:%addr:%long]"
+    << 0 >> 0x49
+    << 1 >> DeclareLong("long")
+    << 4 >> Declare7F0200_2("addr")
+
+<< "[LetB:%long:%byte]"
+    << 0 >> 0x4A
+    << 1 >> DeclareLong("long")
+    << 4 >> DeclareByte("byte")
+
+<< "[LetW:%long:%word]"
+    << 0 >> 0x4B
+    << 1 >> DeclareLong("long")
+    << 4 >> DeclareWord("word")
+
+<< "[LetB:%long:%addr]"
+    << 0 >> 0x4C
+    << 1 >> DeclareLong("long")
+    << 4 >> Declare7F0200_2("addr")
+
+<< "[LetW:%long:%addr]"
+    << 0 >> 0x4D
+    << 1 >> DeclareLong("long")
+    << 4 >> Declare7F0200_2("addr")
+
+<< "[StringStore:%long:%data]"
+    << 0 >> 0x4E
+    << 1 >> DeclareLong("long", 0x7E0000, 0x7FFFFF)
+    << 4 >> DeclareBlob("data")
+
+<< "[LetB:%addr:%byte]"
+    << 0 >> 0x4F
+    << 1 >> DeclareByte("byte")
+    << 2 >> Declare7F0200_2("addr")
+
+<< "[LetW:%addr:%word]"
+    << 0 >> 0x50
+    << 1 >> DeclareWord("word")
+    << 3 >> Declare7F0200_2("addr")
+
+<< "[LetB:%1:%0]"
+    << 0 >> 0x51
+    << 1 >> Declare7F0200_2("0")
+    << 2 >> Declare7F0200_2("1")
+
+<< "[LetW:%1:%0]"
+    << 0 >> 0x52
+    << 1 >> Declare7F0200_2("0")
+    << 2 >> Declare7F0200_2("1")
+
+<< "[LetB:%1:%0]"
+    << 0 >> 0x53
+    << 1 >> Declare7F0000_W("0")
+    << 3 >> Declare7F0200_2("1")
+
+<< "[LetW:%1:%0]"
+    << 0 >> 0x54
+    << 1 >> Declare7F0000_W("0")
+    << 3 >> Declare7F0200_2("1")
+
+<< "[LetB:%0:%1]]"
+    << 0 >> 0x55
+    << 1 >> Declare7F0200_2("1")
+    << DeclareConst("0", 0x7F0000)
+    // "story line counter"?
+
+<< "[LetB:%addr:%byte]"
+    << 0 >> 0x56
+    << 1 >> DeclareByte("byte")
+    << 2 >> Declare7F0000_W("addr")
+
+<< "[ObjectLoadPC:%0 [for:current]]"
+    << 0 >> 0x57
+    << DeclareConst("0", 0) // crono
+    // firsts checks for a party member.
+    // if not a party member:
+    //  puts $1100,X <- #$80 object is now dead
+    //  puts $1101,X <- param0
+    //  returns
+    // if member 1: puts $1100,X <- #$00
+    // if member 2: puts $1100,X <- #$01
+    // if member 3: puts $1100,X <- #$02
+    // puts $1C80,X <- #$00 movement props
+    // puts $1A81,X <- #$01 drawing mode
+    // puts $1B01,X <- #$01 solid
+    // puts $1101,X <- param0
+    // then continues in a complex way.
+    
+<< "[LetB:%1:%0]"
+    << 0 >> 0x58
+    << 1 >> Declare7F0200_2("0")
+    << 2 >> Declare7F0000_W("1")
+
+<< "[LetW:%1:%0]"
+    << 0 >> 0x59
+    << 1 >> Declare7F0200_2("0")
+    << 2 >> Declare7F0000_W("1")
+
+<< "[LetW:%1:%0]"
+    << 0 >> 0x5A
+    << 1 >> DeclareByte("0")
+    << DeclareConst("1", 0x7F0000)
+    // "story line counter"
+
+<< "[AddB:%addr:%byte]"
+    << 0 >> 0x5B
+    << 1 >> DeclareByte("byte")
+    << 2 >> Declare7F0200_2("addr")
+
+<< "[ObjectLoadPC:%0 [for:current]]"
+    << 0 >> 0x5C
+    << DeclareConst("0", 1) // marle
+
+<< "[AddB:%1:%0]"
+    << 0 >> 0x5D
+    << 1 >> Declare7F0200_2("0")
+    << 2 >> Declare7F0200_2("1")
+
+<< "[AddW:%1:%0]"
+    << 0 >> 0x5E
+    << 1 >> Declare7F0200_2("0")
+    << 2 >> Declare7F0200_2("1")
+
+<< "[SubB:%addr:%byte]"
+    << 0 >> 0x5F
+    << 1 >> DeclareByte("byte")
+    << 2 >> Declare7F0200_2("addr")
+
+<< "[SubW:%addr:%word]"
+    << 0 >> 0x60
+    << 1 >> DeclareWord("word")
+    << 3 >> Declare7F0200_2("addr")
+
+<< "[SubB:%1:%0]"
+    << 0 >> 0x61
+    << 1 >> Declare7F0200_2("0")
+    << 2 >> Declare7F0200_2("1")
+
+<< "[ObjectLoadPC:%0 [for:current]]"
+    << 0 >> 0x62
+    << DeclareConst("0", 2) // lucca
+
+<< "[SetBit:%addr:%byte]"
+    << 0 >> 0x63
+    << 1 >> DeclareByte("byte")
+    << 2 >> Declare7F0200_2("addr")
+    // addr |= $FF20[byte]
+
+<< "[ClearBit:%addr:%byte]"
+    << 0 >> 0x64
+    << 1 >> DeclareByte("byte")
+    << 2 >> Declare7F0200_2("addr")
+    // addr &= $FF28[byte]
+
+<< "[SetBit:%addr:%byte]"
+    << 0 >> 0x65
+    << 1 >> DeclareByte("byte", 0x00, 0x7F)
+    << 2 >> Declare7E0000_B("addr")
+    // addr_value |= (byte & 0x80) << 1
+    // addr |= $FF20[byte & 0x0F]
+    
+<< "[SetBit:%addr:%byte]"
+    << 0 >> 0x65
+    << 1 >> DeclareByte("byte", 0x00, 0x7F).DeclareHighbit()
+    << 2 >> Declare7E0100_B("addr")
+
+<< "[ClearBit:%addr:%byte]"
+    << 0 >> 0x66
+    << 1 >> DeclareByte("byte", 0x00, 0x7F)
+    << 2 >> Declare7E0000_B("addr")
+
+<< "[ClearBit:%addr:%byte]"
+    << 0 >> 0x66
+    << 1 >> DeclareByte("byte", 0x00, 0x7F).DeclareHighbit()
+    << 2 >> Declare7E0100_B("addr")
+
+<< "[AndB:%addr:%byte]"
+    << 0 >> 0x67
+    << 1 >> DeclareByte("byte")
+    << 2 >> Declare7F0200_2("addr")
+
+<< "[ObjectLoadPC:%0 [for:current]]"
+    << 0 >> 0x68
+    << DeclareConst("0", 3) // frog
+
+<< "[OrB:%addr:%byte]"
+    << 0 >> 0x69
+    << 1 >> DeclareByte("byte")
+    << 2 >> Declare7F0200_2("addr")
+
+<< "[ObjectLoadPC:%0 [for:current]]"
+    << 0 >> 0x6A
+    << DeclareConst("0", 4) // robo
+
+<< "[XorB:%addr:%byte]"
+    << 0 >> 0x6B
+    << 1 >> DeclareByte("byte")
+    << 2 >> Declare7F0200_2("addr")
+
+<< "[ObjectLoadPC:%0 [for:current]]"
+    << 0 >> 0x6C
+    << DeclareConst("0", 5) // ayla
+
+<< "[ObjectLoadPC:%0 [for:current]]"
+    << 0 >> 0x6D
+    << DeclareConst("0", 6) // magus
+
+<< "[ShrB:%addr:%byte]"
+    << 0 >> 0x6F
+    << 1 >> DeclareByte("byte")
+    << 2 >> Declare7F0200_2("addr")
+
+<< "[IncB:%0]"
+    << 0 >> 0x71
+    << 1 >> Declare7F0200_2("0")
+
+<< "[IncW:%0]"
+    << 0 >> 0x72
+    << 1 >> Declare7F0200_2("0")
+
+<< "[DecB:%0]"
+    << 0 >> 0x73
+    << 1 >> Declare7F0200_2("0")
+
+<< "[LetB:%0:1]"
+    << 0 >> 0x75
+    << 1 >> Declare7F0200_2("0")
+
+<< "[LetW:%0:1]"
+    << 0 >> 0x76
+    << 1 >> Declare7F0200_2("0")
+
+<< "[LetB:%0:0]"
+    << 0 >> 0x77
+    << 1 >> Declare7F0200_2("0")
+
+<< "[ObjectJump:%0:%1:%2 [for:current]]"
+    << 0 >> 0x7A
+    << 1 >> DeclareByte("0") //x
+    << 2 >> DeclareByte("1") //y
+    << 3 >> DeclareByte("2") //height
+    // geometrically "jump"
+
+<< "[ObjectPerformMovement:%0:%1:%2:%3 [for:current]]"
+    << 0 >> 0x7B
+    << 1 >> DeclareByte("0") // $1900 ?
+    << 2 >> DeclareByte("1") // $1980 ?
+    << 3 >> DeclareByte("2") // $1B81 ?
+    << 4 >> DeclareByte("3") // $1A01 length of movement
+    /* Waits until 1A01 becomes zero again. */
+
+<< "[ObjectLetB:%2:%3 [for:%0]"
+    << 0 >> 0x7C
+    << 1 >> DeclareByte("0")
+    << DeclareProp("2", 0x1A81)
+    << DeclareConst("3", 1)
+    // Sets drawing "on" */
+
+<< "[ObjectLetB:%2:%3 [for:%0]"
+    << 0 >> 0x7D
+    << 1 >> DeclareByte("0")
+    << DeclareProp("2", 0x1A81)
+    << DeclareConst("3", 0)
+    // Sets drawing "off" */
+
+<< "[ObjectLetB:%2:%3 [for:current]"
+    << 0 >> 0x7E
+    << DeclareProp("2", 0x1A81)
+    << DeclareConst("3", 0x80)
+    // Sets drawing "hide" */
+
+<< "[GetRandom:%0]"
+    << 0 >> 0x7F
+    << 1 >> Declare7F0200_2("0")
+    // does:
+    //  A  = ++$7E01F8
+    //  %0 = $FE00[A & 0xFF]
+
+<< "[ObjectLoadPC:%0 [for:current [IfInParty?]]]"
+    << 0 >> 0x80
+    << 1 >> DeclareByte("0")
+    // if not a party member:
+    //  puts $1100,X <- #$80   (marks object dead)
+    //  puts $1101,X <- param
+    //  returns
+    // if the given value is 0..6,
+    //  sets $8D+param = current object number
+    // does lots of complicated things. ...
+
+<< "[ObjectLoadPC:%0 [for:current]]"
+    << 0 >> 0x81
+    << 1 >> DeclareByte("0")
+
+<< "[ObjectLoadNPC:%0 [for:current]]"
+    << 0 >> 0x82
+    << 1 >> DeclareByte("0")
+
+<< "[ObjectLoadEnemy:%0:%1 [for:current]]"
+    << 0 >> 0x83
+    << 1 >> DeclareByte("0")
+    << 2 >> DeclareByte("1")
+    // the meaning of the second param is unknown
+
+<< "[ObjectLetB:%0:%1 [for:current]]"
+    << 0 >> 0x84
+    << 1 >> DeclareByte("1")
+    << DeclareProp("0", 0x1B01)
+    // "npc solid props"
+
+<< "[ObjectSet1000Bits:%0 [for:current]]"
+    << 0 >> 0x87
+    << 1 >> DeclareByte("0")
+    // $1000,X  &=  #$80
+    // $1000,X  |=  (param+1)
+    // $1001,X  = $1000,X
+
+<< "[ObjectPaletteReset [for:current]]"
+    << 0 >> 0x88
+    << 1 >> 0x00
+    /* 
+        @48C0
+          
+          Y = $7F0B80 for cur obj
+          if Y & #$80
+            return
+          $7F0B80 for cur obj = #$FFFF
+          $0520[Y] = #$00
+          Y = ($0F81 for cur obj) << 4
+          X = ($1400 for cur obj)
+          Copy 18 bytes from $E4:X to $7E:(#$2102+Y)
+          Copy 18 bytes from $E4:X to $7E:(#$2302+Y)
+          return
+        
+        Seems to load the object's palette from ROM and set it.
+          
+     */
+
+<< "[ObjectGFXSetup:%0:%1:%2:%3 [for:current]]"
+    << 0 >> 0x88
+    << 1 >> DeclareByte("0", 0x20, 0x20) // this value matters
+    << 2 >> DeclareByte("1")
+    << 3 >> DeclareNibbleLo("2")
+    << 3 >> DeclareNibbleHi("3")
+    /* 
+        @4919
+        
+          call $4B2C
+          if carry set:
+            return
+          $7F0B80 for cur obj = Y
+          $0520[Y] = param0 // the 0x20,0x30 byte.
+          $0521[Y] = param3 + (($0F81 for cur obj) << 3) + 0x80
+          $0522[Y] = param2
+          $0524[Y] = 0
+          $0525[Y] = param1
+          return
+          
+          
+     */
+
+<< "[ObjectGFXSetup:%0:%1:%2:%3 [for:current]]"
+    << 0 >> 0x88
+    << 1 >> DeclareByte("0", 0x30, 0x30) // this value matters
+    << 2 >> DeclareByte("1")
+    << 3 >> DeclareNibbleLo("2")
+    << 3 >> DeclareNibbleHi("3")
+    // same as 88 20
+
+<< "[ObjectGFXSetup:%0:%1:%2:%3:%4 [for:current]]"
+    << 0 >> 0x88
+    << 1 >> DeclareByte("0", 0x40, 0x5F) // this value matters
+    << 2 >> DeclareNibbleLo("1")
+    << 2 >> DeclareNibbleHi("2")
+    << 3 >> DeclareByte("3")
+    << 4 >> DeclareByte("4")
+    /* 
+        @4970
+        
+          call $4B2C
+          if carry set:
+            return
+          
+          $0520[Y] = param0 & 0xF0 // the 0x40..0x5F byte.
+          $0521[Y] = param2 + (($0F81 for cur obj) << 3) + 0x80
+          $0522[Y] = param1
+          $0523[Y] = 8
+          $0524[Y] = 0
+          $0525[Y] = param4
+          $0526[Y] = param0 & 0x0F
+          $0527[Y] = ((param3 & 0xF0) >> 4) | (param3 & 0xF0)
+          $0528[Y] = ((param3 & 0x0F) << 4) | (param3 & 0x0F)
+          return
+          
+          
+     */
+
+<< "[ObjectPaletteSet:%0:%1 [for:current]]"
+    << 0 >> 0x88
+    << 1 >> DeclareByte("", 0x80, 0x8F) // actual value matters
+    << 1 >> DeclareNibbleLo("0") // starting colour
+    << 2 >> DeclareBlob("1")
+    /* 
+       @49F8
+         
+          $DB = (($0F81 for cur obj) << 3) + 0x80
+          $DD = ((param0 & 0x0F) + $DB) * 2
+          writes the blob into $7E2200+[$DB] and $7E2000+[$DB]
+          
+          7E2200 is the 512-byte buffer of palettes.
+          DMA 7 writes it to PPU port 2122 (CGRAM) all the time.
+     */
+
+<< "[ObjectLetB:%0:%1 [for:current]]"
+    << 0 >> 0x89
+    << 1 >> DeclareByte("1")
+    << DeclareProp("0", 0x1A00)
+    // "npc speed"
+
+<< "[ObjectLetB:%0:%1 [for:current]]"
+    << 0 >> 0x8A
+    << 1 >> Declare7F0200_2("1")
+    << DeclareProp("0", 0x1A00)
+    // "npc speed"
+
+<< "[ObjectSetCoord:%0:%1 [for:current]]"
+    << 0 >> 0x8B
+    << 1 >> DeclareByte("0")
+    << 2 >> DeclareByte("1")
+    // $1800,X = 80xx where xx=%0
+    // $1880,X = FFxx where xx=%1
+
+<< "[ObjectSetCoord:%0:%1 [for:current]]"
+    << 0 >> 0x8C
+    << 1 >> Declare7F0200_2("0")
+    << 2 >> Declare7F0200_2("1")
+
+<< "[SetObjectCoord2:%0:%1 [for:current]]"
+    << 0 >> 0x8D
+    << 1 >> DeclareWord("0")
+    << 3 >> DeclareWord("1")
+
+<< "[ObjectHide:%0 [for:current]]"
+    << 0 >> 0x8E
+    << 1 >> DeclareByte("0")
+
+<< "[ObjectMoveTowards [for:current:%0] [facing:rotate]]"
+    << 0 >> 0x8F
+    << 1 >> Declare7E0197_B("0")//target obj
+    /*
+       if ( $1A01 for current object  <> 0 )
+         return, loop this command.
+       
+       if ( $1100 for given object & #$80 )
+       {
+         // if the object is removed?
+         call $568B
+         return
+       }
+       
+       @5444
+       [$F2] = $1801 for given obj
+       [$F3] = $1881 for given obj
+       [$F0] = $1801 for current object
+       [$F1] = $1881 for current object
+       
+       if ( abs([$F1] - [$F3]) <= 1
+       and  abs([$F0] - [$F2]) <= 1 )
+       {
+         call $568B
+         return
+       }
+       @547C
+       $DB = $1D0A >> 1
+       $DD = $1D0E >> 1
+       if ($F0 - $DB) in (0, 1, >= 14)
+       or ($F1 - $DD) in (0, 1, >= 13)
+       {
+         @ 54B6
+         call $ABA2
+         ...
+         return, loop
+       }
+       call $568B
+       return
+       
+       .....
+       
+       
+      
+     */
+
+<< "[ObjectLetB:%2:%3 [for:current]"
+    << 0 >> 0x90
+    << DeclareProp("2", 0x1A81)
+    << DeclareConst("3", 1)
+    // Sets drawing "on" */
+
+<< "[ObjectLetB:%2:%3 [for:current]"
+    << 0 >> 0x91
+    << DeclareProp("2", 0x1A81)
+    << DeclareConst("3", 0)
+    // Sets drawing "off" */
+
+<< "[ObjectMoveAngle:%0:%1 [for:current] [facing:change]]"
+    << 0 >> 0x92
+    << 1 >> DeclareByte("0") //angle     ($40 = 90 degrees)
+    << 2 >> DeclareByte("1") //pixels/2
+
+<< "[ObjectMoveTowards [for:current:%0] [facing:change]]"
+    << 0 >> 0x94
+    << 1 >> DeclareByte("0") //target obj
+    // included by op B5
+    /*
+       if ( $1A01 for current object  <> 0 )
+         return, loop this command.
+       
+       if ( $1100 for given object & #$80 )
+       {
+         // if the object is removed?
+         call $527B
+         return
+       }
+       
+       @522D
+       [$F2] = $1801 for given obj
+       [$F3] = $1881 for given obj
+       [$F0] = $1801 for current object
+       [$F1] = $1881 for current object
+       
+       if ( abs([$F1] - [$F3]) > 1
+       or   abs([$F0] - [$F2]) > 1 )
+       {
+         @5281
+         call $ABA2 // calculate facing
+         .....
+       }
+       @5265
+       if ( $1C81 for current object & #$02 )
+       {
+         @526E
+         call $30B3
+         if carry set
+         {
+           @527B
+           call $5614
+           return, loop
+         }
+       }
+       call $568B
+       return
+    */
+    
+<< "[ObjectMoveTowards [for:current:%0] [facing:change]]"
+    << 0 >> 0x95
+    << 1 >> Declare7E0197_B("0")//target obj
+    // included by op B6
+    /*
+       if ( $1A01 for current object <> 0 )
+         return, loop this command.
+       
+       load the object number of the party leader
+       (from $97[param])
+       then goto op $94.
+
+       $97 is a word. The object number of first party member?
+       Bit $80 means inactive.
+       Ha! Indeed.
+       $9B is a word too - it refers to an object. (?)
+       But it's not used here.
+    */
+    /* Execution continues (maybe) when the goal has been reached. */
+
+<< "[ObjectMoveTowards:%0:%1 [for:current] [facing:change]]"
+    << 0 >> 0x96
+    << 1 >> DeclareByte("0") //xcoord
+    << 2 >> DeclareByte("1") //ycoord
+
+<< "[ObjectMoveTowards:%0:%1 [for:current] [facing:change]]"
+    << 0 >> 0x97
+    << 1 >> Declare7F0200_2("0") //xcoord from-var
+    << 2 >> Declare7F0200_2("1") //ycoord from-var
+    /* Same as $96 but coordinates are loaded from vars. */
+
+<< "[ObjectMoveTowardsBy:%1 [for:current:%0] [facing:change]]"
+    << 0 >> 0x98
+    << 1 >> DeclareByte("0") // the target obj.
+    << 2 >> DeclareByte("1") // length of movement
+    /* The same as 0x94, except that 1A80
+     * plays some important part here. */
+    /*
+       if ( $1A80 for current object <> 0)
+       {
+         if ( $1A01 for current object  <> 0 )
+           return, loop this command.
+         $1A80 for current object <- 0
+         return
+       }
+       
+       if ( $1100 for given object & #$80 )
+       { 
+         // if the object is removed?
+         $1A80 for given object <- 0
+         call $568B
+         return
+       }
+       
+       @5370
+       [$F2] = $1801 for given obj
+       [$F3] = $1881 for given obj
+       [$F0] = $1801 for current object
+       [$F1] = $1881 for current object
+       
+       if ( abs([$F1] - [$F3]) > 1
+       or   abs([$F0] - [$F2]) > 1 )
+       {
+         @53CA
+         call $ABA2
+         .....
+       }
+       @53A8
+       if ( $1C81 for current object & #$02 )
+       {
+         @53B1
+         call $30B3
+         if carry set
+         {
+           @53C4
+           call $5614
+           return, loop
+         }
+       }
+       $1A80 for current object <- 0
+       call $568B
+       return
+    */
+
+<< "[ObjectMoveTowardsBy:%1 [for:current:%0] [facing:change]]"
+    << 0 >> 0x99
+    << 1 >> Declare7E0197_B("0") // the target obj.
+    << 2 >> DeclareByte("1")     // length of movement
+
+<< "[ObjectMoveTowardsBy:%0:%1:%2 [for:current] [facing:change]]"
+    << 0 >> 0x9A
+    << 1 >> DeclareByte("0") // xcoord
+    << 2 >> DeclareByte("1") // ycoord
+    << 3 >> DeclareByte("2") // length of movement
+
+<< "[ObjectMoveAngle:%0:%1 [for:current] [facing:keep]]"
+    << 0 >> 0x9C
+    << 1 >> DeclareByte("0") // angle ($40 = 90 degrees)
+    << 2 >> DeclareByte("1") // length of movement
+    // Same as op 92, but without changing facing
+
+<< "[ObjectMoveAngle:%0:%1 [for:current] [facing:keep]]"
+    << 0 >> 0x9D
+    << 1 >> Declare7F0200_2("0")
+    << 2 >> Declare7F0200_2("1")
+    // Same as op 9C, but from vars
+
+<< "[ObjectMoveTowards [for:current:%0] [facing:keep]]"
+    << 0 >> 0x9E
+    << 1 >> DeclareByte("0") // target obj
+    // same as op 9D, but without changing facing
+
+<< "[ObjectMoveTowards [for:current:%0] [facing:keep]]"
+    << 0 >> 0x9F
+    << 1 >> Declare7E0197_B("0") // target obj
+    // same as op 9E, but from var (such as party member)
+
+<< "[ObjectMoveTowards:%0:%1 [for:current] [facing:rotate]]"
+    << 0 >> 0xA0
+    << 1 >> DeclareByte("0") //xcoord
+    << 2 >> DeclareByte("1") //ycoord
+
+<< "[ObjectMoveTowards:%0:%1 [for:current] [facing:rotate]]"
+    << 0 >> 0xA1
+    << 1 >> Declare7F0200_2("0") //xcoord from
+    << 2 >> Declare7F0200_2("1") //ycoord from
+    /* Used for Robo's following of party members at End of time */
+
+<< "[ObjectSetFacing:%0 [for:current]]"
+    << 0 >> 0xA6
+    << 1 >> DeclareByte("0")
+
+<< "[ObjectSetFacing:%0 [for:current]]"
+    << 0 >> 0xA7
+    << 1 >> Declare7F0200_2("0")
+
+<< "[ObjectSetFacingTowards [for:current:%0]]"
+    << 0 >> 0xA8
+    << 1 >> DeclareByte("0")
+
+<< "[ObjectSetFacingTowards [for:current:%0]]"
+    << 0 >> 0xA9
+    << 1 >> Declare7F0200_2("0")
+
+<< "[ObjectAnimation1:%0 [for:current]]"
+    << 0 >> 0xAA
+    << 1 >> DeclareByte("0")
+
+<< "[ObjectAnimation2:%0 [for:current] [may wait]]"
+    << 0 >> 0xAB
+    << 1 >> DeclareByte("0")
+
+<< "[ObjectAnimation3:%0 [for:current]]"
+    << 0 >> 0xAC
+    << 1 >> DeclareByte("0")
+
+<< "[Pause:%0 [for:current]]"
+    << 0 >> 0xAD
+    << 1 >> DeclareByte("0")
+
+<< "[ObjectAnimationReset [for:current]]"
+    << 0 >> 0xAE
+
+<< "[PartyAction [for:current] [once]]"
+    << 0 >> 0xAF
+
+<< "[PartyAction [for:current] [forever]]"
+    << 0 >> 0xB0
+    /*
+        // referred by op B0
+        If $38 <> 0, returns.
+        
+        A = $1100 for current obj. (party identity)
+        switch(A)
+        {
+          case 0: // member1
+            $1A01 for current obj = 1 (movement length)
+            call 9E29
+            A = $1600 for current obj (facing)
+            call 5B8D
+            if carry set:
+              call 3154
+            break;
+          case 1: // member2
+            $1A01 for current obj = 1
+            call A26B
+            break;
+          case 2: // member3
+            $1A01 for current obj = 1
+            call A2C2
+            break;
+        }
+        return, loop.
+        
+        Analysis: This opcode lets the player control the party members.
+        If the object is member1, it responds to controls.
+        If the object is member2, it imitates member1 with delay.
+        If the object is member3, it imitates member2 with delay.
+        I did not disassemble those called functions, but I'm quite
+        sure for this...
+    */
+
+<< "[Wait]"
+    << 0 >> 0xB1
+    /* Isn't this command a little pointless? */
+
+<< "[Idle [forever]]"
+    << 0 >> 0xB2
+    /* This command is used to terminate the object's
+     * execution without destroying the actual object.
+     * It waits until an outside interference affects
+     * this object's path of execution.
+     */
+
+<< "[ObjectAnimation1:%0 [for:current]]"
+    << 0 >> 0xB3
+    << DeclareConst("0", 0)
+
+<< "[ObjectAnimation1:%0 [for:current]]"
+    << 0 >> 0xB4
+    << DeclareConst("0", 1)
+
+<< "[ObjectMoveTowards [for:current:%0] [facing:change] [forever]]"
+    << 0 >> 0xB5
+    << 1 >> DeclareByte("0")
+    // loops op 94 forever
+
+<< "[ObjectMoveTowards [for:current:%0] [facing:change] [forever]]"
+    << 0 >> 0xB6
+    << 1 >> Declare7E0197_B("0")
+    // loops op 95 forever
+
+<< "[ObjectAnimation1Loop:%0:%1 [for:current]]"
+    << 0 >> 0xB7
+    << 1 >> DeclareByte("0")
+    << 2 >> DeclareByte("1")
             /*
                 X = $6D
                 A = $7F0B01,X
@@ -2810,635 +4105,654 @@ namespace
                 X = Y        //loop
                 RETURN
             */
-        }
-    END_EVENT()
 
-    BEGIN_EVENT(EvCommand2E)
-        virtual unsigned BytesToString(std::string& result, const Byte* data, unsigned reserve)
-        {
-            parammap params;
-            
-            if(reserve < 4)throw false;
-        
-            unsigned byte1 = data[0];
-            unsigned byte2 = data[1];
-            unsigned byte3 = data[2];
-            unsigned byte4 = data[3];
-            
-            params["0"] = FormatByte(byte1);
-            
-            switch(byte1 & 0xF0)
-            {
-                case 0x80:
-                {
-                    /* Sets palettes. byte2=colour index, blob=data. */
-                    unsigned length = (byte3 | (byte4 << 8)) - 2;
-                    if(reserve < 4+length)throw false;
+<< "[DialogSetTable:%0]"
+    << 0 >> 0xB8
+    << 1 >> DeclareDialogBegin("0")
+
+<< "[Pause:250ms [for:current]]"
+    << 0 >> 0xB9
+
+<< "[Pause:500ms [for:current]]"
+    << 0 >> 0xBA
+
+<< "[DialogDisplay:%0 [for:current] [pos:auto]]"
+    << 0 >> 0xBB
+    << 1 >> DeclareDialogAddr("0")
+
+<< "[Pause:1000ms [for:current]]"
+    << 0 >> 0xBC
+
+<< "[Pause:2000ms [for:current]]"
+    << 0 >> 0xBD
+
+<< "[DialogAsk:%0:%1:%2 [for:current] [pos:auto]]"
+    << 0 >> 0xC0
+    << 1 >> DeclareDialogAddr("0")
+    << 2 >> DeclareByte("2")
+    << DeclareProp("1", 0x7F0A80)
+
+<< "[DialogDisplay:%0 [for:current] [pos:top]]"
+    << 0 >> 0xC1
+    << 1 >> DeclareDialogAddr("0")
+
+<< "[DialogDisplay:%0 [for:current] [pos:bottom]]"
+    << 0 >> 0xC2
+    << 1 >> DeclareDialogAddr("0")
+
+<< "[DialogAsk:%0:%1:%2 [for:current] [pos:top]]"
+    << 0 >> 0xC3
+    << 1 >> DeclareDialogAddr("0")
+    << 2 >> DeclareByte("2")
+    << DeclareProp("1", 0x7F0A80)
+
+<< "[DialogAsk:%0:%1:%2 [for:current] [pos:bottom]]"
+    << 0 >> 0xC4
+    << 1 >> DeclareDialogAddr("0")
+    << 2 >> DeclareByte("2")
+    << DeclareProp("1", 0x7F0A80)
+
+<< "[ItemGive:%0]"
+    << 0 >> 0xC7
+    << 1 >> Declare7F0200_2("0")
+    // adds an item from the given location
+
+<< "[DialogDisplaySpecial:%0]"
+    << 0 >> 0xC8
+    << 1 >> DeclareByte("0")
+    // shops, name entries and such.
+
+<< "[Goto:%label [UnlessHasItem:%0]]"
+    << 0 >> 0xC9
+    << 1 >> DeclareByte("0")
+    << 2 >> DeclareGoto("label", +1, 2)
+
+<< "[ItemGive:%0]"
+    << 0 >> 0xCA
+    << 1 >> DeclareByte("0")
+
+<< "[ItemTake:%0]"
+    << 0 >> 0xCB
+    << 1 >> DeclareByte("0")
+
+<< "[Goto:%label [UnlessHasGold:%0]]"
+    << 0 >> 0xCC
+    << 1 >> DeclareWord("0")
+    << 3 >> DeclareGoto("label", +1, 3)
+
+<< "[GoldGive:%0]"
+    << 0 >> 0xCD
+    << 1 >> DeclareWord("0")
+
+<< "[GoldTake:%0]"
+    << 0 >> 0xCE
+    << 1 >> DeclareWord("0")
+
+<< "[Goto:%label [UnlessHasMember:%0]]"
+    << 0 >> 0xCF
+    << 1 >> DeclareByte("0")
+    << 2 >> DeclareGoto("label", +1, 2)
+
+<< "[GiveMember:%0]"
+    << 0 >> 0xD0
+    << 1 >> DeclareByte("0")
+
+<< "[TakeMember:%0]"
+    << 0 >> 0xD1
+    << 1 >> DeclareByte("0")
+
+<< "[Goto:%label [UnlessHasActiveMember:%0]"
+    << 0 >> 0xD2
+    << 1 >> DeclareByte("0")
+    << 2 >> DeclareGoto("label", +1, 2)
+
+<< "[GiveActiveMember:%0]"
+    << 0 >> 0xD3
+    << 1 >> DeclareByte("0")
+
+<< "[UnactivateMember:%0]"
+    << 0 >> 0xD4
+    << 1 >> DeclareByte("0")
+
+<< "[EquipMember:%0:%1]"
+    << 0 >> 0xD5
+    << 1 >> DeclareByte("0")
+    << 2 >> DeclareByte("1")
+
+<< "[TakeActiveMember:%0]"
+    << 0 >> 0xD6
+    << 1 >> DeclareByte("0")
+
+<< "[ItemQueryAmount:%byte:%addr]"
+    << 0 >> 0xD7
+    << 1 >> DeclareByte("byte")
+    << 2 >> Declare7F0200_2("addr")
+
+<< "[StartBattle:%0]"
+    << 0 >> 0xD8
+    << 1 >> DeclareWord("0")
+
+<< "[PartyMove:%x1:%y1:%x2:%y2:%x3:%y3]"
+    << 0 >> 0xD9
+    << 1 >> DeclareByte("x1")
+    << 2 >> DeclareByte("y1")
+    << 3 >> DeclareByte("x2")
+    << 4 >> DeclareByte("y2")
+    << 5 >> DeclareByte("x3")
+    << 6 >> DeclareByte("y3")
+    /* Moves the party members to the given positions */
+    // writes to 1180
+
+<< "[PartySetFollow]"
+    << 0 >> 0xDA
+    /* causes members 2 and 3 to follow member 1 again. */
+    // writes to 1180
+
+<< "[PartyTeleportDC:%0:%1]"
+    << 0 >> 0xDC
+    << 1 >> DeclareWord("0")
+    << 3 >> DeclareWord("1")
+    /*
+        %1: 7654321076543210: stored to $0C. (x and y?)
+        %0: 7654321076543210
+                   ^^^^^^^^^: stored to $0A.
+            ^  ^^^^         : stored to $0E. (b000zzzz)
+     */
+
+<< "[PartyTeleportDD:%0:%1]"
+    << 0 >> 0xDD
+    << 1 >> DeclareWord("0")
+    << 3 >> DeclareWord("1")
+    /*
+        %1: 7654321076543210: stored to $02. (x and y?)
+        %0: 7654321076543210
+                   ^^^^^^^^^: stored to $00.
+            ^  ^^^^         : stored to $04. (b000zzzz)
+    */
+
+<< "[PartyTeleportDD:%0:%1 [with 1E=1]]"
+    << 0 >> 0xDE
+    << 1 >> DeclareWord("0")
+    << 3 >> DeclareWord("1")
+    // Same as DD, but puts $1E = 1 */
+
+<< "[PartyTeleportE1:%0:%1 [with 1E=1]]"
+    << 0 >> 0xDF
+    << 1 >> DeclareWord("0")
+    << 3 >> DeclareWord("1")
+    // Same as E1, but puts $1E = 1 */
+
+<< "[PartyTeleportE0:%0:%1]"
+    << 0 >> 0xE0
+    << 1 >> DeclareWord("0")
+    << 3 >> DeclareWord("1")
+    /*
+       Waits until [$17] & 0x80 = 0.
+
+        %1: 7654321076543210: stored to $14 (x and y?)
+        %0: 7654321076543210
+                   ^^^^^^^^^: stored to $12.
+            ^  ^^^^         : stored to $16. (b000zzzz)
+        Sets   $17 |= 0x80
+        Stores $19 = 0x0F
+     */
+
+<< "[PartyTeleportE1:%0:%1]"
+    << 0 >> 0xE1
+    << 1 >> DeclareWord("0")
+    << 3 >> DeclareWord("1")
+    /*
+        %1: 7654321076543210: stored to $14. (x and y?)
+        %0: 7654321076543210
+                   ^^^^^^^^^: stored to $12.
+            ^  ^^^^         : stored to $16. (b000zzzz)
+        Waits for vrefresh.
+        Calls 0B4E.
+        Sets $05 = 0x0000
+        Sets $07 = 0x0002
+        Sets $09 = [$04]
+        Sets $00 = [$12]
+        Sets $02 = [$14]
+        Sets $04 = [$16]
+        Then restarts the scene.
+     */
     
-                    std::vector<Byte> blob(data+4, data+4+length);
 
-                    params["1"] = FormatNibble(byte2 >> 4); // palette number
-                    params["2"] = FormatNibble(byte2 & 15); // starting colour
-                    params["3"] = FormatData(blob);
-                    result = FormatString(params);
-                    return 4 + length;
-                }
-                case 0x40: case 0x50:
-                {
-                    if(reserve < 5)throw false;
-                    // calls function 4B2C.
-                    //   if false, ignores 6 bytes (including opcode).
-                    //   if true:
-                    //     stores return value to $520+y and $526+y
-                    //     stores byte2 to $521+y
-                    //     stores byte3 to $522+y
-                    //     stores byte4 to $DD
-                    //     stores byte5 to $525+y
-                    //     stores 0 to $524+y
-                    //     stores 8 to $523+y
-                    //     stores byte4 to $527+y nibbleswapped
-                    //     stores byte4 to $528+y nibbleswapped some other way(??)
-                    
-                    params["1"] = FormatWord(byte2 | (byte3 << 8));
-                    params["2"] = FormatByte(byte4);
-                    params["3"] = FormatByte(data[4]);
-                    result = FormatString(params);
-                    return 5;
-                }
-                default:
-                {
-                    params["1"] = FormatByte(byte2);
-                    params["2"] = "";
-                    params["3"] = "";
-                    result = FormatString(params);
-                    return 2;
-                }
-           }
-        }
-        virtual void StringToBytes(const std::string& string, std::vector<Byte>& result)
+<< "[UnknownE2:%0:%1:%2:%3]"
+    << 0 >> 0xE2
+    << 1 >> Declare7F0200_2("0")
+    << 2 >> Declare7F0200_2("1")
+    << 3 >> Declare7F0200_2("2")
+    << 4 >> Declare7F0200_2("3")
+    /*
+       Same as E0, except the values
+       are loaded from given memory locations.
+    
+     */
+
+<< "[LetB:%1:%0]"
+    << 0 >> 0xE3
+    << 1 >> DeclareByte("0")
+    << DeclareConst("1", 0x7E011F)
+           // Explore mode
+
+<< "[CopyTiles:%l:%t:%r:%b:%x:%y:%f [v0]]"
+    << 0 >> 0xE4
+    << 1 >> DeclareByte("l")
+    << 2 >> DeclareByte("t")
+    << 3 >> DeclareByte("r")
+    << 4 >> DeclareByte("b")
+    << 5 >> DeclareByte("x")
+    << 6 >> DeclareByte("y")
+    << 7 >> DeclareByte("f")
+    // Pokes the parameters to $3E,$40,$42,$44 and calls $AF4E.
+
+<< "[CopyTiles:%l:%t:%r:%b:%x:%y:%f [v1]]"
+    << 0 >> 0xE5
+    << 1 >> DeclareByte("l")
+    << 2 >> DeclareByte("t")
+    << 3 >> DeclareByte("r")
+    << 4 >> DeclareByte("b")
+    << 5 >> DeclareByte("x")
+    << 6 >> DeclareByte("y")
+    << 7 >> DeclareByte("f")
+    // Pokes the parameters to $3E,$40,$42,$44
+    // then puts (f & 7) to $45 and does [$17] |= 0x20.
+
+<< "[ScrollLayers:%0:%1:%2]"
+    << 0 >> 0xE6
+    << 1 >> DeclareWord("0") //bitmask
+    << 3 >> DeclareByte("1") //x
+    << 4 >> DeclareByte("2") //y
+
+<< "[ScrollScreen:%0:%1]"
+    << 0 >> 0xE7
+    << 1 >> DeclareByte("0") //x
+    << 2 >> DeclareByte("1") //y
+
+<< "[PlaySound:%a [pan=%p]]"
+    << 0 >> 0xE8
+    << 1 >> DeclareByte("a")
+    << DeclareConst("p", 0x80)
+    /* Command E8 pokes $1E00..$1E02 as 18:a:80
+     *  and calls a sound function
+     */
+
+<< "[SongPlay:%0]"
+    << 0 >> 0xEA
+    << 1 >> DeclareByte("0")
+    /* Command EA pokes $1E00..$1E01 as 10:a
+     * and stores a into $7E29AE
+     *  and calls a sound function
+     */
+
+<< "[SetVolume:%l:%r]"
+    << 0 >> 0xEB
+    << 1 >> DeclareByte("l")
+    << 2 >> DeclareByte("r")
+    /* Command EA pokes $1E00..$1E03 as 81:l:r:FF
+     *  and calls a sound function
+     *       then pokes $1E00..$1E02 as 82:00:FF
+     *  and calls a sound function.
+     */
+
+/* Command EC pokes $1E00..$1E02 as a:b:c
+ * and calls a sound function.
+ */
+
+<< "[SongPlay:%a [generic]]"
+    << 0 >> 0xEC
+    << 1 >> 0x11
+    << 2 >> DeclareByte("a")
+    << 3 >> 0x00
+
+<< "[SongPlay:%a [keep pos]]"
+    << 0 >> 0xEC
+    << 1 >> 0x14
+    << 2 >> DeclareByte("a")
+    << 3 >> 0x00
+
+<< "[PlaySound:%a [pan=%p]]"
+    << 0 >> 0xEC
+    << 1 >> DeclareByte("", 0x18, 0x19)
+    << 2 >> DeclareByte("a")
+    << 3 >> DeclareByte("p")
+
+<< "[SongFade:%volume [duration=%duration]]"
+    << 0 >> 0xEC
+    << 1 >> 0x82
+    << 2 >> DeclareByte("duration")
+    << 3 >> DeclareByte("volume")
+
+<< "[SongChangeTempo:%tempo [duration=%duration]]"
+    << 0 >> 0xEC
+    << 1 >> DeclareByte("", 0x85, 0x86)
+    << 2 >> DeclareByte("duration")
+    << 3 >> DeclareByte("tempo")
+
+<< "[SongChangeState]"
+    << 0 >> 0xEC
+    << 1 >> 0x88
+    << 2 >> 0x01
+    << 3 >> 0x01
+
+<< "[SongMute]"
+    << 0 >> 0xEC
+    << 1 >> 0xF0
+    << 2 >> 0x00
+    << 3 >> 0x00
+
+<< "[SoundEffectMute]"
+    << 0 >> 0xEC
+    << 1 >> 0xF2
+    << 2 >> 0x00
+    << 3 >> 0x00
+
+<< "[SongChangeState]"
+    << 0 >> 0xEC
+    << 1 >> 0x88
+    << 2 >> 0x01
+    << 3 >> 0x01
+
+<< "[SoundCommand:%a:%b:%c]"
+    << 0 >> 0xEC
+    << 1 >> DeclareByte("a")
+    << 2 >> DeclareByte("b")
+    << 3 >> DeclareByte("c")
+
+<< "[WaitSilence]"
+    << 0 >> 0xED
+
+<< "[WaitSongEnd]"
+    << 0 >> 0xEE
+
+<< "[FadeOutScreen:%0]"
+    << 0 >> 0xF0
+    << 1 >> DeclareByte("0")
+
+<< "[BrightenScreen:%index]"
+    << 0 >> 0xF1
+    << 1 >> DeclareByte("index", 0x00, 0x00)
+
+<< "[BrightenScreen:%index:%duration]"
+    << 0 >> 0xF1
+    << 1 >> DeclareByte("index", 0x01, 0xFF)
+    << 2 >> DeclareByte("duration")
+
+<< "[FadeOutScreen]"
+    << 0 >> 0xF2
+
+<< "[WaitFor18bit08]"
+    << 0 >> 0xF3
+
+<< "[ShakeScreen:%0]"
+    << 0 >> 0xF4
+    << 1 >> DeclareByte("0")
+
+<< "[HealHPandMP]"
+    << 0 >> 0xF8
+    /* does opF9 and opFA */
+
+<< "[HealHP]"
+    << 0 >> 0xF9
+    /* calls C28004,A=6 */
+
+<< "[HealMP]"
+    << 0 >> 0xFA
+    /* calls C28004,A=7 */
+
+<< "[SetGeometry:%a1:%a2:%b1:%b2:%c1:%c2:%d1:%d2:%e1:%e2:%f1:%f2:%g1:%g2:%h1:%h2 [divider=%divider]]"
+    << 0 >> 0xFE
+    << 1 >> DeclareByte("divider")
+    << 2 >> DeclareByte("a1")
+    << 3 >> DeclareByte("a2")
+    << 4 >> DeclareByte("b1")
+    << 5 >> DeclareByte("b2")
+    << 6 >> DeclareByte("c1")
+    << 7 >> DeclareByte("c2")
+    << 8 >> DeclareByte("d1")
+    << 9 >> DeclareByte("d2")
+    << 10 >> DeclareByte("e1")
+    << 11 >> DeclareByte("e2")
+    << 12 >> DeclareByte("f1")
+    << 13 >> DeclareByte("f2")
+    << 14 >> DeclareByte("g1")
+    << 15 >> DeclareByte("g2")
+    << 16 >> DeclareByte("h1")
+    << 17 >> DeclareByte("h2")
+    /*
+       $F4     = byte1
+       $7F1CE8 = byte1
+       $C7     = pos
+       $F0     = 0
+       $F6     = 0
+       $F7     = 0
+      <begin>
+       pos     = [$C7]
+       $F1     = next byte (high part of $F0)
+       A       = next byte
+       $C7     = pos
+       A(word) = ( word.A - word.$F0 ) / byte.$F4
+       X       = [$F6]
+       [$7F1CF9+X] = word.A
+       [$7F1CE9+X] = word.$F0
+       [$F6]   = X+2
+      <loop 8 times>
+       [$39]   = 6
+       X       = [$C7]
+       
+       The table 7F1CF9 is referred by function at C024A7.
+       It does adds the first (F9) value to the second (E9).
+       Therefore, F9 is the speed of change and E9 is the counter.
+       
+       But why such pointless math with constant values? No idea.
+       If you want to test it, see Lucca's wondershot scene. She
+       invokes this event there.
+       
+       Here is C++ code that simulates this opcode:
+
+        unsigned char divider = Stream[0];
+        for(unsigned pos=1, c=0; c<8; ++c)
         {
-            parammap params;
-            if(!ScanParams(string, params)) throw false;
-            
-            unsigned byte1 = ScanInt(params["0"], 0xFF);
-            
-            switch(byte1 & 0x80)
-            {
-                case 0x80:
-                {
-                    std::vector<Byte> blob = ScanData(params["3"]);
-                    unsigned byte2 = (ScanInt(params["1"],15)<<4) | ScanInt(params["2"],15);
-                    unsigned length = blob.size() + 2;
+            signed short B = Stream[pos++] << 8; 
+            signed short A = Stream[pos++] << 8; 
+            A = (A-B) / divider; 
+            printf("%d %d\n", F0, A);
+       }
+      
+      Btw, does this really relate to graphics? Maybe it's related
+      to sound instead.
 
-                    result.push_back(byte1);
-                    result.push_back(byte2);
-                    result.push_back(length&255);
-                    result.push_back(length>>8);
-                    result.insert(result.end(), blob.begin(), blob.end());
-                    break;
-                }
-                case 0x40: case 0x50:
-                {
-                    unsigned val = ScanInt(params["1"], 0xFFFF);
-                    unsigned byte4 = ScanInt(params["2"], 0xFF);
-                    unsigned byte5 = ScanInt(params["3"], 0xFF);
-                    result.push_back(byte1);
-                    result.push_back(val&255);
-                    result.push_back(val>>8);
-                    result.push_back(byte4);
-                    result.push_back(byte5);
-                    break;
-                }
-                default:
-                {
-                    unsigned byte2 = ScanInt(params["1"], 0xFF);
-                    result.push_back(byte1);
-                }
-            }
-        }
-    END_EVENT()
+    */
 
-    BEGIN_EVENT(EvCommand88)
-        virtual unsigned BytesToString(std::string& result, const Byte* data, unsigned reserve)
+<< "[Mode7Scene:%0:%1:%2]"
+    << 0 >> 0xFF
+    << 1 >> DeclareByte("0", 0x90, 0x90)
+    << 2 >> DeclareWord("1")
+    << 4 >> DeclareByte("2")
+    //sets $39=1, $3A=paramword, $3D=parambyte $3C=0
+    // >> black circle that opens similar to a portal and covers the entire screen (DNL)
+
+<< "[Mode7Scene:%0:%1:%2]"
+    << 0 >> 0xFF
+    << 1 >> DeclareByte("0", 0x97, 0x97)
+    << 2 >> DeclareWord("1")
+    << 4 >> DeclareByte("2")
+    //sets $39=4, $3A=paramword, $3D=parambyte $3C=0
+
+<< "[Mode7Scene:%0]"
+    << 0 >> 0xFF
+    << 1 >> DeclareByte("0", 0x00, 0x8F)
+    //Calls a Mode 7 scene.
+    //Causes data at 0x031513 to be decompressed.
+    //A few values:
+
+<< "[Mode7Scene:%0]"
+    << 0 >> 0xFF
+    << 1 >> DeclareByte("0", 0x91, 0x95)
+    // 0x00:// >> highway race
+    // 0x01:// >> none
+    // 0x02:// >> title screen
+    // 0x03:// >> top of black omen, "blurs" into view (Does Not Load new graphics, may not be visible)
+    // 0x04:// >> lavos falls to earth
+    // 0x0A:// >> fireworks
+    // 0x0C:// >> credits over moving star background
+    // 0x0D:// >> programmer's ending credits
+    // 0x25:// >> lavos summoned to 600AD (DNL)
+    // 0x66:// >> Epoch, first person view
+    // 0x67:// >> world globe exploding, "But the future refused to change"
+    // 0x68:// >> world globe, "But the future refused to change" (short version)
+    // 0x69:// >> attract mode highway race
+    // 0x80:// >> long wormhole (first warp to 600 A.D.)
+    // 0x81:// >> normal wormhole
+    // 0x82:// >> quick wormhole
+    // 0x89:// >> wormhole to lavos
+    // 0x91: //sets $39 = 2
+    // 0x92: //may sometimes not progress
+             // >> the screen wipe effect used during attract mode (left to right)
+    // 0x93: //may sometimes not progress
+             // >> the screen wipe effect used during attract mode (right to left, open)
+    // 0x94: //may sometimes not progress
+             // >> left to right wipe (close)
+    // 0x95: //may sometimes not progress
+             // >> right to left wipe (close)
+    // 0x96: //does not return (resets the system?)
+             // >> Reset (see Castle Magus Inner Sanctum)
+    // 0x98: //sets $39 = 5
+             // >> used by Taban during Moonlight Parade ending
+    // 0x99: //sets $39 = 7
+             // >> used during Death Peak summit sequence, no noticable effect
+    // 0x9A: //sets $39 = 9
+             // >> used after Crono revived in Death Peak sequence 
+    // 0x9B: //sets $39 = 0xB
+             // >> Massive Portal (see Castle Magus Inner Sanctum)
+    // 0x9C: //sets $39 = 0xE
+             // >> Beam upward (Sunstone) (MAYBE)
+    // 0x9D: //sets $54 &= ~2
+    // 0x9E: //if $39==0, sets to 0xC. loops if $39!=0xD.
+             // >> Reality Distortion (see Castle Magus Inner Sanctum)
+    // 0x9F: //calls C28004,A=8
+             // >> used in Tesseract
+    // 0xA0: // 0xA1: //seems like it halts the system
+    // 0xA2: // 0xA3: //seems like it halts the system
+
+<< "[Mode7Scene:%0]"
+    << 0 >> 0xFF
+    << 1 >> DeclareByte("0", 0x98, 0xA3)
+
+<< "[Mode7Scene:%0]"
+    << 0 >> 0xFF
+    << 1 >> DeclareByte("0", 0x96, 0x96)
+
+        ;
+        } /* Init() */
+
+        void Flush()
         {
-            parammap params;
+            if(!cur_command) return;
             
-            if(reserve < 1)throw false;
-
-            unsigned byte1 = data[0];
-            if(!byte1)
-            {
-                // Moves something (?)
-            Default:
-                params["0"] = FormatByte(byte1);
-                params["1"] = "";
-                params["2"] = "";
-                params["3"] = "";
-                result = FormatString(params);
-                return 1;
-            }
-            if(byte1 == 0x20 || byte1 == 0x30)
-            {
-                if(reserve < 3)throw false;
-                params["0"] = FormatByte(byte1);
-                params["1"] = FormatByte(data[1]);
-                params["2"] = FormatByte(data[2]);
-                params["3"] = "";
-                result = FormatString(params);
-                return 3;
-            }
-            if(byte1 >= 0x40 && byte1 <= 0x5F)
-            {
-                if(reserve < 4)throw false;
-                params["0"] = FormatByte(byte1);
-                params["1"] = FormatByte(data[1]);
-                params["2"] = FormatByte(data[2]);
-                params["3"] = FormatByte(data[3]);
-                result = FormatString(params);
-                return 4;
-            }
-            if(byte1 >= 0x80 && byte1 <= 0x8F)
-            {
-                if(reserve < 3)throw false;
-
-                unsigned length = data[1] - 2;
-
-                if(reserve < 3+length)throw false;
-
-                std::vector<Byte> blob(data+3, data+3+length);
-                params["0"] = FormatByte(byte1);
-                params["1"] = FormatByte(data[2]);
-                params["2"] = FormatData(blob);
-                params["3"] = "";
-                result = FormatString(params);
-                return 3 + length;
-            }
-            goto Default;
+            cur_command->PutInto(target);
+            
+            delete cur_command;
+            cur_command = NULL;
         }
-        virtual void StringToBytes(const std::string& string, std::vector<Byte>& result)
+
+    public:
+        Initialize(OpcodeTree& t) : target(t), cur_command(NULL) { Init(); }
+        ~Initialize() { Flush(); }
+        
+    private:
+        OpcodeTree& target;
+        Command* cur_command;
+        unsigned curpos;
+    };
+
+    void FindChoices
+        (const OpcodeTree& tree,
+         std::list<Command>& choices,
+         const unsigned char* data, unsigned length) const
+    {
+        if(length > 0)
         {
-            parammap params;
-            if(!ScanParams(string, params)) throw false;
+            unsigned char opcode = data[0];
             
-            unsigned byte1 = ScanInt(params["0"], 0xFF);
-            
-            if(!byte1)
+            OpcodeTree::maptype::const_iterator i;
+            for(i = tree.data.begin(); i != tree.data.end(); ++i)
             {
-            Default:
-                result.push_back(byte1);
-                return;
+                if(!i->first.Contains(opcode)) continue;
+                FindChoices(i->second, choices, data+1, length-1);
             }
-            if(byte1 == 0x20 || byte1 == 0x30)
-            {
-                unsigned byte2 = ScanInt(params["1"], 0xFF);
-                unsigned byte3 = ScanInt(params["2"], 0xFF);
-                result.push_back(byte1);
-                result.push_back(byte2);
-                result.push_back(byte3);
-                return;
-            }
-            if(byte1 >= 0x40 && byte1 <= 0x5F)
-            {
-                unsigned byte2 = ScanInt(params["1"], 0xFF);
-                unsigned byte3 = ScanInt(params["2"], 0xFF);
-                unsigned byte4 = ScanInt(params["3"], 0xFF);
-                result.push_back(byte1);
-                result.push_back(byte2);
-                result.push_back(byte3);
-                result.push_back(byte4);
-                return;
-            }
-            if(byte1 >= 0x80 && byte1 <= 0x8F)
-            {
-                unsigned byte2 = ScanInt(params["1"], 0xFF);
-                std::vector<Byte> blob = ScanData(params["2"]);
-                unsigned length = blob.size() + 2;
-
-                result.push_back(byte1);
-                result.push_back(byte2);
-                result.push_back(length&255);
-                result.insert(result.end(), blob.begin(), blob.end());
-            }
-            goto Default;
         }
-    END_EVENT()
+        choices.insert(choices.begin(), tree.choices.begin(), tree.choices.end());
+    }
 
-    BEGIN_EVENT(EvMode7Scene)
-        virtual unsigned BytesToString(std::string& result, const Byte* data, unsigned reserve)
+    const std::list<Command> FindChoices
+        (const unsigned char* data, unsigned length) const
+    {
+        std::list<Command> choices;
+        FindChoices(OPTree, choices, data, length);
+        return choices;
+    }
+    
+public:
+    EvCommands()
+    {
+        Initialize tmp(OPTree);
+        //OPTree.Dump();
+    }
+    
+    const EventCode::DecodeResult
+    Scan(unsigned offset, const unsigned char* data, unsigned length,
+         EventCode::DecodingState& State) const
+    {
+        std::list<Command> choices = FindChoices(data, length);
+        std::list<Command>::const_iterator i;
+        
+        //fprintf(stderr, "%u choices for %02X\n", choices.size(), data[0]);
+        
+        for(i=choices.begin(); i!=choices.end(); ++i)
         {
-            parammap params;
-            
-            if(reserve < 1)throw false;
-
-            unsigned byte1 = data[0];
-            switch(byte1)
+            try
             {
-                case 0x90:
-                case 0x97:
-                    if(reserve < 4)throw false;
-                    params["0"] = FormatByte(byte1);
-                    params["1"] = FormatWord(data[1] | (data[2] << 8));
-                    params["2"] = FormatByte(data[3]);
-                    result = FormatString(params);
-                    return 4;
-                default:
-                    params["0"] = FormatByte(byte1);
-                    params["1"] = "";
-                    params["2"] = "";
-                    result = FormatString(params);
-                    return 1;
+                return i->Scan(offset, data, length, State);
+            }
+            catch(bool)
+            {
+                fprintf(stderr, "Cough\n");
             }
         }
-        virtual void StringToBytes(const std::string& string, std::vector<Byte>& result)
-        {
-            parammap params;
-            if(!ScanParams(string, params)) throw false;
-            
-            unsigned byte1 = ScanInt(params["0"], 0xFF);
-            switch(byte1)
-            {
-                case 0x90: //sets $39=1, $3A=paramword, $3D=parambyte $3C=0
-                           // - black circle that opens similar to a portal and covers the entire screen (DNL)
-                case 0x97: //sets $39=4, $3A=paramword, $3D=parambyte $3C=0
-                {
-                    unsigned p1 = ScanInt(params["1"], 0xFFFF);
-                    unsigned p2 = ScanInt(params["2"], 0xFF);
-                    result.push_back(byte1);
-                    result.push_back(p1&255);
-                    result.push_back((p1>8)&255);
-                    result.push_back(p2);
-                    return;
-                }
-                default:
-                //Calls a Mode 7 scene.
-                //Causes data at 0x031513 to be decompressed.
-                //A few values:
-                case 0x00:// - highway race
-                case 0x01:// - none
-                case 0x02:// - title screen
-                case 0x03:// - top of black omen, "blurs" into view (Does Not Load new graphics, may not be visible)
-                case 0x04:// - lavos falls to earth
-                case 0x0A:// - fireworks
-                case 0x0C:// - credits over moving star background
-                case 0x0D:// - programmer's ending credits
-                case 0x25:// - lavos summoned to 600AD (DNL)
-                case 0x66:// - Epoch, first person view
-                case 0x67:// - world globe exploding, "But the future refused to change"
-                case 0x68:// - world globe, "But the future refused to change" (short version)
-                case 0x69:// - attract mode highway race
-                case 0x80:// - long wormhole (first warp to 600 A.D.)
-                case 0x81:// - normal wormhole
-                case 0x82:// - quick wormhole
-                case 0x89:// - wormhole to lavos
-                case 0x91: //sets $39 = 2
-                case 0x92: //may sometimes not progress
-                           // - the screen wipe effect used during attract mode (left to right)
-                case 0x93: //may sometimes not progress
-                           // - the screen wipe effect used during attract mode (right to left, open)
-                case 0x94: //may sometimes not progress
-                           // - left to right wipe (close)
-                case 0x95: //may sometimes not progress
-                           // - right to left wipe (close)
-                case 0x96: //does not return (resets the system?)
-                           // - Reset (see Castle Magus Inner Sanctum)
-                case 0x98: //sets $39 = 5
-                           // - used by Taban during Moonlight Parade ending
-                case 0x99: //sets $39 = 7
-                           // - used during Death Peak summit sequence, no noticable effect
-                case 0x9A: //sets $39 = 9
-                           // - used after Crono revived in Death Peak sequence 
-                case 0x9B: //sets $39 = 0xB
-                           // - Massive Portal (see Castle Magus Inner Sanctum)
-                case 0x9C: //sets $39 = 0xE
-                           // - Beam upward (Sunstone) (MAYBE)
-                case 0x9D: //sets $54 &= ~2
-                case 0x9E: //if $39==0, sets to 0xC. loops if $39!=0xD.
-                           // - Reality Distortion (see Castle Magus Inner Sanctum)
-                case 0x9F: //calls C28004,A=8
-                           // - used in Tesseract
-                case 0xA0: case 0xA1: //seems like it halts the system
-                case 0xA2: case 0xA3: //seems like it halts the system
-                {
-                    result.push_back(byte1);
-                    return ;
-                }
-            }
-        }
-    END_EVENT()
-}
-
-static const struct
-{
-    EvParameterHandler* (*Create)(void);
-    const char* format;
-} EvCommands[256] =
-{
-    { /*00*/ EvNoParams::Create,            "[Unknown00]" },
-    { /*01*/ EvNoParams::Create,          "[Crash:01]" },
-    { /*02*/ EvByteAndTwoNibbles::Create,   "[Ev02:%0:%1:%2]" },
-    { /*03*/ EvByteAndTwoNibbles::Create,   "[Ev03:%0:%1:%2]" },
-    { /*04*/ EvByteAndTwoNibbles::Create,   "[Ev04:%0:%1:%2]" },
-    { /*05*/ EvByteAndTwoNibbles::Create,   "[Ev05:%0:%1:%2]" },
-    { /*06*/ EvByteAndTwoNibbles::Create,   "[Ev06:%0:%1:%2]" },
-    { /*07*/ EvTwoBytes::Create,            "[Ev07:%0:%1]" },
-    { /*08*/ EvNoParams::Create,            "[NPCSetEventFlag:1]" },
-    { /*09*/ EvNoParams::Create,            "[NPCSetEventFlag:0]" },
-    { /*0A*/ EvOneByte::Create,             "[RemoveObj:%0]" },
-    { /*0B*/ Ev7E1000::Create,              "[SetHighBit:%0]" },
-    { /*0C*/ Ev7E1000::Create,              "[ClearHighBit:%0]" },
-    { /*0D*/ EvOneByte::Create,             "[NPCMoveProps:%0]" },
-    { /*0E*/ EvOneByte::Create,             "[SetBits1C81:%0]" },
-    { /*0F*/ EvNoParams::Create,            "[NPCFacingUp]" },
-    { /*10*/ EvPosiGoto::Create,            "[Goto:%0]" },
-    { /*11*/ EvNegaGoto::Create,            "[Goto:%0]" },
-    { /*12*/ EvIf12::Create,                "[Goto:%label [UnlessB:%addr %op %value]]" },
-    { /*13*/ EvIf13::Create,                "[Goto:%label [UnlessW:%addr %op %value]]" },
-    { /*14*/ EvIf14And15::Create,           "[Goto:%label [UnlessB:%addr1 %op %addr2]]" },
-    { /*15*/ EvIf14And15::Create,           "[Goto:%label [UnlessW:%addr1 %op %addr2]]" },
-    { /*16*/ EvIf16::Create,                "[Goto:%label [UnlessB:%addr %op %value]]" },
-    { /*17*/ EvNoParams::Create,            "[NPCFacingDown]" },
-    { /*18*/ EvIfOneByte::Create,           "[Goto:%label [IfStorylinePoint:%0]]" },
-    { /*19*/ Ev7F0200::Create,              "[LoadResult:%0]" },
-    { /*1A*/ EvIfOneByte::Create,           "[Goto:%label [UnlessResultIs:%0]]" },
-    { /*1B*/ EvNoParams::Create,            "[NPCFacingLeft]" },
-    { /*1C*/ Ev7F0000::Create,              "[LoadResult:%0]" },
-    { /*1D*/ EvNoParams::Create,            "[NPCFacingRight]" },
-    { /*1E*/ EvOneByte::Create,             "[NPCFacingUp:%0]" },
-    { /*1F*/ EvOneByte::Create,             "[NPCFacingDown:%0]" },
-    { /*20*/ Ev7F0200::Create,              "[PCStore:%0]" },
-    { /*21*/ EvThreeBytes::Create,          "[Unknown21:%0:%1:%2]" },
-    { /*22*/ EvThreeBytes::Create,          "[Unknown22:%0:%1:%2]" },
-    { /*23*/ EvByteWith7F0200::Create,      "[Unknown23:%addr:%byte]" },
-    { /*24*/ EvByteWith7F0200::Create,      "[Unknown24:%addr:%byte]" },
-    { /*25*/ EvOneByte::Create,             "[NPCFacingLeft:%0]" },
-    { /*26*/ EvOneByte::Create,             "[NPCFacingRight:%0]" },
-    { /*27*/ EvIfOneByte::Create,           "[Goto:%label [IfEnemySomethingZeroAt:%0]]" },
-    { /*28*/ EvTwoBytes::Create,            "[Unknown28:%0:%1]" },
-    { /*29*/ EvOneByte::Create,             "[ReptiteEndingText:%0]" },
-    { /*2A*/ EvNoParams::Create,            "[OrB:54:04]" },
-    { /*2B*/ EvNoParams::Create,            "[OrB:54:08]" },
-    { /*2C*/ EvTwoBytes::Create,            "[Unknown2C:%0:%1]" },
-    { /*2D*/ EvPosiGoto::Create,            "[Goto:%0 [UnlessF8 == 00]]" },
-    { /*2E*/ EvCommand2E::Create,           "[PaletteSet:%0:%1:%2:%3]" },
-    { /*2F*/ EvTwoBytes::Create,            "[Unknown2F:%0:%1]" },
-    { /*30*/ EvPosiGoto::Create,            "[Goto:%0 [UnlessF8 & 02]]" },
-    { /*31*/ EvPosiGoto::Create,            "[Goto:%0 [UnlessF8 & 80]]" },
-    { /*32*/ EvNoParams::Create,            "[OrB:54:10]" },
-    { /*33*/ EvOneByte::Create,             "[PaletteSomething:%0]" },
-    { /*34*/ EvPosiGoto::Create,            "[Goto:%0 [UnlessButtonPressed:A]]" },
-    { /*35*/ EvPosiGoto::Create,            "[Goto:%0 [UnlessButtonPressed:B]]" },
-    { /*36*/ EvPosiGoto::Create,            "[Goto:%0 [UnlessButtonPressed:X]]" },
-    { /*37*/ EvPosiGoto::Create,            "[Goto:%0 [UnlessButtonPressed:Y]]" },
-    { /*38*/ EvPosiGoto::Create,            "[Goto:%0 [UnlessButtonPressed:L]]" },
-    { /*39*/ EvPosiGoto::Create,            "[Goto:%0 [UnlessButtonPressed:R]]" },
-    { /*3A*/ EvNoParams::Create,          "[Crash:3A]" },
-    { /*3B*/ EvOneByte::Create,             "[Unused3B:%0]" },
-    { /*3C*/ EvOneByte::Create,             "[Unused3C:%0]" },
-    { /*3D*/ EvNoParams::Create,          "[Crash:3D]" },
-    { /*3E*/ EvNoParams::Create,          "[Crash:3E]" },
-    { /*3F*/ EvPosiGoto::Create,            "[Goto:%0 [UnlessButtonStatus:A]]" },
-    { /*40*/ EvPosiGoto::Create,            "[Goto:%0 [UnlessButtonStatus:B]]" },
-    { /*41*/ EvPosiGoto::Create,            "[Goto:%0 [UnlessButtonStatus:X]]" },
-    { /*42*/ EvPosiGoto::Create,            "[Goto:%0 [UnlessButtonStatus:Y]]" },
-    { /*43*/ EvPosiGoto::Create,            "[Goto:%0 [UnlessButtonStatus:L]]" },
-    { /*44*/ EvPosiGoto::Create,            "[Goto:%0 [UnlessButtonStatus:R]]" },
-    { /*45*/ EvNoParams::Create,          "[Crash:45]" },
-    { /*46*/ EvNoParams::Create,          "[Crash:46]" },
-    { /*47*/ EvOneByte::Create,             "[PokeTo6B:%0]" },
-    { /*48*/ EvLongWith7F0200::Create,      "[LetB:%addr:%long]" },
-    { /*49*/ EvLongWith7F0200::Create,      "[LetW:%addr:%long]" },
-    { /*4A*/ EvLongWithByte::Create,        "[LetB:%long:%byte]" },
-    { /*4B*/ EvLongWithWord::Create,        "[LetW:%long:%word]" },
-    { /*4C*/ EvLongWith7F0200::Create,      "[LetB:%long:%addr]" },
-    { /*4D*/ EvLongWith7F0200::Create,      "[LetW:%long:%addr]" },
-    { /*4E*/ EvCommand4E::Create,           "[StringStore:%long:%data]" },
-    { /*4F*/ EvByteWith7F0200::Create,      "[LetB:%addr:%byte]" },
-    { /*50*/ EvWordWith7F0200::Create,      "[LetW:%addr:%word]" },
-    { /*51*/ EvTwo7F0200::Create,           "[LetB:%1:%0]" },
-    { /*52*/ EvTwo7F0200::Create,           "[LetW:%1:%0]" },
-    { /*53*/ Ev7F0000And7F0200::Create,     "[LetB:%1:%0]" },
-    { /*54*/ Ev7F0000And7F0200::Create,     "[LetW:%1:%0]" },
-    { /*55*/ Ev7F0200::Create,              "[GetStorylineCounter:%0]" },
-    { /*56*/ EvByteWith7F0000::Create,      "[LetB:%addr:%byte]" },
-    { /*57*/ EvNoParams::Create,            "[PCLoad:0]" },
-    { /*58*/ Ev7F0200And7F0000::Create,     "[LetB:%1:%0]" },
-    { /*59*/ Ev7F0200And7F0000::Create,     "[LetW:%1:%0]" },
-    { /*5A*/ EvOneByte::Create,             "[SetStorylineCounter:%0]" },
-    { /*5B*/ EvByteWith7F0200::Create,      "[AddB:%addr:%byte]" },
-    { /*5C*/ EvNoParams::Create,            "[PCLoad:1]" },
-    { /*5D*/ EvTwoBytes::Create,            "[Unused5D:%0:%1]" },
-    { /*5E*/ EvTwo7F0200::Create,           "[AddW:%1:%0]" },
-    { /*5F*/ EvByteWith7F0200::Create,      "[SubB:%addr:%byte]" },
-    { /*60*/ EvWordWith7F0200::Create,      "[SubW:%addr:%word]" },
-    { /*61*/ EvTwo7F0200::Create,           "[SubB:%1:%0]" },
-    { /*62*/ EvNoParams::Create,            "[PCLoad:2]" },
-    { /*63*/ EvByteWith7F0200::Create,      "[SetBit:%addr:%byte]" },
-    { /*64*/ EvByteWith7F0200::Create,      "[ClearBit:%addr:%byte]" },
-    { /*65*/ EvCommands65And66::Create,     "[SetBit:%addr:%byte]" },
-    { /*66*/ EvCommands65And66::Create,     "[ClearBit:%addr:%byte]" },
-    { /*67*/ EvByteWith7F0200::Create,      "[AndB:%addr:%byte]" },
-    { /*68*/ EvNoParams::Create,            "[PCLoad:3]" },
-    { /*69*/ EvByteWith7F0200::Create,      "[OrB:%addr:%byte]" },
-    { /*6A*/ EvNoParams::Create,            "[PCLoad:4]" },
-    { /*6B*/ EvByteWith7F0200::Create,      "[XorB:%addr:%byte]" },
-    { /*6C*/ EvNoParams::Create,            "[PCLoad:5]" },
-    { /*6D*/ EvNoParams::Create,            "[PCLoad:6]" },
-    { /*6E*/ EvNoParams::Create,          "[Crash:6E]" },
-    { /*6F*/ EvByteWith7F0200::Create,      "[ShrB:%addr:%byte]" },
-    { /*70*/ EvNoParams::Create,          "[Crash:70]" },
-    { /*71*/ Ev7F0200::Create,              "[IncB:%0]" },
-    { /*72*/ Ev7F0200::Create,              "[IncW:%0]" },
-    { /*73*/ Ev7F0200::Create,              "[DecB:%0]" },
-    { /*74*/ EvNoParams::Create,          "[Crash:74]" },
-    { /*75*/ Ev7F0200::Create,              "[LetB:%0:1]" },
-    { /*76*/ Ev7F0200::Create,              "[LetW:%0:1]" },
-    { /*77*/ Ev7F0200::Create,              "[LetB:%0:0]" },
-    { /*78*/ EvNoParams::Create,          "[Crash:78]" },
-    { /*79*/ EvNoParams::Create,          "[Crash:79]" },
-    { /*7A*/ EvThreeBytes::Create,          "[NPCJump:%0:%1:%2]" },
-    { /*7B*/ EvTwoWords::Create,            "[Unused7B:%0:%1]" },
-    { /*7C*/ EvOneByte::Create,             "[SetObjectDrawingFor:%0:on]" },  // Sets 1A81 for given obj to "1"
-    { /*7D*/ EvOneByte::Create,             "[SetObjectDrawingFor:%0:off]" }, // Sets 1A81 for given obj to "0"
-    { /*7E*/ EvNoParams::Create,            "[SetObjectDrawing:hide]" },
-    { /*7F*/ Ev7F0200::Create,              "[GetRandom:%0]" },
-    { /*80*/ EvOneByte::Create,             "[PCLoad_IfInParty:%0]" },
-    { /*81*/ EvOneByte::Create,             "[PCLoad:%0]" },
-    { /*82*/ EvOneByte::Create,             "[NPCLoad:%0]" },
-    { /*83*/ EvTwoBytes::Create,            "[LoadEnemy:%0:%1]" },
-    { /*84*/ EvOneByte::Create,             "[NPCSolidProps:%0]" },
-    { /*85*/ EvNoParams::Create,          "[Crash:85]" },
-    { /*86*/ EvNoParams::Create,          "[Crash:86]" },
-    { /*87*/ EvOneByte::Create,             "[Unknown87:%0]" },
-    { /*88*/ EvCommand88::Create,           "[GFXCommand88:%0:%1:%2:%3]" },
-    { /*89*/ EvOneByte::Create,             "[NPCSetSpeed:%0]" }, // Sets 1A00 from const
-    { /*8A*/ Ev7F0200::Create,              "[NPCSetSpeed:%0]" }, // Sets 1A00 from var
-    { /*8B*/ EvTwoBytes::Create,            "[SetObjectCoord:%0:%1]" },
-    { /*8C*/ EvTwoBytes::Create,            "[Unknown8C:%0:%1]" },
-    { /*8D*/ EvTwoWords::Create,            "[SetObjectCoord2:%0:%1]" },
-    { /*8E*/ EvOneByte::Create,             "[NPCHide:%0]" },
-    { /*8F*/ EvOneByte::Create,             "[Unknown8F:%0]" },
-    { /*90*/ EvNoParams::Create,            "[SetObjectDrawing:on]" },
-    { /*91*/ EvNoParams::Create,            "[SetObjectDrawing:off]" },
-    { /*92*/ EvTwoBytes::Create,            "[MoveObject:%0:%1]" },
-    { /*93*/ EvNoParams::Create,          "[Crash:93]" },
-    { /*94*/ EvOneByte::Create,             "[Unknown94:%0]" },
-    { /*95*/ EvOneByte::Create,             "[NPCSetInviteFlag:%0]" },
-    { /*96*/ EvTwoBytes::Create,            "[NPCMove:%0:%1]" },
-    { /*97*/ EvTwoBytes::Create,            "[Unknown97:%0:%1]" },
-    { /*98*/ EvTwoBytes::Create,            "[Unknown98:%0:%1]" },
-    { /*99*/ EvTwoBytes::Create,            "[Unknown99:%0:%1]" },
-    { /*9A*/ EvThreeBytes::Create,          "[Unknown9A:%0:%1:%2]" },
-    { /*9B*/ EvNoParams::Create,          "[Crash:9B]" },
-    { /*9C*/ EvTwoBytes::Create,            "[Unknown9C:%0:%1]" },
-    { /*9D*/ EvTwo7F0200::Create,           "[Unknown9D:%0:%1]" },
-    { /*9E*/ EvOneByte::Create,             "[Unknown9E:%0]" },
-    { /*9F*/ EvOneByte::Create,             "[Unknown9F:%0]" },
-    { /*A0*/ EvTwoBytes::Create,            "[NPCMoveAnimated:%0:%1]" },
-    { /*A1*/ EvTwo7F0200::Create,           "[UnknownA1:%0:%1]" },
-    { /*A2*/ EvNoParams::Create,          "[Crash:A2]" },
-    { /*A3*/ EvNoParams::Create,          "[Crash:A3]" },
-    { /*A4*/ EvNoParams::Create,          "[Crash:A4]" },
-    { /*A5*/ EvNoParams::Create,          "[Crash:A5]" },
-    { /*A6*/ EvOneByte::Create,             "[NPCSetFacing:%0]" },
-    { /*A7*/ Ev7F0200::Create,              "[NPCSetFacing:%0]" },
-    { /*A8*/ EvOneByte::Create,             "[NPCSetRelativeFacing:%0]" },
-    { /*A9*/ Ev7F0200::Create,              "[NPCSetRelativeFacing:%0]" },
-    { /*AA*/ EvOneByte::Create,             "[Animation:%0:1]" },
-    { /*AB*/ EvOneByte::Create,             "[AnimationWait:%0]" },
-    { /*AC*/ EvOneByte::Create,             "[PlayStaticAnimation:%0]" },
-    { /*AD*/ EvOneByte::Create,             "[Pause:%0]" },
-    { /*AE*/ EvNoParams::Create,            "[Animation:0:0]" },
-    { /*AF*/ EvNoParams::Create,            "[UnknownAF]" },
-    { /*B0*/ EvNoParams::Create,            "[ForeverUnknownAF]" },
-    { /*B1*/ EvNoParams::Create,            "[LoopBreak]" },
-    { /*B2*/ EvNoParams::Create,            "[LoopEnd]" },
-    { /*B3*/ EvNoParams::Create,            "[Animation:0:1]" },
-    { /*B4*/ EvNoParams::Create,            "[Animation:1:1]" },
-    { /*B5*/ EvOneByte::Create,             "[ForeverUnknown94:%0]" },
-    { /*B6*/ EvOneByte::Create,             "[ForeverNPCSetInviteFlag:%0]" },
-    { /*B7*/ EvLoopAnimation::Create,       "[LoopAnimation:%0:%1]" },
-    { /*B8*/ EvDialogBegin::Create,         "[DialogSetTable:%0]" },
-    { /*B9*/ EvNoParams::Create,            "[Pause:250ms]" },
-    { /*BA*/ EvNoParams::Create,            "[Pause:500ms]" },
-    { /*BB*/ EvDialogAddr::Create,          "[DialogDisplay:%0]" },
-    { /*BC*/ EvNoParams::Create,            "[Pause:1000ms]" },
-    { /*BD*/ EvNoParams::Create,            "[Pause:2000ms]" },
-    { /*BE*/ EvNoParams::Create,          "[Crash:BE]" },
-    { /*BF*/ EvNoParams::Create,          "[Crash:BF]" },
-    { /*C0*/ EvDialogAddrWithByte::Create,  "[DialogAsk:%0:%1]" },       //stores to "result" (7F0A80+X)
-    { /*C1*/ EvDialogAddr::Create,          "[DialogDisplayTop:%0]" },
-    { /*C2*/ EvDialogAddr::Create,          "[DialogDisplayBottom:%0]" },
-    { /*C3*/ EvDialogAddrWithByte::Create,  "[DialogAskTop:%0:%1]" },    //stores to "result" (7F0A80+X)
-    { /*C4*/ EvDialogAddrWithByte::Create,  "[DialogAskBottom:%0:%1]" }, //stores to "result" (7F0A80+X)
-    { /*C5*/ EvNoParams::Create,          "[Crash:C5]" },
-    { /*C6*/ EvNoParams::Create,          "[Crash:C6]" },
-    { /*C7*/ Ev7F0200::Create,              "[AddItem:%0]" },
-    { /*C8*/ EvOneByte::Create,             "[SpecialDialog:%0]" },
-    { /*C9*/ EvIfOneByte::Create,           "[Goto:%label [UnlessHasItem:%0]]" },
-    { /*CA*/ EvOneByte::Create,             "[GiveItem:%0]" },
-    { /*CB*/ EvOneByte::Create,             "[StealItem:%0]" },
-    { /*CC*/ EvIfOneWord::Create,           "[Goto:%label [UnlessHasGold:%0]]" },
-    { /*CD*/ EvOneWord::Create,             "[GiveGold:%0]" },
-    { /*CE*/ EvOneWord::Create,             "[StealGold:%0]" },
-    { /*CF*/ EvIfOneByte::Create,           "[Goto:%label [UnlessHasMember:%0]]" },
-    { /*D0*/ EvOneByte::Create,             "[GiveMember:%0]" },
-    { /*D1*/ EvOneByte::Create,             "[StealMember:%0]" },
-    { /*D2*/ EvIfOneByte::Create,           "[Goto:%label [UnlessHasActiveMember:%0]" },
-    { /*D3*/ EvOneByte::Create,             "[GiveActiveMember:%0]" },
-    { /*D4*/ EvOneByte::Create,             "[UnactivateMember:%0]" },
-    { /*D5*/ EvTwoBytes::Create,            "[EquipMember:%0:%1]" },
-    { /*D6*/ EvOneByte::Create,             "[StealActiveMember:%0]" },
-    { /*D7*/ EvByteWith7F0200::Create,      "[GetItemAmount:%byte:%addr]" },
-    { /*D8*/ EvOneWord::Create,             "[StartBattle:%0]" },
-    { /*D9*/ EvSixBytes::Create,            "[PartyMove:%0:%1:%2:%3:%4:%5]" },
-    { /*DA*/ EvNoParams::Create,            "[PartySetFollow]" },
-    { /*DB*/ EvNoParams::Create,          "[Crash:DB]" },
-    { /*DC*/ EvWordAndTwoBytes::Create,     "[PartyTeleportDC:%0:%1:%2]" },
-    { /*DD*/ EvWordAndTwoBytes::Create,     "[PartyTeleportDD:%0:%1:%2]" },
-    { /*DE*/ EvWordAndTwoBytes::Create,     "[PartyTeleportDE:%0:%1:%2]" },
-    { /*DF*/ EvWordAndTwoBytes::Create,     "[PartyTeleportDF:%0:%1:%2]" },
-    { /*E0*/ EvWordAndTwoBytes::Create,     "[PartyTeleportE0:%0:%1:%2]" },
-    { /*E1*/ EvWordAndTwoBytes::Create,     "[PartyTeleportE1:%0:%1:%2]" },
-    { /*E2*/ EvFour7F0200::Create,          "[UnknownE2:%0:%1:%2:%3]" },
-    { /*E3*/ EvOneByte::Create,             "[SetExploreMode:%0]" },
-    { /*E4*/ EvCommandsE4andE5::Create,     "[UnknownE4:%l:%t:%r:%b:%x:%y:%f]" },
-    { /*E5*/ EvCommandsE4andE5::Create,     "[UnknownE5:%l:%t:%r:%b:%x:%y:%f]" },
-    { /*E6*/ EvWordAndTwoBytes::Create,     "[ScrollLayers:%0:%1:%2]" },
-    { /*E7*/ EvTwoBytes::Create,            "[ScrollScreen:%0:%1]" },
-    { /*E8*/ EvOneByte::Create,             "[PlaySound:%0]" },
-    { /*E9*/ EvNoParams::Create,          "[Crash:E9]" },
-    { /*EA*/ EvOneByte::Create,             "[PlaySong:%0]" },
-    { /*EB*/ EvTwoBytes::Create,            "[SetVolume:%0:%1]" },
-    { /*EC*/ EvThreeBytes::Create,          "[SoundCommand:%0:%1:%2]" },
-    { /*ED*/ EvNoParams::Create,            "[WaitSilence]" },
-    { /*EE*/ EvNoParams::Create,            "[WaitSongEnd]" },
-    { /*EF*/ EvNoParams::Create,          "[Crash:EF]" },
-    { /*F0*/ EvOneByte::Create,             "[FadeOutScreen:%0]" },
-    { /*F1*/ EvCommandF1::Create,           "[BrightenScreen:%index:%duration]" },
-    { /*F2*/ EvNoParams::Create,            "[FadeOutScreen]" },
-    { /*F3*/ EvNoParams::Create,            "[UnknownF3]" },
-    { /*F4*/ EvOneByte::Create,             "[ShakeScreen:%0]" },
-    { /*F5*/ EvNoParams::Create,          "[Crash:F5]" },
-    { /*F6*/ EvNoParams::Create,          "[Crash:F6]" },
-    { /*F7*/ EvNoParams::Create,          "[Crash:F7]" },
-    { /*F8*/ EvNoParams::Create,            "[HealHPandMP]" },   // does opF9 and opFA
-    { /*F9*/ EvNoParams::Create,            "[HealHP]" },        // calls C28004,A=6
-    { /*FA*/ EvNoParams::Create,            "[HealMP]" },        // calls C28004,A=7
-    { /*FB*/ EvNoParams::Create,          "[Crash:FB]" },
-    { /*FC*/ EvNoParams::Create,          "[Crash:FC]" },
-    { /*FD*/ EvNoParams::Create,          "[Crash:FD]" },
-    { /*FE*/ EvCommandFE::Create,           "[SetGeometry:%0:%1:%2:%3:%4:%5:%6:%7:%8:%9:%10:%11:%12:%13:%14:%15:%16]" },
-    { /*FF*/ EvMode7Scene::Create,          "[Mode7Scene:%0:%1:%2]" }
+        fprintf(stderr, "No choices for %02X\n", data[0]);
+        throw false;
+    }
+    
+private:
+    OpcodeTree OPTree;
 };
 
-EventCode::EventCode() : ev(NULL)
+namespace
+{
+    static EvCommands evdata;
+}
+
+EventCode::EventCode()
 {
 }
 EventCode::~EventCode()
 {
-    delete ev; ev=NULL;
 }
 
-void EventCode::InitDecode(unsigned offset, unsigned char opcode)
+const EventCode::DecodeResult
+EventCode::DecodeBytes(unsigned offset, const unsigned char* data, unsigned maxlength)
 {
-    if(ev) delete ev; ev=NULL;
-    
-    ev = EvCommands[opcode].Create();
-
-    ev->SetDataPtr(offset);
-    ev->SetFormat(EvCommands[opcode].format);
-}
-
-EventCode::DecodeResult
-EventCode::DecodeBytes(const unsigned char* data, unsigned maxlength)
-{
-    DecodeResult result;
-    
-    if(!ev)
-    {
-        std::fprintf(stderr, "EventCode::DecodeBytes: No ev\n");
-        std::fflush(stderr); std::fflush(stdout);
-        throw false;
-    }
-    
     try
     {
-        unsigned offs = ev->GetDataPtr();
-        std::string line;
-        
-        unsigned size = ev->BytesToString(line, data, maxlength);
-        
-        result.code   = line;
-        result.nbytes = size;
-        
-        EvParameterHandler::labeldata tmp = ev->QueryGotoUsage();
-        result.label_name  = tmp.label_name;
-        result.label_value = tmp.label_value;
+        return evdata.Scan(offset, data, maxlength, DecodeState);
     }
     catch(bool)
     {
-        result.code   = "[ERROR: Not enough bytes]";
-        result.nbytes = 0;
+        DecodeResult result;
+        result.code   = format("[ERROR: No match [offs:%04X] [max:%04X]]", offset, maxlength);
+        result.nbytes = 1;
+        return result;
     }
-    return result;
 }

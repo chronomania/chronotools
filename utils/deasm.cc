@@ -539,6 +539,54 @@ namespace
                                            new Expr(Expr::Constant, val))),
                     bitness);
         }
+        void Add(const labeldata& label, int val, tristate bitness)
+        {
+            if(output.dummy)return;
+            AddExpr(new Expr(Expr::Assign, ParseAddress(label),
+                       new Expr(Expr::Add, ParseAddress(label),
+                                           new Expr(Expr::Constant, val))),
+                    bitness);
+        }
+        void Sub(const labeldata& label, int val, tristate bitness)
+        {
+            if(output.dummy)return;
+            AddExpr(new Expr(Expr::Assign, ParseAddress(label),
+                       new Expr(Expr::Sub, ParseAddress(label),
+                                           new Expr(Expr::Constant, val))),
+                    bitness);
+        }
+        void Asl(RegisterNameType regkey, int val, tristate bitness)
+        {
+            if(output.dummy)return;
+            AddExpr(new Expr(Expr::Assign, new Expr(Expr::Register, regkey),
+                       new Expr(Expr::Mul, new Expr(Expr::Register, regkey), 
+                                           new Expr(Expr::Constant, 1 << val))),
+                    bitness);
+        }
+        void Lsr(RegisterNameType regkey, int val, tristate bitness)
+        {
+            if(output.dummy)return;
+            AddExpr(new Expr(Expr::Assign, new Expr(Expr::Register, regkey),
+                       new Expr(Expr::Div, new Expr(Expr::Register, regkey), 
+                                           new Expr(Expr::Constant, 1 << val))),
+                    bitness);
+        }
+        void Asl(const labeldata& label, int val, tristate bitness)
+        {
+            if(output.dummy)return;
+            AddExpr(new Expr(Expr::Assign, ParseAddress(label),
+                       new Expr(Expr::Mul, ParseAddress(label),
+                                           new Expr(Expr::Constant, 1 << val))),
+                    bitness);
+        }
+        void Lsr(const labeldata& label, int val, tristate bitness)
+        {
+            if(output.dummy)return;
+            AddExpr(new Expr(Expr::Assign, ParseAddress(label),
+                       new Expr(Expr::Div, ParseAddress(label),
+                                           new Expr(Expr::Constant, 1 << val))),
+                    bitness);
+        }
         void And(RegisterNameType regkey, const labeldata& label, tristate bitness)
         {
             if(output.dummy)return;
@@ -901,11 +949,36 @@ namespace
                 else if(label.op == "trb") { ClearBits('A', label, label.A_16bit); }
                 else if(label.op == "tsb") { SetBits('A', label, label.A_16bit); }
                 else if(label.op == "stz") { StoreZero(label, label.A_16bit); }
-
-                else if(label.op == "inc") { Add('A', 1, label.A_16bit); }
+                else if(label.op == "inc")
+                {
+                    if(label.addrmode==0)
+                        Add('A', 1, label.A_16bit);
+                    else
+                        Add(label, 1, label.A_16bit);
+                }
                 else if(label.op == "inx") { Add('X', 1, label.X_16bit); }
                 else if(label.op == "iny") { Add('Y', 1, label.X_16bit); }
-                else if(label.op == "dec") { Sub('A', 1, label.A_16bit); }
+                else if(label.op == "dec")
+                {
+                    if(label.addrmode==0)
+                        Sub('A', 1, label.A_16bit);
+                    else
+                        Sub(label, 1, label.A_16bit);
+                }
+                else if(label.op == "asl")
+                {
+                    if(label.addrmode==0)
+                        Asl('A', 1, label.A_16bit);
+                    else
+                        Asl(label, 1, label.A_16bit);
+                }
+                else if(label.op == "lsr")
+                {
+                    if(label.addrmode==0)
+                        Lsr('A', 1, label.A_16bit);
+                    else
+                        Lsr(label, 1, label.A_16bit);
+                }
                 else if(label.op == "dex") { Sub('X', 1, label.X_16bit); }
                 else if(label.op == "dey") { Sub('Y', 1, label.X_16bit); }
                 else if(label.op == "and") { And('A', label, label.A_16bit); }
