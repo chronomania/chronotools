@@ -57,7 +57,7 @@ int main(int argc, const char *const *argv)
     fclose(original); original=NULL;
     vector<bool> Touched(ROM.size(), false);
     
-    unsigned col=0;
+//    unsigned col=0;
     for(;;)
     {
         int wanted,c = fread(Buf, 1, 3, fp);
@@ -75,8 +75,8 @@ int main(int argc, const char *const *argv)
         unsigned len = (((unsigned)Buf[0]) << 8)
                       | ((unsigned)Buf[1]);
         
-        fprintf(stderr, "%06X <- %-5u ", pos, len);
-        if(++col == 5) { fprintf(stderr, "\n"); col=0; }
+//        fprintf(stderr, "%06X <- %-5u ", pos, len);
+//        if(++col == 5) { fprintf(stderr, "\n"); col=0; }
         
         vector<char> Buf2(len);
         c = fread(&Buf2[0], 1, len, fp);
@@ -102,7 +102,7 @@ int main(int argc, const char *const *argv)
             }
         }
     }
-    if(col) fprintf(stderr, "\n");
+//    if(col) fprintf(stderr, "\n");
     fclose(fp);
     
     unsigned CalculatedSize = (ROM.size() / 0x2000) * 0x2000;

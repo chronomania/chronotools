@@ -1,6 +1,6 @@
 ; Part of Chronotools - http://bisqwit.iki.fi/source/chronotools.html
 ;
-; Copyright (C) 1992,2003 Bisqwit (http://iki.fi/bisqwit/)
+; Copyright (C) 1992,2004 Bisqwit (http://iki.fi/bisqwit/)
 ;
 ; This code draws text using VWF8 (variable width 8pix tall font).
 ;
@@ -733,7 +733,9 @@ EquipLeftItemFunc:
         
         SET_16_BIT_A()
         iny:dec ;skip first char and decrease max length
+#if 1
         dec:dec ;decrease max length by 2 more because of the numbers
+#endif
 
         ALLOCATE()
         pha

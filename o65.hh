@@ -79,6 +79,7 @@ public:
     
     /* Returns the contents of a segment */
     const vector<unsigned char>& GetSeg(SegmentSelection seg) const;
+    const vector<pair<unsigned char, string> >& GetCustomHeaders() const;
     
     /* Returns the segment size */
     unsigned GetSegSize(SegmentSelection seg) const;
@@ -112,6 +113,8 @@ public:
 private:
     class Defs;
     class Segment;
+    
+    vector<pair<unsigned char, string> > customheaders;
     
     Defs *defs;
     Segment *code, *data, *zero, *bss;

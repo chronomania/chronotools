@@ -2,6 +2,8 @@
 #include <cmath>
 #include "tgaimage.hh"
 
+using std::vector;
+
 namespace
 {
     /* Cursive settings: */
@@ -43,7 +45,7 @@ namespace
             double dist_x = (x - b.x);
             double dist_y = (y - b.y);
             
-            return max(fabs(dist_x), fabs(dist_y));
+            return std::max(fabs(dist_x), fabs(dist_y));
             //return dist_x*dist_x + dist_y*dist_y;
         }
     };
@@ -68,7 +70,7 @@ namespace
         "\33[0;1;37m"
     };
 
-    void DispBox(const vector<char> &box)
+    void DispBox(const vector<unsigned char> &box)
     {
         for(unsigned y=0; y<12; ++y)
         {
@@ -84,7 +86,7 @@ namespace
         }
     }
 
-    vector<char> MakeCursive(const vector<char> &box)
+    vector<unsigned char> MakeCursive(const vector<unsigned char> &box)
     {
         vector<value_t> box2v(12 * 12);
         
@@ -134,7 +136,7 @@ namespace
             }
         }
 
-        vector<char> box2(12 * 12, 5);
+        vector<unsigned char> box2(12 * 12, 5);
 
         unsigned maxwidth=0;
         for(unsigned y=0; y<12; ++y)
@@ -181,7 +183,7 @@ namespace
         return box2;
     }
 
-    vector<char> MakeBold(const vector<char> &box)
+    vector<unsigned char> MakeBold(const vector<unsigned char> &box)
     {
         vector<value_t> box2v(12 * 12);
         
@@ -226,7 +228,7 @@ namespace
             }
         }
 
-        vector<char> box2(12 * 12, 5);
+        vector<unsigned char> box2(12 * 12, 5);
 
         unsigned maxwidth=0;
         for(unsigned y=0; y<12; ++y)
@@ -289,7 +291,7 @@ int main(void)
     
     for(unsigned a=0; a<maxbox; ++a)
     {
-        vector<char> box = font12.getbox(a);
+        vector<unsigned char> box = font12.getbox(a);
         
         unsigned t=a;
         unsigned ypos = (t/xdim) * (12+1) + 1;
@@ -303,7 +305,7 @@ int main(void)
     
     for(unsigned a=0xA0; a<0xFF; ++a)
     {
-        vector<char> newbox = MakeCursive(font12.getbox(a));
+        vector<unsigned char> newbox = MakeCursive(font12.getbox(a));
         
         const unsigned cursive_offset = 0x120 - 0xA0;
          
@@ -320,7 +322,7 @@ int main(void)
 /*
     for(unsigned a=0xA0; a<0xFF; ++a)
     {
-        vector<char> newbox = MakeBold(font12.getbox(a));
+        vector<unsigned char> newbox = MakeBold(font12.getbox(a));
         
         const unsigned bold_offset = 0x180 - 0xA0;
          

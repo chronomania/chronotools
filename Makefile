@@ -110,6 +110,7 @@ DEPDIRS = utils/
 # VERSION 1.12.1 is an upgrade to support the new o65 extension...
 # VERSION 1.12.2 fixes a bug in ctdump (battle message list not dumped properly)
 # VERSION 1.12.3 fixes a bug that caused utils/codegen.cc not compile
+# VERSION 1.12.4 is a middle-development version that has windows binaries
 
 #OPTIM=-Os
 # -fshort-enums
@@ -122,7 +123,7 @@ OPTIM=-O3
 
 CXXFLAGS += -I.
 
-VERSION=1.12.3
+VERSION=1.12.4
 ARCHFILES=utils/xray.cc utils/xray.h \
           utils/viewer.c \
           utils/vwftest.cc \
@@ -405,13 +406,22 @@ fullzip: \
 		utils/facegenerator \
 		utils/o65test utils/dumpo65 \
 		utils/deasm \
-		etc/ct.cfg etc/ct.code \
-		DOCS/README.html \
+		etc/ct.cfg \
+		DOCS/README.html      \
+		DOCS/VWF8.html        \
+		DOCS/compression.html \
+		DOCS/crononick.html   \
+		DOCS/conjugation.html \
+		DOCS/signature.html   \
+		DOCS/imageformat.html \
+		DOCS/ct-moglogo.a65 \
+		DOCS/ct-conj.code DOCS/ct-crononick.code \
+		DOCS/ct8fnV.tga \
 		README.TXT
 	@rm -rf $(ARCHNAME)
-	- mkdir $(ARCHNAME){,/utils,/etc}
+	- mkdir $(ARCHNAME){,/utils,/etc,/DOCS}
 	for s in $^;do ln "$$s" $(ARCHNAME)/"$$s"; done
-	for dir in . utils etc; do (\
+	for dir in . utils etc DOCS; do (\
 	 cd $(ARCHNAME)/$$dir; \
 	 /bin/ls|while read s;do echo "$$s"|grep -qF . || test -d "$$s" || mv -v "$$s" "$$s".exe;done; \
 	                           ); done

@@ -11,7 +11,7 @@ int main(void)
     tmp.Load(fp);
     fclose(fp);
     
-    const vector<unsigned char>& code = tmp.GetCode();
+    const vector<unsigned char>& code = tmp.GetSeg(CODE);
     
     printf("Code size: %u bytes\n", code.size());
     
@@ -20,7 +20,7 @@ int main(void)
     
     printf("After relocating code at FF0000:\n");
     
-    tmp.LocateCode(0xFF0000);
+    tmp.Locate(CODE, 0xFF0000);
     
     printf(" Write_4bit is at %06X\n", tmp.GetSymAddress("Write_4bit"));
     printf(" NextTile is at %06X\n", tmp.GetSymAddress("NextTile"));

@@ -215,20 +215,11 @@ void O65::Load(FILE* fp)
         unsigned char type = fgetc(fp);
         if(len >= 2) len -= 2; else len = 0;
         
-        //fprintf(stderr, "Custom header %02X (len=%u)\n", type, len);
+        string data(len, '\0');
         
-        switch(type)
-        {
-            case 10: // linkage type
-            case 0: // filename
-            case 1: // operating system header
-            case 2: // assembler name
-            case 3: // author
-            case 4: // creation date
-            default:
-                // ignore
-                for(unsigned a=0; a<len; ++a) fgetc(fp);
-        }
+        for(unsigned a=0; a<len; ++a) data[a] = fgetc(fp);
+        
+        customheaders.push_back(make_pair(type, data));
     }
     
     fread(&this->code->space[0], this->code->space.size(), 1, fp);
@@ -759,4 +750,9 @@ void O65::Segment::LoadRelocations(FILE* fp)
             }
         }
     }
+}
+
+const vector<pair<unsigned char, string> >& O65::GetCustomHeaders() const
+{
+    return customheaders;
 }

@@ -138,29 +138,29 @@ MogLogo_Do:
         ; Palette $03= free for use
         ; Palette $09= "RONO"
 
-;        DISPLAY_GFX(TILEDATA_ADDR, PALETTE_ADDR,
-;                    1,PALETTE_SIZE,
-;                    $0B0,      ;first tile
+        DISPLAY_GFX(MOGDATA_ADDR, PALETTE_ADDR,
+                    1,PALETTE_SIZE,
+                    $0B0,      ;first tile
+                    $5000,     ;vram.bmap
+                    $6000,     ;vram.tiles
+                    $2F0,      ;vram offset
+                    16, 5, $20);geometry
+       
+;        DISPLAY_GFX(TILEDATA1_ADDR, PALETTE1_ADDR,
+;                    1,PALETTE1_SIZE,
+;                    $0A0,      ;first tile
 ;                    $5000,     ;vram.bmap
 ;                    $6000,     ;vram.tiles
-;                    $2F0,      ;vram offset
-;                    16, 5, $20);geometry
-        
-        DISPLAY_GFX(TILEDATA1_ADDR, PALETTE1_ADDR,
-                    1,PALETTE1_SIZE,
-                    $0A0,      ;first tile
-                    $5000,     ;vram.bmap
-                    $6000,     ;vram.tiles
-                    $250,      ;vram offset
-                    16, 2, $20);geometry
-        
-        DISPLAY_GFX(TILEDATA2_ADDR, PALETTE2_ADDR,
-                    3,PALETTE2_SIZE,
-                    $0C0,      ;first tile
-                    $5000,     ;vram.bmap
-                    $6000,     ;vram.tiles
-                    $1D0,      ;vram offset
-                    16, 4, $20);geometry
+;                    $250,      ;vram offset
+;                    16, 2, $20);geometry
+;        
+;        DISPLAY_GFX(TILEDATA2_ADDR, PALETTE2_ADDR,
+;                    3,PALETTE2_SIZE,
+;                    $0C0,      ;first tile
+;                    $5000,     ;vram.bmap
+;                    $6000,     ;vram.tiles
+;                    $1D0,      ;vram offset
+;                    16, 4, $20);geometry
         
         rts
 .)
