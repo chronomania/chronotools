@@ -316,7 +316,7 @@ const ctstring insertor::ParseScriptEntry(const ucs4string &input, const stringd
     
     if(is_dialog)
     {
-        Conjugater->Work(result);
+        Conjugater->Work(*this, result);
         result = WrapDialogLines(result);
     }
 

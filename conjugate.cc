@@ -9,7 +9,6 @@
 #include "space.hh"
 #include "ctinsert.hh"
 #include "conjugate.hh"
-#include "snescode.hh"
 #include "o65.hh"
 
 using namespace std;
@@ -86,7 +85,7 @@ void Conjugatemap::Load(const insertor &ins)
     }
 }
 
-void Conjugatemap::Work(ctstring &s, formit fit)
+void Conjugatemap::Work(insertor& ins, ctstring &s, formit fit)
 {
     form &form = *fit;
 
@@ -189,27 +188,14 @@ Conjugatemap::Conjugatemap(const insertor &ins)
 */
 }
 
-void Conjugatemap::Work(ctstring &s)
+void Conjugatemap::Work(insertor& ins, ctstring &s)
 {
     for(formit i = forms.begin(); i != forms.end(); ++i)
-        Work(s, i);
+        Work(ins, s, i);
 }
 
 void insertor::GenerateConjugatorCode()
 {
-    const string codefile = WstrToAsc(GetConf("conjugator", "file").SField());
-
-    O65 conj_code = LoadObject(codefile, "Conjugator");
-    if(conj_code.Error()) return;
-    
-    if(!LinkCalls("conjugator"))
-    {
-        fprintf(stderr, "> > Conjugator won't be used\n");
-        return;
-    }
-
-    objects.AddObject(conj_code, "conj code");
-
     const Conjugatemap::formlist &forms = Conjugater->GetForms();
     
     Conjugatemap::formlist::const_iterator i;
@@ -224,6 +210,4 @@ void insertor::GenerateConjugatorCode()
         
         objects.DefineSymbol(CodeName, i->prefix);
     }
-    
-    objects.DefineSymbol("CHAR_OUTPUT_FUNC", 0xC00000 | GetConst(DIALOG_DRAW_FUNC_ADDR));
 }

@@ -1,0 +1,213 @@
+/*
+Ajatuksia miten [crononick] voisi toimia.
+
+Japaniversiossahan se toimii siten, että se ottaa
+nimestä enintään kaksi ensimmäistä tavua.
+
+Matti  -> Mati  ? Vai Masa
+Joel   -> Jole  ? Vai Joeli
+Mikko  -> Miko  ?
+Magus  -> Magu  ?
+Erkki  -> Eki   ?
+Ilkka  -> Ilka  ? Vai Ile
+Lasse  -> Lare  ? 
+Paavo  -> Pavo  ? Vai Pave
+Teemu  -> Temu  ? Teme?
+Jukka  -> Juki  ? Vai Juke?
+Jussi  -> Juke  ? Jusi.
+Henri  -> Hene  ?
+Toni   -> Tomppa :) näh
+Tomi   -> Tomppa :)
+
+-lkka -> -le
+-tti -> -sa
+-kka -> -ki
+-sse -> -re
+-kko -> -ke ? -ko?
+-VVK -> -VVKi
+
+--Entäs--
+
+Ilkka -> Ikka
+Erkki -> Ekki
+Antti -> Atti
+Anssi -> Assi
+
+Matti -> Mati
+Lasse -> Lase
+Jukka -> Juka
+Mikko -> Miko
+Ville -> Vile
+Tommi -> Tomi ??
+Jonne -> Jone
+Harri -> Hari
+Pekka -> Peka
+
+Crono -> Rono
+Thanh -> Hanh
+Blank -> Lank
+Brett -> Rett
+
+Ansku -> Ansu
+Enska -> Ensa
+
+Cheng -> Seng
+
+Rania ->
+
+Risto ->
+Henri ->
+
+Magus ->
+Coder ->
+Gamer ->
+Roger ->
+
+Unto -> Uno?
+Aimo ->
+Toni ->
+Tomi ->
+Juha ->
+
+John  -> Jon?
+
+Ari ->
+Aki ->
+Kai ->
+Ana ->
+
+
+*/
+; Define functions for handling the bitness...
+#define SET_8_BIT_A()   sep #$20 : .as
+#define SET_16_BIT_A()  rep #$20 : .al
+#define SET_8_BIT_X()   sep #$10 : .xs
+#define SET_16_BIT_X()  rep #$10 : .xl
+
+#define SET_8_BIT_AX()  sep #$30 : .xs : .as
+#define SET_16_BIT_AX() rep #$30 : .xl : .al
+
+#define CRONO_NAME_ADDRESS      $7E2C23 ; Where Crono name is
+
+; Support extended chars in output? Currently doesn't work.
+#define SUPPORT_EXTCHARS 0
+
+
+; To be called from $C2:5B3B.
+CrononickHandler:
+.(
+        ; All normal registers are free for use.
+        
+        ; Maximum allowed length of the generated nickname: 6 characters.
+        
+        SET_16_BIT_AX()
+
+        ; Initialize the length with 0.
+        stz $3A
+        
+        ; Initialize the source address.
+        ;lda #$7E7E
+        .byt $A9
+        .byt ^CRONO_NAME_ADDRESS
+        .byt ^CRONO_NAME_ADDRESS
+        
+        sta $38  ; segment
+         
+        lda #!CRONO_NAME_ADDRESS
+        sta $37  ; offset
+        
+        ; Do conjugation
+        jsr Do_Crononick
+        
+        ; Finalize.
+        
+        SET_8_BIT_A()
+        SET_16_BIT_X()
+        
+        ; Finally create a pointer to the string.
+        ; This address - $000044(6 bytes) is free
+        ; for use. It's originally used by [num16],
+        ; and it's not required during [chrononick] handling.
+        ldx #$0044
+        lda #$00
+        sta $39
+        stx $37
+        ; Length should already be stored in $3A.
+        rtl
+
+<CONJUGATER> ;Compiled code will be inserted here by Makefile
+; We insert it in the middle for two reasons:
+;  - to gain warnings about unused labels from snescom
+;  - the labels don't need to be exported.
+
+OutcHelper:
+    .(
+         ; Outputs the character in A.
+         ; Does not modify X.
+         ; May modify Y.
+         ; May modify A.
+         ; Expected to return with A,X = 16-bit
+         ; FIXME: Doesn't work for chars >= 0x100
+         
+         SET_16_BIT_AX()
+         pha
+          lda $3A
+          and #$00FF
+          tay ;Load length to index.
+         pla
+#if SUPPORT_EXTCHARS
+         cmp #$100
+         SET_8_BIT_A()
+         bcc Regular
+
+         ; extended.
+         xba
+         sta $44,y ;Store upper byte
+         xba
+         iny
+         inc $3A   ;inc len - FIXME: wrong! Should count chars, not bytes.
+         ; continue here.
+Regular:
+#else
+         SET_8_BIT_A()
+#endif
+         sta $44,y ;Store n'th char.
+         
+         inc $3A ;increment the length
+         SET_16_BIT_AX()
+         rts
+    .)
+
+LoopHelper:
+    .(
+        ; Fetches the X'th letter of Crono's name.
+        ; Does not modify X.
+        ; Uses Y.
+        ; Returns the letter in A.
+        ; Expected to return with A=8-bit, X=anything, AH=0
+        
+        ; X is generally <256, so it doesn't matter if it's 16-bit or 8-bit.
+        SET_8_BIT_A()
+        lda #0
+        xba
+        ; Get y'th char from the name
+        txy
+        lda [$37],y
+        ;Letters in character name are always 8-bit.
+        ;Character names are 0-terminated.
+        rts
+   .)
+
+UpCase:
+    .(
+        SET_8_BIT_A()
+        ; a-z
+        cmp #$BB : bcc +  ; BB-B3
+        cmp #$D4 : bcc AZ
+        ; åäöé
+        cmp #$F0 : bcc +  ; F0-F3
+        cmp #$F4 : bcs +
+        clc : adc #10 ;so that we'll sub 16.
+AZ:     sec : sbc #26: + rts
+    .)
+.)

@@ -299,7 +299,7 @@ namespace
         DumpZStrings(0x06F400, "places", 112, false);
         
         BlockComment(";era list\n");
-        Dump8Strings(0x3FD396, "eraes", 8);
+        DumpZStrings(0x3FD396, "eraes", 8, false);
         
         BlockComment(";episode list\n");
         DumpZStrings(0x3FD03E, "eps", 27, false);
@@ -425,7 +425,7 @@ int main(int argc, const char* const* argv)
     
     fprintf(stderr,
         "Chrono Trigger script dumper version "VERSION"\n"
-        "Copyright (C) 1992,2003 Bisqwit (http://iki.fi/bisqwit/)\n");
+        "Copyright (C) 1992,2004 Bisqwit (http://iki.fi/bisqwit/)\n");
     
     if(argc != 2)
     {
@@ -466,7 +466,7 @@ int main(int argc, const char* const* argv)
     BlockComment(";dictionary, used for compression. don't try to translate it.\n");
     DumpDict();
     DumpFonts();
-    DumpGFX();
+    //DumpGFX();
     DumpText();
     
     FindEndSpaces();

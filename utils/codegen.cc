@@ -1201,11 +1201,11 @@ Restart:
             
             if((*i)->IsFunctionallyEqual(**j))
             {
-                /**/
+                /*
                 std::printf("One combine - %p replaced with %p\n",
                     (const void *)*j,
                     (const void *)*i);
-                /**/
+                */
                 (*i)->Assimilate(**j);
 
                 /* Everyone who linked to this instruction,
@@ -1456,13 +1456,13 @@ static void AssignLabels()
 
 static void OutputCode(const std::list<std::string>& code)
 {
-	for(std::list<std::string>::const_iterator
-	    i = code.begin();
-	    i != code.end();
-	    ++i)
-	{
-		std::fprintf(out, "%s\n", i->c_str());
-	}
+    for(std::list<std::string>::const_iterator
+        i = code.begin();
+        i != code.end();
+        ++i)
+    {
+        std::fprintf(out, "%s\n", i->c_str());
+    }
 }
 
 static void OutputNode(const CodeNode& node, std::list<std::string>& target)
@@ -1472,10 +1472,10 @@ static void OutputNode(const CodeNode& node, std::list<std::string>& target)
     if(node.defines != defines)
     {
 #if GENERATE_MACROES
-    	FindPatterns(target);
+        FindPatterns(target);
 #endif
-    	OutputCode(target);
-    	target.clear();
+        OutputCode(target);
+        target.clear();
 
         defines.End();
         defines = node.defines;
@@ -1549,7 +1549,7 @@ static void OutputNode(const CodeNode& node, std::list<std::string>& target)
                 :    node.jump.target_label;
             if(node.jump.Is_Call == CallTypeJMPX)
             {
-            	line += ",x)";
+                line += ",x)";
             }
             break;
         }
@@ -1561,11 +1561,11 @@ static void OutputNode(const CodeNode& node, std::list<std::string>& target)
     
     if(!node.next_label.empty())
     {
-    	line = "\t";
-    	line += node.next_ins ? "bra" : "brl";
-    	line += ' ';
-    	line += node.next_label;
-    	target.push_back(line);
+        line = "\t";
+        line += node.next_ins ? "bra" : "brl";
+        line += ' ';
+        line += node.next_label;
+        target.push_back(line);
     }
 }
 
@@ -1593,8 +1593,8 @@ static void OutputNodes()
 #if GENERATE_MACROES
     FindPatterns(code);
 #endif
-	OutputCode(code);
-	code.clear();
+    OutputCode(code);
+    code.clear();
 
     defines.End();
 }
@@ -1790,5 +1790,5 @@ void EmitEndIfDef()
 
 void EmitSegment(const std::string& )
 {
-	/* Segments are ignored */
+    /* Segments are ignored */
 }

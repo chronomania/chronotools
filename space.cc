@@ -104,6 +104,28 @@ void freespacemap::DumpPageMap(unsigned pagenum) const
     }
 }
 
+void freespacemap::VerboseDump() const
+{
+    FILE *log = GetLogFile("mem", "log_addrs");
+    if(!log) return;
+
+    for(const_iterator i = begin(); i != end(); ++i)
+    {
+        unsigned page = i->first;
+        const freespaceset &spaceset = i->second;
+        freespaceset::const_iterator reci;
+        for(reci = spaceset.begin(); reci != spaceset.end(); ++reci)
+        {
+            unsigned recpos = reci->lower;
+            unsigned reclen = reci->upper - recpos;
+            
+            unsigned pos = (page << 16) | recpos | 0xC00000;
+            fprintf(log, "$%06X-%06X: Free %7u bytes: %s\n",
+                pos, pos+reclen-1, reclen, "FREE");
+        }
+    }
+}
+
 void freespacemap::Report() const
 {
     fprintf(stderr, "Free space:");
@@ -186,7 +208,7 @@ void freespacemap::Add(unsigned page, unsigned begin, unsigned length)
 }
 void freespacemap::Add(unsigned longaddr, unsigned length)
 {
-    Add(longaddr >> 16, longaddr & 0xFFFF, length);
+    Add((longaddr >> 16) & 0x3F, longaddr & 0xFFFF, length);
 }
 
 void freespacemap::Del(unsigned page, unsigned begin, unsigned length)
@@ -464,4 +486,93 @@ unsigned freespacemap::FindFromAnyPage(unsigned length)
         return NOWHERE;
     }
     return Find(bestpage, length) | (bestpage << 16);
+}
+
+#include "o65linker.hh"
+
+void freespacemap::OrganizeO65linker(O65linker& objects)
+{
+    vector<unsigned> sizes = objects.GetSizeList();
+    vector<unsigned> addrs = objects.GetAddrList();
+    
+    vector<O65linker::LinkageWish> linkages = objects.GetLinkageList();
+    
+    if(true) /* FIRST link those which require specific pages */
+    {
+        map<unsigned, vector<unsigned> > destinies;
+        for(unsigned a=0; a<linkages.size(); ++a)
+            if(linkages[a].type == O65linker::LinkageWish::LinkThisPage)
+            {
+                destinies[linkages[a].GetPage()].push_back(a);
+            }
+        
+        /* Link each page. */
+        for(map<unsigned, vector<unsigned> >::const_iterator
+            i = destinies.begin(); i != destinies.end(); ++i)
+        {
+            const unsigned page = i->first;
+            const vector<unsigned>& items = i->second;
+            
+            vector<freespacerec> Organization(items.size());
+            
+            for(unsigned c=0; c<items.size(); ++c)
+                Organization[c].len = sizes[items[c]];
+            
+            Organize(Organization, page);
+            
+            for(unsigned c=0; c<items.size(); ++c)
+                addrs[items[c]] = Organization[c].pos | (page << 16) | 0xC00000;
+        }
+    }
+    
+    if(true) /* SECOND link those which require same pages */
+    {
+        map<unsigned, vector<unsigned> > groups;
+        for(unsigned a=0; a<linkages.size(); ++a)
+            if(linkages[a].type == O65linker::LinkageWish::LinkInGroup)
+            {
+                groups[linkages[a].GetGroup()].push_back(a);
+            }
+        
+        /* Link each page. */
+        for(map<unsigned, vector<unsigned> >::const_iterator
+            i = groups.begin(); i != groups.end(); ++i)
+        {
+            //const unsigned groupnum = i->first; /* unused */
+            const vector<unsigned>& items = i->second;
+            
+            vector<freespacerec> Organization(items.size());
+
+            for(unsigned c=0; c<items.size(); ++c)
+                Organization[c].len = sizes[items[c]];
+            
+            unsigned page = NOWHERE;
+            OrganizeToAnySamePage(Organization, page);
+            
+            for(unsigned c=0; c<items.size(); ++c)
+                addrs[items[c]] = Organization[c].pos | (page << 16) | 0xC00000;
+        }
+    }
+    
+    if(true) /* LAST link those which go anywhere */
+    {
+        vector<unsigned> items;
+        for(unsigned a=0; a<linkages.size(); ++a)
+            if(linkages[a].type == O65linker::LinkageWish::LinkAnywhere)
+            {
+                items.push_back(a);
+            }
+        
+        vector<freespacerec> Organization(items.size());
+
+        for(unsigned c=0; c<items.size(); ++c)
+            Organization[c].len = sizes[items[c]];
+
+        OrganizeToAnyPage(Organization);
+        
+        for(unsigned c=0; c<items.size(); ++c)
+            addrs[items[c]] = Organization[c].pos | 0xC00000;
+    }
+
+    objects.PutAddrList(addrs);
 }

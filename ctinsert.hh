@@ -5,7 +5,6 @@
 #include <string>
 #include <vector>
 
-#include "snescode.hh"
 #include "wstring.hh"
 #include "space.hh"
 #include "fonts.hh"
@@ -33,18 +32,17 @@ public:
 
     unsigned GetFont12width(ctchar chronoch) const;
     
-    void PatchROM(class ROM &ROM);
+    void PatchROM(class ROM &ROM) const;
 
     void ReportFreeSpace();
     void ReorganizeFonts();
     
     insertor();
     ~insertor();
-
-    // Shouldn't be public, but StringReceipt is an outside class that needs them
-    void PlaceData(const vector<unsigned char>&, unsigned address, const string& reason="");
-    void PlaceByte(unsigned char byte, unsigned address, const string& reason="");
     
+    // Shouldn't be public, but StringReceipt and Conjugatemap need this.
+    O65linker objects;
+
 private:
     struct stringdata
     {
@@ -63,31 +61,27 @@ private:
     //     WriteStrings()
     stringlist strings;
     
-    list<SNEScode> codes;
-    
     vector<ctstring> dict;
     
     Font8data Font8;
     Font8vdata Font8v;
     Font12data Font12;
     
-    O65linker objects;
+    void PlaceData(const vector<unsigned char>&, unsigned address, const string& reason="");
+    void PlaceByte(unsigned char byte, unsigned address, const string& reason="");
 
     freespacemap freespace;
     
     class Conjugatemap *Conjugater;
     
-    void GenerateConjugatorCode();
-    void GenerateCrononickCode();
     void GenerateVWF12code();
-    void GenerateVWF8code();
-    void GenerateSignatureCode();
+    void GenerateConjugatorCode();
+    
     void WriteStrings();
     void WriteDictionary();
     void WriteRelocatedStrings();
     void WritePageZ(unsigned page, class stringoffsmap&);
     unsigned WriteStringTable(class stringoffsmap&, const string& what);
-    void PatchTimeBoxes();
     
     /* Used to mark free space in the ROM because of code that is no longer used. */
     void ObsoleteCode(unsigned addr, unsigned bytes, bool barrier=false);
@@ -107,17 +101,8 @@ private:
 
     unsigned CalculateScriptSize() const;
 
-    /**
-     *  LinkCalls - Parse add_call_of -commands from config file
-     *     @section: The configuration file section
-     *  Return value:
-     *     false = There were no add_call_of -lines
-     *     true  = ok
-     */
-    bool LinkCalls(const string& section);
-
+    void LoadAllUserCode();
     void LinkAndLocateCode();
-    void AddReference(const ReferMethod& reference, unsigned target, const string& what="");
 };
 
 #endif

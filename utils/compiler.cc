@@ -56,9 +56,9 @@ namespace
            : state(C), specified(true) { }
         void Combine(const CarryAssumption& b)
         {
-        	//Dump("Combining: ");
-        	//b.Dump(" and: ");
-        	
+            //Dump("Combining: ");
+            //b.Dump(" and: ");
+            
             if(!b.specified) return;
             if(!specified) { state = b.state; }
             else if(state != b.state) { state=CarryUnknown; }

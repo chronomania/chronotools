@@ -17,7 +17,7 @@ class Conjugatemap
 public:
     explicit Conjugatemap(const class insertor &ins);
 
-    void Work(ctstring &s);
+    void Work(class insertor &ins, ctstring &s);
 
     typedef hash_map<ctstring, ctchar> datamap_t;
 
@@ -42,7 +42,7 @@ private:
     charmap_t charmap;
 
     void AddForm(const form &form) { forms.push_back(form); }
-    void Work(ctstring &s, formit fit);
+    void Work(class insertor &ins, ctstring &s, formit fit);
     void Load(const class insertor &ins);
 public:
     const formlist &GetForms() const { return forms; }

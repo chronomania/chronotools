@@ -1,9 +1,6 @@
 #include "o65linker.hh"
 #include "msginsert.hh"
 
-#define IPS_ADDRESS_EXTERN 0x01
-#define IPS_ADDRESS_GLOBAL 0x02
-
 #include <list>
 
 using std::list;
@@ -11,22 +8,23 @@ using std::list;
 struct Object
 {
     O65 object;
-    unsigned addr;
     string name;
     vector<string> symlist;
     vector<string> extlist;
     
+    O65linker::LinkageWish linkage;
+    
 public:
-    Object(const O65& obj, const string& what)
+    Object(const O65& obj, const string& what, O65linker::LinkageWish link)
     : object(obj),
-      addr(0),
       name(what),
       symlist(obj.GetSymbolList()),
-      extlist(obj.GetExternList())
+      extlist(obj.GetExternList()),
+      linkage(link)
     {
     }
     
-    Object(): addr(0)
+    Object()
     {
     }
     
@@ -36,17 +34,24 @@ public:
     }
 };
 
-void O65linker::AddObject(const O65& object, const string& what, unsigned addr)
+namespace
 {
-    if(linked)
+    bool SortObjectByAddr(const Object* a, const Object* b)
+    {
+        return a->linkage.GetAddress() < b->linkage.GetAddress();
+    }
+}
+
+void O65linker::AddObject(const O65& object, const string& what, LinkageWish linkage)
+{
+    if(linked && linkage.type != LinkageWish::LinkHere)
     {
         fprintf(stderr,
             "O65 linker: Attempt to add object \"%s\""
             " after linking already done\n", what.c_str());
         return;
     }
-    Object *newobj = new Object(object, what);
-    newobj->addr = addr;
+    Object *newobj = new Object(object, what, linkage);
     
     const vector<string>& symlist = newobj->symlist;
     
@@ -88,7 +93,15 @@ const vector<unsigned> O65linker::GetAddrList() const
 {
     vector<unsigned> result(objects.size());
     for(unsigned a=0; a<result.size(); ++a)
-        result[a] = objects[a]->addr;
+        result[a] = objects[a]->linkage.GetAddress();
+    return result;
+}
+
+const vector<O65linker::LinkageWish> O65linker::GetLinkageList() const
+{
+    vector<LinkageWish> result(objects.size());
+    for(unsigned a=0; a<result.size(); ++a)
+        result[a] = objects[a]->linkage;
     return result;
 }
 
@@ -98,7 +111,7 @@ void O65linker::PutAddrList(const vector<unsigned>& addrs)
     if(objects.size() < limit) limit = objects.size();
     for(unsigned a=0; a<limit; ++a)
     {
-        objects[a]->addr = addrs[a];
+        objects[a]->linkage.SetAddress(addrs[a]);
         objects[a]->object.LocateCode(addrs[a]);
     }
 }
@@ -143,35 +156,34 @@ void O65linker::DefineSymbol(const string& name, unsigned value)
 
 void O65linker::AddReference(const string& name, const ReferMethod& reference)
 {
+    // Check if this symbol is already resolved
+    for(unsigned a=0; a<objects.size(); ++a)
+    {
+        Object& o = *objects[a];
+        if(o.linkage.type != LinkageWish::LinkHere) continue;
+        
+        for(unsigned b=0; b<o.symlist.size(); ++b)
+        {
+            if(o.symlist[b] == name)
+            {
+                unsigned value = o.object.GetSymAddress(name);
+                
+                // resolved referer
+                FinishReference(reference, value, name);
+                return;
+            }
+        }
+    }
+
     if(linked)
     {
         fprintf(stderr, "O65 linker: Attempt to add references after linking\n");
     }
-    referers.push_back(make_pair(reference, make_pair(name, 0)));
+    referers.push_back(make_pair(reference, name));
 }
-
-const vector<pair<ReferMethod, pair<string, unsigned> > >& O65linker::GetReferences() const
-{
-    if(!linked)
-    {
-        fprintf(stderr, "O65 linker: Asked for references before linking\n");
-    }
-    return referers;
-}
-
 
 void O65linker::LinkSymbol(const string& name, unsigned value)
 {
-    for(unsigned a=0; a<referers.size(); ++a)
-    {
-        if(name == referers[a].second.first)
-        {
-            // resolved referer
-            //referers[a].second.first  = "";
-            referers[a].second.second = value;
-        }
-    }
-    
     for(unsigned a=0; a<objects.size(); ++a)
     {
         Object& o = *objects[a];
@@ -186,6 +198,67 @@ void O65linker::LinkSymbol(const string& name, unsigned value)
             }
         }
     }
+    for(unsigned a=0; a<referers.size(); ++a)
+    {
+        if(name == referers[a].second)
+        {
+            // resolved referer
+            FinishReference(referers[a].first, value, name);
+            referers.erase(referers.begin() + a);
+            --a;
+        }
+    }
+}
+
+void O65linker::FinishReference(const ReferMethod& reference, unsigned target, const string& what)
+{
+    unsigned pos = reference.from_addr & 0x3FFFFF;
+    
+    unsigned value = target;
+    if(reference.shr_by > 0) value >>= reference.shr_by;
+    if(reference.shr_by < 0) value <<= -reference.shr_by;
+    
+    value |= reference.or_mask;
+    
+    char Buf[513];
+    sprintf(Buf, "%016X", value);
+
+    std::string title = "ref " + what + ": $" + (Buf + 16-reference.num_bytes*2);
+
+    vector<unsigned char> bytes;
+    for(unsigned n=0; n<reference.num_bytes; ++n)
+    {
+        bytes.push_back(value & 255);
+        value >>= 8;
+    }
+    
+    AddLump(bytes, pos, title);
+}
+
+void O65linker::AddLump(const vector<unsigned char>& data,
+                        unsigned address,
+                        const string& what,
+                        const string& name)
+{
+    O65 tmp;
+    tmp.LoadCodeFrom(data);
+    tmp.LocateCode(address);
+    if(!name.empty()) tmp.DeclareCodeGlobal(name, address);
+    
+    LinkageWish wish;
+    wish.SetAddress(address);
+    
+    AddObject(tmp, what, wish);
+}
+
+void O65linker::AddLump(const vector<unsigned char>& data,
+                        const string& what,
+                        const string& name)
+{
+    O65 tmp;
+    tmp.LoadCodeFrom(data);
+    if(!name.empty()) tmp.DeclareCodeGlobal(name, 0);
+    AddObject(tmp, what);
 }
 
 void O65linker::Link()
@@ -203,8 +276,13 @@ void O65linker::Link()
     for(unsigned a=0; a<objects.size(); ++a)
     {
         Object& o = *objects[a];
+        if(o.linkage.type != LinkageWish::LinkHere)
+        {
+            fprintf(stderr, "O65 linker: Module %s is still without address\n", o.name.c_str());
+            continue;
+        }
         
-        MessageLoadingItem(o.name.c_str());
+        MessageLoadingItem(o.name);
         
         for(unsigned b=0; b<o.extlist.size(); ++b)
         {
@@ -267,11 +345,15 @@ void O65linker::Link()
         {
             for(unsigned c=0; c<referers.size(); ++c)
             {
-                if(o.symlist[b] == referers[c].second.first)
+                if(o.symlist[b] == referers[c].second)
                 {
+                    const string& name = o.symlist[b];
+                    unsigned value = o.object.GetSymAddress(name);
+                    
                     // resolved referer
-                    //referers[c].second.first  = "";
-                    referers[c].second.second = o.object.GetSymAddress(o.symlist[b]);
+                    FinishReference(referers[c].first, value, name);
+                    referers.erase(referers.begin() + c);
+                    --c;
                 }
             }
         }
@@ -282,12 +364,16 @@ void O65linker::Link()
     for(unsigned a=0; a<objects.size(); ++a)
         objects[a]->object.Verify();
 
-    for(unsigned a=0; a<referers.size(); ++a)
-        if(!referers[a].second.second)
-        {
+    if(!referers.empty())
+    {
+        fprintf(stderr,
+            "O65 linker: Leftover references found.\n");
+        
+        for(unsigned a=0; a<referers.size(); ++a)
             fprintf(stderr,
-                "O65 linker: Unresolved reference: %s\n", referers[a].second.first.c_str());
-        }
+                "O65 linker: Unresolved reference: %s\n",
+                    referers[a].second.c_str());
+    }
 
     for(unsigned c=0; c<defines.size(); ++c)
         if(!defines[c].second.second)
@@ -298,7 +384,7 @@ void O65linker::Link()
         }
 }
 
-O65linker::O65linker(): linked(false)
+O65linker::O65linker(): num_groups_used(0), linked(false)
 {
 }
 
@@ -358,7 +444,7 @@ void O65linker::LoadIPSfile(FILE* fp, const string& what)
     for(;;)
     {
         unsigned addr = LoadIPSlong(fp);
-        if(feof(fp) || addr == 0x454F46) break;
+        if(feof(fp) || addr == IPS_EOF_MARKER) break;
         
         unsigned length = LoadIPSword(fp);
         
@@ -472,8 +558,16 @@ void O65linker::LoadIPSfile(FILE* fp, const string& what)
         }
         
         char Buf[64];
-        sprintf(Buf, "block $%06X of ", lump.addr);
+        sprintf(Buf, "block $%06X of ", lump.addr | 0xC00000);
         
-        AddObject(tmp, Buf + what, lump.addr);
+        LinkageWish wish;
+        wish.SetAddress(lump.addr);
+        
+        AddObject(tmp, Buf + what, wish);
     }
+}
+
+void O65linker::SortByAddress()
+{
+    std::sort(objects.begin(), objects.end(), SortObjectByAddr);
 }

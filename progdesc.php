@@ -180,6 +180,9 @@ Copypaste from the Makefile:
 # VERSION 1.11.0 has technological updates and new item list code with VWF8
 # VERSION 1.11.1 adds the documentation core
 # VERSION 1.11.2 is a backup before anything catastrophic happens
+# VERSION 1.11.3 is another backup
+# VERSION 1.11.4 is another backup again
+# VERSION 1.11.5 another... big structural changes
 </pre>
 
 Users of previous versions are advised to do the following:

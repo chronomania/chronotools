@@ -131,8 +131,8 @@ struct Expr: public ptrable
         }
     
         if(type == t)
-        	if((t == Register && intval == param)
-        	|| (p1 && p1->IsConst() && p1->GetConst() == param))
+            if((t == Register && intval == param)
+            || (p1 && p1->IsConst() && p1->GetConst() == param))
                 rec.AddUsed();
         
         if(p2) p2->TraceUsage(rec, t, param);

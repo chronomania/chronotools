@@ -101,17 +101,19 @@ DEPDIRS = utils/
 # VERSION 1.11.2 is a backup before anything catastrophic happens
 # VERSION 1.11.3 is another backup
 # VERSION 1.11.4 is another backup again
+# VERSION 1.11.5 another... big structural changes
 
 #OPTIM=-Os
 # -fshort-enums
 # -fpack-struct
-OPTIM=-O0
+#OPTIM=-O0
 #OPTIM=-O0 -pg -fprofile-arcs
 #LDFLAGS += -pg -fprofile-arcs
+OPTIM=-O3
 
 CXXFLAGS += -I.
 
-VERSION=1.11.4
+VERSION=1.11.5
 ARCHFILES=utils/xray.cc utils/xray.h \
           utils/viewer.c \
           utils/vwftest.cc \
@@ -137,6 +139,7 @@ ARCHFILES=utils/xray.cc utils/xray.h \
           miscfun.cc miscfun.hh \
           compress.cc compress.hh \
           scriptfile.cc scriptfile.hh \
+          dataarea.cc dataarea.hh \
           rangemap.hh rangemap.tcc \
           rangeset.hh rangeset.tcc \
           range.hh \
@@ -146,7 +149,7 @@ ARCHFILES=utils/xray.cc utils/xray.h \
           wstring.cc wstring.hh \
           readin.cc wrap.cc writeout.cc \
           settings.cc settings.hh \
-          snescode.cc snescode.hh \
+          snescode.cc \
           dictionary.cc \
           rom.cc rom.hh \
           rommap.cc rommap.hh \
@@ -167,8 +170,6 @@ ARCHFILES=utils/xray.cc utils/xray.h \
           dumptext.cc dumptext.hh \
           dumpfont.cc dumpfont.hh \
           dumpgfx.cc dumpgfx.hh \
-          signature.cc \
-          vwf8.cc ct-vwf8.a65 \
           config.cc config.hh \
           confparser.cc confparser.hh \
           extras.cc extras.hh \
@@ -178,10 +179,12 @@ ARCHFILES=utils/xray.cc utils/xray.h \
           tristate \
           \
           conjugate.cc conjugate.hh \
-          ct-conj.code ct-conj.a65 \
           \
-          crononick.cc \
-          ct-crononick.code \
+          ct-conj.code ct-conj.a65 \
+          ct-vwf8.a65 \
+          timebox.a65 \
+          \
+          ct-crononick.code ct-crononick.a65 \
           \
           utils/compiler2.cc utils/compiler2-parser.inc utils/ct.code2 \
           utils/deasm-disasm.cc utils/deasm-disasm.hh \
@@ -239,8 +242,8 @@ ctinsert: \
 		ctinsert.o readin.o wrap.o msginsert.o \
 		space.o writeout.o stringoffs.o \
 		dictionary.o images.o fonts.o typefaces.o \
-		rom.o snescode.o signature.o crononick.o \
-		conjugate.o vwf8.o o65.o o65linker.o \
+		rom.o dataarea.o snescode.o \
+		conjugate.o o65.o o65linker.o \
 		 miscfun.o tgaimage.o extras.o compress.o \
 		 symbols.o logfiles.o settings.o \
 		 config.o confparser.o ctcset.o wstring.o
@@ -252,7 +255,7 @@ utils/compile: \
 		utils/codegen.o utils/macrogenerator.o \
 		symbols.o \
 		config.o confparser.o ctcset.o wstring.o
-	$(CXX) $(LDOPTS) $(CXXFLAGS) -g -O -Wall -W -pedantic -o $@ $^ $(LDFLAGS)
+	$(CXX) $(LDOPTS) $(CXXFLAGS) -o $@ $^ $(LDFLAGS)
 utils/compiler: FORCE
 	@echo Make utils/compile instead\!
 
@@ -263,16 +266,16 @@ utils/makeips: utils/makeips.cc
 
 # Patch applier
 utils/unmakeips: utils/unmakeips.cc
-	$(CXX) $(LDOPTS) -g -O -Wall -W -pedantic -o $@ $^
+	$(CXX) $(LDOPTS) $(CXXFLAGS) -o $@ $^
 
 # ROM checksum fixer in the patch file
 utils/fixchecksum: utils/fixchecksum.cc
-	$(CXX) $(LDOPTS) -g -O -Wall -W -pedantic -o $@ $^
+	$(CXX) $(LDOPTS) $(CXXFLAGS) -o $@ $^
 
 
 # ROM graphics viewer
 utils/xray: utils/xray.o compress.o
-	$(CXX) $(LDOPTS) $(CXXFLAGS) -g -O -Wall -W -pedantic -o $@ $^ $(LDFLAGS) -lggi
+	$(CXX) $(LDOPTS) $(CXXFLAGS) -o $@ $^ $(LDFLAGS) -lggi
 
 # ROM text viewer
 utils/viewer: utils/viewer.o
@@ -280,49 +283,49 @@ utils/viewer: utils/viewer.o
 
 # A certain disassembler (not generic)
 utils/deasm: utils/deasm.o utils/deasm-disasm.o utils/insdata.o rommap.o
-	$(CXX) $(LDOPTS) $(CXXFLAGS) -g -O -Wall -W -pedantic -o $@ $^ $(LDFLAGS)
+	$(CXX) $(LDOPTS) $(CXXFLAGS)  -o $@ $^ $(LDFLAGS)
 
 # Cursive/bold typeface font generator (obsolete)
 utils/facegenerator: utils/facegenerator.o tgaimage.o
-	$(CXX) $(LDOPTS) $(CXXFLAGS) -g -O -Wall -W -pedantic -o $@ $^ $(LDFLAGS)
+	$(CXX) $(LDOPTS) $(CXXFLAGS)  -o $@ $^ $(LDFLAGS)
 
 # Base62 - base10 converter
 utils/base62: utils/base62.cc
-	$(CXX) $(LDOPTS) $(CXXFLAGS) -g -O -Wall -W -pedantic -o $@ $^ $(LDFLAGS)
+	$(CXX) $(LDOPTS) $(CXXFLAGS)  -o $@ $^ $(LDFLAGS)
 
 # SRAM dumping program (obsolete)
 utils/sramdump: utils/sramdump.o config.o confparser.o ctcset.o wstring.o
-	$(CXX) $(LDOPTS) $(CXXFLAGS) -g -O -Wall -W -pedantic -o $@ $^ $(LDFLAGS)
+	$(CXX) $(LDOPTS) $(CXXFLAGS)  -o $@ $^ $(LDFLAGS)
 
 
 
 # Script reformatter (not generic)
 utils/rearrange: utils/rearrange.o
-	$(CXX) $(LDOPTS) $(CXXFLAGS) -g -O -Wall -W -pedantic -o $@ $^ $(LDFLAGS)
+	$(CXX) $(LDOPTS) $(CXXFLAGS)  -o $@ $^ $(LDFLAGS)
 
 # O65 tester (not generic)
 utils/o65test: utils/o65test.o o65.o wstring.o
-	$(CXX) $(LDOPTS) $(CXXFLAGS) -g -O -Wall -W -pedantic -o $@ $^ $(LDFLAGS)
+	$(CXX) $(LDOPTS) $(CXXFLAGS)  -o $@ $^ $(LDFLAGS)
 
 # O65 dumper (not generic)
 utils/dumpo65: utils/dumpo65.o
-	$(CXX) $(LDOPTS) $(CXXFLAGS) -g -O -Wall -W -pedantic -o $@ $^ $(LDFLAGS)
+	$(CXX) $(LDOPTS) $(CXXFLAGS)  -o $@ $^ $(LDFLAGS)
 
 # ROM script text viewer, intended to view the jap. ROM (incomplete)
 utils/ctxtview: utils/ctxtview.o settings.o rommap.o
-	$(CXX) $(LDOPTS) $(CXXFLAGS) -g -O -Wall -W -pedantic -o $@ $^ $(LDFLAGS)
+	$(CXX) $(LDOPTS) $(CXXFLAGS)  -o $@ $^ $(LDFLAGS)
 
 # Compression tests (not generic, obsolete)
 utils/comprtest: utils/comprtest.o rommap.o compress.o
-	$(CXX) $(LDOPTS) $(CXXFLAGS) -g -O -Wall -W -pedantic -o $@ $^ $(LDFLAGS)
+	$(CXX) $(LDOPTS) $(CXXFLAGS)  -o $@ $^ $(LDFLAGS)
 utils/comprtest2: utils/comprtest2.o compress.o
-	$(CXX) $(LDOPTS) $(CXXFLAGS) -g -O -Wall -W -pedantic -o $@ $^ $(LDFLAGS)
+	$(CXX) $(LDOPTS) $(CXXFLAGS)  -o $@ $^ $(LDFLAGS)
 
 # Second compiler version (not generic, incomplete, obsolete)
 utils/compiler2.o: utils/compiler2.cc
 	$(CXX) $(LDOPTS) -g -o $@ -c $< $(CXXFLAGS) -O0 -fno-default-inline
 utils/comp2test: utils/compiler2.cc config.o confparser.o ctcset.o wstring.o
-	$(CXX) $(LDOPTS) $(CXXFLAGS) -g -O -Wall -W -pedantic -o $@ $^ $(LDFLAGS)
+	$(CXX) $(LDOPTS) $(CXXFLAGS)  -o $@ $^ $(LDFLAGS)
 
 # Binpacker test (obsolete)
 utils/spacefind: utils/spacefind.o
@@ -334,7 +337,7 @@ utils/vwftest: \
 		fonts.o typefaces.o extras.o conjugate.o o65.o settings.o \
 		snescode.o symbols.o space.o logfiles.o o65linker.o \
 		config.o confparser.o ctcset.o wstring.o
-	$(CXX) $(LDOPTS) $(CXXFLAGS) -g -O -Wall -W -pedantic -o $@ $^ $(LDFLAGS)
+	$(CXX) $(LDOPTS) $(CXXFLAGS)  -o $@ $^ $(LDFLAGS)
 
 
 
@@ -342,6 +345,11 @@ utils/vwftest: \
 # Generic rule to create .o65 out from .a65
 %.o65: %.a65
 	snescom -J -Wall -o $@ $< 
+
+# Generic rule to create .ips out from .a65
+%.ips: %.a65
+	snescom -I -J -Wall -o $@ $< 
+
 
 # Rules for creating ct-conj.o65
 ct-conj1.a65: ct-conj.code utils/compile

@@ -13,17 +13,39 @@ using namespace std;
 
 namespace
 {
+    void PutC(unsigned char c, std::FILE* fp)
+    {
+        // 8-bit output.
+        std::fputc(c, fp);
+    }
+
+    void PutL(unsigned int w, std::FILE* fp)
+    {
+        // 24-bit msb-first IPS output.
+        PutC((w >> 16) & 0xFF, fp);
+        PutC((w >> 8) & 0xFF, fp);
+        PutC(w & 0xFF, fp);
+    }
+
+    void PutMW(unsigned short w, std::FILE* fp)  
+    {
+        // 16-bit msb-first IPS output.
+        PutC(w >> 8,  fp);
+        PutC(w & 0xFF, fp);
+    }                      
+
+    void PutS(const void* s, unsigned n, std::FILE* fp)
+    {
+        std::fwrite(s, n, 1, fp);
+        //for(unsigned a=0; a<n; ++a) PutC(s[a], fp);
+    }
+
     void GeneratePatch(ROM &ROM, unsigned offset, const char *fn)
     {
         fprintf(stderr, "Creating %s\n", fn);
         
         unsigned MaxHunkSize = GetConf("patch",   "maxhunksize");
 
-        /*
-        {FILE *fp = fopen("chrono-uncompressed.smc", "rb");
-        if(fp){fseek(fp,512,SEEK_SET);fread(&ROM[0], 1, ROM.size(), fp);fclose(fp);}}
-        */
-        
         /* Now write the patch */
         FILE *fp = fopen(fn, "wb");
         if(!fp)
@@ -32,28 +54,53 @@ namespace
             return;
         }
         fwrite("PATCH", 1, 5, fp);
-
-        /* Format:   24bit offset, 16-bit size, then data; repeat */
-        for(unsigned a=0; a<ROM.size(); ++a)
+        
+        unsigned addr = 0;
+        for(;;)
         {
-            if(!ROM.touched(a))continue;
-            
-            putc(((a+offset)>>16)&255, fp);
-            putc(((a+offset)>> 8)&255, fp);
-            putc(((a+offset)    )&255, fp);
-            
-            unsigned offs=a, c=0;
-            while(a < ROM.size() && ROM.touched(a) && c < MaxHunkSize)
-                ++c, ++a;
-            
-            // Size is "c" in both.
-            putc((c>> 8)&255, fp);
-            putc((c    )&255, fp);
-            int ret = fwrite(&ROM[offs], 1, c, fp);
-            if(ret < 0 || ret != (int)c)
+            unsigned size;
+            addr = ROM.FindNextBlob(addr, size);
+            if(!size) break;
+
+            for(unsigned left = size; left > 0; )
             {
-                fprintf(stderr, " fwrite failed: %d != %d - this patch will be broken.\n", ret, c);
-                perror("fwrite");
+                unsigned count = MaxHunkSize;
+                if(count > left) count = left;
+                
+                /*
+                fprintf(stderr, "Writing %u(of %u) @ %06X\n", count, left, addr);
+                */
+                
+                if(addr == IPS_EOF_MARKER)
+                {
+                    fprintf(stderr,
+                        "Error: IPS doesn't allow patches that go to $%X\n", addr);
+                }
+                else if(addr == IPS_ADDRESS_EXTERN)
+                {
+                    fprintf(stderr,
+                        "Error: Address $%X is reserved for IPS_ADDRESS_EXTERN\n", addr);
+                }
+                else if(addr == IPS_ADDRESS_GLOBAL)
+                {
+                    fprintf(stderr,
+                        "Error: Address $%X is reserved for IPS_ADDRESS_GLOBAL\n", addr);
+                }
+                else if(addr > 0xFFFFFF)
+                {
+                    fprintf(stderr,
+                        "Error: Address $%X is too big for IPS format\n", addr);
+                }
+                
+                PutL((addr + offset) & 0x3FFFFF, fp);
+                PutMW(count, fp);
+                
+                std::vector<unsigned char> data = ROM.GetContent(addr, count);
+                
+                PutS(&data[0], count, fp);
+                
+                left -= count;
+                addr += count;
             }
         }
         fwrite("EOF",   1, 3, fp);
@@ -133,7 +180,7 @@ int main(void)
 
     fprintf(stderr,
         "Chrono Trigger script insertor version "VERSION"\n"
-        "Copyright (C) 1992,2003 Bisqwit (http://iki.fi/bisqwit/)\n");
+        "Copyright (C) 1992,2004 Bisqwit (http://iki.fi/bisqwit/)\n");
     
     insertor *ins = new insertor;
     

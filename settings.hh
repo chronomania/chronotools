@@ -1,12 +1,3 @@
-// writeout.cc:
-namespace
-{
-    // Where will the conjugater call go
-    const unsigned ConjugatePatchAddress = 0x0258C2;
-    
-    // The rest of the address list is in ctdump.cc
-}
-
 enum
 {
     TILETAB_8_ADDRESS=0,

@@ -1,0 +1,14 @@
+*= $C3F87F
+; Patch -65M timebox
+
+.byt $FC, $00, $88, $01
+.byt $0C, $00, $8C, $01
+.byt $1C, $00, $8E, $01
+.byt $2C, $00, $8A, $01
+
+*= $C3F890
+; Patch -12k timebox
+
+.byt $FE, $00, $A0, $01
+.byt $0E, $00, $A2, $01
+.byt $1E, $00, $8A, $01

@@ -181,8 +181,8 @@ namespace
                 
                 if(!exp.jump_from.empty())
                 {
-                	rec.AssumeWorst();
-                	return;
+                    rec.AssumeWorst();
+                    return;
                 }
                 
                 exp.TraceUsage(rec, type, param);

@@ -2,9 +2,8 @@
 #define bqtctSpaceHH
 
 #include <map>
+#include <set>
 #include <vector>
-
-using namespace std;
 
 #include "rangeset.hh"
 
@@ -29,7 +28,7 @@ struct freespacerec
 typedef rangeset<unsigned> freespaceset;
 
 /* page->list */
-class freespacemap : public map<unsigned, freespaceset>
+class freespacemap : public std::map<unsigned, freespaceset>
 {
     bool quiet;
 public:
@@ -37,6 +36,8 @@ public:
     
     void Report() const;
     void DumpPageMap(unsigned pagenum) const;
+    
+    void VerboseDump() const;
     
     // Returns segment-relative address (16-bit)
     unsigned Find(unsigned page, unsigned length);
@@ -47,7 +48,7 @@ public:
     unsigned Size(unsigned page) const;
     unsigned GetFragmentation(unsigned page) const;
     
-    const set<unsigned> GetPageList() const;
+    const std::set<unsigned> GetPageList() const;
     const freespaceset& GetList(unsigned pagenum) const;
     
     // Uses segment-relative addresses (16-bit)
@@ -59,16 +60,18 @@ public:
     void Del(unsigned longaddr, unsigned length);
     
     // Uses segment-relative addresses (16-bit)
-    bool Organize(vector<freespacerec> &blocks, unsigned pagenum);
+    bool Organize(std::vector<freespacerec> &blocks, unsigned pagenum);
     // Return value: errors-flag
 
     // Uses absolute addresses (24-bit)
-    bool OrganizeToAnyPage(vector<freespacerec> &blocks);
+    bool OrganizeToAnyPage(std::vector<freespacerec> &blocks);
     // Return value: errors-flag
 
     // Uses segment-relative addresses (16-bit), sets page
-    bool OrganizeToAnySamePage(vector<freespacerec> &blocks, unsigned &page);
+    bool OrganizeToAnySamePage(std::vector<freespacerec> &blocks, unsigned &page);
     // Return value: errors-flag
+    
+    void OrganizeO65linker(class O65linker& objects);
     
     void Compact();
 };

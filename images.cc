@@ -5,7 +5,6 @@
 #include "images.hh"
 #include "rom.hh"
 #include "msginsert.hh"
-#include "snescode.hh"
 
 void LoadImageData
     (const TGAimage& image,
@@ -57,20 +56,6 @@ void LoadImageData
     }
 }
 
-void insertor::LoadImage(const string& fn, unsigned address)
-{
-    const TGAimage image(fn);
-    
-    vector<unsigned char> data;
-    LoadImageData(image, data);
-    
-    char Buf[64];
-    sprintf(Buf, " @ $%06X", address | 0xC00000);
-    MessageLoadingItem(fn + Buf);
-
-    PlaceData(data, address, fn);
-}
-
 void insertor::LoadImages()
 {
     MessageLoadingImages();
@@ -83,7 +68,15 @@ void insertor::LoadImages()
             unsigned address            = elems[a];
             const ucs4string& filename  = elems[a+1];
             
-            LoadImage(WstrToAsc(filename), address);
+            const string fn = WstrToAsc(filename);
+            const TGAimage image(fn);
+            
+            vector<unsigned char> data;
+            LoadImageData(image, data);
+            
+            MessageLoadingItem(fn);
+            
+            objects.AddLump(data, address, fn);
         }
     }
     
@@ -117,16 +110,17 @@ void insertor::LoadImages()
             
             //fprintf(stderr, " (%u bytes)\n", data.size());
             
-            objects.AddObject(CreateObject(data, fn), fn);
+            const string name = fn + " data";
+            objects.AddLump(data, fn, name);
             
             if(ptr_seg_address == ptr_ofs_address+2)
             {
-                objects.AddReference(fn, LongPtrFrom(ptr_ofs_address));
+                objects.AddReference(name, LongPtrFrom(ptr_ofs_address));
             }
             else
             {
-                objects.AddReference(fn, OffsPtrFrom(ptr_ofs_address));
-                objects.AddReference(fn, PagePtrFrom(ptr_seg_address));
+                objects.AddReference(name, OffsPtrFrom(ptr_ofs_address));
+                objects.AddReference(name, PagePtrFrom(ptr_seg_address));
             }
         }
     }

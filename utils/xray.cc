@@ -117,14 +117,14 @@ static void putc(unsigned x,unsigned y, unsigned char ch, unsigned char c)
 static void UncompressDump(FILE *fp)
 {
     return;
-    
+/*
     long origpos = ftell(fp);
     unsigned char Buf[8192];
     fread(Buf, 1, sizeof Buf, fp);
     
     vector<unsigned char> Result;
     unsigned size = Uncompress(Buf, Result);
-    
+*/    
 }
 
 static void Disp(const char *s)
@@ -251,6 +251,8 @@ Redraw:
                         {
                             b1 = Buf[nes?y:y*bits/8];
                             b2 = Buf[nes?y+8:y*bits/8+1];
+                            b3 = 0;
+                            b4 = 0;
                         }
                         switch(bits)
                         {
@@ -347,7 +349,7 @@ Redraw:
 
 int main(int argc, const char *const *argv)
 {
-    setenv("GGI_DISPLAY", "x:-noshm", 1);
+    //setenv("GGI_DISPLAY", "x:-noshm", 1);
     
     if(argc<2 || access(argv[argc-1], O_RDONLY))
     {
