@@ -247,7 +247,7 @@ int main(void)
     
     ins->DictionaryCompress();
     
-    ins->GenerateCode();
+    /////////ins->GenerateCode();
     
     ins->freespace.Report();
 

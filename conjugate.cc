@@ -11,6 +11,7 @@ using namespace std;
 
 namespace
 {
+    const char functionfn[]            = "ct.code";
     const unsigned char AllowedBytes[] = {0xFF,0xFE,0xFC,0xFB,0xFA};
 }
 
@@ -19,36 +20,49 @@ void Conjugatemap::Load()
     form tmp;
     tmp.data = CreateMap
         ( "Cronon", "Marlen", "Luccan", "Lucan",
-          "Robon", "Frogin", "Aylan", "Maguksen",
-          "Magusin", "Epochin", 0 );
+          "Robon", "Frogn", "Frogin", "Aylan", "Maguksen",
+          "Magusin", "Epochin",
+          "[member1]:n", "[member2]:n", "[member3]:n",
+          0 );
     tmp.type = Cnj_N;
     AddForm(tmp);
     
     tmp.data = CreateMap
         ( "Cronoa", "Marlea", "Luccaa",
           "Roboa", "Frogia", "Froggia",
-          "Aylaa", "Magusta", "Epochia", 0 );
+          "Aylaa", "Magusta", "Epochia",
+          "[member1]:a", "[member2]:a", "[member3]:a",
+          "[member1]:ä", "[member2]:ä", "[member3]:ä",
+          0 );
     tmp.type = Cnj_A;
     AddForm(tmp);
     
     tmp.data = CreateMap
         ( "Cronolla", "Marlella", "Luccalla", "Lucalla",
           "Robolla", "Frogilla", "Aylalla", "Maguksella",
-          "Magusilla", "Epochilla", 0 );
+          "Magusilla", "Epochilla", 
+          "[member1]:lla", "[member2]:lla", "[member3]:lla",
+          "[member1]:llä", "[member2]:llä", "[member3]:llä",
+          0 );
     tmp.type = Cnj_LLA;
     AddForm(tmp);
     
     tmp.data = CreateMap
         ( "Cronolle", "Marlelle", "Luccalle", "Lucalle",
           "Robolle", "Frogille", "Aylalle", "Magukselle",
-          "Magusille", "Epochille", 0 );
+          "Magusille", "Epochille", 
+          "[member1]:lle", "[member2]:lle", "[member3]:lle",
+          0 );
     tmp.type = Cnj_LLE;
     AddForm(tmp);
     
     tmp.data = CreateMap
         ( "Cronosta", "Marlesta", "Luccasta", "Lucasta",
           "Robosta", "Frogista", "Aylasta", "Maguksesta",
-          "Magusista", "Epochista", 0 );
+          "Magusista", "Epochista", 
+          "[member1]:sta", "[member2]:sta", "[member3]:sta",
+          "[member1]:stä", "[member2]:stä", "[member3]:stä",
+          0 );
     tmp.type = Cnj_STA;
     AddForm(tmp);
 }
@@ -63,7 +77,21 @@ void Conjugatemap::AddData(datamap_t &target, const string &s) const
     {
         case 'C': name = "Crono"; break;
         case 'L': name = "Lucca"; break;
-        case 'M': name = s[2]=='g' ? "Magus" : "Marle"; break;
+        case 'M':
+            switch(s[2])
+            {
+                case 'g': name = "Magus"; break;
+                case 'r': name = "Marle"; break;
+            }
+            break;
+        case '[':
+            switch(s[7])
+            {
+                case '1': name = "[member1]"; break;
+                case '2': name = "[member2]"; break;
+                case '3': name = "[member3]"; break;
+            }
+            break;
         case 'R': name = "Robo"; break;
         case 'F': name = "Frog"; break;
         case 'A': name = "Ayla"; break;
@@ -76,7 +104,8 @@ void Conjugatemap::AddData(datamap_t &target, const string &s) const
     string key = str_replace(name, person, s);
     for(unsigned a=0; a<key.size(); ++a)
         if((key[a] >= 'a' && key[a] <= 'z')
-        || (key[a] >= 'A' && key[a] <= 'Z'))
+        || (key[a] >= 'A' && key[a] <= 'Z')
+        || (key[a] == ':' || key[a] == 'ä'))
             key[a] = getchronochar(key[a]);
 #if 0
     fprintf(stderr, "Key '%s'(from '%s') = '%s' (%02X)\n",
@@ -148,7 +177,7 @@ void Conjugatemap::Work(string &s, const form &form)
 Conjugatemap::Conjugatemap()
 {
     Load();
-    fprintf(stderr, "Built conjugater-map\n");
+    fprintf(stderr, "Built conjugator-map\n");
 }
 
 void Conjugatemap::Work(string &s, const string &plaintext)
@@ -266,16 +295,17 @@ namespace
 
 void insertor::GenerateCode()
 {
-    FILE *fp = fopen("taipus.txt", "rt");
+    FILE *fp = fopen(functionfn, "rt");
     if(!fp) return;
     
+    fprintf(stderr, "Compiling %s...\n", functionfn);
     FunctionList Functions = Compile(fp);
     fclose(fp);
     
-    SubRoutine conjugater = GetConjugateCode();
-    Functions.Define("conjugater", conjugater);
+    SubRoutine conjugator = GetConjugateCode();
+    Functions.Define("conjugator", conjugator);
     
-    Functions.RequireFunction("conjugater");
+    Functions.RequireFunction("conjugator");
     
     vector<SNEScode> codeblobs;
     vector<string>   funcnames;
@@ -299,7 +329,14 @@ void insertor::GenerateCode()
     freespace.OrganizeToAnyPage(blocks);
     
     for(unsigned a=0; a<codeblobs.size(); ++a)
-        codeblobs[a].YourAddressIs(blocks[a].pos);
+    {
+        unsigned addr = blocks[a].pos;
+        codeblobs[a].YourAddressIs(addr);
+        fprintf(stderr, "  Function %s (%u bytes) will be placed at %02X:%04X\n",
+            funcnames[a].c_str(),
+            codeblobs[a].size(),
+            addr>>16, addr & 0xFFFF);
+    }
     
     // All of them are now placed somewhere.
     // Link them!

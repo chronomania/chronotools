@@ -192,6 +192,9 @@ void insertor::PatchROM(ROM &ROM)
     WriteStrings(ROM);
     Write8pixfont(ROM);
     Write12pixfont(ROM);
+    
+    GenerateCode(); 
+    
     WriteCode(ROM);
 }
 

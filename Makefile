@@ -25,10 +25,11 @@ include Makefile.sets
 # VERSION 1.1.2  and so on
 # VERSION 1.1.3  and so on... almost working! "case" still doesn't work.
 # VERSION 1.1.4  conjugating finally works!
+# VERSION 1.1.5  some bugfixes
 
 OPTIM=-O3
 
-VERSION=1.1.4
+VERSION=1.1.5
 ARCHFILES=xray.c xray.h \
           viewer.c \
           ctcset.cc ctcset.hh \
@@ -40,17 +41,18 @@ ARCHFILES=xray.c xray.h \
           rom.cc rom.hh \
           fonts.cc fonts.hh \
           conjugate.cc conjugate.hh \
-          compiler.cc compiler.hh compiletest.cc \
+          compiler.cc compiler.hh \
           symbols.cc symbols.hh \
           tgaimage.cc tgaimage.hh \
           ctdump.cc ctinsert.cc \
           ctinsert.hh writeout.cc \
           makeips.cc unmakeips.cc \
-          taipus.rb taipus.cc taipus.txt \
+          taipus.rb ct.code \
           progdesc.php \
           spacefind.cc base62.cc sramdump.cc \
           binpacker.tcc binpacker.hh \
           README transnotes.txt
+
 EXTRA_ARCHFILES=\
           ct_try.txt \
           ct8fnFI.tga ct16fnFI.tga
@@ -59,7 +61,7 @@ ARCHNAME=chronotools-$(VERSION)
 ARCHDIR=archives/
 
 PROGS=xray viewer ctdump ctinsert makeips unmakeips \
-      spacefind base62 sramdump taipus compiletest
+      spacefind base62 sramdump
 
 all: $(PROGS)
 
@@ -91,17 +93,13 @@ sramdump: sramdump.cc wstring.o
 	$(CXX) -g -O -Wall -W -pedantic -o $@ $^
 base62: base62.cc
 	$(CXX) -g -O -Wall -W -pedantic -o $@ $^
-taipus: taipus.cc
-	$(CXX) -g -O -Wall -W -pedantic -o $@ $^
-compiletest: compiletest.cc compiler.o snescode.o ctcset.o wstring.o
-	$(CXX) -g -O -Wall -W -pedantic -o $@ $^
 
 ct.txt: ctdump chrono-dumpee.smc
 	./ctdump >ct_tmp.txt || rm -f ct_tmp.txt && false
 	mv ct_tmp.txt ct.txt
 
 ctpatch-hdr.ips ctpatch-nohdr.ips: \
-		ctinsert ct.txt taipus.txt \
+		ctinsert ct.txt ct.code \
 		ct16fn.tga ct8fn.tga
 	./ctinsert
 

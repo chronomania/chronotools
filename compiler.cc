@@ -25,10 +25,10 @@ void FunctionList::RequireFunction(const string &name)
     const SubRoutine &func = i->second.first;
     
     if(required) return;
-    
+#if 0
     fprintf(stderr, "Requiring function '%s' (%u bytes)...\n",
         name.c_str(), func.code.size());
-    
+#endif
     required = true;
     
     SubRoutine::requires_t::const_iterator j;
@@ -382,6 +382,8 @@ public:
         CODE.AddCode(0xA9,0x00,0x00);      // LDA $0000
         CODE.AddCode(0xAA);                // TAX
         
+        /* FIXME: Not really intelligent to repeat this in all! */
+        
         loopbegin->ToHere();
         
         // TÄHÄN LABEL
@@ -393,22 +395,42 @@ public:
          // Huom. Tässä välissä eivät muuttujaviittaukset toimi.
          SNEScode::RelativeBranch branchNonEpoch = CODE.PrepareRelativeBranch();
          SNEScode::RelativeBranch branchEpoch    = CODE.PrepareRelativeBranch();
+         SNEScode::RelativeBranch branchNonMember= CODE.PrepareRelativeBranch();
+         SNEScode::RelativeBranch branchMemberSkip=CODE.PrepareRelativeBranch();
          CODE.AddCode(0xA9,0x00,0x00);  // lda $0000
          CODE.AddCode(0xA8);            // tay
          CODE.Set8bit_M();
          CODE.AddCode(0xA7, 0x31); // Id of the name
-         CODE.AddCode(0xC9, 0x20); // If it's Epoch
-         CODE.AddCode(0xD0, 0);    // bne
+         CODE.AddCode(0xC9, 0x20); // CMP A,$20 - If it's Epoch
+         CODE.AddCode(0xD0, 0);    // BNE - jump over if not
          branchNonEpoch.FromHere();
          // Yes, Epoch.
          CODE.Set16bit_M();
          CODE.AddCode(0xA9, 0x4D, 0x2C);    // Load Epoch address $2C4D
-         CODE.AddCode(0x80, 0);             // bra
+         CODE.AddCode(0x80, 0);             // BRA - jump to character name handling
          branchEpoch.FromHere();
+
          branchNonEpoch.ToHere();
+         // No Epoch
          CODE.Set8bit_M();
-         CODE.AddCode(0x38, 0xE9, 0x13); // a-=$13
-         CODE.AddCode(0x0A, 0xAA);       // x=a*2
+         CODE.AddCode(0xC9, 0x1E); // CMP A,$1B - if it's < [member1]
+         CODE.AddCode(0x90, 0);    // BCS - jump over if is <
+         branchNonMember.FromHere();
+         // Yes, it's [member1](1B) or [member2](1C) or [member3](1D).
+         CODE.Set8bit_M();
+         CODE.AddCode(0x38,0xE9,0x1B);      // vähennetään $1B (sec; sbc A,$1B)
+         CODE.AddCode(0xAA);                // TAX
+         CODE.AddCode(0xBF,0x80,0x29,0x7E); // haetaan memberin numero
+         CODE.AddCode(0x80, 0);    // BRA - skip to mul2
+         branchMemberSkip.FromHere();
+         
+         branchNonMember.ToHere();
+         // No member
+         CODE.Set8bit_M();
+         CODE.AddCode(0x38, 0xE9, 0x13); // vähennetään $13 (sec; sbc A,$13)
+         branchMemberSkip.ToHere();
+         CODE.Set8bit_M();
+         CODE.AddCode(0x0A, 0xAA);       // ASL A; TAX
          CODE.Set16bit_M();
          CODE.AddCode(0xBF,0xD8,0x5F,0xC2); // haetaan pointteri nimeen
          branchEpoch.ToHere();
@@ -419,6 +441,8 @@ public:
          CODE.AddCode(0x8D,0x39,0x02);
          branchEpoch.Proceed();
          branchNonEpoch.Proceed();
+         branchMemberSkip.Proceed();
+         branchNonMember.Proceed();
         CODE.Set16bit_X();
         CODE.Set16bit_M();
         CODE.AddCode(0xFA); // PLX

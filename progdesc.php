@@ -89,10 +89,6 @@ I.e. \$C2:5D4C -> rRhU and vice versa.<br>
 This development system uses base62 in the script
 dumps to reduce the amount of code written.
 
-", '1.1.1. compiletest' => "
-
-A test of the inline code compiler.
-
 ", '1. Technical limitations' => "
 
 ", '1.1. Space' => "

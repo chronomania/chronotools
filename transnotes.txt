@@ -70,5 +70,7 @@ TEKNISIÄ OHJEITA
        reptite           = liskos
        prophet           = Profeetta
        mammon machine    = Mammonakone
-       ocean palace      = Meripalatsi
-       
+       ocean palace      = Valtameripalatsi
+       power tab         = voimanappi
+       magic tab         = taikanappi
+       speed tab         = nopsanappi

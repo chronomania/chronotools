@@ -28,10 +28,11 @@ void ROM::AddCall(unsigned codeaddress, unsigned target)
 
 void ROM::AddSubRoutine(unsigned target, const vector<unsigned char> &code)
 {
+#if 0
     fprintf(stderr, "Adding %u bytes long subroutine at %02X:%04X\n",
         code.size(),
         0xC0 | (target >> 16), target & 0xFFFF);
-    
+#endif
     unsigned rompos = target & 0x3FFFFF;
     
     for(unsigned a=0; a<code.size(); ++a)

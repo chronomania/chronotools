@@ -1,7 +1,8 @@
 #
 # This file is derived from taipus.cc, and attempts to describe
 # the algorithm so that it's translatable in asm.
-#
+# 
+# It is responsible of conjugating names in the game.
 #
 #  Syntax
 #
@@ -129,8 +130,10 @@ s Hint1 0
 RETURN Hint1
 
 :B IsAbbrev
-# C6:F000
 VAR Len Vowels WasVowel ElseFlag
+s Len 0
+s Vowels 0
+s WasVowel 0
 {
   + Len
   s ElseFlag 1
@@ -240,11 +243,9 @@ cv OutWord Len
 cv OutByte 'i'
 RET
 
-# C6:F2C2
 :B SoftStem
 VAR Len Hint
 ci Length Len
-# C6:F2CF
 cb IsAbbrev
   cv OutWord Len
   cv OutByte ':'
@@ -256,7 +257,6 @@ cb IsEs
   cv OutByte 's'
   cv OutByte 'e'
   RET
-# C6:F34D
 cb EndWithVowel
   cb DoubleHard
     - Len

@@ -214,7 +214,7 @@ $C2:5900 7C 03 59    JMP [PB:word[PB:$5903+x]]  ;$C2:5B15 A:0026 X:0026 Y:0013 D
 //    5B85: num16
 //    5BC8: num32
 //    5B14: #$10 ?
-//    5B26: member
+//    5B26: <viimeksi ladattu sana>
 //    5B4C: tech
 //    5B15: player name
 //    5B3B: crononick
@@ -246,20 +246,33 @@ $C2:5B28 8D 39 02    STA [DB:$0239]       ;$00:0239     A:2C7E X:0000 Y:0013 D:0
 $C2:5B2B A9 01       LDA A, $01                         A:2C7E X:0000 Y:0013 D:0200 DB:00 PB:C2
 $C2:5B2D 85 30       STA [$00:D+$30]      ;$00:0230     A:2C01 X:0000 Y:0013 D:0200 DB:00 PB:C2
 
-// Alirutiini...
-// ...joka laskee merkkijonon pituuden!
-// Osoite: $7E:2C23. Ilmeisesti RAM!
-// Tuloksen(0-5) rutiini sijoittaa A:han.
 $C2:5B2F 20 45 5D    JSR [DB:$5D45]       ;$00:5D45     A:2C01 X:0000 Y:0013 D:0200 DB:00 PB:C2
-$C2:5D45 A0 00 00    LDY $0000                          A:2C01 X:0000 Y:0013 D:0200 DB:00 PB:C2
+// ^ kutsui strleniä, mutta jatketaan tästä:
 // Pituus tallennetaan.
 $C2:5B32 8D 3A 02    STA [DB:$023A]       ;$00:023A     A:2C05 X:0000 Y:0005 D:0200 DB:00 PB:C2
 $C2:5B35 A9 00       LDA A, $00                         A:2C05 X:0000 Y:0005 D:0200 DB:00 PB:C2
 $C2:5B37 EB          XBA                                A:2C00 X:0000 Y:0005 D:0200 DB:00 PB:C2
 $C2:5B38 4C F5 5B    JMP [DB:$5BF5]       ;$00:5BF5     A:002C X:0000 Y:0005 D:0200 DB:00 PB:C2
 
-//   EPOCH - KÄSITTELIJÄ
 
+//   CRONONICK - KÄSITTELIJÄ
+; 2C23 = Cronon nimen osoite
+$C2:5B3B A2 23 2C    LDX $2C23                          A:0034 X:0034 Y:001A D:0200 DB:00 PB:C2
+$C2:5B3E A9 7E       LDA A, $7E                         A:0034 X:2C23 Y:001A D:0200 DB:00 PB:C2
+$C2:5B40 8E 37 02    STX DB:$0237         ;$00:0237     A:007E X:2C23 Y:001A D:0200 DB:00 PB:C2
+$C2:5B43 8D 39 02    STA DB:$0239         ;$00:0239     A:007E X:2C23 Y:001A D:0200 DB:00 PB:C2
+$C2:5B46 20 45 5D    JSR DB:$5D45         ;$00:5D45     A:007E X:2C23 Y:001A D:0200 DB:00 PB:C2
+// ^ kutsui strleniä, mutta jatketaan tästä:
+$C2:5B49 8D 3A 02    STA DB:$023A         ;$00:023A     A:0005 X:2C23 Y:0005 D:0200 DB:00 PB:C2
+$C2:5B4C A9 01       LDA A, $01                         A:0005 X:2C23 Y:0005 D:0200 DB:00 PB:C2
+$C2:5B4E 85 30       STA [$00:D+$30]      ;$00:0230     A:0001 X:2C23 Y:0005 D:0200 DB:00 PB:C2
+$C2:5B50 A9 00       LDA A, $00                         A:0001 X:2C23 Y:0005 D:0200 DB:00 PB:C2
+$C2:5B52 EB          XBA                                A:0000 X:2C23 Y:0005 D:0200 DB:00 PB:C2
+$C2:5B53 4C F5 5B    JMP DB:$5BF5         ;$00:5BF5     A:0000 X:2C23 Y:0005 D:0200 DB:00 PB:C2
+
+
+//   EPOCH - KÄSITTELIJÄ
+; 2C4D = Epochin nimen osoite
 $C2:5BD6 C2 20       REP $20                            A:0040 X:0040 Y:0020 D:0200 DB:00 PB:C2
 $C2:5BD8 A9 4D 2C    LDA A, $2C4D                       A:0040 X:0040 Y:0020 D:0200 DB:00 PB:C2
 $C2:5BDB 8D 37 02    STA DB:$0237         ;$00:0237     A:2C4D X:0040 Y:0020 D:0200 DB:00 PB:C2
@@ -274,6 +287,34 @@ $C2:5BEC 8D 3A 02    STA DB:$023A         ;$00:023A     A:2C05 X:0040 Y:0005 D:0
 $C2:5BEF A9 00       LDA A, $00                         A:2C05 X:0040 Y:0005 D:0200 DB:00 PB:C2
 $C2:5BF1 EB          XBA                                A:2C00 X:0040 Y:0005 D:0200 DB:00 PB:C2
 $C2:5BF2 4C F5 5B    JMP DB:$5BF5         ;$00:5BF5     A:002C X:0040 Y:0005 D:0200 DB:00 PB:C2
+
+//   MEMBER# -KÄSITTELIJÄ
+; y:ssä on se merkki
+$C2:5B70 98          TYA                                A:0036 X:0036 Y:001B D:0200 DB:00 PB:C2
+$C2:5B71 38          SEC                                A:001B X:0036 Y:001B D:0200 DB:00 PB:C2
+$C2:5B72 E9 1B       SBC A, $1B                         A:001B X:0036 Y:001B D:0200 DB:00 PB:C2
+; siitä vähennetään $1B
+$C2:5B74 AA          TAX                                A:0000 X:0036 Y:001B D:0200 DB:00 PB:C2
+;; 7E:2980 -taulua indeksoidaan sillä
+$C2:5B75 BF 80 29 7E LDA $7E:($2980+x)    ;$7E:2980     A:0000 X:0000 Y:001B D:0200 DB:00 PB:C2
+; Nyt A+$13 on hahmon symboli.
+$C2:5B79 0A          ASL A                              A:0000 X:0000 Y:001B D:0200 DB:00 PB:C2
+$C2:5B7A AA          TAX                                A:0000 X:0000 Y:001B D:0200 DB:00 PB:C2
+$C2:5B7B C2 20       REP $20                            A:0000 X:0000 Y:001B D:0200 DB:00 PB:C2
+$C2:5B7D BF D8 5F C2 LDA $C2:($5FD8+x)    ;$C2:5FD8     A:0000 X:0000 Y:001B D:0200 DB:00 PB:C2
+$C2:5B81 8D 37 02    STA DB:$0237         ;$00:0237     A:2C23 X:0000 Y:001B D:0200 DB:00 PB:C2
+$C2:5B84 E2 20       SEP $20                            A:2C23 X:0000 Y:001B D:0200 DB:00 PB:C2
+$C2:5B86 A9 7E       LDA A, $7E                         A:2C23 X:0000 Y:001B D:0200 DB:00 PB:C2
+$C2:5B88 8D 39 02    STA DB:$0239         ;$00:0239     A:2C7E X:0000 Y:001B D:0200 DB:00 PB:C2
+$C2:5B8B A9 01       LDA A, $01                         A:2C7E X:0000 Y:001B D:0200 DB:00 PB:C2
+$C2:5B8D 85 30       STA [$00:D+$30]      ;$00:0230     A:2C01 X:0000 Y:001B D:0200 DB:00 PB:C2
+$C2:5B8F 20 45 5D    JSR DB:$5D45         ;$00:5D45     A:2C01 X:0000 Y:001B D:0200 DB:00 PB:C2
+// ^ kutsui strleniä, mutta jatketaan tästä:
+$C2:5B92 8D 3A 02    STA DB:$023A         ;$00:023A     A:2C05 X:0000 Y:0005 D:0200 DB:00 PB:C2
+$C2:5B95 A9 00       LDA A, $00                         A:2C05 X:0000 Y:0005 D:0200 DB:00 PB:C2
+$C2:5B97 EB          XBA                                A:2C00 X:0000 Y:0005 D:0200 DB:00 PB:C2
+$C2:5B98 4C F5 5B    JMP DB:$5BF5         ;$00:5BF5     A:002C X:0000 Y:0005 D:0200 DB:00 PB:C2
+
 
 
 
