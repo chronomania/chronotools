@@ -1,0 +1,180 @@
+<html><head><meta http-equiv="Content-type" content="text/html; charset=iso-8859-1">
+ <title>Chrono Trigger translation development system</title>
+ <style type="text/css"><!--
+TABLE.toc {border:0px}
+A:link,A:visited{text-decoration:none;color:#2A3B83}
+A:hover{text-decoration:underline;color:#002040}
+A:active{text-decoration:underline;color:#004060;background:#CCD8FF}
+TD.toc   {font-size:80%; font-family:Tahoma; text-align:left}
+H1       {font-size:250%; font-weight:bold} .level1 {text-align:center}
+H2       {font-size:200%; font-weight:bold} .level2 {margin-left:1%}
+H3       {font-size:160%; font-weight:bold} .level3 {margin-left:2%}
+H4       {font-size:145%; font-weight:bold} .level4 {margin-left:3%}
+H5       {font-size:130%; font-weight:bold} .level5 {margin-left:4%}
+H6       {font-size:110%; font-weight:bold} .level5 {margin-left:5%}
+BODY{background:white;color:black}
+CODE{font-family:lucida console,courier new,courier;color:#105000}
+PRE.smallerpre{font-family:lucida console,courier new,courier;font-size:80%;color:#500010;margin-left:30px}
+SMALL    {font-size:70%}
+--></style></head>
+ <body>
+  <h1>Chrono Trigger translation development system</h1>
+  <h2 class=level2> 0. Contents </h2>
+  
+  This is the documentation of chronotools-1.0.21.
+<div class=toc><table cellspacing=0 cellpadding=0 class=toc><tr><td width="50%" valign=middle align=left nowrap class=toc>&nbsp;&nbsp;&nbsp;1. <a href="#h0">Purpose</a><br>&nbsp;&nbsp;&nbsp;2. <a href="#h1">Program list</a><br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;2.1. <a href="#h2">ctdump</a><br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;2.2. <a href="#h3">ctinsert</a><br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;2.3. <a href="#h4">other</a><br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;2.3.1. <a href="#h5">makeips</a><br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;2.3.2. <a href="#h6">unmakeips</a><br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;2.3.3. <a href="#h7">xray</a><br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;2.3.4. <a href="#h8">viewer</a><br></td>
+<td width="50%" valign=middle align=left nowrap class=toc>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;2.3.5. <a href="#h9">spacefind</a><br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;2.3.6. <a href="#h10">taipus.rb</a><br>&nbsp;&nbsp;&nbsp;3. <a href="#h11">Technical limitations</a><br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;3.1. <a href="#h12">Space</a><br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;3.2. <a href="#h13">Font</a><br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;3.3. <a href="#h14">Code</a><br>&nbsp;&nbsp;&nbsp;4. <a href="#h15">Copying</a><br>&nbsp;&nbsp;&nbsp;5. <a href="#h16">Requirements</a><br>&nbsp;&nbsp;&nbsp;6. <a href="#h17">See also</a><br>&nbsp;&nbsp;&nbsp;7. <a href="#download">Downloading</a><br></td>
+</tr></table></div><H2 class="level2"><a name="h0"></a>1. Purpose</H2><div class="level2">
+
+Tools aiding in
+<a href="http://bisqwit.iki.fi/ctfin/">Bisqwit's Finnish Chrono Trigger translation</a>.
+
+</div><H2 class="level2"><a name="h1"></a>2. Program list</H2><div class="level2">
+
+</div><H3 class="level3"><a name="h2"></a>2.1. ctdump</H3><div class="level3">
+
+Dumps the script and fonts from a given ROM.<br>
+Requires <code>chrono-dumpee.smc</code>.<br>
+Produces <code>ct_eng.txt</code>,
+<code>ct8fn.tga</code> and <code>ct16fn.tga</code>.
+<p>
+Sample of produced script:<pre class=smallerpre
+>;Battle tutorials, Zeal stuff, party stuff
+*z;39 pointerstrings (12pix font)
+$HSs4:
+Taistelun aikana jokaisen iskun[nl]
+   teho vaihtelee iskun mukaan.
+$HSs6:
+Ensinnäkin, voit iskeä myös[nl]
+   useampaa, kuin yhtä vihollista[nl]
+   kerralla.
+$HSs8:
+Voit esimerkiksi tähdätä tätä[nl]
+   hirviötä...</pre>
+(Dumped from
+<a href="http://hallucinat.ionstream.fi/teemu/engine.html?page=13"
+>inf's Finnish Chrono Trigger translation</a>).
+
+</div><H3 class="level3"><a name="h3"></a>2.2. ctinsert</H3><div class="level3">
+
+Reinserts the (edited) script and (edited) fonts to a ROM.<br>
+Requires <code>ct.txt</code>,
+<code>ct8fn.tga</code> and <code>ct16fn.tga</code>.<br>
+Produces <code>ctpatch-hdr.ips</code>
+and <code>ctpatch-nohdr.ips</code>.<br>
+Curiously, it doesn't require the ROM.
+
+</div><H3 class="level3"><a name="h4"></a>2.3. other</H3><div class="level3">
+
+</div><H4 class="level4"><a name="h5"></a>2.3.1. makeips</H4><div class="level4">
+
+Compares two ROMs and produces a patch file in IPS format.
+
+</div><H4 class="level4"><a name="h6"></a>2.3.2. unmakeips</H4><div class="level4">
+
+Reads a ROM and an IPS file and produces a patched ROM file.
+
+</div><H4 class="level4"><a name="h7"></a>2.3.3. xray</H4><div class="level4">
+
+xray is a libggi-requiring application
+for browsing the ROM contents.
+
+</div><H4 class="level4"><a name="h8"></a>2.3.4. viewer</H4><div class="level4">
+
+viewer requires S-Lang and is a textmode ROM browser
+originally developed by me for Pokémon hacking.
+
+</div><H4 class="level4"><a name="h9"></a>2.3.5. spacefind</H4><div class="level4">
+
+A <a href="/source/jaa3.html">bin-packing</a> algorithm test.
+
+</div><H4 class="level4"><a name="h10"></a>2.3.6. taipus.rb</H4><div class="level4">
+
+This one is <a href="/ctfin/taipus.rb">publicly available</a>.
+It conjugates names in Finnish. It's supposed to get translated
+to SNES assembler by somebody.
+
+</div><H2 class="level2"><a name="h11"></a>3. Technical limitations</H2><div class="level2">
+
+</div><H3 class="level3"><a name="h12"></a>3.1. Space</H3><div class="level3">
+
+The ROM doesn't have much space for text.<br>
+It does apply a compression method, but some text
+compresses better than some other.<br>
+This might cause problems if too much different words are used
+in the script, but it isn't a real problem preventing translation.
+
+</div><H3 class="level3"><a name="h13"></a>3.2. Font</H3><div class="level3">
+
+The 12-pix font has only 96 characters available.<br>
+Originally the characters are arranged like this:<br>
+<img src="http://bisqwit.iki.fi/src/chronotools-16en.png"
+     alt="(Chrono Trigger English 12pix font)"><br clear=all>
+My font contains currently this slightly rearranged character map:<br>
+<img src="http://bisqwit.iki.fi/src/chronotools-16fi.png"
+     alt="(Chrono Trigger Finnish 12pix font)"><br clear=all>
+You can imagine in your mind, about which characters you would replace
+with another to get support for Thai for example...
+<p>
+Similarly the 8-pix font has undergone some changes.<br>
+It has lots more redundant space though.<br>
+Originally:<br>
+<img src="http://bisqwit.iki.fi/src/chronotools-8en.png"
+     alt="(Chrono Trigger English 8pix font)"><br clear=all>
+Bisqwit's Finnish 8pix Chrono Trigger font:<br>
+<img src="http://bisqwit.iki.fi/src/chronotools-8fi.png"
+     alt="(Chrono Trigger Finnish 8pix font)"><br clear=all>
+
+<p>
+If you are translating to a language that utilizes lots of
+different symbols, you might want to try to base on the
+Japanese version instead. This utility pack bases on the
+English version.<br>
+(Sorry, I can't help you with the Japanese ROM.)
+
+</div><H3 class="level3"><a name="h14"></a>3.3. Code</H3><div class="level3">
+
+This insertor doesn't generate any SNES assembler code.
+Which means that the game basically works as it has always
+worked. It doesn't conjugate names or draw item names longer
+than they were.<br>
+This might be a significant limitation for some translations.
+
+</div><H2 class="level2"><a name="h15"></a>4. Copying</H2><div class="level2">
+
+If you're interested, throw me email.<br>
+But <em>read the <a href="/ctfin/">translation project page</a> first</em>!
+<p>
+My email-address (sigh) is:
+<em>bisqwit a<b style="font-weight:lighter">t i</b>ki <small>dot</small> fi</em>
+</p>
+I'm not publishing files, because it's a well-known
+fact that many people in ROM hacking scene aren't
+very respectful to copyrights.
+
+</div><H2 class="level2"><a name="h16"></a>5. Requirements</H2><div class="level2">
+
+A POSIX compatible system (like Linux or FreeBSD)
+with GNU tools (GNU make, GCC etc) is required.<br>
+These programs are archived as C++ source code only.
+
+</div><H2 class="level2"><a name="h17"></a>6. See also</H2><div class="level2">
+
+<ul>
+ <li><a href="http://bisqwit.iki.fi/ctfin/">Bisqwit's Finnish Chrono Trigger translation project</a>
+  (uses these tools)</li>
+ <li><a href="http://bisqwit.iki.fi/jutut/ctcset.html">Chrono Trigger character set and encoding explained</a>
+  (publicly available information that these tools base on)</li>
+</ul>
+
+</div><H2 class="level2"><a name="download"></a>7. Downloading</H2><div class="level2">
+   The official home page of chronotools
+   is at <a href="http://iki.fi/bisqwit/source/chronotools.html">http://iki.fi/bisqwit/source/chronotools.html</a>.<br>
+   Check there for new versions.
+</div> <p align=right><small>Generated from
+       <code>progdesc.php</code> (last updated: Wed, 25 Jun 2003 13:47:02 +0300)<br>
+  with <code>docmaker.php</code> (last updated: Thu, 13 Feb 2003 15:11:29 +0200)<br>
+  at Wed, 25 Jun 2003 15:11:10 +0300</small>
+ </p>
+</body>
+</html>

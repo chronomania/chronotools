@@ -1957,9 +1957,8 @@ $6pwW:
 Lucca: Hyödytöntä...
 $6pwY:
 Ayla: Tulkaa kylä![nl]
-   Puhumme ja syömme.[nl]
-   Tanssimme! Syömme![nl]
-   Hauskaa!!
+   Puhua ja syödä![nl]
+   Tanssia! Syödä! Hauskaa!!
 $6pwa:
 Marle: Kiitos vain, mutta emme[nl]
    voi. Tulimme etsimään Unelmakiveä.
@@ -1967,10 +1966,9 @@ $6pwc:
 Lucca: Se olisi hauskaa, mutta[nl]
    meidän on etsittävä Unelmakiveä nyt.
 $6pwe:
-Ayla: Kiveä?[nl]
-   Paljon kiviä![nl]
-   Siellä, täällä, kylässä.[nl]
-   Otatte monta.
+Ayla: Kivi? Paljon kiviä![nl]
+   Siellä, täällä, kylässä![nl]
+   Ottaa monta!
 $6pwg:
 [crononick] tule, Ioka kylä täällä.
 $6pwi:
@@ -2018,7 +2016,7 @@ Rest?[nl]
       Yes.[nl]
       No.
 $6px8:
-KINO: Where you from?[nl]
+Kino: Where you from?[nl]
    Why you here?
 [pause]
    Kino no like you!
@@ -2356,7 +2354,7 @@ $6q0a:
 Lucca: Thanks Ayla.[nl]
    I learned a lot from you.
 $6q0c:
-KINO: Sorry, [crononick].[nl]
+Kino: Sorry, [crononick].[nl]
    I try be strong now.[nl]
    Just like [crononick]!
 $6q0e:
@@ -2531,7 +2529,7 @@ $6q2E:
 Lucca: Magus said that Lavos[nl]
    was born in the distant past...
 $6q2G:
-KINO: [crononick], ok now?[nl]
+Kino: [crononick], ok now?[nl]
    Ayla busy, look for Laruba[nl]
    village.
 [pause]
@@ -2540,7 +2538,7 @@ KINO: [crononick], ok now?[nl]
 $6q2I:
 Kiiiiiiiiino!
 $6q2K:
-KINO: What happen?[nl]
+Kino: What happen?[nl]
    Quiet![nl]
    [crononick] rest.
 $6q2M:
@@ -2642,14 +2640,14 @@ Reptites gone!
 $6q34:
 Praise strong chief, and [crononick]!
 $6q36:
-KINO: Did good![nl]
+Kino: Did good![nl]
    Take time, rest.
 $6q38:
-KINO: Ayla!![nl]
+Kino: Ayla!![nl]
    Ayla ok?[nl]
    Kino ok!
 $6q3A:
-KINO: Lavos fall.[nl]
+Kino: Lavos fall.[nl]
    Reptites gone. Good![nl]
    But get cold now.[nl]
    Hunting bad...
@@ -3098,7 +3096,7 @@ $8SIQ:
 Ayla: Kino![nl]
    Hurry!!
 $8SIS:
-KINO: Ayla![nl]
+Kino: Ayla![nl]
    What you do?!
 $8SIU:
 Ayla: Come![nl]
@@ -3110,7 +3108,7 @@ AZALA: Absolutely not![nl]
 $8SIY:
 Ayla: ...
 $8SIa:
-KINO: Ayla![nl]
+Kino: Ayla![nl]
    Hurry!!!
 $8SIc:
 Ayla: Azala...
@@ -4171,77 +4169,79 @@ Crane control code:[nl]
 Code 00... ...X A[nl]
 Code 01... ...B B
 $F1KU:
-Kansleri: Had any of you heard of[nl]
-   the «Rainbow Shell?»
+Kansleri: Onko kukaan teistä kuullut[nl]
+   koskaan «Sateenkaarikuoresta»?
 [pause]
-   I too, had no idea until I found this...
+   En minäkään, kunnes löysin tämän...
 $F1KW:
-Kansleri: It's an ancestral will.[nl]
-   It says, «Unveil the Rainbow Shell to[nl]
-   the people at the Millienal Fair.»
+Kansleri: Se on muinainen testamentti.[nl]
+[pause]
+   Siinä sanotaan:
+   «Paljasta Sateenkaarikuori
+    vuosituhatjuhlaväelle».
 $F1KY:
-Kuningas: What are you talking about?![nl]
-   We have no family heirlooms here!
+Kuningas: Mitä oikein puhut?[nl]
+   Meillä ei ole perintökalleuksia!
 $F1Ka:
-Kansleri: So this is a forgery?
+Kansleri: Onko tämä siis väärennys?
 [pause]
-   Why does the defendant deny the[nl]
-   people a glimpse of the «Rainbow[nl]
-   Shell?»
+   Miksi syytetty ei tahdo näyttää[nl]
+   kansalle «Sateenkaarikuorta»?
 [pause]
-   Because he no longer HAS it!![nl]
-   He sold the heirloom for cash![nl]
-   Witness, please!
+   Koska hänellä ei ole enää sitä!![nl]
+   Hän myi perintökalleuden rahasta![nl]
+   Kutsun paikalle todistajan.
 $F1Kc:
-Kansleri: Wh, what is it, Nadia?[nl]
-   We are conducting a trial here.
+Kansleri: Mitä nyt, Nadia?[nl]
+   Täällä on oikeudenkäynti meneillään.
 [pause]
-Marle: Father!
+Marle: Isä!
 $F1Ke:
 Kuningas: Nadia![nl]
    Kansleri yrittää lavastaa minua[nl]
    syylliseksi!
 $F1Kg:
-Kansleri: He hurls insults![nl]
-   Confirm your innocence with proof!
+Kansleri: Mikä solvaus![nl]
+   Todistakaa viattomuutenne?
 [pause]
-Marle: Proof?
+Marle: Todiste?
 [pause]
-Kansleri: Yes. If he hasn't sold the[nl]
-   heirloom, it should be in the castle.
+Kansleri: Niin. Jos hän ei ole myynyt[nl]
+   perintökalleutta, sen pitäisi yhä[nl]
+   olla linnassa.
 [pause]
-   Show me the «Rainbow Shell,» and I'll[nl]
-   accept his innocence, heh, heh...
+   Näyttäkää minulle «Sateenkaarikuori», niin[nl]
+   uskon hänen viattomuuteensa, heh, heh...
 $F1Ki:
 Kuningas: Kansleri![nl]
    Mitä ihmeen pelleilyä tämä on?!
 $F1Kk:
-Kansleri: Remove them!
+Kansleri: Heittäkää heidät ulos!
 $F1Km:
-MERCHANT: I confess.[nl]
-   I bought it from the king.[nl]
-   He said he needed the cash.
+Kauppias: Tunnustan.[nl]
+   Ostin sen kuninkaalta.[nl]
+   Hän sanoi tarvitsevansa rahaa.
 [pause]
-Kuningas: Liar!![nl]
-   I've never even seen you before!
+Kuningas: Valehtelija!![nl]
+   En ole koskaan edes nähnyt sinua!
 $F1Ko:
-JUDGE: Order in the court!
+Tuomari: Järjestys salissa!
 $F1Kq:
-MERCHANT: Heh heh.[nl]
-   Was I convincing?
+Kauppias: Heheh.[nl]
+   Olinko vakuuttava?
 [pause]
-Kansleri: Perfect!
+Kansleri: Täydellinen!
 $F1Ks:
-JUDGE: Members of the jury...[nl]
-   If he is guilty, stand to the left.[nl]
-   If innocent, stand to the right.
+Tuomari: Valamiehistön jäsenet...[nl]
+   Jos hän on syyllinen, astukaa vasemmalle.[nl]
+   Jos syytön, astukaa oikealle.
 $F1Ku:
-Guilty.
+Syyllinen.
 $F1Kw:
-Not guilty.
+Syytön.
 $F1Ky:
-JUDGE: The verdict is in![nl]
-   Guilty!!!
+Tuomari: Päätös on lausuttu![nl]
+   Syyllinen!!!
 $F1L0:
 Kansleri: The Guardia line ends[nl]
    here.[nl]
@@ -4249,30 +4249,29 @@ Kansleri: The Guardia line ends[nl]
 [pause]
    Take him away!
 $F1L2:
-Wait!!!
+Odottakaa!!!
 $F1L4:
-Kansleri: Who is it?!
+Kansleri: Kuka siellä?!
 $F1L6:
-Marle: FATHER!!!
+Marle: ISÄ!!!
 $F1L8:
 Kuningas: Nadia!
 $F1LA:
-Kansleri: Princess![nl]
-   Control yourself!
+Kansleri: Prinsessa![nl]
+   Hillitse itsesi!
 $F1LC:
-Kansleri: You're too late![nl]
-   The King has been found guilty.[nl]
-   Even kings are subject to our laws.
+Kansleri: Olette myöhässä![nl]
+   Kuningas on todettu syylliseksi.[nl]
+   Kuninkaidenkin pitää noudattaa lakia.
 $F1LE:
-Marle: No, this was a set up!
+Marle: Ei, tämä oli lavastus!
 $F1LG:
-Kansleri: Nonsense![nl]
-   The King's a crook!
+Kansleri: Hölynpölyä![nl]
+   Kuningas on huijari!
 [pause]
-Marle: But the treasure is right[nl]
-   here!
+Marle: Mutta aarrehan on täällä!
 $F1LI:
-Kansleri: IMPOSSIBLE!!
+Kansleri: MAHDOTONTA!!
 $F1LK:
 Marle: Pikku näytöksesi on ohi,[nl]
    Kansleri!
@@ -4445,7 +4444,7 @@ Kuningas GUARDIA: You fought Magus's[nl]
    troops, and brought peace to the[nl]
    kingdom in the year 600.
 $F2WS:
-KINO: [crononick] beat Reptites!
+Kino: [crononick] beat Reptites!
 $F2WU:
 Marle: Wh, what's going on here?
 $F2WW:
@@ -4589,7 +4588,7 @@ Marle: You're my distant ancestor.[nl]
    So you'd better have tough kids or I'll[nl]
    be in trouble!
 [pause]
-KINO: Heh, heh![nl]
+Kino: Heh, heh![nl]
    No worry.[nl]
    Ayla VERY strong!
 [pause]
@@ -11546,12 +11545,12 @@ Ayla: Kino![nl]
 $FTYQ:
 Ayla: Say NOW!
 $FTYS:
-KINO: Ayla...[nl]
+Kino: Ayla...[nl]
    Kino take [crononick] stuff.
 $FTYU:
 Ayla: Why take?!
 $FTYW:
-KINO: Kino like Ayla best.[nl]
+Kino: Kino like Ayla best.[nl]
    Ayla like [crononick], but Kino not[nl]
    like...
 $FTYY:
@@ -11566,34 +11565,34 @@ $FTYe:
 Ayla: Kino![nl]
    You know why I punish?
 $FTYg:
-KINO: Ayla no like Kino...
+Kino: Ayla no like Kino...
 $FTYi:
 Ayla: No![nl]
    Ayla like Kino BEST![nl]
    No more do bad stuff, okay?![nl]
    That wrong!
 $FTYk:
-KINO: Ayla...
+Kino: Ayla...
 $FTYm:
-KINO: Sorry Ayla!
+Kino: Sorry Ayla!
 $FTYo:
-KINO: Sorry [crononick]!
+Kino: Sorry [crononick]!
 $FTYq:
 Ayla: Give back stuff to [crononick]!
 $FTYs:
-KINO: ...No have... Reptites take!
+Kino: ...No have... Reptites take!
 $FTYu:
 Ayla: Reptites!![nl]
    Where they go?!
 $FTYw:
-KINO: Run into trees...there!
+Kino: Run into trees...there!
 $FTYy:
 Ayla: Ayla go too.[nl]
    Kino go back village.[nl]
    Kino protect village when Ayla[nl]
    not there.
 $FTZ0:
-KINO: Okay, Ayla!
+Kino: Okay, Ayla!
 $FTZ2:
 Ayla: Kino is man... so if Ayla[nl]
    die, Kino chief then.
@@ -15040,237 +15039,236 @@ $GhOC:
 I guess even HER inventions have to[nl]
 work, sometimes.
 $GhOE:
-I'm the lawyer, Pierre.
+Olen asianajaja, Pierre.
 $GhOG:
-I'm the Chancellor, the prosecutor!
+Olen Kansleri, ja toimin syyttäjänä!
 $GhOI:
-Kansleri: Members of the court.
+Kansleri: Valamiehistön jäsenet.
 [pause]
-   We now bring forth the defendant,[nl]
-   Crono, who is charged with[nl]
-   abducting Princess Nadia.
+   Tuomme paikalle nyt syytetty[nl]
+   Cronon, jota syytetään prinsessa[nl]
+   Nadian kaappaamisesta.
 $GhOK:
-Kansleri: What shall we do with[nl]
-   him?[nl]
-   Fire, perhaps?
+Kansleri: Mitä tekisimme hänelle?[nl]
+   Polttaisimmeko vaikka roviolla?
 [pause]
-   Hang him upside down for a few[nl]
-   years?
+   Tai ripustaisimmeko hänet[nl]
+   riippumaan ylösalaisin muutamaksi[nl]
+   vuodeksi?
 [pause]
-   Or...shall we employ the guillotine?
+   Vai...järjestäisimmekö giljotiinille[nl]
+   töitä?
 $GhOM:
-Kansleri: You, the jury, shall decide[nl]
-   his fate.[nl]
-   Now, let us begin.
+Kansleri: Te, hyvät valamiehistön[nl]
+   jäsenet, päätätte hänen kohtalonsa.[nl]
+   Alkakaamme oikeudenkäynti.
 $GhOO:
-JUDGE: Crono, you are hereby[nl]
-   ordered to tell the truth!
+Tuomari: Crono, teidän on täten[nl]
+   kerrottava totuus ja vain totuus!
 $GhOQ:
-PIERRE: Crono is charged with[nl]
-   «Premeditated Abduction of Royalty.»[nl]
-   The question is, did he kidnap[nl]
-   Princess Nadia? The answer?
+Pierre: Cronoa syytetään «Harkitusta[nl]
+   kuninkaallisen kaappauksesta.»[nl]
+   Kysymys onkin, kaappasiko hän[nl]
+   prinsessa Nadian. Mikä on vastaus?
 [pause]
-   No, he did not.[nl]
-   In fact, no «abduction» took place!
+   Vastaus on «ei».[nl]
+   Itse asiassa, mitään «kaappausta»
+   ei edes tapahtunut!
 $GhOS:
-PIERRE: The two met completely by[nl]
-   accident. In fact, the Princess ASKED[nl]
-   Crono if SHE could join HIM!
+Pierre: Nämä kaksi tapasivat täysin[nl]
+   sattumalta. Itse asiassa, prinsessa[nl]
+   PYYSI, josko HÄN saisi liittyä[nl]
+   Cronon seuraan!
 $GhOU:
-Kansleri: Is this true? Who actually[nl]
-   started this whole mess?[nl]
-      I did.[nl]
-      Marle did.
+Kansleri: Onko tämä totta? Kuka[nl]
+   aloitti tämän sotkun?[nl]
+      Minä.[nl]
+      Marle.
 $GhOW:
-Kansleri: Just as I suspected![nl]
-   The defendant deliberately tried to[nl]
-   get near the Princess!
+Kansleri: Kuten epäilinkin![nl]
+   Syytetty tieten tahtoen yritti[nl]
+   päästä lähelle prinsessaa!
 $GhOY:
-Kansleri: Are you sure?[nl]
-   We have witnesses who'll say YOU[nl]
-   were the one that bumped into the[nl]
-   princess.
+Kansleri: Oletko varma?[nl]
+   Meillä on todistajia, jotka väittävät,[nl]
+   että SINÄ olit se, kuka törmäsi[nl]
+   prinsessaan.
 $GhOa:
-Kansleri: The Princess then[nl]
-   innocently followed you to[nl]
-   Lucca's little sideshow.
+Kansleri: Prinsessa sen jälkeen[nl]
+   viattomasti seurasi sinua[nl]
+   Luccan pikku näytökseen.
 [pause]
-   Whereupon you both disappeared![nl]
-   If that wasn't criminal abduction, I[nl]
-   don't know WHAT is!
+   Jossa te molemmat katositte![nl]
+   Jos se ei ollut kidnappaus,[nl]
+   niin ihmettelenpä MIKÄ sitten on!
 $GhOc:
-Kansleri: And I have facts that[nl]
-   throw the defendant's character into[nl]
-   question!
+Kansleri: Tiedossani on lisäksi faktoja,[nl]
+   jotka kyseenalaistavat syytetyn[nl]
+   luonteen!
 $GhOe:
-PIERRE: Objection!
+Pierre: Vastalause!
 [pause]
-   This can't have any relevance[nl]
-   whatsoever to this case!
+   Tällä ei ole mitään tekemistä[nl]
+   tämänhetkisen oikeusjutun kanssa!
 $GhOg:
-JUDGE: Care to respond, Chancellor?
+Tuomari: Vastaisitteko vastalauseeseen,
+   Kansleri?
 $GhOi:
-Kansleri: Crono's character is at[nl]
-   the very core of this case!
+Kansleri: Cronon luonne on koko[nl]
+   asian ydin!
 [pause]
-PIERRE: We have nothing to hide.
+Pierre: Meillä ei ole mitään salattavaa.
 $GhOk:
-PIERRE: We have a witness.[nl]
-   A little girl who will vouch for the[nl]
-   character of the defendant.
+Pierre: Meillä on todistaja.[nl]
+   Tämä pieni tyttö haluaa[nl]
+   todistaa syytetyn luonteesta.
 $GhOm:
-This nice man...[nl]
-He brought me my kitty.
+Tämä kiltti setä...[nl]
+...toi kissani takaisin!
 $GhOo:
-Thank you for being so kind!
+Kiitos, kun olit niin kiltti!
 $GhOq:
-PIERRE: How about that?[nl]
-   Doesn't this young man deserve a[nl]
-   medal?
+Pierre: No miten on?[nl]
+   Eikö tämä nuorimies ansaitsekin[nl]
+   mitalin?
 $GhOs:
-PIERRE: Whew...[nl]
-   Looks like they're buying it.
+Pierre: Huh...[nl]
+   Se näyttää purevan heihin.
 $GhOu:
-Kansleri: The defendant's cruelty is[nl]
-   quite evident.
+Kansleri: Syytetyn julmuus on[nl]
+   melko ilmeistä.
 $GhOw:
-Kansleri: You remember HER, don't[nl]
-   you?[nl]
-   The poor little girl who lost her cat?[nl]
-   You wouldn't even listen to her!
+Kansleri: Muistathan hänet, etkö vain?[nl]
+   Kissansa kadottaneen pikkutytön![nl]
+   Et piitannut hänestä ollenkaan!
 $GhOy:
-You ignored me!
+Sinä et edes huomannut minua!
 $GhP0:
-Kansleri: Oh you poor dear![nl]
-   Thank you.
+Kansleri: Voi tyttöraukkaa! Kiitos.
 $GhP2:
-Kansleri: As you can see, no further[nl]
-   proof is necessary here.
+Kansleri: Kuten näette, emme[nl]
+   tarvitse enempää todisteita tästä.
 $GhP4:
-Kansleri: Have you ever stolen[nl]
-   anything?[nl]
-      Well...yes.[nl]
-      No! I've never been a thief.
+Kansleri: Oletko koskaan varastanut[nl]
+   mitään?[nl]
+      No tuota...olen.[nl]
+      En ole koskaan varastanut mitään!
 $GhP6:
-Kansleri: See![nl]
-   He lacks morals![nl]
-   This should be on the record![nl]
-   He's crying out for help!
+Kansleri: Siinä näette![nl]
+   Hänellä ei ole moraalia![nl]
+   Tämä on merkittävä pöytäkirjaan![nl]
+   Hän tarvitsee ammattilaisapua!
 $GhP8:
-Kansleri: DO NOT feign ignorance![nl]
-   We have a witness.
+Kansleri: Älä esitä tietämätöntä!![nl]
+   Meillä on todistaja.
 $GhPA:
-Him![nl]
-He ate my lunch right off the table!
+Hän![nl]
+Hän varasti minun lounaani nenäni edestä!
 $GhPC:
-Kansleri: Let the record show that[nl]
-   he stole from a poor, helpless man!
+Kansleri: Merkittäköön pöytäkirjaan,[nl]
+   että hän varasti köyhältä,[nl]
+   avuttomalta mieheltä!
 $GhPE:
-PIERRE: The issue here is MOTIVE.[nl]
-   Was there any motive for this fine[nl]
-   citizen to kidnap Princess Nadia?[nl]
-   No! There was none.
+Pierre: Jutun ydin on motiivi![nl]
+   Oliko tällä mallikansalaisella mitään[nl]
+   syytä prinsessa Nadian kidnappaamiseen?
+   Ei!
 $GhPG:
-Kansleri: What about ransom?
+Kansleri: Entä lunnaat?
 [pause]
-   Crono, her fortune DID tempt[nl]
-   you, did it not?[nl]
-      No.[nl]
-      Yes.
+   Crono, hänen omaisuutensa[nl]
+   houkutteli sinua varmasti, eikö?[nl]
+      Ei.[nl]
+      Kyllä.
 $GhPI:
-Kansleri: So, you admit it!
+Kansleri: Myönnätkin vielä!
 $GhPK:
-Kansleri: Nothing more your honor.[nl]
-   The prosecution rests.
+Kansleri: Ei muuta, teidän armonne.[nl]
 $GhPM:
-Kansleri: Are you sure?[nl]
-   You really weren't tempted?[nl]
-      Not at all.[nl]
-      Just a bit.
+Kansleri: Oletko aivan varma?[nl]
+   Et kokenut kiusausta?[nl]
+      En minkäänlaista.[nl]
+      Ihan vähän vain.
 $GhPO:
-Kansleri: That's enough.[nl]
-   I have no more questions.
+Kansleri: Ei muuta kysyttävää.
 [pause]
-PIERRE: It is evident that my client is a[nl]
-   fine, noble young man![nl]
-   Your honor, the defense rests.
+Pierre: On ilmeistä, että asiakkaani[nl]
+   on nöyrä ja jalo miehenalku.[nl]
+   Teidän armonne, puolustus lopettaa.
 $GhPQ:
-Kansleri: Please keep in mind that[nl]
-   he just said he had NO interest in her[nl]
-   fortune.
+Kansleri: Huomatkaa, että hän juuri[nl]
+   väitti, ettei prinsessan omaisuus[nl]
+   kiinnostanut häntä tippaakaan!
 [pause]
-   Witness please!
+   Todistaja, olkaa hyvä
 $GhPS:
-He can't fool me, I saw him with my[nl]
-own eyes!
+Minua ei huijata, sillä näin sen[nl]
+   omin silmin!
 $GhPU:
-Dear me![nl]
-I'm so nervous!
+Olen niin hermoissani!
 $GhPW:
-That man grabbed the pendant even[nl]
-before he checked to see if the[nl]
-Princess was okay!
+Tuo mies otti riipuksen ennen kuin[nl]
+   hän edes vaivautui tarkistamaan,[nl]
+   oliko prinsessa edes kunnossa!
 $GhPY:
-He didn't seem to want to return it,[nl]
-either.
+Eikä hän nähtävästi ajatellut[nl]
+palauttaakaan sitä.
 $GhPa:
-He tried to sell it to the merchant,[nl]
-Melchior.
+Hän yritti myydä sitä kauppias[nl]
+Melchiorille.
 $GhPc:
-Kansleri: And this person's final bit[nl]
-   of testimony will prove our case!
+Kansleri: Vielä tämän miehen[nl]
+   todistus todistaa kantamme.
 $GhPe:
-I heard it clearly.[nl]
-I heard her cry out with my own ears!
+Kuulin hyvin selvästi tämän!
 $GhPg:
-Is that it?[nl]
-Can I go?!
+Siinäkö se? Voinko mennä?
 $GhPi:
-JUDGE: Members of the jury...[nl]
-   If he is guilty, stand to the left.[nl]
-   If innocent, stand to the right.
+Tuomari: Valamiehistön jäsenet...[nl]
+   Jos hän on syyllinen, astukaa vasemmalle.[nl]
+   Jos syytön, astukaa oikealle.
 $GhPk:
-Guilty.
+Syyllinen.
 $GhPm:
-Not guilty.
+Syytön.
 $GhPo:
-Order in the court!
+Järjestys oikeussalissa!
 $GhPq:
-A verdict has been reached!
+Päätös on lausuttu!
 $GhPs:
-We have a majority!
+Meillä on enemmistö!
 $GhPu:
-The verdict is...guilty![nl]
-The sentence? Solitary confinement,[nl]
-pending execution in 3 days!
+Päätös on... syyllinen![nl]
+Tuomio: Eritysselliin kolmeksi[nl]
+vuorokaudeksi, jonka jälkeen teloitus.
 $GhPw:
 [nl]
-The verdict is...not guilty!
+Päätös on... syytön!
 [pause]
-But the fact remains that even if he[nl]
-did not kidnap her, he ran off with her.[nl]
-3 days solitary confinement as[nl]
-punishment.
+Mutta vaikka hän ei kaapannutkaan[nl]
+prinsessaa, hän silti pakeni hänen[nl]
+kanssaan. Tuomio: Eristysselliin[nl]
+kolmeksi vuorokaudeksi.
 $GhPy:
-Kansleri: Take him away!
+Kansleri: Viekää hänet!
 $GhQ0:
-Marle: Now just a darn minute...
+Marle: Odottakaas hetkinen..!
 [pause]
-Kansleri: Princess!
+Kansleri: Prinsessa!
 $GhQ2:
-Kuningas: That's enough, my dear!
+Kuningas: Riittää, kultaseni!
 $GhQ4:
-Marle: But Father...!
+Marle: Mutta isä..!
 [pause]
-Kuningas: All I asked was for you to[nl]
-   behave like a princess.
+Kuningas: Minä vain tahdon, että[nl]
+   käyttäydyt kuten prinsessan[nl]
+   kuuluukin.
 [pause]
-   Even royalty must obey rules.[nl]
-   Leave the rest up to the Chancellor[nl]
-   and forget about the events in town.
+   Kuninkaallistenkin pitää totella[nl]
+   lakia. Jätä loput Kanslerin huoleksi[nl]
+   ja unohda kylän tapahtumat.
 $GhQ6:
-Kuningas: We're leaving!
+Kuningas: Lähdemme nyt!
 $GhQ8:
 Marle: Crono!!!
 $GhQA:
@@ -15340,17 +15338,17 @@ $GhQg:
 You're out of cash.[nl]
 Play longer, spend less!
 $GhQi:
-I'll take 60,000 G.
+Otan 60,000 G.
 $GhQk:
-I'll take 30,000 G.
+Otan 30,000 G.
 $GhQm:
-I'll take 10,000 G.
+Otan 10,000 G.
 $GhQo:
-I'll take 5,000 G.
+Otan 5,000 G.
 $GhQq:
-I'll take 2000 G.
+Otan 2000 G.
 $GhQs:
-I'll take 1000 G.
+Otan 1000 G.
 $GhQu:
 DUMB: The boss is itching to avenge the[nl]
    grudge that's been in the family for[nl]
@@ -15618,7 +15616,7 @@ $GhTE:
 JAILER: Thanks for bringing, er, being[nl]
    the main course!
 $GhTG:
-KINO: Ayla!
+Kino: Ayla!
 [pause]
 Ayla: Kino get back![nl]
    Ayla save you!
@@ -15633,7 +15631,7 @@ Robo: That method does not[nl]
 $GhTO:
 Frog: Hmmph.
 $GhTQ:
-KINO: Sorry Ayla.[nl]
+Kino: Sorry Ayla.[nl]
    All Kino's fault.
 $GhTS:
 Ayla: No matter.[nl]
@@ -15643,18 +15641,18 @@ Kino: What Ayla do?
 $GhTW:
 Ayla: Put end to this!
 $GhTY:
-KINO: Kino go too!
+Kino: Kino go too!
 $GhTa:
 Ayla: Kino no come.[nl]
    If Ayla dead, Kino new chief of[nl]
    Ioka!
 $GhTc:
-KINO: Ayla...
+Kino: Ayla...
 $GhTe:
 Ayla: Ayla strong.[nl]
    No lose!
 $GhTg:
-KINO: Kino understand.[nl]
+Kino: Kino understand.[nl]
    And show you something!
 $GhTi:
 You strong, me weak.[nl]

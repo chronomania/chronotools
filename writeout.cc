@@ -18,7 +18,7 @@ void insertor::Write8pixfont(ROM &ROM)
     font8.setboxsize(8, 8);
     font8.setboxperline(32);
     
-    static const char palette[] = {0,3,1,2,0};
+    static const char palette[] = {0,0,1,2,3};
     
     vector<unsigned char> tiletable(256*16);
     

@@ -25,8 +25,9 @@ CXXFLAGS=-O2
 # VERSION 1.0.18 more of above
 # VERSION 1.0.19 code organising... improved 'i' in 8x8 font.
 # VERSION 1.0.20 binpacker changes, some translation done too
+# VERSION 1.0.21 more translation, some documentation, font palette changes.
 
-VERSION=1.0.20
+VERSION=1.0.21
 ARCHFILES=xray.c xray.h \
           viewer.c \
           ctcset.cc ctcset.hh \

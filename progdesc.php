@@ -14,7 +14,7 @@ Tools aiding in
 
 ", '1.1. ctdump' => "
 
-Dumps the script from a given ROM.<br>
+Dumps the script and fonts from a given ROM.<br>
 Requires <code>chrono-dumpee.smc</code>.<br>
 Produces <code>ct_eng.txt</code>,
 <code>ct8fn.tga</code> and <code>ct16fn.tga</code>.
@@ -38,58 +38,42 @@ Voit esimerkiksi tähdätä tätä[nl]
 
 ", '1.1. ctinsert' => "
 
-Reinserts the script to a ROM.<br>
+Reinserts the (edited) script and (edited) fonts to a ROM.<br>
 Requires <code>ct.txt</code>,
 <code>ct8fn.tga</code> and <code>ct16fn.tga</code>.<br>
 Produces <code>ctpatch-hdr.ips</code>
 and <code>ctpatch-nohdr.ips</code>.<br>
 Curiously, it doesn't require the ROM.
 
-", '1.1. xray' => "
+", '1.1. other' => "
+
+", '1.1.1. makeips' => "
+
+Compares two ROMs and produces a patch file in IPS format.
+
+", '1.1.1. unmakeips' => "
+
+Reads a ROM and an IPS file and produces a patched ROM file.
+
+", '1.1.1. xray' => "
 
 xray is a libggi-requiring application
 for browsing the ROM contents.
 
-", '1.1. viewer' => "
+", '1.1.1. viewer' => "
 
 viewer requires S-Lang and is a textmode ROM browser
 originally developed by me for Pokémon hacking.
 
-", '1.1. spacefind' => "
+", '1.1.1. spacefind' => "
 
-A bin-packing algorithm test.
+A <a href=\"/source/jaa3.html\">bin-packing</a> algorithm test.
 
-", '1.1. makeips' => "
-
-Compares two ROMs and produces a patch file in IPS format.
-
-", '1.1. unmakeips' => "
-
-Reads a ROM and an IPS file and produces a patched ROM file.
-
-", '1.1. taipus.rb' => "
+", '1.1.1. taipus.rb' => "
 
 This one is <a href=\"/ctfin/taipus.rb\">publicly available</a>.
 It conjugates names in Finnish. It's supposed to get translated
 to SNES assembler by somebody.
-
-", '1. Copying' => "
-
-If you're interested, throw me email.<br>
-Read the <a href=\"/ctfin/\">translation project page</a> first!
-<p>
-My email-address (sigh) is:
-<em>bisqwit a<b style=\"font-weight:lighter\">t i</b>ki <small>dot</small> fi</em>
-</p>
-I'm not publishing files, because it's a well-known
-fact that many people in ROM hacking scene aren't
-very respective to copyrights.
-
-", '1. Requirements' => "
-
-A POSIX compatible system (like Linux or FreeBSD)
-with GNU tools (GNU make, GCC etc) is required.<br>
-These programs are archived as C++ source code only.
 
 ", '1. Technical limitations' => "
 
@@ -97,7 +81,9 @@ These programs are archived as C++ source code only.
 
 The ROM doesn't have much space for text.<br>
 It does apply a compression method, but some text
-compresses better than some other.
+compresses better than some other.<br>
+This might cause problems if too much different words are used
+in the script, but it isn't a real problem preventing translation.
 
 ", '1.1. Font' => "
 
@@ -126,6 +112,32 @@ different symbols, you might want to try to base on the
 Japanese version instead. This utility pack bases on the
 English version.<br>
 (Sorry, I can't help you with the Japanese ROM.)
+
+", '1.1. Code' => "
+
+This insertor doesn't generate any SNES assembler code.
+Which means that the game basically works as it has always
+worked. It doesn't conjugate names or draw item names longer
+than they were.<br>
+This might be a significant limitation for some translations.
+
+", '1. Copying' => "
+
+If you're interested, throw me email.<br>
+But <em>read the <a href=\"/ctfin/\">translation project page</a> first</em>!
+<p>
+My email-address (sigh) is:
+<em>bisqwit a<b style=\"font-weight:lighter\">t i</b>ki <small>dot</small> fi</em>
+</p>
+I'm not publishing files, because it's a well-known
+fact that many people in ROM hacking scene aren't
+very respectful to copyrights.
+
+", '1. Requirements' => "
+
+A POSIX compatible system (like Linux or FreeBSD)
+with GNU tools (GNU make, GCC etc) is required.<br>
+These programs are archived as C++ source code only.
 
 ", '1. See also' => "
 

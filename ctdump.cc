@@ -562,14 +562,14 @@ static void OutImage(const string &fntemplate,
     TgaPutB(fp, 0); //misc
     
     // border color:
-    TgaPutP(fp, 192,0,0);
+    TgaPutP(fp, 128,128,128);
     // colours 0..3
-    TgaPutP(fp, 255,255,255);
-    TgaPutP(fp, 192,128, 32);
-    TgaPutP(fp, 255,255,128);
-    TgaPutP(fp, 0,0,0);
+    TgaPutP(fp, 192,192,192);
+    TgaPutP(fp,  32, 48,128);
+    TgaPutP(fp,  40, 72,192);
+    TgaPutP(fp,  48, 96,255);
     // filler
-    TgaPutP(fp, 160,160,160);
+    TgaPutP(fp, 255,255,255);
     
     for(unsigned y=ydim; y-->0; )
         fwrite(&pixels[y*xdim], 1, xdim, fp);
@@ -586,7 +586,7 @@ static void Dump8x8sprites(unsigned spriteoffs, unsigned count)
     const unsigned xpixdim = xdim*8 + (xdim+1);
     const unsigned ypixdim = ydim*8 + (ydim+1);
     
-    const char palette[] = {4,2,3,1};
+    const char palette[] = {1,2,3,4};
     const char bordercolor=0;
     
     vector<char> pixels (xpixdim * ypixdim, bordercolor);

@@ -1,33 +1,64 @@
-USAGE NOTES
+NOTES
 
-   You need the Chrono Trigger English
-   uncompressed ROM as chrono-uncompressed.smc.
-   It should be either 4194816 or 4194304 bytes,
-   depending on whether it has the header or not.
-
-   To generate the script file:
-
-   ctdump > ct_eng.txt
-   
-   To generate the patch file:
-   
-   ctinsert
-   
-   The insertor writes its runtime messages to stderr.
-   
-   You can toggle the value of rebuild_dict bool constant
-   if you want to change whether the program generates
-   the dictionary or not.
-
-COPYING NOTES
-
-   You have got these files from Bisqwit confidentially.
-   Do not distribute them!
-   If I want to publish these, I'll publish them as GPL.
-   But that's just an "if".
+   Read readme.html
 
 THE REST OF THIS FILE IS MY NOTES
 
+KÄÄNNÖSOHJEITA
+
+TEKNISIÄ OHJEITA
+
+   Skriptirivit (*z):
+
+     - Neljä riviä max per repliikki.
+       Jos tarvitaan enemmän, jaa repliikki
+       kolmen rivin ryhmiin ja erota [pause]:lla.
+       ([pause] vie ikäänkuin yhden rivin, ja
+        tyhjentää sen jälkeen dialogiruudun.)
+     
+     - Rivien pituuksilla on raja, mutta se riippuu
+       vähän tekstistä (variable width). Yritä
+       välttää kamalan pitkiä rivejä, mutta älä
+       tee hirveän lyhyitäkään.
+     
+     - Jos dialogissa on kysymys ("kyllä/ei"), älä
+       muuta rivien määrää ennen sitä.
+  
+   Dialogiohjeita:
+
+       Marle - vähän vallaton, rentoa kieltä.
+       Lucca - jäykkää, mutta suorasukaista, välillä
+               vähän tylyä kieltä, mutta ei mitään
+               törkeää kuitenkaan.
+       Crono - ei yleensä puhu ollenkaan.
+       Robo  - mekaanista mutta humoristista kieltä
+       Frog  - mahdollisimman vanhanaikaista ja kankeaa
+               kieltä, välillä th -äänteitä
+       Magus - puhuu asiansa hyvin lyhyesti
+               ja suorasukaisesti.
+       Ayla  - yksinkertaista alkuasukaskieltä, mutta
+               sisällöltään hyvin eläviä lauseita.
+               Käyttää cronosta nicknamea [crononick].
+       Kino - alkuasukasmies/-poika, ajattele intiaanisotilasta.
+       Kuningas Guardia
+             - aikuinen, kokee olevansa auktoriteetti
+               asiassa kuin asiassa, ja puhuu sen mukaisesti.
+       Doan  - vanhus, mutta puhuu modernia kieltä.
+       Belthasar (guru of reason)
+             - Hyvin tietäväinen henkilö, vähän hörhö;
+               professorityyppiä.
+       Melchior (guru of life)
+             - Filosofinen henkilö, sanoo asiat vähän mutkan
+               kautta. Savon murre sopisi ehkä? :)
+       Gaspar (guru of time)
+             - Lämminsydäminen vanha mies, vähän arka
+               välillä sanomaan asioita suoraan.
+       Masa, Mune - poikia
+       Queen Zeal - halpamainen akka
+       Dalton - tyhmä toiminnantäyteinen paha mies
+
+
+   
 [1EFA00]
 4AFB57FB38FCADFB18FC5FFC05FB9DFB0DFCB7FB44FCCBFC40FC07FCBDFC34FC
 2FFC2BFB62FCE2FB90FC0AFCFEFBB0FB76FB15FB2CFC6EFC09FB5BFC58FC41FB
