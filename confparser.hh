@@ -15,15 +15,24 @@ using std::map;
 class ConfParser
 {
  public:
-    class invalid_section: public std::runtime_error
+    class invalid_section //: public std::runtime_error
     {
+       string sect;
     public:
-       explicit invalid_section(const string& arg): runtime_error(arg) {}
+       explicit invalid_section(const string& arg)
+         : /*runtime_error(arg), */sect(arg) {}
+       const string& GetSection() const { return sect; }
     };
-    class invalid_field: public std::runtime_error
+    class invalid_field //: public std::runtime_error
     {
+       string sect, field;
     public:
-       explicit invalid_field(const string& arg): runtime_error(arg) {}
+       explicit invalid_field(const string& sectname,
+                              const string& fieldname)
+        : /*runtime_error(sectname + ":" + fieldname),
+          */sect(sectname), field(fieldname) {}
+       const string& GetSection() const { return sect; }
+       const string& GetField() const { return field; }
     };
 
     void Parse(FILE *fp);

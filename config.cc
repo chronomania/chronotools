@@ -1,5 +1,6 @@
 #include <cstdio>
 #include <cerrno>
+#include <set>
 
 #include "ctcset.hh"
 #include "wstring.hh"
@@ -127,11 +128,39 @@ const ConfParser::Field& GetConf(const char *sect, const char *var)
     }
     catch(ConfParser::invalid_section sect_error)
     {
+        typedef string errortype;
+        static set<errortype> displayed;
+        
+        const errortype ErrorName(sect_error.GetSection());
+        
+        if(displayed.find(ErrorName) == displayed.end())
+        {
+            fprintf(stderr, "\nWarning: Section '%s' not present in configuration file!\n",
+                ErrorName.c_str());
+            displayed.insert(ErrorName);
+        }
+
         static const ConfParser::Field error;
         return error;
     }
     catch(ConfParser::invalid_field field_error)
     {
+        typedef pair<string, string> errortype;
+        static set<errortype> displayed;
+        
+        const errortype ErrorName(field_error.GetField().c_str(),
+                                  field_error.GetSection().c_str());
+        
+        if(displayed.find(ErrorName) == displayed.end())
+        {
+           fprintf(stderr, "\nWarning: Field '%s' not present in"
+                           " configuration file section '%s'!\n",
+               ErrorName.first.c_str(),
+               ErrorName.second.c_str());
+
+            displayed.insert(ErrorName);
+        }
+
         static const ConfParser::Field error;
         return error;
     }

@@ -88,6 +88,7 @@ DEPDIRS = utils/
 # VERSION 1.8.1  requires separate snescom (not bundled anymore)
 # VERSION 1.9.0  unified some configuration parts; added crononick-code support
 # VERSION 1.9.1  improved the signature feature; added checksum and ROM name feature
+# VERSION 1.9.2  has only documentation updates
 
 OPTIM=-O3
 #OPTIM=-O0
@@ -96,7 +97,7 @@ OPTIM=-O3
 
 CXXFLAGS += -I.
 
-VERSION=1.9.1
+VERSION=1.9.2
 ARCHFILES=utils/xray.cc utils/xray.h \
           utils/viewer.c \
           utils/vwftest.cc \

@@ -21,7 +21,7 @@ SMALL    {font-size:70%}
   <h1>Chrono Trigger translation development system</h1>
   <h2 class=level2> 0. Contents </h2>
   
-  This is the documentation of chronotools-1.9.1.
+  This is the documentation of chronotools-1.9.2.
 <div class=toc><table cellspacing=0 cellpadding=0 class=toc><tr><td width="50%" valign=middle align=left nowrap class=toc>&nbsp;&nbsp;&nbsp;1. <a href="#what">Purpose</a><br>&nbsp;&nbsp;&nbsp;2. <a href="#how">How to begin?</a><br>&nbsp;&nbsp;&nbsp;3. <a href="#status">Current status</a><br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;3.1. <a href="#changes">Version history</a><br>&nbsp;&nbsp;&nbsp;4. <a href="#h0">Program list</a><br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;4.1. <a href="#ctdump">ctdump</a><br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;4.2. <a href="#ctinsert">ctinsert</a><br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;4.3. <a href="#h1">other</a><br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;4.3.1. <a href="#h2">makeips</a><br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;4.3.2. <a href="#h3">unmakeips</a><br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;4.3.3. <a href="#h4">xray</a><br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;4.3.4. <a href="#h5">viewer</a><br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;4.3.5. <a href="#h6">spacefind</a><br></td>
 <td width="50%" valign=middle align=left nowrap class=toc>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;4.3.6. <a href="#h7">taipus.rb</a><br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;4.3.7. <a href="#h8">sramdump</a><br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;4.3.8. <a href="#h9">base62</a><br>&nbsp;&nbsp;&nbsp;5. <a href="#h10">Useful features</a><br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;5.1. <a href="#conj">Name conjugation</a><br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;5.2. <a href="#skew">Font/dictionary skew</a><br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;5.3. <a href="#wrap">Automatic paragraph wrapping</a><br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;5.4. <a href="#vwf8">Variable width 8pix font</a><br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;5.5. <a href="#h11">Very configurable</a><br>&nbsp;&nbsp;&nbsp;6. <a href="#req">Requirements</a><br>&nbsp;&nbsp;&nbsp;7. <a href="#copying">Copying</a><br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;7.1. <a href="#parts">If you only are interested in some features/parts</a><br>&nbsp;&nbsp;&nbsp;8. <a href="#h12">See also</a><br>&nbsp;&nbsp;&nbsp;9. <a href="#download">Downloading</a><br></td>
 </tr></table></div><H2 id="what" class="level2"><a name="what"></a>1. Purpose</H2><div class="level2" id="divwhat">
@@ -65,7 +65,7 @@ you might have about translating/hacking Chrono Trigger.<br>
 Chronotools is under active development.
 Here's the current situation.<br>
 Last updated:
-2003-10-14
+2003-11-09
 
 <p>
 <table>
@@ -93,7 +93,7 @@ Last updated:
 <tr><td>Error recovery</td>
     <td>10%</td> <td>silent ignore</td></tr>
 <tr><td>Documentation</td>
-    <td>0%</td> <td>practically no documentation; that's why you must contact</td></tr>
+    <td>0%</td> <td>next to none</td></tr>
 </table>
 
 </div><H3 id="changes" class="level3"><a name="changes"></a>3.1. Version history</H3><div class="level3" id="divchanges">
@@ -171,6 +171,7 @@ Copypaste from the Makefile:
 # VERSION 1.8.1  requires separate snescom (not bundled anymore)
 # VERSION 1.9.0  unified some configuration parts; added crononick-code support
 # VERSION 1.9.1  improved the signature feature; added checksum and ROM name feature
+# VERSION 1.9.2  has only documentation updates
 </pre>
 
 </div><H2 id="h0" class="level2"><a name="h0"></a>4. Program list</H2><div class="level2" id="divh0">
@@ -276,7 +277,7 @@ dumps to reduce the amount of code written.
 </div><H3 id="conj" class="level3"><a name="conj"></a>5.1. Name conjugation</H3><div class="level3" id="divconj">
 
 <a href="/ctfin/ct-code.txt">
-<img src="/kala/snap/ctdevel/ct-taipus2.png" alt="It works!" align=right>
+<img src="/ctfin/dev/ct-taipus2.png" alt="It works!" align=right>
 </a>  
 It currently has support for conjugating names on fly.<br>
 It's very important in Finnish, where you can't just
@@ -393,7 +394,8 @@ If you fear the text mode and command line, you better
 change your attitude and start learning :)
 </blockquote>
 <p>
-The VWF8 code and the conjugator require an assembler,
+The <acronym title="Variable width 8pix tall font">VWF8</acronym> code
+and the conjugator require an assembler,
 <a href="http://bisqwit.iki.fi/source/snescom.html">snescom</a>.
 Snescom is a GPL'd xa65-compatible 65816 assembler program,
 and it can be downloaded at
@@ -411,10 +413,14 @@ If you have questions or just want to talk about
 Chrono Trigger hacking, throw me email.
 <p>
 <table cellspacing=0 cellpadding=0>
-<tr><td class=email>My email address:</td>
-    <td class=email>Joel Ylilu</td>
-    <td class=email>oma &lt;bisqw</td>
-    <td class=email>it@iki.fi&gt;</td>
+           <tr><td class=email>My email address:</td>
+           <td class=email>Joel Y</td>
+<td class=email>lilu</td>
+<td class=email>oma &lt;</td>
+<td class=email>bisq</td>
+<td class=email>wit@</td>
+<td class=email>iki.</td>
+<td class=email>fi&gt;</td>
 </tr></table>
 </p>
 I've previously stated here that I'm not publishing files because it's
@@ -447,9 +453,9 @@ If you're uncertain, <a href="#copying">send me email and explain your situation
    is at <a href="http://iki.fi/bisqwit/source/chronotools.html">http://iki.fi/bisqwit/source/chronotools.html</a>.<br>
    Check there for new versions.
 </div> <p align=right><small>Generated from
-       <code>progdesc.php</code> (last updated: Tue, 14 Oct 2003 01:54:00 +0300)<br>
+       <code>progdesc.php</code> (last updated: Tue, 11 Nov 2003 00:06:02 +0200)<br>
   with <code>docmaker.php</code> (last updated: Thu, 13 Feb 2003 15:11:29 +0200)<br>
-  at Tue, 14 Oct 2003 01:54:05 +0300</small>
+  at Tue, 11 Nov 2003 00:06:10 +0200</small>
  </p>
 </body>
 </html>

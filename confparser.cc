@@ -143,8 +143,6 @@ ConfParser::operator[](const std::string& sectionName) const
     SecMap::const_iterator iter = sections.find(sectionName);
     if(iter == sections.end())
     {
-        fprintf(stderr, "Error: Section '%s' not present in configuration file!\n",
-            sectionName.c_str());
         throw invalid_section(sectionName);
     }
     
@@ -158,9 +156,7 @@ ConfParser::Section::operator[](const std::string& fieldName) const
     FieldMap::const_iterator iter = fields.find(fieldName);
     if(iter == fields.end())
     {
-        fprintf(stderr, "Error: Field '%s' not present in configuration file section '%s'!\n",
-            fieldName.c_str(), SectName.c_str());
-        throw invalid_field(SectName+":"+fieldName);
+        throw invalid_field(SectName, fieldName);
     }
     return iter->second;
 }

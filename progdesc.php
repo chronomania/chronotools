@@ -76,7 +76,7 @@ Last updated:
 <tr><td>Error recovery</td>
     <td>10%</td> <td>silent ignore</td></tr>
 <tr><td>Documentation</td>
-    <td>0%</td> <td>practically no documentation; that's why you must contact</td></tr>
+    <td>0%</td> <td>next to none</td></tr>
 </table>
 
 ", 'changes:1.1. Version history' => "
@@ -154,6 +154,7 @@ Copypaste from the Makefile:
 # VERSION 1.8.1  requires separate snescom (not bundled anymore)
 # VERSION 1.9.0  unified some configuration parts; added crononick-code support
 # VERSION 1.9.1  improved the signature feature; added checksum and ROM name feature
+# VERSION 1.9.2  has only documentation updates
 </pre>
 
 ", '1. Program list' => "
@@ -259,7 +260,7 @@ dumps to reduce the amount of code written.
 ", 'conj:1.1. Name conjugation' => "
 
 <a href=\"/ctfin/ct-code.txt\">
-<img src=\"/kala/snap/ctdevel/ct-taipus2.png\" alt=\"It works!\" align=right>
+<img src=\"/ctfin/dev/ct-taipus2.png\" alt=\"It works!\" align=right>
 </a>  
 It currently has support for conjugating names on fly.<br>
 It's very important in Finnish, where you can't just
@@ -376,7 +377,8 @@ If you fear the text mode and command line, you better
 change your attitude and start learning :)
 </blockquote>
 <p>
-The VWF8 code and the conjugator require an assembler,
+The <acronym title=\"Variable width 8pix tall font\">VWF8</acronym> code
+and the conjugator require an assembler,
 <a href=\"http://bisqwit.iki.fi/source/snescom.html\">snescom</a>.
 Snescom is a GPL'd xa65-compatible 65816 assembler program,
 and it can be downloaded at

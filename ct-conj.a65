@@ -124,6 +124,7 @@ LoopHelper:
         SET_16_BIT_AX()
         phx
          ldy #0
+         tya
          SET_8_BIT_A()
          
          lda #$7E
