@@ -11,6 +11,7 @@
 #include "config.hh"
 #include "conjugate.hh"
 #include "typefaces.hh"
+#include "msginsert.hh"
 
 using namespace std;
 
@@ -50,7 +51,9 @@ namespace
         ScriptCharGet(FILE *f) : fp(f), cacheptr(0)
         {
             conv.SetSet(getcharset());
+        /* - nobody cares
             fprintf(stderr, "Built script character set converter\n");
+        */
         }
         ucs4 getc()
         {
@@ -154,10 +157,7 @@ const ctstring insertor::ParseScriptEntry(const ucs4string &input, const stringd
                     //&& i->second >= get_font_begin()
                       )
                     {
-                        fprintf(stderr,
-                            "Warning: Symbol '%s' wouldn't work in different typefaces!\n"
-                            "         Thus not generating.\n",
-                                WstrToAsc(i->first).c_str());
+                        MessageSymbolIgnored(i->first);
                         continue;
                     }
                     
@@ -255,8 +255,7 @@ const ctstring insertor::ParseScriptEntry(const ucs4string &input, const stringd
                 {
                     if(current_typeface >= 0)
                     {
-                        fprintf(stderr, "Error: Started typeface with '%s' when one was already active!\n",
-                            WstrToAsc(begin).c_str());
+                        MessageTFStartError(begin);
                     }
                     current_typeface = a;
                     found = true;
@@ -265,8 +264,7 @@ const ctstring insertor::ParseScriptEntry(const ucs4string &input, const stringd
                 {
                     if(current_typeface < 0)
                     {
-                        fprintf(stderr, "Error: Ended typeface with '%s' when none was active!\n",
-                            WstrToAsc(end).c_str());
+                        MessageTFEndError(end);
                     }
                     current_typeface = -1;
                     found = true;
@@ -342,17 +340,32 @@ void insertor::LoadFile(FILE *fp)
 
     rawcodes.clear();
     
+    ucs4string unexpected;
+    #define UNEXPECTED(c) unexpected += (c)
+    #define EXPECTED() \
+        if(!unexpected.empty()) \
+        { \
+            MessageUnexpected(unexpected); \
+            CLEARSTR(unexpected); \
+        }
+
+    MessageLoadingDialog();
+    
     for(;;)
     {
+        MessageWorking();
+
         if(c == (ucs4)EOF)break;
         if(c == '\n')
         {
+            EXPECTED();
             cget(c);
             continue;
         }
 
         if(c == '*')
         {
+            EXPECTED();
             header = "";
             for(;;)
             {
@@ -365,33 +378,33 @@ void insertor::LoadFile(FILE *fp)
             if(header == "z")
             {
                 model.type = stringdata::zptr12;
-                fprintf(stderr, "Loading strings for %s (%s)", header.c_str(),
-                    WstrToAsc(getter.getcomment()).c_str());
+                MessageZSection(header);
             }
             else if(header == "r")
             {
                 model.type = stringdata::zptr8;
-                fprintf(stderr, "Loading strings for %s (%s)", header.c_str(),
-                    WstrToAsc(getter.getcomment()).c_str());
+                MessageRSection(header);
             }
             else if(header.size() > 1 && header[0] == 'l')
             {
                 model.type = stringdata::fixed;
                 model.width = atoi(header.c_str() + 1);
-                fprintf(stderr, "Loading strings for %s (%s)", header.c_str(),
-                    WstrToAsc(getter.getcomment()).c_str());
+                if(model.width < 1 || model.width > 65535)
+                    MessageUnknownHeader(header);
+                else
+                    MessageLSection(header);
             }
             else if(header.size() >= 1 && header[0] == 'd')
             {
-                // ok
+                MessageDSection(header);
             }
             else if(header.size() > 1 && header[0] == 's')
             {
-                // ok
+                MessageSSection(header);
             }
             else
             {
-                fprintf(stderr, "Unknown header '%s'\n", header.c_str());
+                MessageUnknownHeader(header);
             }
             
             continue;
@@ -399,6 +412,8 @@ void insertor::LoadFile(FILE *fp)
         
         if(c == '$')
         {
+            EXPECTED();
+
             unsigned label = 0;
             for(;;)
             {
@@ -416,7 +431,7 @@ void insertor::LoadFile(FILE *fp)
                         label = label * 16 + c + 10 - 'a';
                     else
                     {
-                        fprintf(stderr, "$%X: Got char '%c', invalid is (in label)!\n", label, c);
+                        MessageInvalidLabelChar(c, label, header);
                     }
                 }
                 else
@@ -442,8 +457,8 @@ void insertor::LoadFile(FILE *fp)
                             tmp = tmp2 + tmp;
                         }
                         while(tmp.size() < 4)tmp = "0" + tmp;
-                        fprintf(stderr, "$%s", tmp.c_str());
-                        fprintf(stderr, ": Got char '%c', expected ':' (in label)!\n", c);
+                        
+                        MessageInvalidLabelChar(c, tmp, header);
                         break;
                     }
                 }
@@ -580,16 +595,13 @@ void insertor::LoadFile(FILE *fp)
             
             strings.push_back(model);
             
-            static char cursbuf[]="-/|\\",curspos=0;
-            if(!(curspos%4)) fprintf(stderr,"%c\010",cursbuf[curspos/4]);
-            curspos=(curspos+1)%(4*4);
-            if(c == '*')fputs(" \n", stderr);
-           
             continue;
         }
-        fprintf(stderr, "Unexpected char '%c'\n", c);
-        cget(c);
+        
+        UNEXPECTED(c);
     }
+    
+    MessageDone();
     
     if(!rawcodes.empty())
     {

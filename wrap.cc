@@ -6,10 +6,11 @@
 #include "symbols.hh"
 #include "config.hh"
 #include "conjugate.hh"
+#include "msginsert.hh"
 
 const ctstring insertor::WrapDialogLines(const ctstring &dialog) const
 {
-    ctstring input = dialog;
+    const ctstring &input = dialog;
     
     // Standard defines that this'll be initialized upon the first call.
     static unsigned MaxTextWidth   = GetConf("wrap", "maxtextwidth");
@@ -48,6 +49,8 @@ const ctstring insertor::WrapDialogLines(const ctstring &dialog) const
         
         if(c == spacechar)
         {
+            // MessageWorking(); - too much slowdown
+            
             if(!col) wrap_with_indent = true;
             wrappos = result.size();
             wrapcol = col;
@@ -167,13 +170,7 @@ const ctstring insertor::WrapDialogLines(const ctstring &dialog) const
     
     if(linecount_error || linelength_error)
     {
-        fprintf(stderr,
-            " \n"
-            "Error: Too long text\n"
-            "In:  %s\n"
-            "Out: %s\n",
-                DispString(input).c_str(),
-                DispString(result).c_str());
+        MessageTooLongText(input, result);
     }
     
     if(wraps_happened)

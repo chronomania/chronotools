@@ -25,7 +25,7 @@ $C0:2018 20 26 21    JSR [DB:$2126]       ;$00:2126     A:7700 X:07E0 Y:001F D:0
 $C0:201B 6B          RTL                                A:0001 X:0058 Y:0200 D:0100 DB:00 PB:C0
 
 // Täällä tarkistetaan erikoiskoodeja.
-//  215 = erikoiskoodi, asetettu muualla
+//  0215 = erikoiskoodi, asetettu muualla
 $C0:2126 AD 15 02    LDA [DB:$0215]       ;$00:0215     A:7700 X:07E0 Y:001F D:0100 DB:00 PB:C0
 $C0:2129 D0 03       BNE $212E                          A:7710 X:07E0 Y:001F D:0100 DB:00 PB:C0
 // Ei ollut 0
@@ -49,16 +49,23 @@ $C0:214E C9 03       CMP A, $03    eli DELAY            A:7710 X:07E0 Y:001F D:0
 $C0:2150 F0 02       BEQ $2154                          A:7710 X:07E0 Y:001F D:0100 DB:00 PB:C0
 $C0:2152 80 19       BRA $216D                          A:7710 X:07E0 Y:001F D:0100 DB:00 PB:C0
 
+// 2154: delay-handler
+
 // 215B: newline-handler
 
 // 2161: cls-handler
 
 // 216D: muu merkki
 //        0213: nyt tulostettavien merkkien määrä
+//        0215: se erikoismerkki
 $C0:216D A9 01       LDA A, $01                         A:7710 X:07E0 Y:001F D:0100 DB:00 PB:C0
 $C0:216F 8D 13 02    STA [DB:$0213]       ;$00:0213     A:7701 X:07E0 Y:001F D:0100 DB:00 PB:C0
-$C0:2172 22 09 00 C2 JSL [$C2:$0009]      ;$C2:0009     A:7701 X:07E0 Y:001F D:0100 DB:00 PB:C0
-$C2:0009 4C 23 58    JMP [DB:$5823]       ;$00:5823     A:7701 X:07E0 Y:001F D:0100 DB:00 PB:C2
+$C0:2172 22 09 00 C2 JSL $C2:0009         ;$C2:0009     A:7701 X:07E0 Y:001F D:0100 DB:00 PB:C0
+
+// Kun tulostetaan status-ruudulle tekstejä.
+$C2:FAB2 22 09 00 C2 JSL $C2:0009         ;$C2:0009     A:FA0A X:0010 Y:FFFF D:0000 DB:7E S:0ABD P:envMxdi
+
+$C2:0009 4C 23 58    JMP $5823            ;$00:5823     A:7701 X:07E0 Y:001F D:0100 DB:00 PB:C2
 
 // 5823: merkin tulostusrutiini.
 $C2:5823 08          PHP                                A:7701 X:07E0 Y:001F D:0100 DB:00 PB:C2
@@ -68,8 +75,30 @@ $C2:5827 A9 00 02    LDA A, $0200                       A:7701 X:07E0 Y:001F D:0
 $C2:582A 5B          TCD                                A:0200 X:07E0 Y:001F D:0100 DB:00 PB:C2
 $C2:582B A9 00 00    LDA A, $0000                       A:0200 X:07E0 Y:001F D:0200 DB:00 PB:C2
 $C2:582E E2 20       SEP $20                            A:0000 X:07E0 Y:001F D:0200 DB:00 PB:C2
+// Käydään käsittelemässä erikoismerkki.
 $C2:5830 20 4A 58    JSR DB:$584A         ;$00:584A     A:0000 X:07E0 Y:001F D:0200 DB:00 PB:C2
-// jatkuu 5833:ssa
+// Hyppy 58B2:n ohi, jos carry set
+$C2:5833 B0 07       BCS $583C                          A:0020 X:0020 Y:001F D:0200 DB:00 PB:C2
+// $0230:sta haetaan ohje!
+$C2:5835 A5 30       LDA [$00:D+$30]      ;$00:0230     A:0020 X:0020 Y:001F D:0200 DB:00 PB:C2
+$C2:5837 0A          ASL A                              A:0000 X:0020 Y:001F D:0200 DB:00 PB:C2
+$C2:5838 AA          TAX                                A:0000 X:0020 Y:001F D:0200 DB:00 PB:C2
+// Taulun 5842 sisältö:
+//  0-1   58B2 = haetaan merkki
+//        5BF5 = tulostetaan edellinen merkki (eli pointterin $0237 takaa)
+$C2:5839 FC 42 58    JSR [PB:word[PB:$5842+x]] ;$C2:58B2 A:0000 X:0000 Y:001F D:0200 DB:00 PB:C
+// 583C: mitä lie?
+$C2:583C A9 00       LDA A, $00                         A:0010 X:0022 Y:02A0 D:0200 DB:00 PB:C2
+$C2:583E EB          XBA                                A:0000 X:0022 Y:02A0 D:0200 DB:00 PB:C2
+$C2:583F 2B          PLD                                A:0000 X:0022 Y:02A0 D:0200 DB:00 PB:C2
+$C2:5840 28          PLP                                A:0000 X:0022 Y:02A0 D:0100 DB:00 PB:C2
+$C2:5841 6B          RTL                                A:0000 X:0022 Y:02A0 D:0100 DB:00 PB:C2
+// merkin tulostusrutiini loppuu tähän.
+
+
+// Erikoismerkin käsittely.
+// Syötteenä: $0215 = luku $00..$20 väliltä.
+
 $C2:584A A5 15       LDA [$00:D+$15]      ;$00:0215     A:0000 X:07E0 Y:001F D:0200 DB:00 PB:C2
 $C2:584C 0A          ASL A                              A:0010 X:07E0 Y:001F D:0200 DB:00 PB:C2
 $C2:584D AA          TAX                                A:0020 X:07E0 Y:001F D:0200 DB:00 PB:C2
@@ -80,35 +109,76 @@ $C2:584D AA          TAX                                A:0020 X:07E0 Y:001F D:0
 // 10-17 5895 5895 5895 5895  5895 5895 5895 5895
 // 18-1F 5895 5895 5895 5895  5895 5895 5895 5895
 // 20    5895
-//   5893 = ei tulosteta
-//   5895 = tulostetaan sellaisenaan
+// Taulu loppuu osoitteessa 5893
+//   5893 = ei tulosteta (sec+rts)
+//   5895 = käsitellään sellaisenaan (clc+rts)
 //   5897 = erikoismerkki
 //   589B = erikoismerkki, lisäksi kolme spacea
 
 $C2:584E 7C 51 58    JMP [PB:word[PB:$5851+x]] ;$C2:5895 A:0020 X:0020 Y:001F D:0200 DB:00 PB:C
+$C2:5893 38          SEC                                A:0000 X:08B3 Y:0038 D:0000 DB:00 PB:7E S:06FF P:envmxdIZC HC:010 VC:225 02
+$C2:5894 60          RTS                                A:0000 X:08B3 Y:0038 D:0000 DB:00 PB:7E S:06FF P:envmxdIZC HC:010 VC:225 02
 $C2:5895 80 19       BRA $58B0                          A:0020 X:0020 Y:001F D:0200 DB:00 PB:C2
 $C2:58B0 18          CLC                                A:0020 X:0020 Y:001F D:0200 DB:00 PB:C2
 $C2:58B1 60          RTS                                A:0020 X:0020 Y:001F D:0200 DB:00 PB:C2
-// Hyppy 58B2:n ohi, jos carry set
-$C2:5833 B0 07       BCS $583C                          A:0020 X:0020 Y:001F D:0200 DB:00 PB:C2
-// $230:sta haetaan ohje!
-$C2:5835 A5 30       LDA [$00:D+$30]      ;$00:0230     A:0020 X:0020 Y:001F D:0200 DB:00 PB:C2
-$C2:5837 0A          ASL A                              A:0000 X:0020 Y:001F D:0200 DB:00 PB:C2
-$C2:5838 AA          TAX                                A:0000 X:0020 Y:001F D:0200 DB:00 PB:C2
-// Taulun 5842 sisältö:
-//  0-1   58B2 = haetaan merkki
-//        5BF5 = tulostetaan edellinen merkki
-$C2:5839 FC 42 58    JSR [PB:word[PB:$5842+x]] ;$C2:58B2 A:0000 X:0000 Y:001F D:0200 DB:00 PB:C
-// 583C: mitä lie?
-$C2:583C A9 00       LDA A, $00                         A:0010 X:0022 Y:02A0 D:0200 DB:00 PB:C2
-$C2:583E EB          XBA                                A:0000 X:0022 Y:02A0 D:0200 DB:00 PB:C2
-$C2:583F 2B          PLD                                A:0000 X:0022 Y:02A0 D:0200 DB:00 PB:C2
-$C2:5840 28          PLP                                A:0000 X:0022 Y:02A0 D:0100 DB:00 PB:C2
-$C2:5841 6B          RTL                                A:0000 X:0022 Y:02A0 D:0100 DB:00 PB:C2
-// merkin tulostusrutiini loppuu tähän.
 
-$C2:5893 38          SEC                                A:0000 X:08B3 Y:0038 D:0000 DB:00 PB:7E S:06FF P:envmxdIZC HC:010 VC:225 02
-$C2:5894 60          RTS                                A:0000 X:08B3 Y:0038 D:0000 DB:00 PB:7E S:06FF P:envmxdIZC HC:010 VC:225 02
+
+$C2:FA72 A9 00 5E    LDA #$5E00              A:FFFF X:53BE Y:53C0 D:0000 DB:7E S:0A74 P:envmxdi
+$C2:FA75 8D 10 02    STA $0210  [$7E:0210]   A:5E00 X:53BE Y:53C0 D:0000 DB:7E S:0A74 P:envmxdi
+$C2:FA78 A9 01 31    LDA #$3101              A:5E00 X:53BE Y:53C0 D:0000 DB:7E S:0A74 P:envmxdi
+$C2:FA7B 8D C7 0D    STA $0DC7  [$7E:0DC7]   A:3101 X:53BE Y:53C0 D:0000 DB:7E S:0A74 P:envmxdi
+$C2:FA7E A9 08 00    LDA #$0008              A:3101 X:53BE Y:53C0 D:0000 DB:7E S:0A74 P:envmxdi
+$C2:FA81 8D D2 0D    STA $0DD2  [$7E:0DD2]   A:0008 X:53BE Y:53C0 D:0000 DB:7E S:0A74 P:envmxdi
+$C2:FA84 A9 00 78    LDA #$7800              A:0008 X:53BE Y:53C0 D:0000 DB:7E S:0A74 P:envmxdi
+$C2:FA87 8D D4 0D    STA $0DD4  [$7E:0DD4]   A:7800 X:53BE Y:53C0 D:0000 DB:7E S:0A74 P:envmxdi
+$C2:FA8A A9 00 5E    LDA #$5E00              A:7800 X:53BE Y:53C0 D:0000 DB:7E S:0A74 P:envmxdi
+$C2:FA8D 8D D6 0D    STA $0DD6  [$7E:0DD6]   A:5E00 X:53BE Y:53C0 D:0000 DB:7E S:0A74 P:envmxdi
+$C2:FA90 A9 9F FA    LDA #$FA9F              A:5E00 X:53BE Y:53C0 D:0000 DB:7E S:0A74 P:envmxdi
+$C2:FA93 A2 10 00    LDX #$0010              A:FA9F X:53BE Y:53C0 D:0000 DB:7E S:0A74 P:eNvmxdi
+$C2:FA96 20 49 82    JSR $8249  [$7E:8249]   A:FA9F X:0010 Y:53C0 D:0000 DB:7E S:0A74 P:envmxdi
+//// "Yksintekniikat", "kaksintekniikat"... 
+$C2:FA99 22 03 00 C2 JSL $C20003[$C2:0003]   A:0101 X:0010 Y:53C0 D:0000 DB:7E S:0A74 P:envmxdi
+$C2:0003 4C DF 57    JMP $57DF  [$7E:57DF]   A:0101 X:0010 Y:53C0 D:0000 DB:7E S:0A71 P:envmxdi
+$C2:57DF 08          PHP                     A:0101 X:0010 Y:53C0 D:0000 DB:7E S:0A71 P:envmxdi
+$C2:57E0 C2 20       REP #$20                A:0101 X:0010 Y:53C0 D:0000 DB:7E S:0A70 P:envmxdi
+$C2:57E2 0B          PHD                     A:0101 X:0010 Y:53C0 D:0000 DB:7E S:0A70 P:envmxdi
+$C2:57E3 A9 00 02    LDA #$0200              A:0101 X:0010 Y:53C0 D:0000 DB:7E S:0A6E P:envmxdi
+$C2:57E6 5B          TCD                     A:0200 X:0010 Y:53C0 D:0000 DB:7E S:0A6E P:envmxdi
+//  $0C = byte-indeksi "tech descs"-tauluun
+$C2:57E7 A5 0C       LDA $0C    [$00:020C]   A:0200 X:0010 Y:53C0 D:0200 DB:7E S:0A6E P:envmxdi
+$C2:57E9 29 FF 00    AND #$00FF              A:0978 X:0010 Y:53C0 D:0200 DB:7E S:0A6E P:envmxdi
+$C2:57EC 0A          ASL A                   A:0078 X:0010 Y:53C0 D:0200 DB:7E S:0A6E P:envmxdi
+$C2:57ED A8          TAY                     A:00F0 X:0010 Y:53C0 D:0200 DB:7E S:0A6E P:envmxdi
+//  $0D = long-pointteri "tech descs"-tauluun
+$C2:57EE B7 0D       LDA [$0D],y[$CC:3AF9]   A:00F0 X:0010 Y:00F0 D:0200 DB:7E S:0A6E P:envmxdi
+$C2:57F0 85 31       STA $31    [$00:0231]   A:D2FD X:0010 Y:00F0 D:0200 DB:7E S:0A6E P:eNvmxdi
+$C2:57F2 A9 00 00    LDA #$0000              A:D2FD X:0010 Y:00F0 D:0200 DB:7E S:0A6E P:eNvmxdi
+$C2:57F5 E2 20       SEP #$20                A:0000 X:0010 Y:00F0 D:0200 DB:7E S:0A6E P:envmxdi
+$C2:57F7 A5 0F       LDA $0F    [$00:020F]   A:0000 X:0010 Y:00F0 D:0200 DB:7E S:0A6E P:envMxdi
+$C2:57F9 85 33       STA $33    [$00:0233]   A:00CC X:0010 Y:00F0 D:0200 DB:7E S:0A6E P:eNvMxdi
+$C2:57FB 64 30       STZ $30    [$00:0230]   A:00CC X:0010 Y:00F0 D:0200 DB:7E S:0A6E P:eNvMxdi
+$C2:57FD A5 14       LDA $14    [$00:0214]   A:00CC X:0010 Y:00F0 D:0200 DB:7E S:0A6E P:eNvMxdi
+$C2:57FF C9 02       CMP #$02                A:0000 X:0010 Y:00F0 D:0200 DB:7E S:0A6E P:envMxdi
+$C2:5801 D0 04       BNE $04    [$5807]      A:0000 X:0010 Y:00F0 D:0200 DB:7E S:0A6E P:eNvMxdi
+$C2:5807 A9 08       LDA #$08                A:0000 X:0010 Y:00F0 D:0200 DB:7E S:0A6E P:eNvMxdi
+$C2:5809 85 34       STA $34    [$00:0234]   A:0008 X:0010 Y:00F0 D:0200 DB:7E S:0A6E P:envMxdi
+$C2:580B A5 14       LDA $14    [$00:0214]   A:0008 X:0010 Y:00F0 D:0200 DB:7E S:0A6E P:envMxdi
+$C2:580D 10 02       BPL $02    [$5811]      A:0000 X:0010 Y:00F0 D:0200 DB:7E S:0A6E P:envMxdi
+// Sijoitetaan $04 seuraavaksi tulostettavaksi merkiksi.
+$C2:5811 A9 04       LDA #$04                A:0000 X:0010 Y:00F0 D:0200 DB:7E S:0A6E P:envMxdi
+$C2:5813 85 15       STA $15    [$00:0215]   A:0004 X:0010 Y:00F0 D:0200 DB:7E S:0A6E P:envMxdi
+$C2:5815 A2 00 02    LDX #$0200              A:0004 X:0010 Y:00F0 D:0200 DB:7E S:0A6E P:envMxdi
+$C2:5818 86 3D       STX $3D    [$00:023D]   A:0004 X:0200 Y:00F0 D:0200 DB:7E S:0A6E P:envMxdi
+$C2:581A A9 00       LDA #$00                A:0004 X:0200 Y:00F0 D:0200 DB:7E S:0A6E P:envMxdi
+$C2:581C 85 3F       STA $3F    [$00:023F]   A:0000 X:0200 Y:00F0 D:0200 DB:7E S:0A6E P:envMxdi
+$C2:581E 64 17       STZ $17    [$00:0217]   A:0000 X:0200 Y:00F0 D:0200 DB:7E S:0A6E P:envMxdi
+$C2:5820 2B          PLD                     A:0000 X:0200 Y:00F0 D:0200 DB:7E S:0A6E P:envMxdi
+$C2:5821 28          PLP                     A:0000 X:0200 Y:00F0 D:0000 DB:7E S:0A70 P:envMxdi
+$C2:5822 6B          RTL                     A:0000 X:0200 Y:00F0 D:0000 DB:7E S:0A71 P:envmxdi
+
+
+
+
 
 // Haetaan merkki pointterin $31 osoittamasta paikasta
 // Tämä koodi on japaniversiossa osoitteessa $C2:58BB
@@ -559,8 +629,8 @@ $C2:5C64 5C 70 5C 75 JMP $75:$5C70
 //  - C2:5C12 (substring)
 //  - C2:58C4 (literal)
 //  PARAMETREJÄ:
-//    $0210: (long) osoitin pikselibufferin alkuun
-//    $0214: (byte) ???
+//    $0210: (long) osoitin pikselibufferin alkuun (EIHÄN?)
+//    $0214: (byte) ??? poikkeuksetta 0
 //    $0217: (byte) tulostettujen merkkien määrä (tälle vain tehdään INC)
 //    $0234: (byte) pikselipositio rivillä
 //    $0235: (word) merkki, joka piirretään
@@ -570,8 +640,11 @@ $C2:5C64 5C 70 5C 75 JMP $75:$5C70
 //    $026A: (word) pikselipositio rivillä AND 7
 //    $026C: (word) apumuuttuja laskutoimituksiin
 //    $026E: (word) tavuoffset nametableen
+//    $0273: (long) pointteri seuraavaan tileen
 //    $0276: (long) pointteri merkkiin fontissa, part 1
 //    $0279: (long) pointteri merkkiin fontissa, part 2
+//  EI KÄYTÄ:
+//    $0215: (word) kontrollimerkki ($00..$20)
 //  PALUUARVO:
 //    A = $0000
 
@@ -1520,7 +1593,7 @@ $C1:09A7 E6 86       INC [$00:D+$86]      ;$00:0086     A:0000 X:0000 Y:000B D:0
 $C1:09A9 A5 86       LDA [$00:D+$86]      ;$00:0086     A:0000 X:0000 Y:000B D:0000 DB:7E PB:C
 $C1:09AB C9 03       CMP A, $03                         A:0001 X:0000 Y:000B D:0000 DB:7E PB:C
 $C1:09AD D0 DC       BNE $098B                          A:0001 X:0000 Y:000B D:0000 DB:7E PB:C
-$C1:09AF 60          RTS                                A:0003 
+$C1:09AF 60          RTS         
 
 
 ; Display item-line

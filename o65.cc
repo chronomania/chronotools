@@ -27,7 +27,8 @@ public:
     unsigned base;
     
     // absolute addresses of all symbols
-    map<string, unsigned> symbols;
+    typedef map<string, unsigned> symbolmap_t;
+    symbolmap_t symbols;
     
     template<typename T>
     struct Relocdata
@@ -41,7 +42,10 @@ public:
     Relocdata<pair<unsigned,unsigned> > R16hi; // addr,lowpart
     Relocdata<pair<unsigned,unsigned> > R24seg;// addr,offspart
     Relocdata<unsigned> R24;                   // addr
-
+public:
+    segment(): base(0)
+    {
+    }
 private:
     friend class O65;
     void Locate(unsigned newaddress);
@@ -166,26 +170,27 @@ namespace
     }
 }
 
-O65::O65(): text(NULL), data(NULL)
+O65::O65(): code(NULL), data(NULL), error(false)
 {
 }
 
 O65::~O65()
 {
-    delete text;
+    delete code;
     delete data;
 }
 
-O65::O65(const O65& b): undefines(b.undefines)
+O65::O65(const O65& b)
+    : undefines(b.undefines),
+      code(b.code ? new segment(*b.code) : NULL),
+      data(b.data ? new segment(*b.data) : NULL),
+      error(b.error)
 {
-    text = b.text ? new segment(*b.text) : NULL;
-    data = b.data ? new segment(*b.data) : NULL;
-    undefines = b.undefines;
 }
 void O65::operator= (const O65& b)
 {
     if(&b == this) return;
-    delete text; text = b.text ? new segment(*b.text) : NULL;
+    delete code; code = b.code ? new segment(*b.code) : NULL;
     delete data; data = b.data ? new segment(*b.data) : NULL;
     undefines = b.undefines;
 }
@@ -202,17 +207,17 @@ void O65::Load(FILE *fp)
     // Skip mode
     LoadWord(fp);
     
-    if(this->text) delete this->text;
+    if(this->code) delete this->code;
     if(this->data) delete this->data;
 
-    this->text = new segment;
+    this->code = new segment;
     this->data = new segment;
     
-    this->text->base = LoadWord(fp);
-    this->text->space.resize(LoadWord(fp));
+    this->code->base = LoadWord(fp);
+    this->ResizeCode(LoadWord(fp));
 
     this->data->base = LoadWord(fp);
-    this->data->space.resize(LoadWord(fp));
+    this->ResizeData(LoadWord(fp));
     
     LoadWord(fp); // Skip bss_base
     LoadWord(fp); // Skip bss_len
@@ -229,7 +234,7 @@ void O65::Load(FILE *fp)
         for(unsigned a=0; a<len; ++a) fgetc(fp);
     }
     
-    fread(&this->text->space[0], this->text->space.size(), 1, fp);
+    fread(&this->code->space[0], this->code->space.size(), 1, fp);
     fread(&this->data->space[0], this->data->space.size(), 1, fp);
     
     unsigned num_und = LoadWord(fp);
@@ -241,7 +246,7 @@ void O65::Load(FILE *fp)
         undefines.push_back(make_pair(varname, make_pair(false, 0)));
     }
     
-    LoadRelocations(fp, *this->text);
+    LoadRelocations(fp, *this->code);
     LoadRelocations(fp, *this->data);
     
     if(!this->data->space.empty())
@@ -249,8 +254,8 @@ void O65::Load(FILE *fp)
         fprintf(stderr, "Warning: Nonempty data segment completely ignored.\n");
     }
     
-    unsigned num_ext = LoadWord(fp);
-    for(unsigned a=0; a<num_ext; ++a)
+    unsigned num_global = LoadWord(fp);
+    for(unsigned a=0; a<num_global; ++a)
     {
         string varname;
         while(int c = fgetc(fp)) { if(c==EOF)break; varname += (char) c; }
@@ -261,18 +266,28 @@ void O65::Load(FILE *fp)
         switch(seg)
         {
             case 2:
-                text->symbols[varname] = value;
+                DeclareCodeGlobal(varname, value);
                 break;
             case 3:
-                data->symbols[varname] = value;
+                DeclareDataGlobal(varname, value);
                 break;
         }
     }
 }
 
+void O65::DeclareCodeGlobal(const string& name, unsigned address)
+{
+    code->symbols[name] = address;
+}
+
+void O65::DeclareDataGlobal(const string& name, unsigned address)
+{
+    data->symbols[name] = address;
+}
+
 void O65::LocateCode(unsigned newaddress)
 {
-    text->Locate(newaddress);
+    code->Locate(newaddress);
 }
 
 void O65::LinkSym(const string& name, unsigned value)
@@ -293,7 +308,7 @@ void O65::LinkSym(const string& name, unsigned value)
                 undefines[a].second.second
                    );
         }
-        text->LocateSym(a, value);
+        code->LocateSym(a, value);
         undefines[a].second.first  = true;  // mark defined
         undefines[a].second.second = value; // as this value
     }
@@ -306,11 +321,15 @@ void O65::LinkSym(const string& name, unsigned value)
 void O65::segment::Locate(unsigned newaddress)
 {
     unsigned diff = newaddress - base;
+    
+    /* Relocate symbols */
     map<string, unsigned>::iterator i;
     for(i = symbols.begin(); i != symbols.end(); ++i)
     {
         i->second += diff;
     }
+    
+    /* Fix all references to local symbols */
     for(unsigned a=0; a<R16.Fixups.size(); ++a)
     {
         unsigned addr = R16.Fixups[a];
@@ -372,6 +391,9 @@ void O65::segment::Locate(unsigned newaddress)
 
 void O65::segment::LocateSym(unsigned symno, unsigned value)
 {
+    /* Locate an external symbol */
+
+    /* Fix all references to it */
     for(unsigned a=0; a<R16.Relocs.size(); ++a)
     {
         if(R16.Relocs[a].second != symno) continue;
@@ -437,30 +459,46 @@ void O65::segment::LocateSym(unsigned symno, unsigned value)
 
 const vector<unsigned char>& O65::GetCode() const
 {
-    return text->space;
+    return code->space;
 }
 
 unsigned O65::GetCodeSize() const
 {
-    return text->space.size();
+    return code->space.size();
+}
+
+const vector<unsigned char>& O65::GetData() const
+{
+    return data->space;
+}
+
+unsigned O65::GetDataSize() const
+{
+    return data->space.size();
 }
 
 unsigned O65::GetSymAddress(const string& name) const
 {
-    return text->symbols.find(name)->second;
+    segment::symbolmap_t::const_iterator i = code->symbols.find(name);
+    if(i == code->symbols.end())
+    {
+        fprintf(stderr, "Attempt to find symbol %s which not exists.\n", name.c_str());
+        return 0;
+    }
+    return i->second;
 }
 
 bool O65::HasSym(const string& name) const
 {
-    return text->symbols.find(name) != text->symbols.end();
+    return code->symbols.find(name) != code->symbols.end();
 }
 
 const vector<string> O65::GetSymbolList() const
 {
     vector<string> result;
     for(map<string, unsigned>::const_iterator
-        i = text->symbols.begin();
-        i != text->symbols.end();
+        i = code->symbols.begin();
+        i != code->symbols.end();
         ++i)
     {
         result.push_back(i->first);
@@ -494,16 +532,16 @@ void O65::Verify() const
 const string O65::GetByteAt(unsigned addr) const
 {
 #if 0
-    for(unsigned a=0; a<text->R16lo.Relocs.size(); ++a)
+    for(unsigned a=0; a<code->R16lo.Relocs.size(); ++a)
     {
-        if(text->R16lo.Relocs[a].first != addr) continue;
+        if(code->R16lo.Relocs[a].first != addr) continue;
         
-        unsigned symno = text->R16lo.Relocs[a].second;
+        unsigned symno = code->R16lo.Relocs[a].second;
         string result = undefines[symno].first;
         
         unsigned Target = undefines[symno].second.second;
 
-        signed char diff = text->space[addr] - Target;
+        signed char diff = code->space[addr] - Target;
         if(diff)
         {
             char Buf[64]; sprintf(Buf, "%+d", diff);
@@ -511,14 +549,14 @@ const string O65::GetByteAt(unsigned addr) const
         }
         return result;
     }
-    for(unsigned a=0; a<text->R16lo.Fixups.size(); ++a)
+    for(unsigned a=0; a<code->R16lo.Fixups.size(); ++a)
     {
-        if(text->R16lo.Fixups[a].first != addr) continue;
+        if(code->R16lo.Fixups[a].first != addr) continue;
         
-        unsigned symno = text->R16lo.Fixups[a].second;
+        unsigned symno = code->R16lo.Fixups[a].second;
         string result = undefines[symno].first;
 
-        signed char diff = text->space[addr] - undefines[symno].second.second;
+        signed char diff = code->space[addr] - undefines[symno].second.second;
         if(diff)
         {
             char Buf[64]; sprintf(Buf, "%+d", diff);
@@ -527,18 +565,62 @@ const string O65::GetByteAt(unsigned addr) const
         return result;
     }
 #endif
-    char Buf[4]; sprintf(Buf, "$%02X", text->space[addr]);
+    char Buf[4]; sprintf(Buf, "$%02X", code->space[addr]);
     return Buf;
 }
 
 const string O65::GetWordAt(unsigned addr) const
 {
-    char Buf[6]; sprintf(Buf, "$%02X%02X", text->space[addr+1], text->space[addr]);
+    char Buf[6]; sprintf(Buf, "$%02X%02X", code->space[addr+1], code->space[addr]);
     return Buf;
 }
 
 const string O65::GetLongAt(unsigned addr) const
 {
-    char Buf[8]; sprintf(Buf, "$%02X%02X%02X", text->space[addr+2], text->space[addr+1], text->space[addr]);
+    char Buf[8]; sprintf(Buf, "$%02X%02X%02X", code->space[addr+2], code->space[addr+1], code->space[addr]);
     return Buf;
+}
+
+void O65::ResizeCode(unsigned newsize)
+{
+    code->space.resize(newsize);
+}
+
+void O65::ResizeData(unsigned newsize)
+{
+    if(!this->data) this->data = new segment;
+    data->space.resize(newsize);
+}
+
+void O65::WriteCode(unsigned addr, unsigned char value)
+{
+    if(!this->code) this->code = new segment;
+    code->space[addr] = value;
+}
+
+void O65::WriteData(unsigned addr, unsigned char value)
+{
+    data->space[addr] = value;
+}
+
+void O65::LoadCodeFrom(const vector<unsigned char>& buf)
+{
+    if(!this->code) this->code = new segment;
+    code->space = buf;
+}
+
+void O65::LoadDataFrom(const vector<unsigned char>& buf)
+{
+    if(!this->data) this->data = new segment;
+    data->space = buf;
+}
+
+bool O65::Error() const
+{
+    return error;
+}
+
+void O65::SetError()
+{
+    error = true;
 }

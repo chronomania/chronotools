@@ -11,82 +11,58 @@
 // Short jump takes two bytes:
 //     80 2A       = JMP (IP + 2 + $2A)
 
-void ROM::AddCall(unsigned codeaddress, unsigned target)
+void ROM::AddReference(const ReferMethod& reference, unsigned target, const string& what)
 {
-    unsigned rompos = codeaddress & 0x3FFFFF;
-    
-    target |= 0xC00000; // Ensure we're jumping correctly
+    unsigned rompos = reference.from_addr & 0x3FFFFF;
     
     FILE *log = GetLogFile("mem", "log_addrs");
-    
     if(log)
-        fprintf(log, "- Adding subroutine    $%06X call at $%06X\n",
-            target, 0xC00000 | rompos);
-
-    Write(rompos++, 0x22);
-    Write(rompos++, target & 255);
-    Write(rompos++, (target >> 8) & 255);
-    Write(rompos  , target >> 16);
+    {
+        fprintf(log,
+                "- Add ref at $%06X: ",
+                0xC00000 | rompos);
+        
+        fprintf(log, "(");
+        if(reference.shr_by) fprintf(log, "(");
+        fprintf(log, "%X", target);
+        if(reference.shr_by > 0) fprintf(log, " >> %d", reference.shr_by);
+        if(reference.shr_by < 0) fprintf(log, " << %d", -reference.shr_by);
+        if(reference.shr_by) fprintf(log, ")");
+        
+        if(reference.or_mask) fprintf(log, " | %X", reference.or_mask);
+        
+        fprintf(log, ") & 0x");
+        for(unsigned n=0; n<reference.num_bytes; ++n) fprintf(log, "FF");
+        
+        fprintf(log, " (%s)\n", what.c_str());
+    }
+    
+    unsigned value = target;
+    if(reference.shr_by > 0) value >>= reference.shr_by;
+    if(reference.shr_by < 0) value <<= -reference.shr_by;
+    
+    value |= reference.or_mask;
+    
+    for(unsigned n=0; n<reference.num_bytes; ++n)
+    {
+        Write(rompos++, value & 255);
+        value >>= 8;
+    }
 }
 
-void ROM::AddLongPtr(unsigned codeaddress, unsigned target)
-{
-    unsigned rompos = codeaddress & 0x3FFFFF;
-    
-    target |= 0xC00000; // Ensure we're pointing correctly
-    
-    FILE *log = GetLogFile("mem", "log_addrs");
-    
-    if(log)
-        fprintf(log, "-   Writing longptr    $%06X at $%06X\n", target, rompos);
-    
-    Write(rompos++, target & 255);
-    Write(rompos++, (target >> 8) & 255);
-    Write(rompos  , target >> 16);
-}
-
-void ROM::AddOffsPtr(unsigned codeaddress, unsigned target)
-{
-    unsigned rompos = codeaddress & 0x3FFFFF;
-    
-    target &= 0xFFFF;
-    
-    FILE *log = GetLogFile("mem", "log_addrs");
-    
-    if(log)
-        fprintf(log, "-   Writing offsptr      $%04X at $%06X\n", target, rompos);
-    
-    Write(rompos++, target & 255);
-    Write(rompos,   (target >> 8) & 255);
-}
-
-void ROM::AddPagePtr(unsigned codeaddress, unsigned target)
-{
-    unsigned rompos = codeaddress & 0x3FFFFF;
-    
-    target >>= 16;
-    target |= 0xC0;
-    
-    FILE *log = GetLogFile("mem", "log_addrs");
-    
-    if(log)
-        fprintf(log, "-   Writing pageptr    $%02X     at $%06X\n", target, rompos);
-    
-    Write(rompos, target & 255);
-}
-
-void ROM::AddSubRoutine(unsigned target, const vector<unsigned char> &code)
+void ROM::AddPatch(const vector<unsigned char> &code, unsigned addr, const string& what)
 {
     if(code.empty()) return;
     
     FILE *log = GetLogFile("mem", "log_addrs");
     
     if(log)
-        fprintf(log, "- Adding subroutine at $%06X (%u bytes)\n",
-            0xC00000 | target,
-            code.size());
+        fprintf(log, "- Add obj at $%06X (%u bytes) (%s)\n",
+            0xC00000 | addr,
+            code.size(),
+            what.c_str());
 
-    unsigned rompos = target & 0x3FFFFF;
+    unsigned rompos = addr & 0x3FFFFF;
     
     for(unsigned a=0; a<code.size(); ++a)
         Write(rompos++, code[a]);
@@ -94,53 +70,14 @@ void ROM::AddSubRoutine(unsigned target, const vector<unsigned char> &code)
 
 void ROM::AddPatch(const SNEScode &code)
 {
-    AddSubRoutine(code.GetAddress(), code);
+    AddPatch(code, code.GetAddress(), code.GetName());
     
-    if(true) /* Handle calls */
+    const list<ReferMethod>& referers = code.GetReferers();
+    for(list<ReferMethod>::const_iterator
+        i = referers.begin();
+        i != referers.end();
+        ++i)
     {
-        const set<unsigned>& addrlist = code.GetCalls();
-        for(set<unsigned>::const_iterator
-            i = addrlist.begin();
-            i != addrlist.end();
-            ++i)
-        {
-            AddCall(*i, code.GetAddress());
-        }
-    }
-
-    if(true) /* Handle longptrs */
-    {
-        const set<unsigned>& addrlist = code.GetLongPtrs();
-        for(set<unsigned>::const_iterator
-            i = addrlist.begin();
-            i != addrlist.end();
-            ++i)
-        {
-            AddLongPtr(*i, code.GetAddress());
-        }
-    }
-
-    if(true) /* Handle offsptrs */
-    {
-        const set<unsigned>& addrlist = code.GetOffsPtrs();
-        for(set<unsigned>::const_iterator
-            i = addrlist.begin();
-            i != addrlist.end();
-            ++i)
-        {
-            AddOffsPtr(*i, code.GetAddress());
-        }
-    }
-
-    if(true) /* Handle pageptrs */
-    {
-        const set<unsigned>& addrlist = code.GetPagePtrs();
-        for(set<unsigned>::const_iterator
-            i = addrlist.begin();
-            i != addrlist.end();
-            ++i)
-        {
-            AddPagePtr(*i, code.GetAddress());
-        }
+        AddReference(*i, code.GetAddress(), code.GetName());
     }
 }

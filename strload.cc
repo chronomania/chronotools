@@ -3,13 +3,112 @@
 
 #include "rommap.hh"
 #include "strload.hh"
+#include "logfiles.hh"
+#include "rangemap.hh"
 
 using namespace std;
 
-#define LOADP_DEBUG      0
-#define LOADZ_DEBUG      0
+#define LOADP_DEBUG      1
+#define LOADZ_DEBUG      1
 #define LOADZ_EXTRASPACE 0
 #define LOADP_EXTRASPACE 0
+
+namespace
+{
+    class TableDumper
+    {
+        static const unsigned maxco = 4;
+        unsigned col;
+        FILE *log;
+        
+        rangemap<unsigned, bool> ranges;
+        
+    public:
+        TableDumper(const string& type, unsigned offset)
+            : col(maxco), log(GetLogFile("mem", "log_addrs"))
+        {
+            if(log)
+                fprintf(log, "-- %s at %06X\n", type.c_str(), offset | 0xC00000);
+        }
+        void AddPtr(unsigned ptrnum, unsigned where, unsigned target, unsigned bytes)
+        {
+            if(log)
+            {
+                if(col==maxco){fprintf(log, "ptr%2u ", ptrnum);col=0;}
+                else if(!col)fprintf(log, "%5u ", ptrnum);
+                if(!col)
+                {
+                    const unsigned noffs = where;
+                    for(unsigned k=62*62*62; ; k/=62)
+                    {
+                        unsigned dig = (noffs/k)%62;
+                        if(dig < 10) fputc('0' + dig, log);
+                        else if(dig < 36) fputc('A' + (dig-10), log);
+                        else fputc('a' + (dig-36), log);
+                        if(k==1)break;
+                    }
+                }
+                if(col == maxco/2)fputc(' ', log);
+                fprintf(log, " $%04X-%04X", target, target+bytes-1);
+                
+                ranges.set(target, target+bytes, true);
+                
+                if(++col == maxco) { fprintf(log, "\n"); col=0; }
+            }
+        }
+        void Finish(unsigned where)
+        {
+            if(log)
+            {
+                ranges.compact();
+                
+                if(col)fprintf(log, "\n");
+                fprintf(log, "-- Table ends at %06X\n", where | 0xC00000);
+
+                list<rangemap<unsigned,bool>::const_iterator> rangelist;
+                ranges.find_all_coinciding(0,0x10000, rangelist);
+
+                for(list<rangemap<unsigned,bool>::const_iterator>::const_iterator
+                    j = rangelist.begin();
+                    j != rangelist.end();
+                    ++j)
+                {
+                    fprintf(log, "--  Uses memory range $%04X-%04X\n",
+                        (*j)->first.lower,
+                        (*j)->first.upper-1);
+                }
+                
+                fprintf(log, "\n");
+
+                fflush(log);
+            }
+        }
+    };
+    
+    const ctstring LoadPString(unsigned offset,
+                               unsigned& bytes,
+                               const string& what)
+    {
+        ctstring foundstring;
+
+        bytes = ROM[offset++];
+
+        foundstring.reserve(bytes);
+        for(unsigned a=0; a<bytes; ++a)
+        {
+            unsigned int byte = ROM[offset++];
+            if(byte == 1 || byte == 2)
+            {
+                ++a; ++bytes;
+                byte = byte*256 + ROM[offset++];
+            }
+            foundstring += (ctchar)byte;
+        }
+        ++bytes; // the length-byte
+        MarkFree(offset-bytes, bytes, what);
+        return foundstring;
+    }
+}
 
 const vector<ctstring> LoadPStrings(unsigned offset, unsigned count,
                                     const string& what
@@ -18,39 +117,28 @@ const vector<ctstring> LoadPStrings(unsigned offset, unsigned count,
     unsigned segment = offset & 0xFF0000;
     vector<ctstring> result;
     result.reserve(count);
-#if LOADP_DEBUG
-    const unsigned maxco=10;
-    unsigned col=maxco;
-#endif
-    
     const string what_p = what+" pointers";
     const string what_d = what+" data";
-
+    
+#if LOADP_DEBUG
+    TableDumper logger(what_p, offset);
+#endif
+    
     MarkProt(offset, count*2, what_p);
     for(unsigned a=0; a<count; ++a)
     {
         unsigned stringptr = ROM[offset] + 256*ROM[offset + 1];
         
+        unsigned bytes;
+        ctstring foundstring = LoadPString(stringptr+segment, bytes, what_d);
+        
 #if LOADP_DEBUG
-        if(col==maxco){printf(";ptr%2u ", a);col=0;}
-        else if(!col)printf(";%5u ", a);
-        if(maxco==10 && col==5)putchar(' ');
-        printf(" $%04X", stringptr);
-        if(++col == maxco) { printf("\n"); col=0; }
+        logger.AddPtr(a, offset, stringptr, bytes);
 #endif
-        
-        stringptr += segment;
-        
-        unsigned length = ROM[stringptr];
-        ctstring foundstring;
-        foundstring.reserve(length);
-        for(unsigned a=0; a<length; ++a) foundstring += (ctchar)ROM[stringptr+a+1];
         
         result.push_back(foundstring);
         offset += 2;
         
-        MarkFree(stringptr, length + 1, what_d);
-
 #if LOADP_EXTRASPACE
         unsigned freebytepos=stringptr + result[a].size()+1;
         unsigned freebytecount=0;
@@ -63,8 +151,7 @@ const vector<ctstring> LoadPStrings(unsigned offset, unsigned count,
 #endif
     }
 #if LOADP_DEBUG
-    if(col)printf("\n");
-    fflush(stdout);
+    logger.Finish(offset);
 #endif
     return result;
 }
@@ -125,15 +212,14 @@ const vector<ctstring> LoadZStrings(unsigned offset, unsigned count,
 
     vector<ctstring> result;
     result.reserve(count);
-#if LOADZ_DEBUG
-    const unsigned maxco=6;
-    unsigned col=maxco;
-#endif
     set<unsigned> offsetlist;
     
     const string what_p = what+" pointers";
     const string what_d = what+" data";
 
+#if LOADZ_DEBUG
+    TableDumper logger(what_p, offset);
+#endif
     unsigned first_offs = offset;
     unsigned last_offs  = first_offs;
     for(unsigned a=0; !count || a<count; ++a, offset += 2)
@@ -147,31 +233,11 @@ const vector<ctstring> LoadZStrings(unsigned offset, unsigned count,
         last_offs = offset+2;
         offsetlist.insert(stringptr);
         
-#if LOADZ_DEBUG
-        if(col==maxco){printf(";ptr%2u ", a);col=0;}
-        else if(!col)printf(";%5u ", a);
-        if(!col)
-        {
-            const unsigned noffs = offset;
-            for(unsigned k=62*62*62; ; k/=62)
-            {
-                unsigned dig = (noffs/k)%62;
-                if(dig < 10) putchar('0' + dig);
-                else if(dig < 36) putchar('A' + (dig-10));
-                else putchar('a' + (dig-36));
-                if(k==1)break;
-            }
-        }
-        if(maxco==6 && col==3)putchar(' ');
-        printf(" $%04X", stringptr);
-#endif
-        
         unsigned bytes;
         ctstring foundstring = LoadZString(stringptr+base, bytes, what_d, extrasizes);
 
 #if LOADZ_DEBUG
-        printf("-%04X", stringptr+bytes);
-        if(++col == maxco) { printf("\n"); col=0; }
+        logger.AddPtr(a, offset, stringptr, bytes);
 #endif
         
 #if LOADZ_EXTRASPACE
@@ -190,8 +256,7 @@ const vector<ctstring> LoadZStrings(unsigned offset, unsigned count,
     MarkProt(first_offs, last_offs-first_offs, what_p);
 
 #if LOADZ_DEBUG
-    if(col)printf("\n");
-    fflush(stdout);
+    logger.Finish(offset);
 #endif
     return result;
 }

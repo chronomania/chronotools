@@ -4,6 +4,7 @@
 #include <vector>
 
 #include "snescode.hh"
+#include "refer.hh"
 
 using namespace std;
 
@@ -12,18 +13,6 @@ class ROM
     vector<unsigned char> Data;
     vector<unsigned char> Touched;
 
-    // Adds JSL to the specific location.
-    void AddCall(unsigned codeaddress, unsigned target);
-    
-    // Adds a long pointer to the specific location.
-    void AddLongPtr(unsigned codeaddress, unsigned target);
-    // Adds an offset pointer to the specific location.
-    void AddOffsPtr(unsigned codeaddress, unsigned target);
-    // Adds a page pointer to the specific location.
-    void AddPagePtr(unsigned codeaddress, unsigned target);
-    
-    // Writes a subroutine. Remember to terminate it with LONG-RETURN!
-    void AddSubRoutine(unsigned target, const vector<unsigned char> &code);
 
 public:
     ROM(unsigned size) : Data(size, 0), Touched(size, false)
@@ -38,7 +27,14 @@ public:
     const unsigned size() const { return Data.size(); }
     bool touched(unsigned ind) const { return Touched[ind]; }
     
-    void AddPatch(const SNEScode &code);
+    void AddReference(const ReferMethod& reference,
+                      unsigned target,
+                      const string& what = "");
+
+    void AddPatch(const SNEScode& code);
+
+    // Writes a subroutine. Remember to terminate it with RTL if necessary.
+    void AddPatch(const vector<unsigned char>& code, unsigned addr, const string& what="");
 };
 
 #endif

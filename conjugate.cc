@@ -9,6 +9,7 @@
 #include "space.hh"
 #include "ctinsert.hh"
 #include "conjugate.hh"
+#include "snescode.hh"
 #include "o65.hh"
 
 using namespace std;
@@ -16,6 +17,11 @@ using namespace std;
 void Conjugatemap::Load(const insertor &ins)
 {
     const ConfParser::ElemVec& elems = GetConf("conjugator", "setup").Fields();
+    if(elems.empty())
+    {
+        fprintf(stderr, "> Conjugator has nothing to do. Not using.\n");
+        return;
+    }
     for(unsigned a=0; a<elems.size(); a += 3)
     {
         form tmp;
@@ -178,7 +184,9 @@ unsigned Conjugatemap::GetMaxWidth(ctchar c) const
 Conjugatemap::Conjugatemap(const insertor &ins)
 {
     Load(ins);
+/* - nobody cares
     fprintf(stderr, "Built conjugator-map\n");
+*/
 }
 
 void Conjugatemap::Work(ctstring &s)
@@ -191,24 +199,16 @@ void insertor::GenerateConjugatorCode()
 {
     const string codefile = WstrToAsc(GetConf("conjugator", "file").SField());
 
-    O65 conj_code;
-    {FILE *fp = fopen(codefile.c_str(), "rb");
-    if(!fp) { perror(codefile.c_str()); return; }
-    conj_code.Load(fp);
-    fclose(fp);}
+    O65 conj_code = LoadObject(codefile, "Conjugator");
+    if(conj_code.Error()) return;
     
-    const unsigned Code_Size = conj_code.GetCodeSize();
-    
-    const unsigned Code_Address = freespace.FindFromAnyPage(Code_Size);
-    
-    fprintf(stderr,
-        "\r> Conjugater(%s):"
-            " %u(code)@ $%06X\n",
-        codefile.c_str(),
-        Code_Size, 0xC00000 | Code_Address
-           );
-    
-    conj_code.LocateCode(Code_Address | 0xC00000);
+    if(!LinkCalls("conjugator"))
+    {
+        fprintf(stderr, "> > Conjugator won't be used\n");
+        return;
+    }
+
+    objects.AddObject(conj_code, "conj code");
 
     const Conjugatemap::formlist &forms = Conjugater->GetForms();
     
@@ -222,16 +222,8 @@ void insertor::GenerateConjugatorCode()
         string CodeName = "CODE_";
         CodeName += WstrToAsc(funcname);
         
-        conj_code.LinkSym(CodeName, i->prefix);
+        objects.DefineSymbol(CodeName, i->prefix);
     }
     
-    conj_code.LinkSym("CHAR_OUTPUT_FUNC", 0xC00000 | GetConst(DIALOG_DRAW_FUNC_ADDR));
-    
-    LinkCalls("conjugator", conj_code);
-    
-    // Do not remove Verify() here!
-    // Otherwise you won't know what conjugations do you need!
-    conj_code.Verify();
-
-    PlaceData(conj_code.GetCode(), Code_Address);
+    objects.DefineSymbol("CHAR_OUTPUT_FUNC", 0xC00000 | GetConst(DIALOG_DRAW_FUNC_ADDR));
 }

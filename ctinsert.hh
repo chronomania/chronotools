@@ -26,11 +26,6 @@ public:
     void LoadFont12(const string &fn) { Font12.Load(fn); }
     
     void LoadImage(const string &fn, unsigned address);
-    void LoadAlreadyCompressedImage(const string& fn, unsigned address);
-    void LoadAndCompressImage(const string& fn, unsigned address, unsigned char seg);
-    
-    void LoadAndCompressImageWithPointer
-       (const string& fn, unsigned address, unsigned char seg);
 
     void LoadImages();
     void GenerateCode();
@@ -88,8 +83,8 @@ private:
     void WriteDictionary();
     void PatchTimeBoxes();
     
-    void PlaceData(const vector<unsigned char>&, unsigned address);
-    void PlaceByte(unsigned char byte, unsigned address);
+    void PlaceData(const vector<unsigned char>&, unsigned address, const string& reason="");
+    void PlaceByte(unsigned char byte, unsigned address, const string& reason="");
     
     void ApplyDictionary();
     void RebuildDictionary();
@@ -104,16 +99,17 @@ private:
 
     unsigned CalculateScriptSize() const;
 
-#if 0    
-    void LinkAndLocate(class FunctionList& functions);
-#endif
-    
     /**
      *  LinkCalls - Parse add_call_of -commands from config file
      *     @section: The configuration file section
-     *     @code: The code to be linked
+     *  Return value:
+     *     false = There were no add_call_of -lines
+     *     true  = ok
      */
-    void LinkCalls(const string& section, const class O65& code);
+    bool LinkCalls(const string& section);
+
+    void LinkAndLocateCode();
+    void AddReference(const ReferMethod& reference, unsigned target, const string& what="");
 };
 
 #endif

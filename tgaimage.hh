@@ -31,6 +31,8 @@ public:
     unsigned GetPalSize() const { return palsize; }
     unsigned GetPalEntry(unsigned n) const { return palette_in.at(n); }
     
+    bool Error() const { return !GetXdim(); }
+    
 private:
     unsigned xdim, ydim;
     unsigned palsize;

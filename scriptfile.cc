@@ -34,7 +34,7 @@ void BlockComment(const string& comment)
 {
     CurLabelComment = comment;
 }
-void StartBlock(const char* blocktype, unsigned intparam)
+void StartBlock(const char* blocktype, const string& reason, unsigned intparam)
 {
     char *Buf = new char[strlen(blocktype) + 64];
     sprintf(Buf, blocktype, intparam);
@@ -52,9 +52,12 @@ void StartBlock(const char* blocktype, unsigned intparam)
         // FIXME: iconv here
         if(*Buf)
         {
-            PutAscii("*");
-            PutAscii(Buf);
-            PutAscii(";block type\n");
+            string blockheader = "*";
+            blockheader += Buf;
+            blockheader += ';';
+            blockheader += reason;
+            blockheader += '\n';
+            PutAscii(blockheader);
         }
         CurLabel = Buf;
     }

@@ -8,7 +8,7 @@
 
 namespace
 {
-    static const char DefaultConfig[] =
+    const char DefaultConfig[] =
 "\n\
 # A simple Chronotools configuration file.\n\
 # Complete enough for only ctdump to work.\n\
@@ -17,11 +17,13 @@ characterset=\"iso-8859-15\"\n\
 [dumper]\n\
 font8fn=\"ct8fn.tga\"\n\
 font12fn=\"ct16fn.tga\"\n\
+log_map=\"ct_map.log\"\n\
+[mem]\n\
+log_addrs=\"ct_addr.log\"\n\
 [font]\n\
 begin=$A0\n\
 font8fn=\"ct8fn.tga\"\n\
 font12fn=\"ct16fn.tga\"\n\
-use_vwf8=false\n\
 nonchar=\"¶\"\n\
 font12_00=\"¶¶¶¶¶¶¶¶¶¶¶¶¶¶¶¶\"\n\
 font12_10=\"¶¶¶¶¶¶¶¶¶¶¶¶¶¶¶¶\"\n\
@@ -118,6 +120,9 @@ dummy=0\n\
 ";
     
     ConfParser config;
+
+    const char cfgfilename[] = "ct.cfg";
+    const char cfgtmpname[] = "ct-cfg.tmp";
 };
 
 const ConfParser::Field& GetConf(const char *sect, const char *var)
@@ -135,8 +140,11 @@ const ConfParser::Field& GetConf(const char *sect, const char *var)
         
         if(displayed.find(ErrorName) == displayed.end())
         {
-            fprintf(stderr, "\nWarning: Section '%s' not present in configuration file!\n",
-                ErrorName.c_str());
+            fprintf(stderr,
+                "> %s: Missing section [%s]\n",
+                cfgfilename,
+                ErrorName.c_str()
+                   );
             displayed.insert(ErrorName);
         }
 
@@ -153,10 +161,12 @@ const ConfParser::Field& GetConf(const char *sect, const char *var)
         
         if(displayed.find(ErrorName) == displayed.end())
         {
-           fprintf(stderr, "\nWarning: Field '%s' not present in"
-                           " configuration file section '%s'!\n",
-               ErrorName.first.c_str(),
-               ErrorName.second.c_str());
+            fprintf(stderr,
+                "> %s: Missing \"%s\" in [%s]\n",
+               cfgfilename,
+               ErrorName.first.c_str(),/* fieldname */
+               ErrorName.second.c_str()/* section name */
+                   );
 
             displayed.insert(ErrorName);
         }
@@ -178,28 +188,29 @@ namespace
         {
             bool was_tmp = false;
             
-            fprintf(stderr, "Reading %s...", "ct.cfg");
+            fprintf(stderr, "Reading %s...", cfgfilename);
             
-            FILE *fp = fopen("ct.cfg", "rt");
+            FILE *fp = fopen(cfgfilename, "rt");
             if(!fp)
             {
                 if(errno == ENOENT)
                 {
                     fprintf(stderr,
-                        "The configuration file 'ct.cfg' doesn't exist.\n"
+                        "The configuration file '%s' doesn't exist.\n"
                         "You should have one if you are dumping any other ROMs\n"
                         "than the standard english Chrono Trigger ROM, or if\n"
                         "you are inserting scripts to ROMs.\n"
                         "Ask Bisqwit how to create one.\n"
-                        "Using internal defaults for now.\n");
+                        "Using internal defaults for now.\n",
+                        cfgfilename);
                 }
                 else
-                    perror("ct.cfg");
+                    perror(cfgfilename);
                 
-                fp = fopen("ct-cfg.tmp", "wt");
+                fp = fopen(cfgtmpname, "wt");
                 fwrite(DefaultConfig, strlen(DefaultConfig), 1, fp);
                 fclose(fp);
-                fp = fopen("ct-cfg.tmp", "rt");
+                fp = fopen(cfgtmpname, "rt");
                 was_tmp = true;
             }
             
@@ -219,7 +230,7 @@ namespace
             
             fclose(fp);
 
-            if(was_tmp)remove("ct-cfg.tmp");
+            if(was_tmp)remove(cfgtmpname);
             
             fprintf(stderr, " done\n");
         }

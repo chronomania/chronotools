@@ -233,7 +233,13 @@ ctchar getchronochar(ucs4 ch, cset_class cl)
     }
     if(result < get_font_begin())
     {
-        fprintf(stderr, "Error: Irrepresentible character '%c' (%X)\n", ch, ch);
+        fprintf(stderr, "Error: Irrepresentible character '%c' (%X) = %d", ch, ch, result);
+        switch(cl)
+        {
+            case cset_8pix: fprintf(stderr, " in 8x8 font\n"); break;
+            case cset_12pix: fprintf(stderr, " in 12pix font\n"); break;
+            default: fprintf(stderr, " in unknown font class\n");
+        }
     }
     return result;
 }

@@ -3,8 +3,9 @@
 #include <vector>
 
 #include "rommap.hh"
-#include "ctdump.hh"
+#include "msgdump.hh"
 #include "scriptfile.hh"
+#include "logfiles.hh"
 #include "rangemap.hh"
 
 using namespace std;
@@ -92,7 +93,7 @@ namespace
         reasons.set(begin, begin+length, what);
     }
     
-    void ExplainProtMap(FILE *fp,
+    void ExplainProtMap(FILE *log,
                         unsigned begin, unsigned length,
                         const char* type,
                         unsigned num_ref)
@@ -121,19 +122,19 @@ namespace
             i != contents.end();
             ++i)
         {
-            fprintf(fp, "  %06X-%06X: %10u %-10s",
+            fprintf(log, "  %06X-%06X: %10u %-10s",
                 i->first.lower,
                 i->first.upper-1,
                 i->first.upper - i->first.lower,
                 type);
             
             if(num_ref > 1)
-                fprintf(fp, " %3u", num_ref);
+                fprintf(log, " %3u", num_ref);
             else
-                fprintf(fp, "    ");
+                fprintf(log, "    ");
             
-            fprintf(fp, "%s\n", i->second.c_str());
-            fflush(fp);
+            fprintf(log, "%s\n", i->second.c_str());
+            fflush(log);
         }
     }
 }
@@ -141,17 +142,14 @@ namespace
 void ShowProtMap()
 {
     static const char *const types[4] = {"?","free","protected","ERROR"};
-    static const char filename[] = "ctrommap.txt";
     
-    FILE *fp = fopen(filename, "wt");
-    if(!fp)
+    FILE *log = GetLogFile("dumper", "log_map");
+    if(!log)
     {
         return;
     }
     
-    fprintf(stderr, "Creating %s... (delete if you don't need it)\n", filename);
-    
-    fprintf(fp,
+    fprintf(log,
         "This file lists the memory map of your\n"
         "Chrono Trigger ROM, as detected by ctdump.\n"
         "\n"
@@ -180,7 +178,7 @@ void ShowProtMap()
         || (begun && (lasttype != type || lastcount != count))
           )
         {
-            ExplainProtMap(fp,
+            ExplainProtMap(log,
                            first, a-first,
                            types[lasttype],
                            lastcount);
@@ -193,7 +191,7 @@ void ShowProtMap()
         lastcount = count;
     }
     
-    fprintf(fp,
+    fprintf(log,
         "\n"
         "%-10s: will be used by insertor\n"
         "%-10s: will never be marked \"free\"\n"
@@ -202,8 +200,6 @@ void ShowProtMap()
         types[2],
         types[0]
            );
-    
-    fclose(fp);
 }
 
 void MarkFree(unsigned begin, unsigned length, const string& reason)
@@ -349,7 +345,7 @@ void ListSpaces(void)
 {
     //fprintf(stderr, "Dumping free space list...");
     unsigned pagecount = (space.size()+0xFFFF) >> 16;
-    StartBlock("");
+    StartBlock("", "free space");
     for(unsigned page=0; page<pagecount; ++page)
     {
         unsigned pageend = (page+1) << 16;

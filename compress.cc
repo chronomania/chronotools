@@ -1,4 +1,5 @@
 #include "compress.hh"
+#include "msginsert.hh"
 
 //#define DEBUG_DECOMPRESS
 //#define DEBUG_COMPRESS
@@ -572,7 +573,7 @@ public:
         {
           Only8bits = false;
           result_t result;
-          fprintf(stderr, ".");
+          MessageWorking();
           Compress(0, result, MAX_RECURSION);
           results.push_back(result);
         }
@@ -580,7 +581,7 @@ public:
         {
           Only8bits = true;
           result_t result;
-          fprintf(stderr, ".");
+          MessageWorking();
           Compress(0, result, 0);
           results.push_back(result);
         }

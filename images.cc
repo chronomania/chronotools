@@ -4,6 +4,8 @@
 #include "compress.hh"
 #include "images.hh"
 #include "rom.hh"
+#include "msginsert.hh"
+#include "snescode.hh"
 
 void LoadImageData
     (const TGAimage& image,
@@ -27,6 +29,8 @@ void LoadImageData
         const unsigned tiley = 8 * (a / tiles_x);
         const unsigned tileoffs = a * 8 * bitness;
         
+        MessageWorking();
+
         for(unsigned ty=tiley,y=0; y<8; ++y,++ty)
         {
             unsigned char byte[8] = {0,0,0,0};
@@ -60,77 +64,17 @@ void insertor::LoadImage(const string& fn, unsigned address)
     vector<unsigned char> data;
     LoadImageData(image, data);
     
-    PlaceData(data, address);
-    
-    fprintf(stderr, "Loading '%s'... @ $%06X\n",
-        fn.c_str(), 0xC00000 | address);
-}
+    char Buf[64];
+    sprintf(Buf, " @ $%06X", address | 0xC00000);
+    MessageLoadingItem(fn + Buf);
 
-
-void insertor::LoadAlreadyCompressedImage(const string& fn, unsigned address)
-{
-    address &= 0x3FFFFF;
-    
-    FILE *fp = fopen(fn.c_str(), "rb");
-    fseek(fp, 0, SEEK_END);
-
-    vector<unsigned char> data(ftell(fp));
-    rewind(fp);
-    fread(&data[0], 1, data.size(), fp);
-    fclose(fp);
-    
-    PlaceData(data, address);
-    
-    fprintf(stderr, "Loading '%s'...@ $%06X\n",
-        fn.c_str(), 0xC00000 | address);
-}
-
-void insertor::LoadAndCompressImage(const string& fn, unsigned address, unsigned char seg)
-{
-    const TGAimage image(fn);
-    
-    vector<unsigned char> uncompressed;
-    LoadImageData(image, uncompressed);
-    
-    address &= 0x3FFFFF;
-    
-    fprintf(stderr, "Loading '%s'...@ $%06X, compressing",
-        fn.c_str(), 0xC00000 | address);
-    
-    vector<unsigned char> data = Compress(&uncompressed[0], uncompressed.size(), seg);
-    
-    fprintf(stderr, " (%u bytes)\n", data.size());
-    
-    PlaceData(data, address);
-}
-
-void insertor::LoadAndCompressImageWithPointer
-   (const string& fn, unsigned address, unsigned char seg)
-{
-    const TGAimage image(fn);
-    
-    vector<unsigned char> uncompressed;
-    LoadImageData(image, uncompressed);
-    
-    address &= 0x3FFFFF;
-    
-    fprintf(stderr, "Loading '%s'...@ $%06X, compressing",
-        fn.c_str(), 0xC00000 | address);
-    
-    vector<unsigned char> compressed = 
-        Compress(&uncompressed[0], uncompressed.size(), seg);
-
-    SNEScode code(compressed);
-    
-    code.AddLongPtrFrom(address);
-    
-    fprintf(stderr, " (%u bytes)\n", compressed.size());
-    
-    codes.push_back(code);
+    PlaceData(data, address, fn);
 }
 
 void insertor::LoadImages()
 {
+    MessageLoadingImages();
+    
     if(true) /* Load unpacked images */
     {
         const ConfParser::ElemVec& elems = GetConf("images", "putimage").Fields();
@@ -168,25 +112,25 @@ void insertor::LoadImages()
             vector<unsigned char> data;
             LoadImageData(image, data);
             
-            fprintf(stderr, "Loading '%s'...@ $%06X, compressing",
-                fn.c_str(), 0xC00000 | space_address);
+            MessageLoadingItem(fn);
 
             data = Compress(&data[0], data.size(), segment);
             
-            fprintf(stderr, " (%u bytes)\n", data.size());
-    
-            SNEScode code(data);
-            /* Address given later */
+            //fprintf(stderr, " (%u bytes)\n", data.size());
+            
+            objects.AddObject(CreateObject(data, fn), fn);
             
             if(ptr_seg_address == ptr_ofs_address+2)
-                code.AddLongPtrFrom(ptr_ofs_address);
+            {
+                objects.AddReference(fn, LongPtrFrom(ptr_ofs_address));
+            }
             else
             {
-                code.AddOffsPtrFrom(ptr_ofs_address);
-                code.AddPagePtrFrom(ptr_seg_address);
+                objects.AddReference(fn, OffsPtrFrom(ptr_ofs_address));
+                objects.AddReference(fn, PagePtrFrom(ptr_seg_address));
             }
-            
-            codes.push_back(code);
         }
     }
+    
+    MessageDone();
 }

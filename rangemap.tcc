@@ -56,7 +56,8 @@ void rangemap<Key,Value>::set(const Key& lo, const Key& up, const Value& v)
 }
 
 template<typename Key, typename Value>
-rangemap<Key,Value>::const_iterator rangemap<Key,Value>::find(const Key& v) const
+typename rangemap<Key,Value>::const_iterator
+    rangemap<Key,Value>::find(const Key& v) const
 {
     for(const_iterator a=data.begin(); a!=data.end(); ++a)
         if(a->first.contains(v)) return a;

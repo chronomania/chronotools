@@ -7,6 +7,7 @@
 #include "config.hh"
 #include "logfiles.hh"
 #include "stringoffs.hh"
+#include "rangemap.hh"
 
 #define INITIALIZE_FREESPACE_ZERO
 
@@ -230,18 +231,17 @@ void insertor::GenerateCode()
 {
     // Do this first, because it requires two blocks on same page.
     GenerateVWF12code();
+    GenerateVWF8code();
     
-    if(GetConf("font", "use_vwf8"))
-    {
-        GenerateVWF8code();
-    }
-    
-    PlaceData(Font8.GetTiles(), GetConst(TILETAB_8_ADDRESS));
+    PlaceData(Font8.GetTiles(), GetConst(TILETAB_8_ADDRESS), "8x8 tiles");
     
     GenerateConjugatorCode();
     GenerateCrononickCode();
     GenerateSignatureCode();
-
+    
+    // Do this after all code has been generated.
+    LinkAndLocateCode();
+    
     // The dictionary fits almost anywhere.
     WriteDictionary();
 
@@ -254,23 +254,64 @@ void insertor::GenerateCode()
         {
             blocks.push_back(i->size());
         }
+    
     if(!blocks.empty())
     {
+        fprintf(stderr, "Organizing %u undetermined blocks:", blocks.size());
         freespace.OrganizeToAnyPage(blocks);
         
         unsigned a=0;
         for(i=codes.begin(); i!=codes.end(); ++i)
             if(!i->HasAddress())
+            {
+                fprintf(stderr, " \"%s\"", i->GetName().c_str());
                 i->YourAddressIs(blocks[a++].pos);
+            }
+        fprintf(stderr, ", done\n");
     }
 
     // Doesn't use space.
     PatchTimeBoxes();
 }
 
+void insertor::LinkAndLocateCode()
+{
+    /* Link code objects */
+    
+    /* Organize the code blobs */
+    vector<unsigned> o65sizes = objects.GetSizeList();
+    vector<freespacerec> Organization(o65sizes.size());
+    for(unsigned a=0; a<o65sizes.size(); ++a)
+        Organization[a].len = o65sizes[a];
+    freespace.OrganizeToAnyPage(Organization);
+    for(unsigned a=0; a<o65sizes.size(); ++a)
+        o65sizes[a] = Organization[a].pos;
+    objects.PutAddrList(o65sizes);
+    
+    /* Link the code blobs */
+    objects.Link();
+    
+    /* Send them into the ROM */
+    const vector<unsigned> o65addrs = objects.GetAddrList();
+    for(unsigned a=0; a<o65addrs.size(); ++a)
+    {
+        PlaceData(objects.GetCode(a), o65addrs[a], objects.GetName(a));
+        objects.Release(a);
+    }
+    
+    /* Load and remember the references */
+    vector<pair<ReferMethod, pair<string,unsigned> > > references = objects.GetReferences();
+    for(unsigned a=0; a<references.size(); ++a)
+    {
+        AddReference(references[a].first,
+                     references[a].second.second,
+                     references[a].second.first);
+    }
+}
+
 void insertor::WriteCode(ROM &ROM) const
 {
-    fprintf(stderr, "Writing code...\n");
+    fprintf(stderr, "Writing code and images...\n");
     
     // Patch the name entry function
     //  FIXME: Make this read the pointers from "strings" instead
@@ -321,63 +362,55 @@ void insertor::WriteDictionary()
 
     unsigned dictpage = NOWHERE;
     freespace.OrganizeToAnySamePage(Organization, dictpage);
-    unsigned dictaddr = Organization[dictsize].pos + (dictpage << 16);
+    unsigned dictaddr = Organization[dictsize].pos | (dictpage << 16) | 0xC00000;
 
     /* Display the dictionary data addresses */
     if(true)
     {
-        vector<unsigned> UsedAddresses;
+        rangemap<unsigned, bool> ranges;
         for(unsigned a=0; a<dictsize; ++a)
         {
             unsigned spaceptr = Organization[a].pos;
-            for(unsigned b=0; b<=dict[a].size(); ++b)
-                UsedAddresses.push_back(spaceptr+b);
+            ranges.set(spaceptr, spaceptr + CalcSize(dict[a]) + 1, true);
         }
-            
-        vector<unsigned> rangebegins, rangeends;
         
-        const unsigned* begin = &*UsedAddresses.begin();
-        const unsigned* end   = &*UsedAddresses.end();
-        unsigned first=0, last=0; bool eka=true;
-        while(begin < end)
-        {
-            if(eka) { eka=false; NewRange: first=last=*begin++; continue; }
-            if(*begin == last+1) { last=*begin++; continue; }              
-            
-            rangebegins.push_back(first); rangeends.push_back(last);
-            goto NewRange;
-        }
-        rangebegins.push_back(first); rangeends.push_back(last);
-
+        ranges.compact();
+        
+        list<rangemap<unsigned,bool>::const_iterator> rangelist;
+        ranges.find_all_coinciding(0,0x10000, rangelist);
+        
         fprintf(stderr,
-            "\r> Dictionary: %u(table)@ $%06X",
+            "> Dictionary: %u(table)@ $%06X",
             dictsize*2, dictaddr | 0xC00000);
         
-        for(unsigned a=0; a<rangebegins.size(); ++a)
-            fprintf(stderr, ", %u(data)@ $%06X",
-                rangeends[a]-rangebegins[a]+1,
-                rangebegins[a] | (dictpage << 16) | 0xC00000);
+        for(list<rangemap<unsigned,bool>::const_iterator>::const_iterator
+            j = rangelist.begin();
+            j != rangelist.end();
+            ++j)
+        {
+            unsigned size = (*j)->first.upper - (*j)->first.lower;
+            unsigned ptr  = (*j)->first.lower | (dictpage << 16) | 0xC00000;
 
+            fprintf(stderr, ", %u(data)@ $%06X", size, ptr);
+        }
         fprintf(stderr, "\n");
     }
     
     for(unsigned a=0; a<dictsize; ++a)
     {
-        unsigned spaceptr = Organization[a].pos;
-        
-        PlaceByte((spaceptr     ) & 255, dictaddr + a*2);
-        PlaceByte((spaceptr >> 8) & 255, dictaddr + a*2+1);
-        
         vector<unsigned char> str;
         str.push_back(dict[a].size());
         str.insert(str.end(), dict[a].begin(), dict[a].end());
-        PlaceData(str, spaceptr | (dictpage << 16) | 0xC00000);
+        
+        unsigned spaceptr = Organization[a].pos | (dictpage << 16);
+        
+        PlaceData(str, spaceptr, "dict");
+        AddReference(OffsPtrFrom(dictaddr + a*2), spaceptr, "dict");
     }
     
-    PlaceByte((dictaddr     ) & 255, GetConst(DICT_OFFSET)+0);
-    PlaceByte((dictaddr >> 8) & 255, GetConst(DICT_OFFSET)+1);
-    PlaceByte(0xC0 | dictpage,       GetConst(DICT_SEGMENT1));
-    PlaceByte(0xC0 | dictpage,       GetConst(DICT_SEGMENT2));
+    AddReference(OffsPtrFrom(GetConst(DICT_OFFSET)),   dictaddr, "dict ptr");
+    AddReference(PagePtrFrom(GetConst(DICT_SEGMENT1)), dictaddr, "dict ptr");
+    AddReference(PagePtrFrom(GetConst(DICT_SEGMENT2)), dictaddr, "dict ptr");
 }
 
 void insertor::WriteStrings(ROM &ROM)
@@ -434,6 +467,7 @@ void insertor::WriteStrings(ROM &ROM)
 
 void insertor::GenerateVWF12code()
 {
+    // O65 linker can't be used here because of the same-page restriction.
     const vector<unsigned char> &tiletab1 = Font12.GetTab1();
     const vector<unsigned char> &tiletab2 = Font12.GetTab2();
     
@@ -453,7 +487,7 @@ void insertor::GenerateVWF12code()
     const unsigned WidthTab_Address = freespace.FindFromAnyPage(tilecount);
     
     fprintf(stderr,
-        "\r> VWF12:"
+        "> VWF12:"
             " %u(widths)@ $%06X,"
             " %u(tab1)@ $%06X,"
             " %u(tab2)@ $%06X\n",
@@ -465,15 +499,8 @@ void insertor::GenerateVWF12code()
     /* As this pointer doesn't point directly to the data,
      * it can't be set with AddOffsPtrFrom/AddSegPtrFrom
      */
-    // patch font engine
-    unsigned tmp = (WidthTab_Address - font_begin) | 0xC00000;
-    
-    PlaceByte(((tmp     )&255), GetConst(VWF12_WIDTH_OFFSET)+0);
-    PlaceByte(((tmp >> 8)&255), GetConst(VWF12_WIDTH_OFFSET)+1);
-    PlaceByte(((tmp >>16)&255), GetConst(VWF12_WIDTH_SEGMENT));
-    
     // patch dialog engine
-    PlaceByte(font_begin,       GetConst(CSET_BEGINBYTE));
+    PlaceByte(font_begin,  GetConst(CSET_BEGINBYTE), "vwf12 beginbyte");
     
     /*
      C2:5E1E:
@@ -504,31 +531,32 @@ void insertor::GenerateVWF12code()
     */
 
     // patch font engine
-    PlaceByte(0xC2, GetConst(VWF12_WIDTH_INDEX)-7); // rep $20
-    PlaceByte(0x20, GetConst(VWF12_WIDTH_INDEX)-6);
-    PlaceByte(0xEA, GetConst(VWF12_WIDTH_INDEX)-5); // nop
-    PlaceByte(0xEA, GetConst(VWF12_WIDTH_INDEX)-4); // nop
-    PlaceByte(0xE2, GetConst(VWF12_WIDTH_INDEX)-1); // sep $20
-    PlaceByte(0x20, GetConst(VWF12_WIDTH_INDEX)  );
+    PlaceByte(0xC2, GetConst(VWF12_WIDTH_INDEX)-7, "vwf12 patch"); // rep $20
+    PlaceByte(0x20, GetConst(VWF12_WIDTH_INDEX)-6, "vwf12 patch");
+    PlaceByte(0xEA, GetConst(VWF12_WIDTH_INDEX)-5, "vwf12 patch"); // nop
+    PlaceByte(0xEA, GetConst(VWF12_WIDTH_INDEX)-4, "vwf12 patch"); // nop
+    PlaceByte(0xE2, GetConst(VWF12_WIDTH_INDEX)-1, "vwf12 patch"); // sep $20
+    PlaceByte(0x20, GetConst(VWF12_WIDTH_INDEX)  , "vwf12 patch");
 
-    /* As these pointers don't point directly to the data,
-     * they can't be set with AddOffsPtrFrom/AddSegPtrFrom
-     */
+    // patch font engine
+    unsigned tmp = (WidthTab_Address - font_begin) | 0xC00000;
+    
+    AddReference(OffsPtrFrom(GetConst(VWF12_WIDTH_OFFSET)),  tmp, "vwf12 width ptr");
+    AddReference(PagePtrFrom(GetConst(VWF12_WIDTH_SEGMENT)), tmp, "vwf12 width ptr");
+    
     tmp = (addr1 - font_begin * 24) | 0xC00000;
     // patch font engine
-    PlaceByte(((tmp     )&255), GetConst(VWF12_TAB1_OFFSET)+0);
-    PlaceByte(((tmp >> 8)&255), GetConst(VWF12_TAB1_OFFSET)+1);
-    PlaceByte(((tmp >>16)&255), GetConst(VWF12_SEGMENT));
+    AddReference(OffsPtrFrom(GetConst(VWF12_TAB1_OFFSET)), tmp, "vwf12 ptr1");
+    AddReference(PagePtrFrom(GetConst(VWF12_SEGMENT)),     tmp, "vwf12 ptr1,2");
     tmp = addr2 - font_begin * 12;
-    PlaceByte(((tmp     )&255), GetConst(VWF12_TAB2_OFFSET)+0);
-    PlaceByte(((tmp >> 8)&255), GetConst(VWF12_TAB2_OFFSET)+1);
+    AddReference(OffsPtrFrom(GetConst(VWF12_TAB2_OFFSET)), tmp, "vwf12 ptr2");
     
     vector<unsigned char> widths(tilecount);
     for(unsigned a=0; a<tilecount; ++a) widths[a] = Font12.GetWidth(a);
     
-    PlaceData(tiletab1, addr1);
-    PlaceData(tiletab2, addr2);
-    PlaceData(widths, WidthTab_Address);
+    PlaceData(tiletab1, addr1, "font12 tab1");
+    PlaceData(tiletab2, addr2, "font12 tab2");
+    PlaceData(widths, WidthTab_Address, "font12 widths");
 }
 
 void insertor::PatchTimeBoxes()
@@ -542,7 +570,7 @@ void insertor::PatchTimeBoxes()
           0x0C, 0x00, 0x8C, 0x01,
           0x1C, 0x00, 0x8E, 0x01,
           0x2C, 0x00, 0x8A, 0x01 };
-        PlaceData(vector<unsigned char>(Patch,Patch+16), 0x03F87F);
+        PlaceData(vector<unsigned char>(Patch,Patch+16), 0x03F87F, "timebox patch -65M");
     }
 
     // Patch tile indices in -12k textbox
@@ -551,6 +579,6 @@ void insertor::PatchTimeBoxes()
         { 0xFE, 0x00, 0xA0, 0x01,
           0x0E, 0x00, 0xA2, 0x01,
           0x1E, 0x00, 0x8A, 0x01 };
-        PlaceData(vector<unsigned char>(Patch,Patch+12), 0x03F890);
+        PlaceData(vector<unsigned char>(Patch,Patch+12), 0x03F890, "timebox patch -12k");
     }
 }

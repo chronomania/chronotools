@@ -12,9 +12,11 @@ typedef unsigned int Ptr;
 
 
 //dummy, used by rommap.o
-void StartBlock(const char*, unsigned){}
+void StartBlock(const char*, const string&, unsigned){}
 void PutAscii(const string&){}
 void EndBlock(){}
+FILE *GetLogFile(const char *sect, const char *key){return NULL;}
+void MessageWorking() { fprintf(stderr, "."); }
 
 
 static vector<Byte> Data(65536);

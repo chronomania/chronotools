@@ -176,6 +176,7 @@ Copypaste from the Makefile:
 # VERSION 1.10.0 implemented various assembly optimization techniques
 # VERSION 1.10.1 updated the docs and the conj.code generator
 # VERSION 1.10.2 creates more useful information when dumping
+# VERSION 1.10.3 has technological updates but broken VWF8
 </pre>
 
 ", '1. Program list' => "

@@ -749,7 +749,7 @@ Skip:   pla
 GetItemNum:
         lda #$5840
         pha
-        .byt $5C, $9A, $A5, $C2  ;jsl $C2A59A
+        jsl @$C2A59A
 .)
 
 EquipLeftItemFunc:

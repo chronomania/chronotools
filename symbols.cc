@@ -31,6 +31,10 @@ void Symbols::Load()
     // 0x01: characters 256-511
     // 0x02: characters 512-767
     // 0x03 is delay, handled elseway
+
+    // 0x04 is used for special meaning, but what?
+    // (See $C2:5811 in assembler code)
+
     // 0x04 seems to do nothing
     defbsym(nl,          0x05)
     defbsym(nl3,         0x06)

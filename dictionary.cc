@@ -12,6 +12,7 @@
 #include "hash.hh"
 #include "logfiles.hh"
 #include "conjugate.hh"
+#include "msginsert.hh"
 
 using namespace std;
 
@@ -314,12 +315,12 @@ namespace
             
             const ctchar spacechar = getchronochar(' ', cset_12pix);
             
-            fprintf(stderr, " - time left: ");
+            fprintf(stderr, " - time used: ");
             for(unsigned a=fprintf(stderr, "%15s",""); a-->0; )putc(8, stderr);
 
             substringtable substrings;
             
-            unsigned pageno=0, pagecount=compressed_pages.size();
+            //unsigned pageno=0, pagecount=compressed_pages.size();
             
             /* Find substrings from the compressed script */
             for(PageScriptList::const_iterator
@@ -327,10 +328,11 @@ namespace
                 i != compressed_pages.end();
                 ++i)
             {
-                double totalpos = (pos + pageno++/(double)pagecount) / scale;
-                if(totalpos==0.0)totalpos=1e-10;
+                //double totalpos = (pos + pageno++/(double)pagecount) / scale;
+                //if(totalpos==0.0)totalpos=1e-10;
                 
-                unsigned diffsec = (unsigned)(difftime(time(NULL),begintime)*(1.0/totalpos - 1));
+                unsigned diffsec = (unsigned)(difftime(time(NULL), begintime));
+                // *(1.0/totalpos - 1));
                 for(unsigned a=fprintf(stderr,
                       "%02d:%02d:%02d",
                           diffsec/3600,
@@ -344,7 +346,7 @@ namespace
                 LoadSubstrings(substrings, page, script, Conjugater);
             }
             
-            fprintf(stderr, "\r%8u substrings; ", substrings.size());
+            fprintf(stderr, "\r>%7u substrings; ", substrings.size());
             
             ctstring bestword;
             
@@ -547,7 +549,7 @@ namespace
                     }
                     if(bestj == substrings.end())
                     {
-                        printf(";No neostrings\n");
+                        fprintf(log, ";No neostrings\n");
                     }
                     else
                     {
@@ -562,11 +564,6 @@ namespace
             if(was_extended && log)
             {
                 fprintf(log, ";Chose '%s'(%.2f) instead of '%s'(%.2f)\n",
-                    DispString(dict_word).c_str(),
-                    bestscore,
-                    DispString(dictword).c_str(),
-                    goodscore);
-                printf(";Chose '%s'(%.2f) instead of '%s'(%.2f)\n",
                     DispString(dict_word).c_str(),
                     bestscore,
                     DispString(dictword).c_str(),
@@ -605,10 +602,10 @@ void insertor::RebuildDictionary()
     time_t begintime = time(NULL);
     fprintf(stderr,
         "Rebuilding the dictionary. This will take probably a long time!\n"
-        "You should take a lunch break or something now.\n"
+        "> You should take a lunch break or something now.\n"
     );
     
-    fprintf(stderr, "Building script for compression tests...\n");
+    fprintf(stderr, "> Building script for compression tests... ");
     
     PageScriptList pages, saved_pages;
 
@@ -640,8 +637,7 @@ void insertor::RebuildDictionary()
     
     saved_pages = pages;
     
-    fprintf(stderr, "Script to be used in compression tests: %u bytes\n",
-        CalcScriptSize(pages));
+    fprintf(stderr, "%u bytes.\n", CalcScriptSize(pages));
     
     const unsigned dictbegin = 0x21;
     const unsigned dictend   = get_font_begin();
@@ -680,9 +676,20 @@ NULL);
     vector<ctstring> quick_regen;
     hash_map<ctstring, unsigned> latest_gains;
     
+    if(log)
+    {
+        fprintf(log,
+            ";------------\n"
+            ";The dictionary is found at the end of this file.\n"
+            ";If you are satisfied with it, you can copypaste\n"
+            ";it to your script file, replacing the old dictionary.\n"
+            ";------------\n"
+               );
+    }
+    
     while(dict.size() < dict_fullsize)
     {
-        fprintf(stderr, "Finding substrings");
+        fprintf(stderr, "Finding substrs");
         
         if(reapply)
         {
@@ -727,8 +734,6 @@ NULL);
                 {
                     Finder.MarkAsEffectless(dictword);
                     
-                    printf(";Effectless dictionary word:%s;\n",
-                        DispString(dictword).c_str());
                     if(log)
                     {
                         fprintf(log, ";Effectless dictionary word:%s;\n",
@@ -746,8 +751,6 @@ NULL);
                 && prev_saving < prev_prev_saving/2
                   )
                 {
-                    printf(";Effectless previous dictionary word:%s;\n",
-                        DispString(prev_word).c_str());
                     if(log)
                     {
                         fprintf(log, ";Effectless previous dictionary word:%s;\n",
@@ -796,9 +799,11 @@ NULL);
                     
                     testee = dictword;
                     
-                    printf(";Discarding '%s', saving(%u) doesn't match previous(%u)\n",
+                    fprintf(log,
+                        ";Discarding '%s', saving(%u) doesn't match previous(%u)\n",
                         DispString(dictword).c_str(),
                         saving, latest_gains[dictword]);
+                    
                     quick_regen.erase(quick_regen.begin(),
                                       quick_regen.begin() + a + 1);
                     break;
@@ -807,9 +812,6 @@ NULL);
                 if(log)
                     fprintf(log, ";Reapplying:%s;saving: %u bytes\n",
                         DispString(dictword).c_str(), saving);
-
-                printf(";Reapplying:%s;saving: %u bytes\n",
-                    DispString(dictword).c_str(), saving);
 
                 dict.push_back(dictword);
                 latest_gains[dictword] = saving;
@@ -831,9 +833,11 @@ NULL);
             testee.clear();
         }
         
+        /*
         printf(";Generated:%s;%u bytes\n",
             DispString(dictword).c_str(),
             CalcSize(rep_word));
+        */
         
         if(UseRedefine)
         {
@@ -880,8 +884,9 @@ NULL);
 
                     const unsigned restartpos = num_restarts;
 
-                    printf(";Restarted the work at $%02X\n", restartpos+dictbegin);
-                    if(log) fprintf(log, ";Restarted the work at %u\n", restartpos);
+                    if(log)
+                        fprintf(log, ";Restarted the work at %u ($%02X)\n",
+                                     restartpos, restartpos+dictbegin);
                     
                     if(UseQuickRegen)
                     {
@@ -916,7 +921,7 @@ NULL);
             latest_gains[dictword] = saving;
             dict.push_back(dictword);
         }
-        
+        /*
         for(unsigned d=0; d<dict.size(); ++d)
         {
             printf("$%02X:%s;\n",
@@ -924,12 +929,12 @@ NULL);
                 DispString(dict[d]).c_str());
         }
         fflush(stdout);
+        */
     }
 
-    time_t endtime = time(NULL);
     fprintf(stderr,
-        "\nDictionary generated successfully - took %.2f minutes.\n",
-        difftime(endtime, begintime) / 60.0);
+        "\r> %-56s\n",
+        "Dictionary generated. Applying it first, then saving...");
 }
 
 void insertor::ApplyDictionary()
@@ -938,9 +943,8 @@ void insertor::ApplyDictionary()
 
     const unsigned dictbegin = 0x21;
 
-    fprintf(stderr,
-        "Applying dictionary. This will take some seconds at most.\n"
-    );
+    MessageApplyingDictionary();
+
     if(sort_dictionary)
         sort(dict.begin(), dict.end(), dictsorter);
 #if APPLYD_DUMP
@@ -948,6 +952,7 @@ void insertor::ApplyDictionary()
 #endif
     for(unsigned d=0; d<dict.size(); ++d)
     {
+        MessageWorking();
         const ctstring &dictword = dict[d];
         
         ctstring rep_word = dictword;
@@ -975,14 +980,19 @@ void insertor::ApplyDictionary()
 #if APPLYD_DUMP
     if(col)putc('\n', stderr);
 #endif
+    MessageDone();
 }
 
 unsigned insertor::CalculateScriptSize() const
 {
+    MessageMeasuringScript();
+    
     set<unsigned> zpages = GetZStringPageList();
     unsigned size = 0;
     for(set<unsigned>::const_iterator i=zpages.begin(); i!=zpages.end(); ++i)
     {
+        MessageWorking();
+        
         stringoffsmap pagestrings = GetZStringList(*i);
         
         pagestrings.GenerateNeederList();
@@ -993,6 +1003,7 @@ unsigned insertor::CalculateScriptSize() const
             if(neederlist.find(a) == neederlist.end())
                 size += CalcSize(pagestrings[a].str) + 1;
     }
+    MessageDone();
     return size;
 }
 
@@ -1014,7 +1025,6 @@ void insertor::DictionaryCompress()
             dict_fullsize, dict.size());
     }
     
-    fprintf(stderr, "Calculating script size...\n");
     unsigned origsize = CalculateScriptSize();
 
     if(rebuild_dict) RebuildDictionary();
@@ -1026,11 +1036,54 @@ void insertor::DictionaryCompress()
     unsigned dictbytes = 0;
     for(unsigned a=0; a<dict.size(); ++a)dictbytes += CalcSize(dict[a]) + 1;
     
-    fprintf(stderr, "Original script size: %u bytes; new script size: %u bytes\n"
-                    "Saved: %u bytes (%.1f%% off); dictionary size: %u bytes\n",
+    fprintf(stderr, "> Original script size: %u bytes; new script size: %u bytes\n"
+                    "> Saved: %u bytes (%.1f%% off); dictionary size: %u bytes\n",
         origsize,
         resultsize,
         origsize-resultsize,
         (origsize-resultsize)*100.0/origsize,
         dictbytes);
+
+    if(rebuild_dict)
+    {
+        FILE *log = GetLogFile("dictionary", "outputfn");
+
+        if(log)
+        {
+            fprintf(log,
+                "\n"
+                "\n"
+                "*d;dictionary\n"
+                ";Original script size: %u bytes; new script size: %u bytes\n"
+                ";Saved: %u bytes (%.1f%% off); dictionary size: %u bytes\n"
+                ";-----------------\n"
+                ";dictionary, used for compression. don't try to translate it.\n"
+                ";-----------------\n",
+                origsize,
+                resultsize,
+                origsize-resultsize,
+                (origsize-resultsize)*100.0/origsize,
+                dictbytes
+                   );
+
+            for(unsigned d=0; d<dict.size(); ++d)
+            {
+                fprintf(log, "$%02X:%s;\n",
+                    dictbegin+d,
+                    DispString(dict[d]).c_str());
+            }
+            fflush(log);
+            
+            fprintf(stderr,
+                "Dictionary saved.\n"
+                "* If you want to reuse the generated dictionary, you can copypaste\n"
+                "* it from the log file to your script file.\n");
+        }
+        else
+        {
+            fprintf(stderr,
+                "* The generated dictionary was not saved in a file.\n"
+                "* This is because you had \"outputfn\" setting empty.\n");
+        }
+    }
 }

@@ -57,33 +57,65 @@ public:
     /* Defines the value of a symbol the TEXT is referring */
     void LinkSym(const string& name, unsigned value);
     
+    /* Declares a global label in the TEXT segment */
+    void DeclareCodeGlobal(const string& name, unsigned address);
+    
+    /* Declares a global label in the DATA segment */
+    void DeclareDataGlobal(const string& name, unsigned address);
+    
     /* Returns the TEXT segment */
     const vector<unsigned char>& GetCode() const;
     
     /* Returns the TEXT segment size */
     unsigned GetCodeSize() const;
     
+    /* Returns the DATA segment */
+    const vector<unsigned char>& GetData() const;
+    
+    /* Returns the DATA segment size */
+    unsigned GetDataSize() const;
+    
     /* Returns the address of a global defined in TEXT segment */
     unsigned GetSymAddress(const string& name) const;
+    
+    /* Resizes the TEXT/DATA segment */
+    void ResizeCode(unsigned newsize);
+    void ResizeData(unsigned newsize);
+    
+    /* Write to TEXT/DATA segment. Warning: no range checks */
+    void WriteCode(unsigned addr, unsigned char value);
+    void WriteData(unsigned addr, unsigned char value);
+    
+    /* Redefine TEXT/DATA segment. Warning: Does not change symbols. */
+    void LoadCodeFrom(const vector<unsigned char>& buf);
+    void LoadDataFrom(const vector<unsigned char>& buf);
     
     bool HasSym(const string& name) const;
     
     const vector<string> GetSymbolList() const;
     const vector<string> GetExternList() const;
     
-    const string GetByteAt(unsigned addr) const;
-    const string GetWordAt(unsigned addr) const;
-    const string GetLongAt(unsigned addr) const;
+    /* Load hexdumps from TEXT segment. Warning: No range checks. */
+    const string GetByteAt(unsigned addr) const; // Return value: "$00"
+    const string GetWordAt(unsigned addr) const; // Return value: "$0000"
+    const string GetLongAt(unsigned addr) const; // Return value: "$000000"
     
     /* Verifies that all symbols have been properly defined */
     void Verify() const;
+    
+    /* Has an error been found? */
+    bool Error() const;
+    
+    /* Set error flag */
+    void SetError();
 
     class segment;
 private:
     // undefined symbols; sym -> defined_flag -> old value
     vector<pair<string, pair<bool, unsigned> > > undefines;
     
-    segment *text, *data;
+    segment *code, *data;
+    bool error;
 };
 
 #endif

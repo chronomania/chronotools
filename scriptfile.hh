@@ -8,7 +8,7 @@ void CloseScriptFile();
 void PutAscii(const string& comment);
 
 void BlockComment(const string& comment);
-void StartBlock(const char* blocktype, unsigned intparam=0);
+void StartBlock(const char* blocktype, const string& reason, unsigned intparam=0);
 void PutBase62Label(const unsigned noffs);
 void PutBase16Label(const unsigned noffs);
 void PutBase10Label(const unsigned noffs);

@@ -11,7 +11,7 @@ typedef autoptr<struct CodeNode> CodeNodePtr;
 
 #define THREAD_JUMPS     1
 #define COMBINE_NODES    1
-#define REORDER_NODES    1
+#define REORDER_NODES    0
 #define NEGATE_JUMPS     1
 #define DEBUG_NODES      0
 #define ELIMINATE_DEAD   1

@@ -95,6 +95,7 @@ DEPDIRS = utils/
 # VERSION 1.10.0 implemented various assembly optimization techniques
 # VERSION 1.10.1 updated the docs and the conj.code generator
 # VERSION 1.10.2 creates more useful information when dumping
+# VERSION 1.10.3 has technological updates but broken VWF8
 
 OPTIM=-O3
 #OPTIM=-O0
@@ -103,7 +104,7 @@ OPTIM=-O3
 
 CXXFLAGS += -I.
 
-VERSION=1.10.2
+VERSION=1.10.3
 ARCHFILES=utils/xray.cc utils/xray.h \
           utils/viewer.c \
           utils/vwftest.cc \
@@ -143,12 +144,18 @@ ARCHFILES=utils/xray.cc utils/xray.h \
           fonts.cc fonts.hh \
           o65.cc o65.hh \
           o65linker.cc o65linker.hh \
+          refer.hh \
           logfiles.cc logfiles.hh \
           stringoffs.cc stringoffs.hh \
           symbols.cc symbols.hh \
           tgaimage.cc tgaimage.hh \
-          ctdump.cc ctdump.hh \
+          ctdump.cc \
+          msgdump.cc msgdump.hh \
+          msginsert.cc msginsert.hh \
           ctinsert.cc ctinsert.hh \
+          dumptext.cc dumptext.hh \
+          dumpfont.cc dumpfont.hh \
+          dumpgfx.cc dumpgfx.hh \
           signature.cc \
           vwf8.cc ct-vwf8.a65 \
           config.cc config.hh \
@@ -204,21 +211,22 @@ PROGS=\
 all: $(PROGS)
 
 ctdump: \
-		ctdump.o scriptfile.o rommap.o strload.o extras.o \
-		compress.o settings.o \
-		tgaimage.o symbols.o miscfun.o config.o \
-		confparser.o ctcset.o wstring.o
+		ctdump.o scriptfile.o rommap.o strload.o \
+		dumptext.o dumpfont.o dumpgfx.o msgdump.o \
+		 miscfun.o tgaimage.o extras.o compress.o \
+		 symbols.o logfiles.o settings.o \
+		 config.o confparser.o ctcset.o wstring.o
 	$(CXX) $(LDOPTS) -o $@ $^ $(LDFLAGS)
 
 ctinsert: \
-		ctinsert.o miscfun.o readin.o wrap.o \
-		tgaimage.o space.o writeout.o stringoffs.o \
-		dictionary.o images.o compress.o \
-		fonts.o typefaces.o extras.o \
+		ctinsert.o readin.o wrap.o msginsert.o \
+		space.o writeout.o stringoffs.o \
+		dictionary.o images.o fonts.o typefaces.o \
 		rom.o snescode.o signature.o crononick.o \
 		conjugate.o vwf8.o o65.o o65linker.o \
-		symbols.o logfiles.o settings.o \
-		config.o confparser.o ctcset.o wstring.o
+		 miscfun.o tgaimage.o extras.o compress.o \
+		 symbols.o logfiles.o settings.o \
+		 config.o confparser.o ctcset.o wstring.o
 	$(CXX) $(LDOPTS) -o $@ $^ $(LDFLAGS) -lm
 
 %.o65: %.a65
@@ -273,7 +281,7 @@ utils/compiler: FORCE
 utils/vwftest: \
 		utils/vwftest.o tgaimage.o \
 		fonts.o typefaces.o extras.o conjugate.o o65.o settings.o \
-		snescode.o symbols.o space.o logfiles.o \
+		snescode.o symbols.o space.o logfiles.o o65linker.o \
 		config.o confparser.o ctcset.o wstring.o
 	$(CXX) $(LDOPTS) $(CXXFLAGS) -g -O -Wall -W -pedantic -o $@ $^ $(LDFLAGS)
 utils/facegenerator: \

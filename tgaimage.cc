@@ -1,4 +1,5 @@
 #include <cstdio>
+#include <cerrno>
 
 using namespace std;
 
@@ -16,7 +17,20 @@ TGAimage::TGAimage(const string &filename)
     : xdim(0), ydim(0), xsize(8), ysize(8), xbox(32)
 {
     FILE *fp = fopen(filename.c_str(), "rb");
-    if(!fp) { perror(filename.c_str()); return; }
+    if(!fp)
+    {
+        if(errno == ENOENT)
+        {
+            fprintf(stderr, "> %s doesn't exist, ignoring\n", filename.c_str());
+        }
+        else
+        {
+            string message = "> Failed to load ";
+            message += filename;
+            perror(message.c_str());
+        }
+        return;
+    }
     
     int idlen = fgetc(fp);
     fgetc(fp); // color map type, should be 1

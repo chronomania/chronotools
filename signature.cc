@@ -26,6 +26,8 @@ struct Image
     {
     }
     
+    bool Error() const { return image.Error(); }
+    
     void MakePalette()
     {
         unsigned palsize = image.GetPalSize();
@@ -52,7 +54,16 @@ void insertor::GenerateSignatureCode()
 {
     const ucs4string& codefn  = GetConf("signature", "file");
 
-    vector<Image> images;
+    const string codefile = WstrToAsc(codefn);
+    
+    O65 sig_code = LoadObject(codefile, "Signature");
+    if(sig_code.Error()) return;
+
+    if(!LinkCalls("signature"))
+    {
+        fprintf(stderr, "> > Signature won't be used\n");
+        return;
+    }
     
     const ConfParser::ElemVec& elems = GetConf("signature", "add_image").Fields();
     for(unsigned a=0; a<elems.size(); a += 5)
@@ -64,83 +75,21 @@ void insertor::GenerateSignatureCode()
         const ucs4string& palsize_sym = elems[a+4];
     
         Image img(WstrToAsc(imagefn), tab_sym, pal_sym, palsize_sym);
-        if(!img.image.GetXdim())
+        if(img.Error())
         {
-            fprintf(stderr, "- failed to load '%s'...\n", WstrToAsc(imagefn).c_str());
             continue;
         }
         
         img.MakeData(segment);
         img.MakePalette();
         
-        images.push_back(img);
+        objects.DefineSymbol(WstrToAsc(img.palsize_sym), img.Palette.size());
+
+        objects.AddObject(CreateObject(img.ImgData, WstrToAsc(img.tab_sym)), "sig img data");
+        objects.AddObject(CreateObject(img.Palette, WstrToAsc(img.pal_sym)), "sig img palette");
     }
     
-    const string codefile = WstrToAsc(codefn);
-    
-    O65 sig_code;
-    {FILE *fp = fopen(codefile.c_str(), "rb");
-    if(!fp) { perror(codefile.c_str()); return; }
-    sig_code.Load(fp);
-    fclose(fp);}
+    objects.AddObject(sig_code, "sig code");
 
-    unsigned code_size = sig_code.GetCodeSize();
-
-    vector<freespacerec> Organization(1);
-    Organization[0].len = code_size;
-    for(unsigned a=0; a<images.size(); ++a)
-    {
-        Organization.push_back(images[a].Palette.size());
-        Organization.push_back(images[a].ImgData.size());
-    }
-    
-    freespace.OrganizeToAnyPage(Organization);
-
-    const unsigned CodeAddress = Organization[0].pos;
-
-    for(unsigned a=0; a<images.size(); ++a)
-    {
-        const unsigned PaletteAddr = Organization[1+a*2].pos;
-        const unsigned ImgDataAddr = Organization[2+a*2].pos;
-
-        sig_code.LinkSym(WstrToAsc(images[a].tab_sym),     0xC00000 | ImgDataAddr);
-        sig_code.LinkSym(WstrToAsc(images[a].pal_sym),     0xC00000 | PaletteAddr);
-        sig_code.LinkSym(WstrToAsc(images[a].palsize_sym), images[a].Palette.size());
-
-        PlaceData(images[a].ImgData, ImgDataAddr);
-        PlaceData(images[a].Palette, PaletteAddr);
-    }
-    
-    sig_code.LocateCode(CodeAddress);
-    
-    sig_code.LinkSym("DECOMPRESS_FUNC_ADDR", 0xC00000 | GetConst(DECOMPRESSOR_FUNC_ADDR));
-    
-    fprintf(stderr,
-        "\r> Signature(%s):"
-            " %u(code)@ $%06X,",
-        codefile.c_str(),
-        code_size, 0xC00000 | CodeAddress);
-
-    for(unsigned a=0; a<images.size(); ++a)
-    {
-        const unsigned PaletteAddr = Organization[1+a*2].pos;
-        const unsigned ImgDataAddr = Organization[2+a*2].pos;
-        
-        fprintf(stderr,
-            " %u(pal%u)@ $%06X,"
-            " %u(img%u,orig %u)@ $%06X",
-            images[a].Palette.size(), a+1, 0xC00000 | PaletteAddr,
-            images[a].ImgData.size(), a+1,
-                   images[a].OriginalSize, 0xC00000 | ImgDataAddr
-               );
-    }
-    fprintf(stderr, "\n");
-    
-    sig_code.Verify();
-
-    SNEScode tmp(sig_code.GetCode());
-    tmp.YourAddressIs(CodeAddress);
-    codes.push_back(tmp);
-    
-    LinkCalls("signature", sig_code);
+    objects.DefineSymbol("DECOMPRESS_FUNC_ADDR", 0xC00000 | GetConst(DECOMPRESSOR_FUNC_ADDR));
 }

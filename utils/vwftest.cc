@@ -6,6 +6,13 @@
 typedef unsigned char byte;
 typedef unsigned short word;
 
+//dummy, used by fonts.o
+void MessageReorganizingFonts() {}
+void MessageDone() {}
+void MessageLinkingModules(unsigned) {}
+void MessageLoadingItem(const string&) {}
+void MessageWorking() {}
+
 static struct VWFdata
 {
     Font8data data;

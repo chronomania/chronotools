@@ -4,13 +4,13 @@
 #include "fonts.hh"
 #include "typefaces.hh"
 #include "conjugate.hh"
+#include "logfiles.hh"
+#include "msginsert.hh"
 #include "config.hh"
 #include "hash.hh"
 
 #define NO_GAINLESS_SHUFFLING_AROUND 1
 #define FONT12_DEBUG_LOADING         0
-#define DISPLAY_REARRANGE_DETAILS    0
-#define DUMP_FREE_MAPS               0
 
 namespace
 {
@@ -150,9 +150,8 @@ void Font12data::Reload(const Rearrangemap_t& arrange)
 {
     fprintf(stderr, "Loading '%s'...\n", fn.c_str());
     TGAimage image(fn);
-    if(!image.GetXdim())
+    if(image.Error())
     {
-        fprintf(stderr, "- failed\n");
         return;
     }
     
@@ -252,9 +251,8 @@ void Font8data::Reload(const Rearrangemap_t& arrange)
     fprintf(stderr, "Loading '%s'...\n", fn.c_str());
 
     TGAimage image(fn);
-    if(!image.GetXdim())
+    if(image.Error())
     {
-        fprintf(stderr, "- failed\n");
         return;
     }
     
@@ -478,11 +476,10 @@ namespace
         }
     }
 
-    const Rearrangemap_t Rearrange
-      (const usagemap_t& usages,
-       const charset_t& free,
-       charset_t& fixed,
-       const set<ctchar>& ControlCodes)
+    const Rearrangemap_t Rearrange(const usagemap_t& usages,
+                                   const charset_t& free,
+                                   charset_t& fixed,
+                                   const set<ctchar>& ControlCodes)
     {
         Rearrangemap_t result;
         
@@ -546,30 +543,146 @@ namespace
             
             if(ControlCodes.find(a->first) == ControlCodes.end())
             {
+                // Mark this new location so that it won't be erased in the font
                 fixed.insert(a->second);
             }
+            
+            /* Delete useless orders (attempts to not move char) */
             if(a->first == a->second) result.erase(a);
         }
 
-#if DISPLAY_REARRANGE_DETAILS
-        for(Rearrangemap_t::const_iterator i=result.begin(); i!=result.end(); ++i)
+        return result;
+    }
+
+    void DumpFreeMap(const string& label, const string& map)
+    {
+        static const char MapChars[8+1] = "-LMm" "cKCy";
+        static const char *const MapDescs[8] =
+        {"free slot", "locked",
+         "movable",   "locked+movable=?",
+         "mystery control char", "locked control char",
+         "movable control char", "locked+movable+ctrl=?"};
+        const unsigned width = 16;
+        bool used[8] = {false};
+        
+        FILE *log = GetLogFile("font", "log_rearrange");
+        if(!log) return;
+        
+        unsigned ndec = map.size() > 256 ? 3 : 2;
+        
+        vector<string> labels;
+        vector<string> lines;
+        vector<string> legend;
+
+        // Build the text lines
+        string cur_line, cur_label;
+        unsigned col=0;
+        for(unsigned c=0; c<map.size(); ++c)
+        {
+            if(col == 0)
+            {
+                char Buf[32];
+                sprintf(Buf, "%0*X: ", ndec, c);
+                cur_label = Buf;
+                cur_line  = "";
+            }
+            cur_line += MapChars[map[c]];
+            used[map[c]] = true;
+            if(++col >= width)
+            {
+                col=0; 
+                labels.push_back(cur_label);
+                lines.push_back(cur_line);
+            }
+        }
+        if(col > 0)
+        {
+            labels.push_back(cur_label);
+            lines.push_back(cur_line);
+        }
+
+        // Shorten the lines
+        for(unsigned a=0; a<lines.size(); ++a)
+        {
+            if(a+1 < lines.size() && lines[a+1] != lines[a]) continue;
+            
+            unsigned hog = 0;
+            while(a+2+hog < lines.size() && lines[a+2+hog] == lines[a]) ++hog;
+            
+            if(hog > 0)
+            {
+                labels[++a] = "...  ";
+                lines[a] = "";
+                while(--hog > 0)
+                {
+                    lines.erase(lines.begin() + a+1);
+                    labels.erase(labels.begin() + a+1);
+                }
+            }
+        }
+        
+        // Build the legend (include only used chars)
+        for(unsigned a=0; a<8; ++a)
+            if(used[a])
+            {
+                string s;
+                s += MapChars[a];
+                s += '=';
+                s += MapDescs[a];
+                legend.push_back(s);
+            }
+        
+        fprintf(log, "%s:\n", label.c_str());
+        for(unsigned a=0; a<lines.size(); ++a)
+        {
+            fprintf(log, "%6s%-*s", labels[a].c_str(), width, lines[a].c_str());
+            if(a < legend.size()) fprintf(log, " %s", legend[a].c_str()); 
+            fprintf(log, "\n");
+        }
+        fprintf(log, "\n");
+    }
+    
+    void DumpMovableMaps(const usagemap_t& Usages, cset_class type, const string& what)
+    {
+        FILE *log = GetLogFile("font", "log_rearrange");
+        if(!log) return;
+        
+        const unsigned width = 3;
+        
+        fprintf(log, "%s:\n", what.c_str());
+        for(usagemap_t::const_iterator i = Usages.begin(); i != Usages.end(); ++i)
+        {
+            ucs4 c = getucs4(i->ch, type);
+            if(c == ilseq)
+                fprintf(log,  "     (%0*X): %u\n",                width, i->ch, i->count);
+            else
+                fprintf(log, "  '%c'(%0*X): %u\n", WcharToAsc(c), width, i->ch, i->count);
+        }
+        fprintf(log, "\n");
+    }
+    
+    void DumpRearranges(const Rearrangemap_t& Rearranges,
+                        const usagemap_by_char_t& usages,
+                        const string& what)
+    {
+        FILE *log = GetLogFile("font", "log_rearrange");
+        if(!log) return;
+        
+        fprintf(log, "Rearranged %u %s symbols:\n", Rearranges.size(), what.c_str());
+        
+        for(Rearrangemap_t::const_iterator i=Rearranges.begin(); i!=Rearranges.end(); ++i)
         {
             unsigned usetimes = 0;
             
-            for(unsigned a=0; a<usages.size(); ++a)
-            {
-                if(usages[a].ch == i->first) { usetimes = usages[a].count; break; }
-            }
+            usagemap_by_char_t::const_iterator j = usages.find(i->first);
+            if(j != usages.end()) usetimes = j->second;
         
-            fprintf(stderr, "  Arranged %X(used %u times) to %X\n",
+            fprintf(log, "  %X(used %u times) moved to %X\n",
                 i->first,
                 usetimes,
                 i->second);
         }
-        fprintf(stderr, "--\n");
-#endif
-        
-        return result;
+        fprintf(log, "\n");
     }
 }
 
@@ -583,7 +696,7 @@ void insertor::ReorganizeFonts()
     usagemap_by_char_t UsagesByChar_12;
     usagemap_by_char_t UsagesByChar_8;
     
-    fprintf(stderr, "Analyzing character usage...\n");
+    MessageReorganizingFonts();
     
     const ctchar font_begin = get_font_begin();
     
@@ -659,21 +772,8 @@ void insertor::ReorganizeFonts()
     usagemap_t Usages_12 = LoadUsageMap(UsagesByChar_12);
     usagemap_t Usages_8  = LoadUsageMap(UsagesByChar_8);
     
-#if 0
-    fprintf(stderr, "12pix:\n");
-    for(usagemap_t::const_iterator i = Usages_12.begin(); i != Usages_12.end(); ++i)
-    {
-        ucs4 c = getucs4(i->ch, cset_12pix);
-        fprintf(stderr, "  '%c'(%X): %u\n", WcharToAsc(c),i->ch, i->count);
-    }
-    
-    fprintf(stderr, "8pix:\n");
-    for(usagemap_t::const_iterator i = Usages_8.begin(); i != Usages_8.end(); ++i)
-    {
-        ucs4 c = getucs4(i->ch, cset_8pix);
-        fprintf(stderr, "  '%c'(%X): %u\n", WcharToAsc(c),i->ch, i->count);
-    }
-#endif
+    DumpMovableMaps(Usages_12, cset_12pix, "Movable 12pix chars");
+    DumpMovableMaps(Usages_8,  cset_8pix,  "Movable 8x8 chars");
 
     charset_t Free_12;
     charset_t Free_8;
@@ -711,31 +811,39 @@ void insertor::ReorganizeFonts()
     {
         if(Conjugater->IsConjChar(i->ch)) ControlCodes.insert(i->ch);
     }
+
+    if(true) /* dump free maps */
+    {
+        string map;
+        for(ctchar c=0; c<0x300; ++c)
+        {
+            bool Fixed = Fixed_12.find(c) != Fixed_12.end();
+            bool Usage = UsagesByChar_12.find(c) != UsagesByChar_12.end();
+            bool Ctrl  = ControlCodes.find(c) != ControlCodes.end();
+            
+            map += (char)(Fixed*1 + Usage*2 + Ctrl*4);
+        }
+        DumpFreeMap("12pix map", map);
+        
+        map = "";
+        for(ctchar c=0; c<0x100; ++c)
+        {
+            bool Fixed = Fixed_8.find(c) != Fixed_8.end();
+            bool Usage = UsagesByChar_8.find(c) != UsagesByChar_8.end();
+            bool Ctrl  = false;
+            
+            map += (char)(Fixed*1 + Usage*2 + Ctrl*4);
+        }
+        DumpFreeMap("8x8 map", map);
+    }
+
     Rearrangemap_t Rearrange_12 = Rearrange(Usages_12, Free_12, Fixed_12, ControlCodes);
-    fprintf(stderr, "- Rearranged %u dialog symbols\n", Rearrange_12.size());
+    DumpRearranges(Rearrange_12, UsagesByChar_12, "dialog");
     
     ControlCodes.clear();
     Rearrangemap_t Rearrange_8  = Rearrange(Usages_8, Free_8, Fixed_8, ControlCodes);
-    fprintf(stderr, "- Rearranged %u status screen symbols\n", Rearrange_8.size());
+    DumpRearranges(Rearrange_8, UsagesByChar_8, "status screen");
     
-#if DUMP_FREE_MAPS
-    fprintf(stderr, "12pix map:\n");
-    for(ctchar c=0; c<0x300; ++c)
-    {
-        if( (c&31) == 0)  fprintf(stderr, " %03X: ", c);
-        fputc( (Fixed_12.find(c) == Fixed_12.end()) ? 'F' : 'U' , stderr);
-        if( (c&31) == 31) fputc('\n', stderr);
-    }
-    
-    fprintf(stderr, "8x8 map:\n");
-    for(ctchar c=0; c<0x100; ++c)
-    {
-        if( (c&31) == 0)  fprintf(stderr, " %02X: ", c);
-        fputc( (Fixed_8.find(c) == Fixed_8.end()) ? 'F' : 'U' , stderr);
-        if( (c&31) == 31) fputc('\n', stderr);
-    }
-#endif
-
     /* Proceed the rearrangements */
     for(stringlist::iterator i=strings.begin(); i!=strings.end(); ++i)
     {
@@ -831,15 +939,17 @@ void insertor::ReorganizeFonts()
             font8v_end = *i + 1;
         }
     
-    fprintf(stderr, "Font12 end tag set at 0x%X\n", font12_end);
+    FILE *log = GetLogFile("font", "log_rearrange");
+    if(log) fprintf(log, "Font12 end tag set at 0x%X\n\n", font12_end);
     
     Font12.Reload(Rearrange_12);
     Font8.Reload(Rearrange_8);
     Font8v.Reload(Rearrange_12);
     
+    /* RearrangeCharSet() is found in ctcset.cc */
+    
     RearrangeCharset(cset_12pix, Rearrange_12);
     RearrangeCharset(cset_8pix, Rearrange_8);
     
-    /* FIXME: ctcset must be rearranged too!
-     * Otherwise conjugate-asm fails */
+    MessageDone();
 }
