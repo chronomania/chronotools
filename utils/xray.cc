@@ -342,6 +342,8 @@ Redraw:
 
 int main(int argc, const char *const *argv)
 {
+    setenv("GGI_DISPLAY", "x:-noshm", 1);
+    
     if(argc<2 || access(argv[argc-1], O_RDONLY))
     {
         printf(

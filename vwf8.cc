@@ -9,20 +9,6 @@ void insertor::GenerateVWF8code()
     const vector<unsigned char> &widths  = Font8v.GetWidths();
     const vector<unsigned char> &tiletab = Font8v.GetTiles();
     
-    fprintf(stderr, "8-pix VWF will be placed:");
-
-    const unsigned WidthTab_Address = freespace.FindFromAnyPage(widths.size());
-    const unsigned TileTab_Address  = freespace.FindFromAnyPage(tiletab.size());
-    
-    fprintf(stderr, " %u bytes at $%06X,"
-                    " %u bytes at $%06X\n",
-        widths.size(),   0xC00000 | WidthTab_Address,
-        tiletab.size(),  0xC00000 | TileTab_Address
-           );
-
-    PlaceData(widths,  WidthTab_Address);
-    PlaceData(tiletab, TileTab_Address);
-
     const string codefile = WstrToAsc(GetConf("vwf8", "file").SField());
     
     FILE *fp = fopen(codefile.c_str(), "rb");
@@ -35,12 +21,32 @@ void insertor::GenerateVWF8code()
     vwf8_code.Load(fp);
     fclose(fp);
     
-    unsigned code_size = vwf8_code.GetCodeSize();
-    unsigned code_addr = freespace.FindFromAnyPage(code_size);
-    vwf8_code.LocateCode(code_addr);
+    const unsigned code_size = vwf8_code.GetCodeSize();
     
-    vwf8_code.LinkSym("WIDTH_SEG",   (WidthTab_Address >> 16) | 0xC0);
-    vwf8_code.LinkSym("WIDTH_OFFS",  (WidthTab_Address & 0xFFFF));
+    vector<freespacerec> Organization(3);
+    Organization[0].len = code_size;
+    Organization[1].len = widths.size();
+    Organization[2].len = tiletab.size();
+    
+    freespace.OrganizeToAnyPage(Organization);
+    
+    const unsigned Code_Address     = Organization[0].pos;
+    const unsigned WidthTab_Address = Organization[1].pos;
+    const unsigned TileTab_Address  = Organization[2].pos;
+    
+    vwf8_code.LocateCode(Code_Address | 0xC00000);
+    
+    fprintf(stderr, "Writing VWF8:"
+                    " %u(widths)@ $%06X,"
+                    " %u(tiles)@ $%06X,"
+                    " %u(code)@ $%06X\n",
+        widths.size(),   0xC00000 | WidthTab_Address,
+        tiletab.size(),  0xC00000 | TileTab_Address,
+        code_size,       0xC00000 | Code_Address
+           );
+
+    vwf8_code.LinkSym("WIDTH_ADDR",  (WidthTab_Address | 0xC00000));
+    
     vwf8_code.LinkSym("TILEDATA_SEG",  (TileTab_Address >> 16) | 0xC0);
     vwf8_code.LinkSym("TILEDATA_OFFS", (TileTab_Address & 0xFFFF));
     
@@ -85,7 +91,7 @@ void insertor::GenerateVWF8code()
                 nopcount -= 2;
                 unsigned skipbytes = nopcount;
                 if(skipbytes > 127) skipbytes = 127;
-                PlaceByte(0x80,      address++);
+                PlaceByte(0x80,      address++); // BRA over the space.
                 PlaceByte(skipbytes, address++);
                 
                 freespace.Add((address >> 16) & 0x3F,
@@ -103,5 +109,7 @@ void insertor::GenerateVWF8code()
     
     vwf8_code.Verify();
     
-    PlaceData(vwf8_code.GetCode(), code_addr);
+    PlaceData(widths,              WidthTab_Address);
+    PlaceData(tiletab,             TileTab_Address);
+    PlaceData(vwf8_code.GetCode(), Code_Address);
 }

@@ -5,7 +5,7 @@
  * For loading and linking 65816 object files
  * Copyright (C) 1992,2003 Bisqwit (http://iki.fi/bisqwit/)
  *
- * Version 1.0.1 - Aug 18 2003
+ * Version 1.1.0 - Aug 18 2003, Sep 4 2003
  */
 
 #include <cstdio>
@@ -28,12 +28,12 @@ using std::pair;
  *    Acquiring symbol pointers
  *    Defining the undefined numeric constants
  *    Defining the undefined symbol addresses
+ *    Five type of fixups and relocs: 16bit, 16/hi, 16/lo, long, seg
  *
  * Defects:
  *
  *    Only the TEXT segment is handled.
- *    Only 16-bit, LOW and HIGH type fixups and relocs are supported.
- *    File validity is not checked.
+ *    File validity is not checked carefully.
  *    Undefined symbols may only be defined once.
  *
  */
@@ -76,43 +76,5 @@ private:
     
     segment *text, *data;
 };
-
-/*
- Example code:
-
-#include <cstdio>
-#include "o65.hh"
-
-using namespace std;
-
-int main(void)
-{
-    O65 tmp;
-    
-    FILE *fp = fopen("ct-vwf8.o65", "rb");
-    tmp.Load(fp);
-    fclose(fp);
-    
-    const vector<unsigned char>& code = tmp.GetCode();
-    
-    printf("Code size: %u bytes\n", code.size());
-    
-    printf(" Write_4bit is at %06X\n", tmp.GetSymAddress("Write_4bit"));
-    printf(" NextTile is at %06X\n", tmp.GetSymAddress("NextTile"));
-    
-    printf("After relocating code at FF0000:\n");
-    
-    tmp.LocateCode(0xFF0000);
-    
-    printf(" Write_4bit is at %06X\n", tmp.GetSymAddress("Write_4bit"));
-    printf(" NextTile is at %06X\n", tmp.GetSymAddress("NextTile"));
-    
-    tmp.LinkSym("WIDTH_SEG", 0xFF);
-    
-    tmp.Verify();
-    
-    return 0;
-}
-*/
 
 #endif

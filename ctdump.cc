@@ -469,6 +469,9 @@ static void DumpFont(unsigned begin,unsigned end, unsigned offs1, unsigned offs2
         
         unsigned width = ROM[sizeoffs + a];
         
+        if(!GetConst(VWF12_WIDTH_USE))
+            width = 12;
+        
         if(width > maxwidth)width = maxwidth;
         for(unsigned y=0; y<12; ++y)
         {
@@ -510,22 +513,22 @@ static void DumpFont(unsigned begin,unsigned end, unsigned offs1, unsigned offs2
 
 static void Dump12Font()
 {
-    unsigned char A0 = ROM[FirstChar_Address];
+    unsigned char A0 = ROM[GetConst(CSET_BEGINBYTE)];
     
-    unsigned Offset = ROM[WidthTab_Offset_Addr];
+    unsigned Offset = ROM[GetConst(VWF12_WIDTH_INDEX)];
     if(Offset == 0x20) Offset = 0; // ctfin puts $20 here (sep $20 instead of sbc $A0)
     
-    unsigned WidthPtr = ROM[WidthTab_Address_Ofs+0]
-                     + (ROM[WidthTab_Address_Ofs+1]<<8)
-                     + ((ROM[WidthTab_Address_Seg] & 0x3F) << 16)
+    unsigned WidthPtr = ROM[GetConst(VWF12_WIDTH_OFFSET)+0]
+                     + (ROM[GetConst(VWF12_WIDTH_OFFSET)+1]<<8)
+                     + ((ROM[GetConst(VWF12_WIDTH_SEGMENT)] & 0x3F) << 16)
                      - Offset;
     
-    unsigned FontSeg = ROM[Font12_Address_Seg] & 0x3F;
-    unsigned FontPtr1 = ROM[Font12a_Address_Ofs+0]
-                     + (ROM[Font12a_Address_Ofs+1] << 8)
+    unsigned FontSeg = ROM[GetConst(VWF12_SEGMENT)] & 0x3F;
+    unsigned FontPtr1 = ROM[GetConst(VWF12_TAB1_OFFSET)+0]
+                     + (ROM[GetConst(VWF12_TAB1_OFFSET)+1] << 8)
                      + (FontSeg << 16);
-    unsigned FontPtr2 = ROM[Font12b_Address_Ofs+0]
-                     + (ROM[Font12b_Address_Ofs+1] << 8)
+    unsigned FontPtr2 = ROM[GetConst(VWF12_TAB2_OFFSET)+0]
+                     + (ROM[GetConst(VWF12_TAB2_OFFSET)+1] << 8)
                      + (FontSeg << 16);
     
     if(FontPtr2 != FontPtr1 + 0x1800)
@@ -541,20 +544,21 @@ static void Dump12Font()
     MarkFree(FontPtr1, 256*24);
     MarkFree(FontPtr2, 256*12);
     
+    // FIXME: 0x100 is not the upper limit!
     MarkFree(WidthPtr+A0, 0x100-A0);
 }
 
 static void DoLoadDict()
 {
-    unsigned DictPtr = ROM[DictAddr_Ofs+0]
-                    + (ROM[DictAddr_Ofs+1] << 8)
-                   + ((ROM[DictAddr_Seg_1] & 0x3F) << 16);
+    unsigned DictPtr = ROM[GetConst(DICT_OFFSET)+0]
+                    + (ROM[GetConst(DICT_OFFSET)+1] << 8)
+                   + ((ROM[GetConst(DICT_SEGMENT1)] & 0x3F) << 16);
 
-    unsigned char A0 = ROM[FirstChar_Address];
+    unsigned char UpperLimit = ROM[GetConst(CSET_BEGINBYTE)];
     
-    fprintf(stderr, "Dictionary end byte for this ROM is $%02X...\n", A0);
+    fprintf(stderr, "Dictionary end byte for this ROM is $%02X...\n", UpperLimit);
 
-    unsigned dictsize = A0-0x21;  // For A0, that is 127.
+    unsigned dictsize = UpperLimit-0x21;  // For A0, that is 127.
     
     LoadDict(DictPtr, dictsize);
 
@@ -711,6 +715,7 @@ static void DumpGFX()
 0x29314A,0x41415A,0x525262,0x5A5A73,
 0x5A6283,0x737394,0x838B9C,0x8B94AC,
 0xA4A4B4,0xB4B4CD,0xCDCDDE,0xF6F6FF };
+    // in japanese it is FFE83C
     DumpGFX_4bit(0x3FF008, 12, 3, "active1.tga", pal); // "Battle Mode"
 }
 
@@ -819,6 +824,8 @@ static void DumpGFX()
 
 int main(int argc, const char* const* argv)
 {
+    SelectENGconst();
+    
     fprintf(stderr,
         "Chrono Trigger script dumper version "VERSION"\n"
         "Copyright (C) 1992,2003 Bisqwit (http://iki.fi/bisqwit/)\n");
@@ -832,8 +839,6 @@ int main(int argc, const char* const* argv)
     
     LoadROM(argv[1]);
     
-    DumpGFX();
-    
     scriptout = fopen(scriptoutfile, "wt");
     
     fprintf(scriptout,
@@ -846,11 +851,21 @@ int main(int argc, const char* const* argv)
     
     DoLoadDict();
     
+    Dump8x8sprites(GetConst(TILETAB_8_ADDRESS), 256);
+    
+    Dump12Font();
+    
+    DumpGFX();
+    
     // 
     fprintf(scriptout, ";items\n");
     DumpFStrings(0x0C0B5E, 11, 242);
     fprintf(scriptout, ";item descriptions\n");
     DumpZStrings(0x0C2EB1, 242, false);
+    
+    DumpFStrings(0x0CFB4C, 16, 1);
+    DumpFStrings(0x0CFB5E, 16, 1);
+    DumpFStrings(0x0CFA41, 14, 6);
     
     fprintf(scriptout, ";techs\n");
     DumpFStrings(0x0C15C4, 11);
@@ -968,10 +983,6 @@ int main(int argc, const char* const* argv)
     
     fprintf(scriptout, ";Episode list\n");
     DumpZStrings(0x3FD03E, 27, false);
-    
-    Dump8x8sprites(Font8_Address, 256);
-    
-    Dump12Font();
     
     FindEndSpaces();
 

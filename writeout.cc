@@ -239,7 +239,7 @@ void insertor::GenerateCode()
         GenerateVWF8code();
     }
     
-    PlaceData(Font8.GetTiles(), Font8_Address);
+    PlaceData(Font8.GetTiles(), GetConst(TILETAB_8_ADDRESS));
     
     GenerateConjugatorCode();
     GenerateSignatureCode();
@@ -320,10 +320,10 @@ void insertor::WriteDictionary(ROM &ROM)
         unsigned spaceptr = Organization[a].pos;
         WritePPtr(ROM, dictaddr + a*2, dict[a], spaceptr);
     }
-    ROM.Write(DictAddr_Ofs+0, dictaddr & 255);
-    ROM.Write(DictAddr_Ofs+1, (dictaddr >> 8) & 255);
-    ROM.Write(DictAddr_Seg_1, 0xC0 | dictpage);
-    ROM.Write(DictAddr_Seg_2, 0xC0 | dictpage);
+    ROM.Write(GetConst(DICT_OFFSET)+0, dictaddr & 255);
+    ROM.Write(GetConst(DICT_OFFSET)+1, (dictaddr >> 8) & 255);
+    ROM.Write(GetConst(DICT_SEGMENT1), 0xC0 | dictpage);
+    ROM.Write(GetConst(DICT_SEGMENT2), 0xC0 | dictpage);
 }
 
 void insertor::WriteStrings(ROM &ROM)
@@ -383,8 +383,6 @@ void insertor::GenerateVWF12code()
     const vector<unsigned char> &tiletab1 = Font12.GetTab1();
     const vector<unsigned char> &tiletab2 = Font12.GetTab2();
     
-    fprintf(stderr, "12-pix VWF will be placed:");
-
     const unsigned font_begin = get_font_begin();
     const unsigned tilecount  = Font12.GetCount();
     
@@ -398,11 +396,12 @@ void insertor::GenerateVWF12code()
     unsigned addr1 = Organization[0].pos + (page<<16);
     unsigned addr2 = Organization[1].pos + (page<<16);
 
-    unsigned WidthTab_Address = freespace.FindFromAnyPage(tilecount);
+    const unsigned WidthTab_Address = freespace.FindFromAnyPage(tilecount);
     
-    fprintf(stderr, " %u bytes at $%06X,"
-                    " %u bytes at $%06X,"
-                    " %u bytes at $%06X\n",
+    fprintf(stderr, "Writing VWF12:"
+                    " %u(widths)@ $%06X,"
+                    " %u(tab1)@ $%06X,"
+                    " %u(tab2)@ $%06X\n",
         tilecount,        0xC00000 | WidthTab_Address,
         tiletab1.size(),  0xC00000 | addr1,
         tiletab2.size(),  0xC00000 | addr2
@@ -414,12 +413,12 @@ void insertor::GenerateVWF12code()
     // patch font engine
     unsigned tmp = (WidthTab_Address - font_begin) | 0xC00000;
     
-    PlaceByte(((tmp     )&255), WidthTab_Address_Ofs+0);
-    PlaceByte(((tmp >> 8)&255), WidthTab_Address_Ofs+1);
-    PlaceByte(((tmp >>16)&255), WidthTab_Address_Seg);
+    PlaceByte(((tmp     )&255), GetConst(VWF12_WIDTH_OFFSET)+0);
+    PlaceByte(((tmp >> 8)&255), GetConst(VWF12_WIDTH_OFFSET)+1);
+    PlaceByte(((tmp >>16)&255), GetConst(VWF12_WIDTH_SEGMENT));
     
     // patch dialog engine
-    PlaceByte(font_begin,       FirstChar_Address);
+    PlaceByte(font_begin,       GetConst(CSET_BEGINBYTE));
     
     /*
      C2:5E1E:
@@ -446,27 +445,28 @@ void insertor::GenerateVWF12code()
        14
        
        Now widthtab may have more than 256 items.
+       We may ignore VWF12_WIDTH_INDEX as it's no longer used.
     */
 
     // patch font engine
-    PlaceByte(0xC2, WidthTab_Offset_Addr-7); // rep $20
-    PlaceByte(0x20, WidthTab_Offset_Addr-6);
-    PlaceByte(0xEA, WidthTab_Offset_Addr-5); // nop
-    PlaceByte(0xEA, WidthTab_Offset_Addr-4); // nop
-    PlaceByte(0xE2, WidthTab_Offset_Addr-1); // sep $20
-    PlaceByte(0x20, WidthTab_Offset_Addr  );
+    PlaceByte(0xC2, GetConst(VWF12_WIDTH_INDEX)-7); // rep $20
+    PlaceByte(0x20, GetConst(VWF12_WIDTH_INDEX)-6);
+    PlaceByte(0xEA, GetConst(VWF12_WIDTH_INDEX)-5); // nop
+    PlaceByte(0xEA, GetConst(VWF12_WIDTH_INDEX)-4); // nop
+    PlaceByte(0xE2, GetConst(VWF12_WIDTH_INDEX)-1); // sep $20
+    PlaceByte(0x20, GetConst(VWF12_WIDTH_INDEX)  );
 
     /* As these pointers don't point directly to the data,
      * they can't be set with AddOffsPtrFrom/AddSegPtrFrom
      */
     tmp = (addr1 - font_begin * 24) | 0xC00000;
     // patch font engine
-    PlaceByte(((tmp     )&255), Font12a_Address_Ofs+0);
-    PlaceByte(((tmp >> 8)&255), Font12a_Address_Ofs+1);
-    PlaceByte(((tmp >>16)&255), Font12_Address_Seg);
+    PlaceByte(((tmp     )&255), GetConst(VWF12_TAB1_OFFSET)+0);
+    PlaceByte(((tmp >> 8)&255), GetConst(VWF12_TAB1_OFFSET)+1);
+    PlaceByte(((tmp >>16)&255), GetConst(VWF12_SEGMENT));
     tmp = addr2 - font_begin * 12;
-    PlaceByte(((tmp     )&255), Font12b_Address_Ofs+0);
-    PlaceByte(((tmp >> 8)&255), Font12b_Address_Ofs+1);
+    PlaceByte(((tmp     )&255), GetConst(VWF12_TAB2_OFFSET)+0);
+    PlaceByte(((tmp >> 8)&255), GetConst(VWF12_TAB2_OFFSET)+1);
     
     vector<unsigned char> widths(tilecount);
     for(unsigned a=0; a<tilecount; ++a) widths[a] = Font12.GetWidth(a);

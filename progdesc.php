@@ -143,6 +143,7 @@ Copypaste from the Makefile:
 # VERSION 1.6.1  some remodularizing of code
 # VERSION 1.6.2  fixed the vwf8 scrolling problems and some other bugs
 # VERSION 1.6.3  battle item lister fixed - no vwf8 problems there now
+# VERSION 1.6.4  battle tech lister almost done; dumper: partial jap ROM support
 </pre>
 
 ", '1. Program list' => "

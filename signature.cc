@@ -23,8 +23,12 @@ void insertor::GenerateSignatureCode()
     
     PlaceData(imgdata, imgdata_addr);
     
+    const string codefile = WstrToAsc(codefn);
+    
+    fprintf(stderr, "\rLoading '%s'...\n", codefile.c_str());
+    
     O65 code;
-    {FILE *fp = fopen(WstrToAsc(codefn).c_str(), "rb");
+    {FILE *fp = fopen(codefile.c_str(), "rb");
     code.Load(fp);
     fclose(fp);}
 
@@ -53,7 +57,7 @@ void insertor::GenerateSignatureCode()
     code.LinkSym("PAL_F", image.GetPalEntry(15));
     
     fprintf(stderr,
-        "\rSignature: code(%u bytes) at $%06X, img(%u bytes (orig %u)) at $%06X\n",
+        "\rWriting sig: %u(code)@ $%06X, %u(img,orig %u)@ $%06X\n",
             code_size, code_addr,
             imgdata.size(), uncompressed.size(), imgdata_addr
            );

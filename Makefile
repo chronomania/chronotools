@@ -66,6 +66,7 @@ DEPDIRS = utils/
 # VERSION 1.6.1  some remodularizing of code
 # VERSION 1.6.2  fixed the vwf8 scrolling problems and some other bugs
 # VERSION 1.6.3  battle item lister fixed - no vwf8 problems there now
+# VERSION 1.6.4  battle tech lister almost done; dumper: partial jap ROM support
 
 OPTIM=-O3
 #OPTIM=-O0
@@ -74,7 +75,7 @@ OPTIM=-O3
 
 CXXFLAGS += -I.
 
-VERSION=1.6.3
+VERSION=1.6.4
 ARCHFILES=utils/xray.cc utils/xray.h \
           utils/viewer.c \
           utils/vwftest.cc \
@@ -94,7 +95,7 @@ ARCHFILES=utils/xray.cc utils/xray.h \
           hash.hh \
           wstring.cc wstring.hh \
           readin.cc wrap.cc writeout.cc \
-          settings.hh \
+          settings.cc settings.hh \
           rom.cc rom.hh \
           rommap.cc rommap.hh \
           strload.cc strload.hh \
@@ -170,7 +171,7 @@ all: $(PROGS)
 
 ctdump: \
 		ctdump.o rommap.o strload.o extras.o \
-		compress.o \
+		compress.o settings.o \
 		tgaimage.o symbols.o miscfun.o config.o \
 		confparser.o ctcset.o wstring.o
 	$(CXX) -o $@ $^ $(LDFLAGS)
@@ -182,15 +183,15 @@ ctinsert: \
 		fonts.o typefaces.o extras.o \
 		rom.o snescode.o signature.o \
 		conjugate.o vwf8.o o65.o compiler.o symbols.o \
-		logfiles.o \
+		logfiles.o settings.o \
 		config.o confparser.o ctcset.o wstring.o
 	$(CXX) -o $@ $^ $(LDFLAGS) -lm
 
 ct-vwf8.o65: ct-vwf8.a65
-	xa -o $@ $< -R -c -w
+	./xa -o $@ $< -R -c -w
 
 ct-moglogo.o65: ct-moglogo.a65
-	xa -o $@ $< -R -c -w
+	./xa -o $@ $< -R -c -w
 
 utils/makeips: utils/makeips.cc
 	$(CXX) -o $@ $^
@@ -237,6 +238,9 @@ utils/o65test: utils/o65test.o o65.o wstring.o
 	$(CXX) $(CXXFLAGS) -g -O -Wall -W -pedantic -o $@ $^ $(LDFLAGS)
 
 utils/dumpo65: utils/dumpo65.o
+	$(CXX) $(CXXFLAGS) -g -O -Wall -W -pedantic -o $@ $^ $(LDFLAGS)
+
+utils/ctxtview: utils/ctxtview.o settings.o rommap.o
 	$(CXX) $(CXXFLAGS) -g -O -Wall -W -pedantic -o $@ $^ $(LDFLAGS)
 
 

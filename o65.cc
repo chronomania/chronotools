@@ -2,7 +2,7 @@
  * For loading and linking 65816 object files
  * Copyright (C) 1992,2003 Bisqwit (http://iki.fi/bisqwit/)
  *
- * Version 1.0 - Aug 18 2003
+ * Version 1.1.0 - Aug 18 2003, Sep 4 2003
  */
 
 #define DEBUG_FIXUPS 0
@@ -29,17 +29,18 @@ public:
     // absolute addresses of all symbols
     map<string, unsigned> symbols;
     
-    typedef unsigned Fixup16; //addr
-    vector<Fixup16> Fixups_16;
-    vector<pair<Fixup16, unsigned> > Relocs_16; // fixup,undef_indx
+    template<typename T>
+    struct Relocdata
+    {
+        vector<T> Fixups;
+        vector<pair<T, unsigned> > Relocs; // fixup,undef_indx
+    };
     
-    typedef unsigned Fixup16lo; //addr
-    vector<Fixup16lo> Fixups_16lo;
-    vector<pair<Fixup16lo, unsigned> > Relocs_16lo; // fixup,undef_indx
-    
-    typedef pair<unsigned,unsigned> Fixup16hi; // addr,lowpart
-    vector<Fixup16hi> Fixups_16hi;
-    vector<pair<Fixup16hi, unsigned> > Relocs_16hi; // fixup,undef_indx
+    Relocdata<unsigned> R16;                   // addr
+    Relocdata<unsigned> R16lo;                 // addr
+    Relocdata<pair<unsigned,unsigned> > R16hi; // addr,lowpart
+    Relocdata<pair<unsigned,unsigned> > R24seg;// addr,offspart
+    Relocdata<unsigned> R24;                   // addr
 
 private:
     friend class O65;
@@ -52,6 +53,7 @@ namespace
     unsigned LoadWord(FILE *fp)
     {
         unsigned temp = fgetc(fp);
+        if(temp == (unsigned)EOF)return temp;
         return temp | (fgetc(fp) << 8);
     }
     
@@ -76,17 +78,38 @@ namespace
                     switch(type)
                     {
                         case 0x20:
-                            seg.Relocs_16lo.push_back(make_pair(addr, undef_idx));
+                        {
+                            seg.R16lo.Relocs.push_back(make_pair(addr, undef_idx));
                             break;
+                        }
                         case 0x40:
                         {
-                            O65::segment::Fixup16hi tmp = make_pair(addr, fgetc(fp));
-                            seg.Relocs_16hi.push_back(make_pair(tmp, undef_idx));
+                            pair<unsigned,unsigned> tmp(addr, fgetc(fp));
+                            seg.R16hi.Relocs.push_back(make_pair(tmp, undef_idx));
                             break;
                         }
                         case 0x80:
-                            seg.Relocs_16.push_back(make_pair(addr, undef_idx));
+                        {
+                            seg.R16.Relocs.push_back(make_pair(addr, undef_idx));
                             break;
+                        }
+                        case 0xA0:
+                        {
+                            pair<unsigned,unsigned> tmp(addr, LoadWord(fp));
+                            seg.R24seg.Relocs.push_back(make_pair(tmp, undef_idx));
+                            break;
+                        }
+                        case 0xC0:
+                        {
+                            seg.R24.Relocs.push_back(make_pair(addr, undef_idx));
+                            break;
+                        }
+                        default:
+                        {
+                            fprintf(stderr,
+                                "Error: External reloc type %02X not supported yet\n",
+                                type);
+                        }
                     }
                     break;
                 }
@@ -95,22 +118,49 @@ namespace
                     switch(type)
                     {
                         case 0x20:
-                            seg.Fixups_16lo.push_back(addr);
+                        {
+                            seg.R16lo.Fixups.push_back(addr);
                             break;
+                        }
                         case 0x40:
                         {
-                            O65::segment::Fixup16hi tmp = make_pair(addr, fgetc(fp));
-                            seg.Fixups_16hi.push_back(tmp);
+                            pair<unsigned,unsigned> tmp(addr, fgetc(fp));
+                            seg.R16hi.Fixups.push_back(tmp);
                             break;
                         }
                         case 0x80:
-                            seg.Fixups_16.push_back(addr);
+                        {
+                            seg.R16.Fixups.push_back(addr);
                             break;
+                        }
+                        case 0xA0:
+                        {
+                            pair<unsigned,unsigned> tmp(addr, LoadWord(fp));
+                            seg.R24seg.Fixups.push_back(tmp);
+                            break;
+                        }
+                        case 0xC0:
+                        {
+                            seg.R24.Fixups.push_back(addr);
+                            break;
+                        }
+                        default:
+                        {
+                            fprintf(stderr,
+                                "Error: Fixup type %02X not supported yet\n",
+                                type);
+                        }
                     }
                     break;
                 }
-                // others are ignored
-                // FIXME: 3 would be data
+                default:
+                {
+                    fprintf(stderr,
+                        "Error: Reloc area type %02X not supported yet\n",
+                            area);
+                    // others are ignored
+                    // FIXME: 3 would be data
+                }
             }
         }
     }
@@ -172,7 +222,7 @@ void O65::Load(FILE *fp)
     for(unsigned a=0; a<num_und; ++a)
     {
         string varname;
-        while(int c = fgetc(fp)) varname += (char) c;
+        while(int c = fgetc(fp)) { if(c==EOF)break; varname += (char) c; }
         
         undefines.push_back(make_pair(varname, make_pair(false, 0)));
     }
@@ -189,7 +239,7 @@ void O65::Load(FILE *fp)
     for(unsigned a=0; a<num_ext; ++a)
     {
         string varname;
-        while(int c = fgetc(fp)) varname += (char) c;   
+        while(int c = fgetc(fp)) { if(c==EOF)break; varname += (char) c; }
         
         unsigned seg = fgetc(fp);
         unsigned value = LoadWord(fp);
@@ -247,9 +297,9 @@ void O65::segment::Locate(unsigned newaddress)
     {
         i->second += diff;
     }
-    for(unsigned a=0; a<Fixups_16.size(); ++a)
+    for(unsigned a=0; a<R16.Fixups.size(); ++a)
     {
-        unsigned addr = Fixups_16[a];
+        unsigned addr = R16.Fixups[a];
         unsigned oldvalue = space[addr] | (space[addr+1] << 8);
         unsigned newvalue = oldvalue + diff;
         
@@ -259,9 +309,9 @@ void O65::segment::Locate(unsigned newaddress)
         space[addr] = newvalue&255;
         space[addr+1] = (newvalue>>8) & 255;
     }
-    for(unsigned a=0; a<Fixups_16lo.size(); ++a)
+    for(unsigned a=0; a<R16lo.Fixups.size(); ++a)
     {
-        unsigned addr = Fixups_16lo[a];
+        unsigned addr = R16lo.Fixups[a];
         unsigned oldvalue = space[addr];
         unsigned newvalue = oldvalue + diff;
 #if DEBUG_FIXUPS
@@ -269,25 +319,49 @@ void O65::segment::Locate(unsigned newaddress)
 #endif
         space[addr] = newvalue & 255;
     }
-    for(unsigned a=0; a<Fixups_16hi.size(); ++a)
+    for(unsigned a=0; a<R16hi.Fixups.size(); ++a)
     {
-        unsigned addr = Fixups_16hi[a].first;
-        unsigned oldvalue = (space[addr] << 8) | Fixups_16hi[a].second;
+        unsigned addr = R16hi.Fixups[a].first;
+        unsigned oldvalue = (space[addr] << 8) | R16hi.Fixups[a].second;
         unsigned newvalue = oldvalue + diff;
 #if DEBUG_FIXUPS
         fprintf(stderr, "Replaced %02X with %02X at %06X\n", space[addr],(newvalue>>8)&255, newaddress+addr+0xC00000);
 #endif
         space[addr] = (newvalue>>8) & 255;
     }
+    for(unsigned a=0; a<R24.Fixups.size(); ++a)
+    {
+        unsigned addr = R24.Fixups[a];
+        unsigned oldvalue = space[addr] | (space[addr+1] << 8) | (space[addr+2] << 16);
+        unsigned newvalue = oldvalue + diff;
+        
+#if DEBUG_FIXUPS
+        fprintf(stderr, "Replaced %06X with %06X at %06X\n", oldvalue,newvalue, newaddress+addr+0xC00000);
+#endif
+        space[addr] = newvalue&255;
+        space[addr+1] = (newvalue>>8) & 255;
+        space[addr+2] = (newvalue>>16) & 255;
+    }
+    for(unsigned a=0; a<R24seg.Fixups.size(); ++a)
+    {
+        unsigned addr = R24seg.Fixups[a].first;
+        unsigned oldvalue = (space[addr] << 16) | R24seg.Fixups[a].second;
+        unsigned newvalue = oldvalue + diff;
+        
+#if DEBUG_FIXUPS
+        fprintf(stderr, "Replaced %02X with %02X at %06X\n", space[addr],newvalue>>16, newaddress+addr+0xC00000);
+#endif
+        space[addr] = (newvalue>>16) & 255;
+    }
     base = newaddress;
 }
 
 void O65::segment::LocateSym(unsigned symno, unsigned value)
 {
-    for(unsigned a=0; a<Relocs_16.size(); ++a)
+    for(unsigned a=0; a<R16.Relocs.size(); ++a)
     {
-        if(Relocs_16[a].second != symno) continue;
-        unsigned addr = Relocs_16[a].first;
+        if(R16.Relocs[a].second != symno) continue;
+        unsigned addr = R16.Relocs[a].first;
         unsigned oldvalue = space[addr] | (space[addr+1] << 8);
         unsigned newvalue = oldvalue + value;
 #if DEBUG_FIXUPS
@@ -296,10 +370,10 @@ void O65::segment::LocateSym(unsigned symno, unsigned value)
         space[addr] = newvalue&255;
         space[addr+1] = (newvalue>>8) & 255;
     }
-    for(unsigned a=0; a<Relocs_16lo.size(); ++a)
+    for(unsigned a=0; a<R16lo.Relocs.size(); ++a)
     {
-        if(Relocs_16lo[a].second != symno) continue;
-        unsigned addr = Relocs_16lo[a].first;
+        if(R16lo.Relocs[a].second != symno) continue;
+        unsigned addr = R16lo.Relocs[a].first;
         unsigned oldvalue = space[addr];
         unsigned newvalue = oldvalue + value;
 #if DEBUG_FIXUPS
@@ -307,17 +381,43 @@ void O65::segment::LocateSym(unsigned symno, unsigned value)
 #endif
         space[addr] = newvalue & 255;
     }
-    for(unsigned a=0; a<Relocs_16hi.size(); ++a)
+    for(unsigned a=0; a<R16hi.Relocs.size(); ++a)
     {
-        if(Relocs_16hi[a].second != symno) continue;
-        unsigned addr = Relocs_16hi[a].first.first;
-        unsigned oldvalue = (space[addr] << 8) | Relocs_16hi[a].first.second;
+        if(R16hi.Relocs[a].second != symno) continue;
+        unsigned addr = R16hi.Relocs[a].first.first;
+        unsigned oldvalue = (space[addr] << 8) | R16hi.Relocs[a].first.second;
         unsigned newvalue = oldvalue + value;
 #if DEBUG_FIXUPS
         fprintf(stderr, "Replaced %02X with %02X for sym %u\n",
             space[addr],(newvalue>>8)&255, symno);
 #endif
         space[addr] = (newvalue>>8) & 255;
+    }
+    for(unsigned a=0; a<R24.Relocs.size(); ++a)
+    {
+        if(R24.Relocs[a].second != symno) continue;
+        unsigned addr = R24.Relocs[a].first;
+        unsigned oldvalue = space[addr] | (space[addr+1] << 8) | (space[addr+2] << 16);
+        unsigned newvalue = oldvalue + value;
+        
+#if DEBUG_FIXUPS
+        fprintf(stderr, "Replaced %06X with %06X for sym %u\n", oldvalue,newvalue, symno);
+#endif
+        space[addr] = newvalue&255;
+        space[addr+1] = (newvalue>>8) & 255;
+        space[addr+2] = (newvalue>>16) & 255;
+    }
+    for(unsigned a=0; a<R24seg.Relocs.size(); ++a)
+    {
+        if(R24seg.Relocs[a].second != symno) continue;
+        unsigned addr = R24seg.Relocs[a].first.first;
+        unsigned oldvalue = (space[addr] << 16) | R24seg.Relocs[a].first.second;
+        unsigned newvalue = oldvalue + value;
+        
+#if DEBUG_FIXUPS
+        fprintf(stderr, "Replaced %02X with %02X for sym %u\n", space[addr],newvalue>>16, symno);
+#endif
+        space[addr] = (newvalue>>16) & 255;
     }
 }
 
