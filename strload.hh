@@ -12,16 +12,26 @@ using std::map;
 #include "ctcset.hh"
 #include "extras.hh"
 
-// Load an array of pascal style strings
-const vector<ctstring> LoadPStrings(unsigned offset, unsigned count);
+const ctstring LoadZString(unsigned offset,
+                           unsigned &bytes,
+                           const string& what,
+                           const extrasizemap_t& extrasizes);
 
-const ctstring LoadZString(unsigned offset, const extrasizemap_t& extrasizes);
+// Load an array of pascal style strings
+const vector<ctstring> LoadPStrings(unsigned offset,
+                                    unsigned count,
+                                    const string& what
+                                   );
 
 // Load an array of C style strings
 const vector<ctstring> LoadZStrings(unsigned offset, unsigned count,
-                                    const extrasizemap_t& extrasizes);
+                                    const string& what,
+                                    const extrasizemap_t& extrasizes
+                                   );
 
 // Load an array of fixed length strings
-const vector<ctstring> LoadFStrings(unsigned offset, unsigned len, unsigned maxcount=0);
+const vector<ctstring> LoadFStrings(unsigned offset, unsigned len,
+                                    const string& what,
+                                    unsigned maxcount=0);
 
 #endif

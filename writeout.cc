@@ -275,13 +275,19 @@ void insertor::WriteCode(ROM &ROM) const
     // Patch the name entry function
     //  FIXME: Make this read the pointers from "strings" instead
     
-    ROM.Write(0x02E553, ROM[0x3FC4D3]);
-    ROM.Write(0x02E554, ROM[0x3FC4D4]);
-    ROM.Write(0x02E555, 0xFF);
-
-    ROM.Write(0x02E331, ROM[0x3FC4D5]);
-    ROM.Write(0x02E332, ROM[0x3FC4D6]);
-    ROM.Write(0x02E333, 0xFF);
+    if(ROM.touched(0x3FC4D3))
+    {
+        // Write the address of name input strings.
+        ROM.Write(0x02E553, ROM[0x3FC4D3]);
+        ROM.Write(0x02E554, ROM[0x3FC4D4]);
+        ROM.Write(0x02E555, 0xFF);
+    }
+    if(ROM.touched(0x3FC4D5))
+    {
+        ROM.Write(0x02E331, ROM[0x3FC4D5]);
+        ROM.Write(0x02E332, ROM[0x3FC4D6]);
+        ROM.Write(0x02E333, 0xFF);
+    }
 
     // Testataan moottoria
     // ROM.Write(0x0058DE, 0xA9); //lda A, $08

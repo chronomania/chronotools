@@ -177,6 +177,9 @@ namespace
         ConfigLoader()
         {
             bool was_tmp = false;
+            
+            fprintf(stderr, "Reading %s...", "ct.cfg");
+            
             FILE *fp = fopen("ct.cfg", "rt");
             if(!fp)
             {
@@ -218,7 +221,7 @@ namespace
 
             if(was_tmp)remove("ct-cfg.tmp");
             
-            fprintf(stderr, "Configuration loaded\n");
+            fprintf(stderr, " done\n");
         }
     } ConfigLoader;
 }

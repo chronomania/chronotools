@@ -94,6 +94,7 @@ DEPDIRS = utils/
 # VERSION 1.9.3  includes the forgotten snescode and dictionary modules.
 # VERSION 1.10.0 implemented various assembly optimization techniques
 # VERSION 1.10.1 updated the docs and the conj.code generator
+# VERSION 1.10.2 creates more useful information when dumping
 
 OPTIM=-O3
 #OPTIM=-O0
@@ -102,7 +103,7 @@ OPTIM=-O3
 
 CXXFLAGS += -I.
 
-VERSION=1.10.1
+VERSION=1.10.2
 ARCHFILES=utils/xray.cc utils/xray.h \
           utils/viewer.c \
           utils/vwftest.cc \
@@ -114,6 +115,7 @@ ARCHFILES=utils/xray.cc utils/xray.h \
           utils/unmakeips.cc \
           utils/fixchecksum.cc \
           utils/comprtest.cc \
+          utils/rearrange.cc \
           utils/compiler.cc \
           utils/codegen.cc utils/codegen.hh \
           utils/casegen.cc utils/casegen.hh \
@@ -124,6 +126,8 @@ ARCHFILES=utils/xray.cc utils/xray.h \
           ctcset.cc ctcset.hh \
           miscfun.cc miscfun.hh \
           compress.cc compress.hh \
+          scriptfile.cc scriptfile.hh \
+          rangemap.hh rangemap.tcc \
           space.cc space.hh \
           crc32.cc crc32.h \
           hash.hh \
@@ -188,6 +192,7 @@ PROGS=\
 	utils/facegenerator \
 	utils/base62 \
 	utils/sramdump \
+	utils/rearrange \
 	utils/spacefind \
         utils/comprtest \
 	utils/vwftest \
@@ -199,7 +204,7 @@ PROGS=\
 all: $(PROGS)
 
 ctdump: \
-		ctdump.o rommap.o strload.o extras.o \
+		ctdump.o scriptfile.o rommap.o strload.o extras.o \
 		compress.o settings.o \
 		tgaimage.o symbols.o miscfun.o config.o \
 		confparser.o ctcset.o wstring.o
@@ -282,6 +287,8 @@ utils/comp2test: utils/compiler2.cc config.o confparser.o ctcset.o wstring.o
 	$(CXX) $(LDOPTS) $(CXXFLAGS) -g -O -Wall -W -pedantic -o $@ $^ $(LDFLAGS)
 
 utils/comprtest: utils/comprtest.o rommap.o compress.o
+	$(CXX) $(LDOPTS) $(CXXFLAGS) -g -O -Wall -W -pedantic -o $@ $^ $(LDFLAGS)
+utils/rearrange: utils/rearrange.o
 	$(CXX) $(LDOPTS) $(CXXFLAGS) -g -O -Wall -W -pedantic -o $@ $^ $(LDFLAGS)
 
 utils/comprtest2: utils/comprtest2.o compress.o

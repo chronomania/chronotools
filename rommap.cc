@@ -1,8 +1,11 @@
 #include <set>
+#include <map>
 #include <vector>
 
 #include "rommap.hh"
 #include "ctdump.hh"
+#include "scriptfile.hh"
+#include "rangemap.hh"
 
 using namespace std;
 
@@ -12,6 +15,9 @@ namespace
     const unsigned ExtraSpaceMinLen = 128;
     
     vector<unsigned char> space, protect;
+    
+    typedef rangemap<unsigned, string> reasonmap;
+    reasonmap reasons;
 }
 
 unsigned char *ROM;
@@ -24,7 +30,7 @@ unsigned char *ROM;
 
 namespace
 {
-    void MarkingError(const set<unsigned>& errlist, const char *type)
+    void MarkingMessage(const char* msgtype, const set<unsigned>& errlist, const char* type)
     {
         set<unsigned>::const_iterator i;
         
@@ -32,11 +38,38 @@ namespace
         unsigned first=0;
         unsigned prev=0;
         
+        reasons.find(5);
+        
         for(i=errlist.begin(); ; ++i)
         {
             if(i == errlist.end() || (begun && prev < *i-1))
             {
-                fprintf(stderr, "Error: %06X-%06X already marked %s\n", first,prev, type);
+                fprintf(stderr, "%s: %06X-%06X already marked %s\n",
+                                msgtype, first,prev, type);
+                
+                set<string> users;
+                
+                list<reasonmap::const_iterator> userlist;
+                reasons.find_all_coinciding(first, prev+1, userlist);
+                for(list<reasonmap::const_iterator>::const_iterator
+                    j = userlist.begin();
+                    j != userlist.end();
+                    ++j)
+                {
+                    users.insert((*j)->second);
+                }
+                if(!users.empty())
+                {
+                    fprintf(stderr, "- previously defined by:");
+                    int c=0;
+                    for(set<string>::const_iterator j = users.begin(); j != users.end(); ++j)
+                    {
+                        if(c++)fprintf(stderr, ",");
+                        fprintf(stderr, " %s", j->c_str());
+                    }
+                    fprintf(stderr, "\n");
+                }
+                
                 begun = false;
                 if(i == errlist.end()) break;
             }
@@ -45,67 +78,177 @@ namespace
             prev = *i;
         }
     }
+    void MarkingError(const set<unsigned>& errlist, const char *type)
+    {
+        MarkingMessage("Error", errlist, type);
+    }
+    void MarkingWarning(const set<unsigned>& errlist, const char *type)
+    {
+        MarkingMessage("Warning", errlist, type);
+    }
+    
+    void SetReasons(unsigned begin, unsigned length, const string& what)
+    {
+        reasons.set(begin, begin+length, what);
+    }
+    
+    void ExplainProtMap(FILE *fp,
+                        unsigned begin, unsigned length,
+                        const char* type,
+                        unsigned num_ref)
+    {
+        unsigned endpos = begin+length;
+        
+        reasonmap contents;
+        
+        contents.set(begin, endpos, "");
+        
+        list<reasonmap::const_iterator> userlist;
+        reasons.find_all_coinciding(begin, endpos, userlist);
+        for(list<reasonmap::const_iterator>::const_iterator
+            i = userlist.begin();
+            i != userlist.end();
+            ++i)
+        {
+            contents.set((*i)->first.lower,
+                         (*i)->first.upper,
+                         (*i)->second);
+        }
+        contents.compact();
+        
+        for(reasonmap::const_iterator
+            i = contents.begin();
+            i != contents.end();
+            ++i)
+        {
+            fprintf(fp, "  %06X-%06X: %10u %-10s",
+                i->first.lower,
+                i->first.upper-1,
+                i->first.upper - i->first.lower,
+                type);
+            
+            if(num_ref > 1)
+                fprintf(fp, " %3u", num_ref);
+            else
+                fprintf(fp, "    ");
+            
+            fprintf(fp, "%s\n", i->second.c_str());
+            fflush(fp);
+        }
+    }
 }
 
 void ShowProtMap()
 {
     static const char *const types[4] = {"?","free","protected","ERROR"};
+    static const char filename[] = "ctrommap.txt";
     
-    fprintf(stderr, "Prot/free map:\n");
+    FILE *fp = fopen(filename, "wt");
+    if(!fp)
+    {
+        return;
+    }
+    
+    fprintf(stderr, "Creating %s... (delete if you don't need it)\n", filename);
+    
+    fprintf(fp,
+        "This file lists the memory map of your\n"
+        "Chrono Trigger ROM, as detected by ctdump.\n"
+        "\n"
+        "Prot/free map:\n"
+        "   begin-end     size/bytes type       use\n");
     unsigned romsize = space.size();
     
     bool begun=false;
     unsigned first=0;
     unsigned lasttype=0;
+    unsigned lastcount=0;
     
     for(unsigned a=0; a<=romsize; ++a)
     {
-        unsigned type = 0;
+        unsigned type = 0, count = 0;
+        
+        if(a < romsize)
+        {
+            type = (space[a] ? 1 : 0)
+                 | (protect[a] ? 2 : 0);
+            count = /*space[a] +*/ protect[a];
+        }
+        
         if(a == romsize
-        || (begun && lasttype != (type = (space[a]?1:0) + (protect[a]?2:0)))
+        || (a > 0 && !(a&0xFFFF))
+        || (begun && (lasttype != type || lastcount != count))
           )
         {
-            fprintf(stderr, "  %06X-%06X: %s (%u bytes)\n",
-                first,a-1, types[lasttype], a-first);
+            ExplainProtMap(fp,
+                           first, a-first,
+                           types[lasttype],
+                           lastcount);
+            
             begun = false;
             if(a == romsize) break;
         }
         if(!begun) { begun = true; first=a; }
-        lasttype = type;
+        lasttype  = type;
+        lastcount = count;
     }
+    
+    fprintf(fp,
+        "\n"
+        "%-10s: will be used by insertor\n"
+        "%-10s: will never be marked \"free\"\n"
+        "%-10s: is code/data/undetermined - not free.\n",
+        types[1],
+        types[2],
+        types[0]
+           );
+    
+    fclose(fp);
 }
 
-void MarkFree(unsigned begin, unsigned length)
+void MarkFree(unsigned begin, unsigned length, const string& reason)
 {
     set<unsigned> error;
+    //set<unsigned> warning;
     //fprintf(stderr, "Marking %u bytes free at %06X\n", length, begin);
-    for(; length>0; --length)
+    for(unsigned n=0; n<length; ++n)
     {
-        if(protect[begin]) error.insert(begin);
-        space[begin++] = true;
+        if(protect[begin+n]) error.insert(begin+n);
+        //if(space[begin+n]) warning.insert(begin+n);
+        ++space[begin+n];
     }
+    
+    // refreeing is not dangerous. It's common when substrings are reused.
     
     if(!error.empty()) MarkingError(error, "protected, attempted to free");
+    //if(!warning.empty()) MarkingWarning(warning, "free, attempted to refree");
+    
+    if(length > 0) SetReasons(begin, length, reason);
 }
 
-void MarkProt(unsigned begin, unsigned length)
+void MarkProt(unsigned begin, unsigned length, const string& reason)
 {
     set<unsigned> error;
+    set<unsigned> warning;
     
     //fprintf(stderr, "Marking %u bytes protected at %06X\n", length, begin);
-    for(; length>0; --length)
+    for(unsigned n=0; n<length; ++n)
     {
-        if(space[begin]) error.insert(begin);
-        protect[begin++] = true;
+        if(space[begin+n]) error.insert(begin+n);
+        if(protect[begin+n]) warning.insert(begin+n);
+        ++protect[begin+n];
     }
 
     if(!error.empty()) MarkingError(error, "free, attempted to protect");
+    if(!warning.empty()) MarkingWarning(warning, "protected, attempted to reprotect");
+    
+    if(length > 0) SetReasons(begin, length, reason);
 }
 
 void UnProt(unsigned begin, unsigned length)
 {
     for(; length>0; --length)
-        protect[begin++] = false;
+        protect[begin++] = 0;
 }
 
 void LoadROM(FILE *fp)
@@ -139,9 +282,11 @@ void LoadROM(FILE *fp)
         fprintf(stderr, " memmap succesful (%p),", (const void *)ROM);
     fprintf(stderr, " done");
     space.clear();
-    space.resize(romsize);
+    space.resize(romsize, 0);
     protect.clear();
-    protect.resize(romsize);
+    protect.resize(romsize, 0);
+    reasons.clear();
+    
     fprintf(stderr, "\n");
 }
 
@@ -174,7 +319,7 @@ void FindEndSpaces(void)
                     ++blanklen;
                     if(blanklen == ExtraSpaceMinLen)
                     {
-                        MarkFree(blapos-(ExtraSpaceMinLen-1), ExtraSpaceMinLen);
+                        MarkFree(blapos-(ExtraSpaceMinLen-1), ExtraSpaceMinLen, "end space");
                     }
                     if(blanklen >= ExtraSpaceMinLen)
                         space[blapos] = true;
@@ -202,8 +347,9 @@ void FindEndSpaces(void)
 
 void ListSpaces(void)
 {
-    fprintf(stderr, "Dumping free space list...");
+    //fprintf(stderr, "Dumping free space list...");
     unsigned pagecount = (space.size()+0xFFFF) >> 16;
+    StartBlock("");
     for(unsigned page=0; page<pagecount; ++page)
     {
         unsigned pageend = (page+1) << 16;
@@ -222,16 +368,18 @@ void ListSpaces(void)
             {
                 if(!freehere)
                 {
-                    fprintf(scriptout, "*s%02X ;Free space in segment $%02X:\n", page, page);
+                    char Buf[64];
+                    sprintf(Buf, "*s%02X\n", page);
+                    PutAscii(Buf);
                     freehere = true;
                 }
-                fprintf(scriptout,
-                    "$%04X:%04X ; %u\n", freebegin, p, p-freebegin);
+                char Buf[64];
+                sprintf(Buf, "$%04X:%04X ; %u\n", freebegin, p, p-freebegin);
+                
+                PutAscii(Buf);
             }
         }
-        if(freehere)
-            fprintf(scriptout, "\n\n");
     }
-    fprintf(stderr, " done\n");
+    EndBlock();
+    //fprintf(stderr, " done\n");
 }
-

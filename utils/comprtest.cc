@@ -2,6 +2,7 @@
 
 #include "rommap.hh"
 #include "compress.hh"
+#include "scriptfile.hh"
 
 using namespace std;
 
@@ -9,7 +10,12 @@ typedef unsigned short Word;
 typedef unsigned char Byte;
 typedef unsigned int Ptr;
 
-FILE *scriptout=NULL; //dummy, used by rommap.o
+
+//dummy, used by rommap.o
+void StartBlock(const char*, unsigned){}
+void PutAscii(const string&){}
+void EndBlock(){}
+
 
 static vector<Byte> Data(65536);
 static unsigned lastsize;

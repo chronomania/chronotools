@@ -33,7 +33,9 @@ namespace
                 if((unsigned)c < revmapfirst.size()) revmapfirst[(unsigned)c] = a;
                 else if(c != ilseq)revmap[c] = a;
             }
+#if 0 /* nobody needs this message */
             fprintf(stderr, "Built charset map (%u noncached)\n", revmap.size());
+#endif
         }
 
     protected:

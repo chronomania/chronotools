@@ -175,6 +175,7 @@ Copypaste from the Makefile:
 # VERSION 1.9.3  includes the forgotten snescode and dictionary modules.
 # VERSION 1.10.0 implemented various assembly optimization techniques
 # VERSION 1.10.1 updated the docs and the conj.code generator
+# VERSION 1.10.2 creates more useful information when dumping
 </pre>
 
 ", '1. Program list' => "

@@ -7,11 +7,13 @@
 using namespace std;
 
 #define LOADP_DEBUG      0
-                         #define LOADZ_DEBUG      0
+#define LOADZ_DEBUG      0
 #define LOADZ_EXTRASPACE 0
 #define LOADP_EXTRASPACE 0
 
-const vector<ctstring> LoadPStrings(unsigned offset, unsigned count)
+const vector<ctstring> LoadPStrings(unsigned offset, unsigned count,
+                                    const string& what
+                                   )
 {
     unsigned segment = offset & 0xFF0000;
     vector<ctstring> result;
@@ -20,7 +22,11 @@ const vector<ctstring> LoadPStrings(unsigned offset, unsigned count)
     const unsigned maxco=10;
     unsigned col=maxco;
 #endif
-    MarkProt(offset, count*2);
+    
+    const string what_p = what+" pointers";
+    const string what_d = what+" data";
+
+    MarkProt(offset, count*2, what_p);
     for(unsigned a=0; a<count; ++a)
     {
         unsigned stringptr = ROM[offset] + 256*ROM[offset + 1];
@@ -43,7 +49,7 @@ const vector<ctstring> LoadPStrings(unsigned offset, unsigned count)
         result.push_back(foundstring);
         offset += 2;
         
-        MarkFree(stringptr, length + 1);
+        MarkFree(stringptr, length + 1, what_d);
 
 #if LOADP_EXTRASPACE
         unsigned freebytepos=stringptr + result[a].size()+1;
@@ -53,21 +59,30 @@ const vector<ctstring> LoadPStrings(unsigned offset, unsigned count)
          || ROM[freebyte] == 0xFF //space
          || ROM[freebyte] == 0xEF //also space
          ; ++freebyte,++freebytecount);
-        MarkFree(freebytepos, freebytecount);
+        MarkFree(freebytepos, freebytecount, "extra space");
 #endif
     }
 #if LOADP_DEBUG
     if(col)printf("\n");
+    fflush(stdout);
 #endif
     return result;
 }
 
-const ctstring LoadZString(unsigned offset, const extrasizemap_t& extrasizes)
+const ctstring LoadZString(unsigned offset,
+                           unsigned &bytes,
+                           const string& what,
+                           const extrasizemap_t& extrasizes)
 {
     ctstring foundstring;
+
+    const unsigned beginoffs = offset;
+    unsigned endoffs=beginoffs;
     
     for(unsigned p=offset; ; ++p)
     {
+        endoffs = p+1;
+        
         if(ROM[p] == 0) break;
         unsigned int byte = ROM[p];
         
@@ -75,7 +90,10 @@ const ctstring LoadZString(unsigned offset, const extrasizemap_t& extrasizes)
         if(extrasizes.size() == 1)
         {
             if(byte == 1 || byte == 2)
+            {
+                ++endoffs;
                 byte = byte*256 + ROM[++p];
+            }
         }
         
         foundstring += (ctchar)byte;
@@ -89,14 +107,17 @@ const ctstring LoadZString(unsigned offset, const extrasizemap_t& extrasizes)
         }
     }
     
+    bytes = endoffs - beginoffs;
+    
     //printf("\n;Loaded %u bytes from $%06X\n", foundstring.size()+1, offset);
     
-    MarkFree(offset, foundstring.size() + 1);
+    MarkFree(offset, bytes, what);
     
     return foundstring;
 }
 
 const vector<ctstring> LoadZStrings(unsigned offset, unsigned count,
+                                    const string& what,
                                     const extrasizemap_t& extrasizes)
 {
     const unsigned segment = offset >> 16;
@@ -105,64 +126,82 @@ const vector<ctstring> LoadZStrings(unsigned offset, unsigned count,
     vector<ctstring> result;
     result.reserve(count);
 #if LOADZ_DEBUG
-    const unsigned maxco=10;
+    const unsigned maxco=6;
     unsigned col=maxco;
 #endif
     set<unsigned> offsetlist;
     
-    unsigned firstoffs = 0x10000, lastoffs = 0, lastlen = 0;
-    for(unsigned a=0; !count || a<count; ++a)
+    const string what_p = what+" pointers";
+    const string what_d = what+" data";
+
+    unsigned first_offs = offset;
+    unsigned last_offs  = first_offs;
+    for(unsigned a=0; !count || a<count; ++a, offset += 2)
     {
         const unsigned stringptr = ROM[offset] + 256*ROM[offset + 1];
         
         // Jos tämä osoite on listattu jo kertaalleen, break.
         if(offsetlist.find(offset & 0xFFFF) != offsetlist.end())
             break;
-
-        MarkProt(offset, 2);
+        
+        last_offs = offset+2;
         offsetlist.insert(stringptr);
         
 #if LOADZ_DEBUG
         if(col==maxco){printf(";ptr%2u ", a);col=0;}
         else if(!col)printf(";%5u ", a);
-        if(maxco==10 && col==5)putchar(' ');
+        if(!col)
+        {
+            const unsigned noffs = offset;
+            for(unsigned k=62*62*62; ; k/=62)
+            {
+                unsigned dig = (noffs/k)%62;
+                if(dig < 10) putchar('0' + dig);
+                else if(dig < 36) putchar('A' + (dig-10));
+                else putchar('a' + (dig-36));
+                if(k==1)break;
+            }
+        }
+        if(maxco==6 && col==3)putchar(' ');
         printf(" $%04X", stringptr);
+#endif
+        
+        unsigned bytes;
+        ctstring foundstring = LoadZString(stringptr+base, bytes, what_d, extrasizes);
+
+#if LOADZ_DEBUG
+        printf("-%04X", stringptr+bytes);
         if(++col == maxco) { printf("\n"); col=0; }
 #endif
         
-        ctstring foundstring = LoadZString(stringptr+base, extrasizes);
-        
-        if(stringptr < firstoffs) firstoffs = stringptr;
-        if(stringptr > lastoffs)
-        {
-            lastoffs=  stringptr;
-            lastlen = foundstring.size();
-        }
-        
 #if LOADZ_EXTRASPACE
-        unsigned freebytepos=stringptr + base + foundstring.size();
+        unsigned freebytepos=stringptr + base + bytes;
         unsigned freebytecount=0;
         for(unsigned freebyte=freebytepos;
             ROM[freebyte] == 0x00 //zero
          || ROM[freebyte] == 0xFF //space
          || ROM[freebyte] == 0xEF //also space
          ; ++freebyte,++freebytecount);
-        MarkFree(freebytepos, freebytecount);
+        MarkFree(freebytepos, freebytecount, "extra space");
 #endif
         result.push_back(foundstring);
-        
-        offset += 2;
     }
+
+    MarkProt(first_offs, last_offs-first_offs, what_p);
+
 #if LOADZ_DEBUG
     if(col)printf("\n");
+    fflush(stdout);
 #endif
     return result;
 }
 
-const vector<ctstring> LoadFStrings(unsigned offset, unsigned len, unsigned maxcount)
+const vector<ctstring> LoadFStrings(unsigned offset, unsigned len,
+                                    const string& what,
+                                    unsigned maxcount)
 {
     ctstring str;
-    for(unsigned a=0; ROM[offset+a]; ++a)
+    for(unsigned a=0; ROM[offset+a] && a<len*maxcount; ++a)
         str += (ctchar) ROM[offset+a];
     
     unsigned count = str.size() / len + 1;
@@ -170,5 +209,8 @@ const vector<ctstring> LoadFStrings(unsigned offset, unsigned len, unsigned maxc
     vector<ctstring> result(count);
     for(unsigned a=0; a<count; ++a)
         result[a] = str.substr(a*len, len);
+    
+    MarkProt(offset, len*maxcount, what);
+    
     return result;
 }

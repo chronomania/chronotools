@@ -123,7 +123,9 @@ const Symbols::revtype& Symbols::GetRev(unsigned ind) const
 Symbols::Symbols()
 {
     Load();
+#if 0 /* nobody cares */
     fprintf(stderr, "Built symbol converter\n");
+#endif
 }
 
 class Symbols Symbols;

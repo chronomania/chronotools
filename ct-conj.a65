@@ -17,6 +17,7 @@
 
 #define RTL_ADDR_C2             $5841   ; Where RTL can be found in page $C2
 
+;**CUSTOMIZE**
 ; Omit creation of these:
 #define OMIT_Do_LTA
 #define OMIT_Do_SSA
@@ -30,46 +31,37 @@ Conjugator:
 
         #define Choice(name) cmp #CODE_##name: bne +: jsr name: bra DidConj
 
+;**CUSTOMIZE**
  #ifndef OMIT_Do_N
       + Choice(Do_N)
  #endif
-
  #ifndef OMIT_Do_A
       + Choice(Do_A)
  #endif
-
  #ifndef OMIT_Do_LLA
       + Choice(Do_LLA)
  #endif
- 
  #ifndef OMIT_Do_LTA
       + Choice(Do_LTA)
  #endif
-
  #ifndef OMIT_Do_SSA
       + Choice(Do_SSA)
  #endif
-      
  #ifndef OMIT_Do_KSI
       + Choice(Do_KSI)
  #endif
-      
  #ifndef OMIT_Do_LLE
       + Choice(Do_LLE)
  #endif
-
  #ifndef OMIT_Do_STA
       + Choice(Do_STA)
  #endif
-
  #ifndef OMIT_Do_TTA
       + Choice(Do_TTA)
  #endif
-
  #ifndef OMIT_Do_NA
       + Choice(Do_NA)
  #endif
-
  #ifndef OMIT_Do_HUN
       + Choice(Do_HUN)
  #endif
@@ -124,7 +116,7 @@ LoopHelper:
         SET_16_BIT_AX()
         phx
          ldy #0
-         tya
+         tya       ; zero the upper 8 bits of A
          SET_8_BIT_A()
          
          lda #$7E
