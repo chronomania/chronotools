@@ -1,7 +1,6 @@
 #include <vector>
 #include <string>
-
-using std::vector;
+#include <list>
 
 class PagePtrList
 {
@@ -20,8 +19,6 @@ public:
                 const std::string& tablename = "");
 
 private:
-    void Combine();
-
     struct Reference
     {
         unsigned short ptraddr;
@@ -31,15 +28,16 @@ private:
     };
     struct Data
     {
-        vector<unsigned char> data;
-        vector<Reference> refs;
+        std::vector<unsigned char> data;
+        std::list<Reference> refs;
         
         Data(const std::vector<unsigned char>& d,
              unsigned short r): data(d), refs(1, r) {}
         
-        void Combine(Data& b, unsigned offset);
-
         bool operator< (const Data& ) const;
     };
-    std::vector<Data> items;
+    std::list<Data> items;
+private:
+    void Combine();
+    void Combine(Data& a, const Data& b, unsigned offset) const;
 };

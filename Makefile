@@ -105,18 +105,20 @@ DEPDIRS = utils/
 # VERSION 1.11.6 backup copy... this version has bugs
 # VERSION 1.11.7 unwraps the script when dumping, if configured so
 # VERSION 1.11.8 has much more documentation than before
+# VERSION 1.11.9 is faster than the few recent versions
 
 #OPTIM=-Os
 # -fshort-enums
 # -fpack-struct
 #OPTIM=-O0
-#OPTIM=-O0 -pg -fprofile-arcs
-#LDFLAGS += -pg -fprofile-arcs
+#OPTIM=-O0 -pg
+#OPTIM=-O3 -pg
+LDFLAGS += -pg
 OPTIM=-O3
 
 CXXFLAGS += -I.
 
-VERSION=1.11.8
+VERSION=1.11.9
 ARCHFILES=utils/xray.cc utils/xray.h \
           utils/viewer.c \
           utils/vwftest.cc \

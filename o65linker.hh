@@ -77,9 +77,11 @@ private:
     
     void FinishReference(const ReferMethod& reference, unsigned target, const string& what);
 
-    // No copies
+    // No copying!
     O65linker(const O65linker& );
     void operator= (const O65linker& );
+    
+    class SymCache *symcache;
     
     vector<struct Object* > objects;
     vector<pair<string, pair<unsigned, bool> > > defines;

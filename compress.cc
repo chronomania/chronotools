@@ -12,8 +12,10 @@
 
 class Compressor
 {
+    typedef const unsigned char* dataptr;
+    
     /* Input data */
-    const unsigned char* const data;
+    dataptr const data;
     const unsigned length;
     const unsigned Segment;
     const unsigned Depth;
@@ -80,6 +82,7 @@ class Compressor
     
     void Map_Savings()
     {
+        /* FIXME: Rewrite using std::mismatch and co. */
         for(unsigned pos=0; pos < length; ++pos)
         {
             unsigned max_saving = 0, max_saving_offset = 0;
@@ -90,6 +93,7 @@ class Compressor
                 unsigned matching_length = 0;
                 unsigned testpos = pos;
                 if(testpos < offset) continue;
+                
                 while(testpos < length && matching_length < max_length)
                 {
                     if(testpos >= length) break;
@@ -538,7 +542,7 @@ DoesntWork:
     }
     
 public:    
-    Compressor(const unsigned char *d, unsigned l,
+    Compressor(dataptr d, unsigned l,
                unsigned seg, unsigned bits)
         : data(d), length(l),
           Segment(seg), Depth(bits),
@@ -604,16 +608,16 @@ public:
 
 
 unsigned Uncompress                 /* Return value: compressed size */
-    (const unsigned char *Memory,   /* Pointer to the compressed data */
+    (const unsigned char* Memory,   /* Pointer to the compressed data */
      vector<unsigned char>& Target, /* Where to decompress to */
-     const unsigned char *End
+     const unsigned char* End
     )
 {
     Target.clear();
     
     #define NEED_BYTES(n) do { if(Memory+n > End) return 0; } while(0)
     
-    const unsigned char *Begin = Memory, *Endpos = NULL;
+    const unsigned char* Begin = Memory, *Endpos = NULL;
     unsigned endtmp;
     
     NEED_BYTES(2);
@@ -731,7 +735,7 @@ End:
 }
 
 const vector<unsigned char> Compress
-    (const unsigned char *data, unsigned length,
+    (const unsigned char* data, unsigned length,
      unsigned Segment,   /* 7E or 7F */
      unsigned Depth      /* 11 or 12 */
      )
@@ -741,7 +745,7 @@ const vector<unsigned char> Compress
 }
 
 const vector<unsigned char> Compress
-    (const unsigned char *data, unsigned length,
+    (const unsigned char* data, unsigned length,
      unsigned char seg)
 {
     vector<unsigned char> result1 = Compress(data, length, seg, 11);

@@ -11,23 +11,22 @@ using namespace std;
 bool PagePtrList::Data::operator< (const Data& b) const
 {
     if(data.size() != b.data.size())
-        return data.size() < b.data.size();
+        return data.size() > b.data.size();
     
     return data < b.data;
 }
 
-void PagePtrList::Data::Combine(Data& b, unsigned offset)
+void PagePtrList::Combine(Data& a, const Data& b, unsigned offset) const
 {
-    // "b" is better, but it is supposed to leave as empty.
+    // Item "a" will eat item "b".
     
-    data.clear();
-    data.swap(b.data);
-    
-    for(unsigned a=0; a<refs.size(); ++a)
-        refs[a].offset += offset;
-    
-    refs.insert(refs.end(), b.refs.begin(), b.refs.end());
-    b.refs.clear();
+    for(std::list<Reference>::const_iterator
+        i = b.refs.begin(); i != b.refs.end(); ++i)
+    {
+        Reference tmp(*i);
+        tmp.offset += offset;
+        a.refs.push_back(tmp);
+    }
 }
 
 void PagePtrList::AddItem(const vector<unsigned char>& d,
@@ -47,43 +46,43 @@ void PagePtrList::AddItem(const string& s,
 
 void PagePtrList::Combine()
 {
-    sort(items.begin(), items.end());
+    items.sort();
     
-    unsigned n = 0, c = 0, t = 0;
-    for(unsigned a=items.size(); a-- > 0; )
+    //unsigned n = 0, c = 0, t = 0;
+    
+    for(list<Data>::iterator a = items.begin(); a != items.end(); ++a)
     {
+        Data& A = *a;
+        
         MessageWorking();
         
-        t += items[a].data.size();
-        for(unsigned b=a; ++b != items.size(); )
+        //t += A.data.size();
+        
+        list<Data>::iterator next=a; ++next;
+        while(next != items.end())
         {
-            const vector<unsigned char>& A = items[a].data;
-            const vector<unsigned char>& B = items[b].data;
-            if(A.size() > B.size()) continue;
+            list<Data>::iterator b = next++;
+            Data& B = *b;
             
-            unsigned diff = B.size() - A.size();
-            for(unsigned pos=diff+1; pos-- > 0; )
+            const vector<unsigned char>& Haystack = A.data;
+            const vector<unsigned char>& Needle   = B.data;
+            
+            vector<unsigned char>::const_iterator
+                pos = std::search(Haystack.begin(), Haystack.end(),
+                                  Needle.begin(),   Needle.end());
+            
+            if(pos != Haystack.end())
             {
-                if(std::equal(A.begin(), A.end(),
-                              B.begin() + pos))
-                {
-                    ++n;
-                    c += A.size();
-                    
-                    /*
-                    fprintf(stderr,
-                        "Combine of %u bytes (%u -> %u(%u), pos=%u)\n",
-                            A.size(),
-                            a, b, B.size(), pos);
-                    */
-                    
-                    items[a].Combine(items[b], pos);
-                    
-                    goto Done;
-                }
+                unsigned int_pos = pos - Haystack.begin();
+            
+                //++n;
+                //c += Needle.size();
+                
+                Combine(A, B, int_pos);
+                
+                items.erase(b);
             }
         }
-    Done: ;
     }
     
     /*
@@ -123,21 +122,24 @@ void PagePtrList::Create(insertor& ins,
     map<unsigned short, string> NamedRefs;
     
     const string objname = what + " data";
-    for(unsigned a=0; a<items.size(); ++a)
+
+    for(list<Data>::const_iterator a = items.begin(); a != items.end(); ++a)
     {
         MessageWorking();
         
-        const Data& d = items[a];
+        const Data& d = *a;
         if(d.data.empty()) continue;
         
         O65 tmp;
         tmp.LoadCodeFrom(d.data);
         
-        for(unsigned b=0; b<d.refs.size(); ++b)
+        for(std::list<Reference>::const_iterator
+            i = d.refs.begin(); i != d.refs.end(); ++i)
         {
+            const Reference& ref = *i;
             const string name = CreateRefName();
-            tmp.DeclareCodeGlobal(name, d.refs[b].offset);
-            NamedRefs[d.refs[b].ptraddr] = name;
+            tmp.DeclareCodeGlobal(name, ref.offset);
+            NamedRefs[ref.ptraddr] = name;
         }
         
         //char Buf[64];

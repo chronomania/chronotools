@@ -7,11 +7,12 @@
 using std::list;
 using std::map;
 
+#include "hash.hh"
+
 struct Object
 {
     O65 object;
     string name;
-    vector<string> symlist;
     vector<string> extlist;
     
     O65linker::LinkageWish linkage;
@@ -20,7 +21,6 @@ public:
     Object(const O65& obj, const string& what, O65linker::LinkageWish link)
     : object(obj),
       name(what),
-      symlist(obj.GetSymbolList()),
       extlist(obj.GetExternList()),
       linkage(link)
     {
@@ -33,6 +33,27 @@ public:
     void Release()
     {
         //*this = Object();
+    }
+};
+
+class SymCache
+{
+    typedef hash_map<string, unsigned> cachetype;
+    
+    cachetype sym_cache;
+public:
+    void Update(const Object& o, unsigned objnum)
+    {
+        const vector<string> symlist = o.object.GetSymbolList();
+        for(unsigned a=0; a<symlist.size(); ++a)
+            sym_cache[symlist[a]] = objnum;
+    }
+    
+    const pair<unsigned, bool> Find(const string& sym) const
+    {
+        cachetype::const_iterator i = sym_cache.find(sym);
+        if(i == sym_cache.end()) return make_pair(0, false);
+        return make_pair(i->second, true);
     }
 };
 
@@ -55,25 +76,23 @@ void O65linker::AddObject(const O65& object, const string& what, LinkageWish lin
     }
     Object *newobj = new Object(object, what, linkage);
     
-    const vector<string>& symlist = newobj->symlist;
+    const vector<string> symlist = newobj->object.GetSymbolList();
     
     unsigned collisions = 0;
-    for(unsigned a=0; a<objects.size(); ++a)
+    for(unsigned a=0; a<symlist.size(); ++a)
     {
-        const vector<string>& prevsymlist = objects[a]->symlist;
-        for(unsigned b=0; b<symlist.size(); ++b)
-            for(unsigned c=0; c<prevsymlist.size(); ++c)
-                if(symlist[b] == prevsymlist[c])
-                {
-                    fprintf(stderr,
-                        "O65 linker: ERROR:"
-                        " Symbol \"%s\" defined by object \"%s\""
-                        " is already present in object \"%s\"\n",
-                        symlist[b].c_str(),
-                        what.c_str(),
-                        objects[a]->name.c_str());
-                    ++collisions;
-                }
+        const pair<unsigned, bool> tmp = symcache->Find(symlist[a]);
+        if(tmp.second)
+        {
+            fprintf(stderr,
+                "O65 linker: ERROR:"
+                " Symbol \"%s\" defined by object \"%s\""
+                " is already present in object \"%s\"\n",
+                symlist[a].c_str(),
+                what.c_str(),
+                objects[tmp.first]->name.c_str());
+            ++collisions;
+        }
     }
     if(collisions)
     {
@@ -81,6 +100,8 @@ void O65linker::AddObject(const O65& object, const string& what, LinkageWish lin
         return;
     }
     objects.push_back(newobj);
+
+    symcache->Update(*newobj, objects.size()-1);
 }
 
 const vector<unsigned> O65linker::GetSizeList() const
@@ -158,22 +179,16 @@ void O65linker::DefineSymbol(const string& name, unsigned value)
 
 void O65linker::AddReference(const string& name, const ReferMethod& reference)
 {
-    // Check if this symbol is already resolved
-    for(unsigned a=0; a<objects.size(); ++a)
+    const pair<unsigned, bool> tmp = symcache->Find(name);
+    if(tmp.second)
     {
-        Object& o = *objects[a];
-        if(o.linkage.type != LinkageWish::LinkHere) continue;
-        
-        for(unsigned b=0; b<o.symlist.size(); ++b)
+        const Object& o = *objects[tmp.first];
+        if(o.linkage.type == LinkageWish::LinkHere)
         {
-            if(o.symlist[b] == name)
-            {
-                unsigned value = o.object.GetSymAddress(name);
-                
-                // resolved referer
-                FinishReference(reference, value, name);
-                return;
-            }
+            unsigned value = o.object.GetSymAddress(name);
+            // resolved referer
+            FinishReference(reference, value, name);
+            return;
         }
     }
 
@@ -274,14 +289,6 @@ void O65linker::Link()
     
     MessageLinkingModules(objects.size());
 
-    map<string, unsigned> sym_cache;
-    for(unsigned c=0; c<objects.size(); ++c)
-    {
-        const Object& o = *objects[c];
-        for(unsigned a=0; a<o.symlist.size(); ++a)
-            sym_cache[o.symlist[a]] = c;
-    }
-    
     // For all modules, satisfy their needs.
     for(unsigned a=0; a<objects.size(); ++a)
     {
@@ -300,10 +307,10 @@ void O65linker::Link()
             
             unsigned found=0, addr=0, defcount=0;
             
-            std::map<std::string, unsigned>::const_iterator sym_it = sym_cache.find(ext);
-            if(sym_it != sym_cache.end())
+            const pair<unsigned, bool> tmp = symcache->Find(ext);
+            if(tmp.second)
             {
-                addr = objects[sym_it->second]->object.GetSymAddress(ext);
+                addr = objects[tmp.first]->object.GetSymAddress(ext);
                 ++found;
             }
             
@@ -349,22 +356,23 @@ void O65linker::Link()
             MessageUndefinedSymbols(o.extlist.size());
             // FIXME: where?
         }
-        
-        for(unsigned b=0; b<o.symlist.size(); ++b)
+    }
+
+    for(unsigned c=0; c<referers.size(); ++c)
+    {
+        const string& name = referers[c].second;
+        const pair<unsigned, bool> tmp = symcache->Find(name);
+        if(tmp.second)
         {
-            for(unsigned c=0; c<referers.size(); ++c)
-            {
-                if(o.symlist[b] == referers[c].second)
-                {
-                    const string& name = o.symlist[b];
-                    unsigned value = o.object.GetSymAddress(name);
-                    
-                    // resolved referer
-                    FinishReference(referers[c].first, value, name);
-                    referers.erase(referers.begin() + c);
-                    --c;
-                }
-            }
+            const Object& o = *objects[tmp.first];
+            if(o.linkage.type != LinkageWish::LinkHere) continue;
+            
+            unsigned value = o.object.GetSymAddress(name);
+             
+            // resolved referer
+            FinishReference(referers[c].first, value, name);
+            referers.erase(referers.begin() + c);
+            --c;
         }
     }
     
@@ -393,12 +401,13 @@ void O65linker::Link()
         }
 }
 
-O65linker::O65linker(): num_groups_used(0), linked(false)
+O65linker::O65linker(): symcache(new SymCache), num_groups_used(0), linked(false)
 {
 }
 
 O65linker::~O65linker()
 {
+    delete symcache;
 }
 
 namespace

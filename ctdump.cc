@@ -301,10 +301,21 @@ namespace
         DumpFStrings(0x0C6500, "mons", 11, 252); // monsters
 
         BlockComment(";place names\n");
+        // REFERRED FROM:
+        // $C2:567A A2 00 F4    LDX #$F400
+        // $C2:5680 A9 C6       LDA #$C6
+        
         DumpZStrings(0x06F400, "places", 112, false);
+        //DumpRZStrings(0xC25681, 0xC2567B, "places", 112, false);
+        
         
         BlockComment(";era list\n");
+        // REFERRED FROM:
+        // $C2:D3D4 A2 96 D3    LDX #$D396
+        // $C2:D3DA A9 FF       LDA #$FF
+        
         DumpZStrings(0x3FD396, "eraes", 8, false);
+        //DumpRZStrings(0xC2D3DB, 0xC2D3D5, "eraes", 8, false);
         
         BlockComment(";episode list\n");
         DumpZStrings(0x3FD03E, "eps", 27, false);
