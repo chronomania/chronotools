@@ -613,6 +613,7 @@ const string O65::GetLongAt(unsigned addr) const
 
 void O65::ResizeCode(unsigned newsize)
 {
+    if(!this->code) this->code = new segment;
     code->space.resize(newsize);
 }
 

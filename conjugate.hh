@@ -9,7 +9,6 @@ using std::vector;
 
 #include "wstring.hh"
 #include "ctcset.hh"
-#include "ctinsert.hh"
 #include "hash.hh"
 
 class Conjugatemap

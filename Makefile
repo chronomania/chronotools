@@ -102,6 +102,7 @@ DEPDIRS = utils/
 # VERSION 1.11.3 is another backup
 # VERSION 1.11.4 is another backup again
 # VERSION 1.11.5 another... big structural changes
+# VERSION 1.11.6 backup copy... this version has bugs
 
 #OPTIM=-Os
 # -fshort-enums
@@ -113,7 +114,7 @@ OPTIM=-O3
 
 CXXFLAGS += -I.
 
-VERSION=1.11.5
+VERSION=1.11.6
 ARCHFILES=utils/xray.cc utils/xray.h \
           utils/viewer.c \
           utils/vwftest.cc \
@@ -139,6 +140,7 @@ ARCHFILES=utils/xray.cc utils/xray.h \
           miscfun.cc miscfun.hh \
           compress.cc compress.hh \
           scriptfile.cc scriptfile.hh \
+          pageptrlist.cc pageptrlist.hh \
           dataarea.cc dataarea.hh \
           rangemap.hh rangemap.tcc \
           rangeset.hh rangeset.tcc \
@@ -242,7 +244,7 @@ ctinsert: \
 		ctinsert.o readin.o wrap.o msginsert.o \
 		space.o writeout.o stringoffs.o \
 		dictionary.o images.o fonts.o typefaces.o \
-		rom.o dataarea.o snescode.o \
+		rom.o dataarea.o snescode.o pageptrlist.o \
 		conjugate.o o65.o o65linker.o \
 		 miscfun.o tgaimage.o extras.o compress.o \
 		 symbols.o logfiles.o settings.o \

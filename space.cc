@@ -521,7 +521,11 @@ void freespacemap::OrganizeO65linker(O65linker& objects)
             Organize(Organization, page);
             
             for(unsigned c=0; c<items.size(); ++c)
-                addrs[items[c]] = Organization[c].pos | (page << 16) | 0xC00000;
+            {
+                unsigned addr = Organization[c].pos;
+                if(addr != NOWHERE) addr |= (page << 16) | 0xC00000;
+                addrs[items[c]] = addr;
+            }
         }
     }
     
@@ -550,7 +554,11 @@ void freespacemap::OrganizeO65linker(O65linker& objects)
             OrganizeToAnySamePage(Organization, page);
             
             for(unsigned c=0; c<items.size(); ++c)
-                addrs[items[c]] = Organization[c].pos | (page << 16) | 0xC00000;
+            {
+                unsigned addr = Organization[c].pos;
+                if(addr != NOWHERE) addr |= (page << 16) | 0xC00000;
+                addrs[items[c]] = addr;
+            }
         }
     }
     
@@ -571,7 +579,11 @@ void freespacemap::OrganizeO65linker(O65linker& objects)
         OrganizeToAnyPage(Organization);
         
         for(unsigned c=0; c<items.size(); ++c)
-            addrs[items[c]] = Organization[c].pos | 0xC00000;
+        {
+            unsigned addr = Organization[c].pos;
+            if(addr != NOWHERE) addr |= 0xC00000;
+            addrs[items[c]] = addr;
+        }
     }
 
     objects.PutAddrList(addrs);

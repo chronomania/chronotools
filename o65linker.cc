@@ -2,8 +2,10 @@
 #include "msginsert.hh"
 
 #include <list>
+#include <map>
 
 using std::list;
+using std::map;
 
 struct Object
 {
@@ -271,6 +273,14 @@ void O65linker::Link()
     linked = true;
     
     MessageLinkingModules(objects.size());
+
+    map<string, unsigned> sym_cache;
+    for(unsigned c=0; c<objects.size(); ++c)
+    {
+        const Object& o = *objects[c];
+        for(unsigned a=0; a<o.symlist.size(); ++a)
+            sym_cache[o.symlist[a]] = c;
+    }
     
     // For all modules, satisfy their needs.
     for(unsigned a=0; a<objects.size(); ++a)
@@ -289,16 +299,15 @@ void O65linker::Link()
             const string& ext = o.extlist[b];
             
             unsigned found=0, addr=0, defcount=0;
-            // Find out which module defines this symbol.
-            for(unsigned c=0; c<objects.size(); ++c)
+            
+            std::map<std::string, unsigned>::const_iterator sym_it = sym_cache.find(ext);
+            if(sym_it != sym_cache.end())
             {
-                MessageWorking();
-                if(objects[c]->object.HasSym(ext))
-                {
-                    addr = objects[c]->object.GetSymAddress(ext);
-                    ++found;
-                }
+                addr = objects[sym_it->second]->object.GetSymAddress(ext);
+                ++found;
             }
+            
+            // Or if it was an external definition.
             for(unsigned c=0; c<defines.size(); ++c)
             {
                 MessageWorking();
@@ -309,6 +318,7 @@ void O65linker::Link()
                     ++defcount;
                 }
             }
+            
             if(found == 0 && !defcount)
             {
                 fprintf(stderr, "O65 linker: Symbol '%s' still undefined\n", ext.c_str());

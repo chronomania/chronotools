@@ -154,18 +154,3 @@ const stringoffsmap insertor::GetZStringList(unsigned pagenum) const
     }
     return result;
 }
-
-const class stringoffsmap insertor::GetStringList(stringdata::strtype type) const
-{
-    stringoffsmap result;
-    for(stringlist::const_iterator i=strings.begin(); i!=strings.end(); ++i)
-    {
-        if(i->type != type) continue;
-        
-        stringoffsdata tmp;
-        tmp.str  = i->str;
-        tmp.offs = i->address;
-        result.push_back(tmp);
-    }
-    return result;
-}

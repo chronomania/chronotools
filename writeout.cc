@@ -6,247 +6,8 @@
 #include "settings.hh"
 #include "config.hh"
 #include "logfiles.hh"
-#include "stringoffs.hh"
 #include "rangeset.hh"
-
-namespace
-{
-    class StringReceipt
-    {
-        vector<unsigned char> data;
-        rangeset<unsigned> ptrbytes, databytes;
-        list<unsigned> pointers;
-        
-        typedef multimap<unsigned, pair<ReferMethod, string> > refermap;
-        refermap referers;
-        
-    public:
-        StringReceipt(): data(65536) { }
-        void WritePtr(unsigned short addr, unsigned short value)
-        {
-            data[addr]   = value&255;
-            data[addr+1] = value>>8;
-            ptrbytes.set(addr, addr+2);
-            pointers.push_back(addr);
-        }
-        void WriteData(unsigned short spaceaddr, const vector<unsigned char>& buf)
-        {
-            for(unsigned a=0; a<buf.size(); ++a)
-                data[spaceaddr+a] = buf[a];
-            databytes.set(spaceaddr, spaceaddr+buf.size());
-        }
-        void WriteDataPtr(unsigned short ptraddr, unsigned short spaceaddr,
-                          const vector<unsigned char>& buf)
-        {
-/*
-            fprintf(stderr, "Writing %u bytes to %04X (ptr at %04X)\n",
-                            buf.size(), spaceaddr, ptraddr);
-*/
-            WritePtr(ptraddr, spaceaddr);
-            WriteData(spaceaddr, buf);
-        }
-        void WriteZPtr(unsigned short ptraddr, unsigned short spaceaddr, const ctstring& s)
-        {
-            const string StringBuf = GetString(s);
-            vector<unsigned char> DataBuf(StringBuf.size() + 1);
-            for(unsigned a=0; a<StringBuf.size(); ++a) DataBuf[a] = StringBuf[a];
-            DataBuf[StringBuf.size()] = 0;
-            WriteDataPtr(ptraddr, spaceaddr, DataBuf);
-        }
-        void WritePPtr(unsigned short ptraddr, unsigned short spaceaddr, const ctstring& s)
-        {
-            const string StringBuf = GetString(s);
-            vector<unsigned char> DataBuf(StringBuf.size() + 1);
-            for(unsigned a=0; a<StringBuf.size(); ++a) DataBuf[a+1] = StringBuf[a];
-            DataBuf[0] = StringBuf.size();
-            WriteDataPtr(ptraddr, spaceaddr, DataBuf);
-        }
-        void WriteLString(unsigned short spaceaddr, const ctstring& s, unsigned width)
-        {
-            vector<unsigned char> Buf(width, 255);
-            
-            // Fixed strings shouldn't contain extrachars.
-            // Thus s.size() can be safely used.
-            unsigned size = s.size();
-            if(size > width) size = width;
-            
-            std::copy(s.begin(), s.begin()+size, Buf.begin());
-            
-            WriteData(spaceaddr, Buf);
-        }
-        void Apply(insertor& ins,
-                   const string& what, unsigned strpage)
-        {
-            Apply(ins, what + " table", ptrbytes, strpage);
-            Apply(ins, what + " data", databytes, strpage);
-            
-            if(!referers.empty())
-            {
-                fprintf(stderr, "Script Writer: %u leftover referers\n", referers.size());
-            }
-        }
-        void AddReference(const ReferMethod& reference, unsigned short target, const string& what="")
-        {
-            referers.insert(make_pair(target, make_pair(reference, what)));
-        }
-    private:
-        void Apply(insertor& ins, const string& what,
-                   rangeset<unsigned>& ranges, unsigned page)
-        {
-            ranges.compact();
-            list<rangeset<unsigned>::const_iterator> rangelist;
-            ranges.find_all_coinciding(0,0x10000, rangelist);
-            for(list<rangeset<unsigned>::const_iterator>::const_iterator
-                j = rangelist.begin();
-                j != rangelist.end();
-                ++j)
-            {
-                unsigned begin  = (*j)->lower;
-                unsigned end    = (*j)->upper;
-                unsigned absptr = begin | (page << 16);
-                
-                vector<unsigned char> Buf(data.begin() + begin, data.begin() + end);
-                
-                O65 tmp;
-                tmp.LoadCodeFrom(Buf);
-                tmp.LocateCode(absptr);
-                
-                O65linker::LinkageWish wish;
-                wish.SetAddress(absptr);
-                
-                list<pair<string, ReferMethod> > refs;
-                for(refermap::iterator j,i = referers.begin(); i != referers.end(); i=j)
-                {
-                    j = i; ++j;
-                    if(i->first < begin || i->first >= end) continue;
-                    
-                    string refname = what + ":" + i->second.second;
-                    
-                    tmp.DeclareCodeGlobal(refname, absptr + (i->first - begin));
-                    refs.push_back(make_pair(refname, i->second.first));
-                    referers.erase(i);
-                }
-                
-                ins.objects.AddObject(tmp, what, wish);
-                for(list<pair<string, ReferMethod> >::const_iterator
-                    i = refs.begin(); i != refs.end(); ++i)
-                {
-                    ins.objects.AddReference(i->first, i->second);
-                }
-            }
-        }
-    };
-
-    void insertor::WritePageZ(unsigned page, stringoffsmap& pagestrings)
-    {
-        FILE *log = GetLogFile("mem", "log_addrs");
-
-        pagestrings.GenerateNeederList();
-        
-        const stringoffsmap::neederlist_t &neederlist = pagestrings.neederlist;
-        
-        StringReceipt receipt;
-        
-        if(true) /* First do hosts */
-        {
-            vector<unsigned> todo;
-            todo.reserve(pagestrings.size() - neederlist.size());
-            unsigned reusenum = 0;
-            for(unsigned stringnum=0; stringnum<pagestrings.size(); ++stringnum)
-            {
-                if(neederlist.find(stringnum) == neederlist.end())
-                    todo.push_back(stringnum);
-                else
-                    ++reusenum;
-            }
-
-            unsigned todobytes=0;
-            for(unsigned a=0; a<todo.size(); ++a)
-                todobytes += CalcSize(pagestrings[todo[a]].str) + 1;
-
-            vector<freespacerec> Organization(todo.size());
-            for(unsigned a=0; a<todo.size(); ++a)
-                Organization[a].len = CalcSize(pagestrings[todo[a]].str) + 1;
-            
-            freespace.Organize(Organization, page);
-            
-            unsigned unwritten = 0;
-            for(unsigned a=0; a<todo.size(); ++a)
-            {
-                unsigned stringnum  = todo[a];
-                unsigned ptroffs    = pagestrings[stringnum].offs;
-                const ctstring &str = pagestrings[stringnum].str;
-
-                unsigned spaceptr = Organization[a].pos;
-                pagestrings[stringnum].offs = spaceptr;
-                
-                if(spaceptr == NOWHERE)
-                    ++unwritten;
-                else
-                {
-                     receipt.WriteZPtr(ptroffs, spaceptr, str);
-                }
-            }
-            if(unwritten && log)
-                fprintf(log, "  %u string%s unwritten\n", unwritten, unwritten==1?"":"s");
-        }
-        
-        if(true) /* Then do parasites */
-        {
-            for(unsigned stringnum=0; stringnum<pagestrings.size(); ++stringnum)
-            {
-                stringoffsmap::neederlist_t::const_iterator i = neederlist.find(stringnum);
-                if(i == neederlist.end()) continue;
-                
-                unsigned parasitenum = i->first;
-                unsigned hostnum     = i->second;
-
-                unsigned hostoffs   = pagestrings[hostnum].offs;
-                        
-                unsigned ptroffs    = pagestrings[parasitenum].offs;
-                const ctstring &str = pagestrings[parasitenum].str;
-                
-                if(hostoffs == NOWHERE)
-                {
-                    if(log)
-                        fprintf(log, "  Host %u doesn't exist! ", hostnum);
-                    
-                    // Try find another host
-                    for(hostnum=0; hostnum<pagestrings.size(); ++hostnum)
-                    {
-                        // Skip parasites
-                        if(neederlist.find(hostnum) != neederlist.end()) continue;
-                        // Skip unwritten ones
-                        if(pagestrings[hostnum].offs == NOWHERE) continue;
-                        const ctstring &host = pagestrings[hostnum].str;
-                        // Impossible host?
-                        if(host.size() < str.size()) continue;
-                        unsigned extralen = host.size() - str.size();
-                        if(str != host.substr(extralen)) continue;
-                        hostoffs = pagestrings[hostnum].offs;
-                        break;
-                    }
-                    if(hostoffs == NOWHERE)
-                    {
-                        if(log)
-                            fprintf(log, "  String %u wasn't written.\n", parasitenum);
-                        continue;
-                    }
-                    if(log)
-                        fprintf(log, "  Substitute %u assigned for %u.\n",
-                            hostnum, parasitenum);
-                }
-
-                const ctstring &host = pagestrings[hostnum].str;
-                
-                unsigned place = hostoffs + CalcSize(host) - CalcSize(str);
-                
-                receipt.WritePtr(ptroffs, place);
-            }
-        }
-        receipt.Apply(*this, "strings", page);
-    }
-}
+#include "pageptrlist.hh"
 
 void insertor::PatchROM(ROM &ROM) const
 {
@@ -278,9 +39,9 @@ void insertor::PatchROM(ROM &ROM) const
     const vector<unsigned> o65addrs = objects.GetAddrList();
     for(unsigned a=0; a<o65addrs.size(); ++a)
     {
-        ROM.AddPatch(objects.GetCode(a),
-                     o65addrs[a] & 0x3FFFFF,
-                     objects.GetName(a));
+        unsigned addr = o65addrs[a];
+        if(addr == NOWHERE) continue;
+        ROM.AddPatch(objects.GetCode(a), addr & 0x3FFFFF, objects.GetName(a));
         //objects.Release(a);
     }
     
@@ -289,15 +50,11 @@ void insertor::PatchROM(ROM &ROM) const
 
 void insertor::GenerateCode()
 {
-    // Write the strings first because they require certain pages!
-    WriteStrings();
-    
-    // Then write items, techs, monsters.
+    WriteFixedStrings();
+    WriteOtherStrings();
     WriteRelocatedStrings();
 
-    // Do this first, because it requires two blocks on same page.
     GenerateVWF12code();
-    
     GenerateConjugatorCode();
     
     LoadAllUserCode();
@@ -362,288 +119,113 @@ void insertor::LinkAndLocateCode()
 
 void insertor::WriteDictionary()
 {
-    unsigned size = 0;
-    unsigned dictsize = dict.size();
-    for(unsigned a=0; a<dictsize; ++a)size += CalcSize(dict[a]) + 1;
+    fprintf(stderr, "Writing dictionary...\n");
 
-    vector<freespacerec> Organization(dictsize + 1);
-    for(unsigned a=0; a<dictsize; ++a)
-        Organization[a].len = CalcSize(dict[a]) + 1;
+    PagePtrList tmp;
     
-    // Allocate a record for the table itself
-    Organization[dictsize] = dictsize*2;
-
-    unsigned dictpage = NOWHERE;
-    freespace.OrganizeToAnySamePage(Organization, dictpage);
-    unsigned dictaddr = Organization[dictsize].pos | (dictpage << 16) | 0xC00000;
-
-    /* Display the dictionary data addresses */
-    if(true)
+    for(unsigned a=0; a<dict.size(); ++a)
     {
-        rangeset<unsigned> ranges;
-        for(unsigned a=0; a<dictsize; ++a)
-        {
-            unsigned spaceptr = Organization[a].pos;
-            ranges.set(spaceptr, spaceptr + CalcSize(dict[a]) + 1);
-        }
+        const string s = GetString(dict[a]);
+        vector<unsigned char> Buf(s.size() + 1);
+        std::copy(s.begin(), s.begin()+s.size(), Buf.begin()+1);
+        Buf[0] = s.size();
         
-        ranges.compact();
-        
-        list<rangeset<unsigned>::const_iterator> rangelist;
-        ranges.find_all_coinciding(0,0x10000, rangelist);
-        
-        fprintf(stderr,
-            "> Dictionary: %u(table)@ $%06X",
-            dictsize*2, dictaddr | 0xC00000);
-        
-        for(list<rangeset<unsigned>::const_iterator>::const_iterator
-            j = rangelist.begin();
-            j != rangelist.end();
-            ++j)
-        {
-            unsigned size = (*j)->upper - (*j)->lower;
-            unsigned ptr  = (*j)->lower | (dictpage << 16) | 0xC00000;
-
-            fprintf(stderr, ", %u(data)@ $%06X", size, ptr);
-        }
-        fprintf(stderr, "\n");
+        tmp.AddItem(Buf, a*2);
     }
     
-    StringReceipt receipt;
+    tmp.Create(*this, "dict", "DICT_TABLE");
     
-    for(unsigned a=0; a<dictsize; ++a)
-        receipt.WritePPtr(dictaddr + a*2, Organization[a].pos, dict[a]);
-    
-    receipt.AddReference(OffsPtrFrom(GetConst(DICT_OFFSET)),   dictaddr, "dict ptr");
-    receipt.AddReference(PagePtrFrom(GetConst(DICT_SEGMENT1)), dictaddr, "dict ptr");
-    receipt.AddReference(PagePtrFrom(GetConst(DICT_SEGMENT2)), dictaddr, "dict ptr");
-
-    receipt.Apply(*this, "dict", dictpage);
+    objects.AddReference("DICT_TABLE", OffsPtrFrom(GetConst(DICT_OFFSET)));
+    objects.AddReference("DICT_TABLE", PagePtrFrom(GetConst(DICT_SEGMENT1)));
+    objects.AddReference("DICT_TABLE", PagePtrFrom(GetConst(DICT_SEGMENT2)));
 }
 
-void insertor::WriteStrings()
+void insertor::WriteFixedStrings()
 {
     fprintf(stderr, "Writing fixed-length strings...\n");
-    map<unsigned, StringReceipt> fixedstrings;
     
     for(stringlist::const_iterator i=strings.begin(); i!=strings.end(); ++i)
     {
-        switch(i->type)
+        if(i->type == stringdata::fixed)
         {
-            case stringdata::fixed:
+            unsigned pos = i->address;
+            const ctstring &s = i->str;
+            
+            // Fixed strings don't contain extrachars.
+            // Thus s.size() is safe.
+            unsigned size = s.size();
+            
+            if(size > i->width)
             {
-                unsigned pos = i->address;
-                const ctstring &s = i->str;
-                
-                unsigned size = CalcSize(s);
-                
-                if(size > i->width)
-                {
 #if 0
-                    fprintf(stderr, "  Warning: Fixed string at %06X: len(%u) > space(%u)... '%s'\n",
-                        pos, size, i->width, DispString(s).c_str());
+                fprintf(stderr, "  Warning: Fixed string at %06X: len(%u) > space(%u)... '%s'\n",
+                    pos, size, i->width, DispString(s).c_str());
 #endif
-                    size = i->width;
-                }
-                
-                // Filler must be 255, or otherwise following problems occur:
-                //     item listing goes zigzag
-                //     12pix item/tech/mons text in battle has garbage (char 0 in font).
+                size = i->width;
+            }
+            
+            // Filler must be 255, or otherwise following problems occur:
+            //     item listing goes zigzag
+            //     12pix item/tech/mons text in battle has garbage (char 0 in font).
 
-                unsigned page = (pos >> 16) & 0x3F;
-                pos &= 0xFFFF;
-                
-                fixedstrings[page].WriteLString(pos, s, i->width);
-                break;
-            }
-            case stringdata::item:
-            case stringdata::tech:
-            case stringdata::monster:
-            case stringdata::zptr8:
-            case stringdata::zptr12:
-            {
-                // These are not interesting here, as they're handled below
-                break;
-            }
-            // If we omitted something, the compiler should warn
+            vector<unsigned char> Buf(i->width, 255);
+            if(size > i->width) size = i->width;
+            
+            std::copy(s.begin(), s.begin()+size, Buf.begin());
+            
+            objects.AddLump(Buf, pos & 0x3FFFFF, "lstring");
         }
-    }
-    
-    for(map<unsigned, StringReceipt>::iterator
-        i = fixedstrings.begin();
-        i != fixedstrings.end();
-        ++i)
-    {
-        i->second.Apply(*this, "lstring", i->first);
-    }
-    fixedstrings.clear();
-
-    fprintf(stderr, "Writing other strings...\n");
-    set<unsigned> zpages = GetZStringPageList();
-    for(set<unsigned>::const_iterator i=zpages.begin(); i!=zpages.end(); ++i)
-    {
-       unsigned pagenum = *i;
-       stringoffsmap pagestrings = GetZStringList(pagenum);
-       WritePageZ(pagenum, pagestrings);
     }
 }
 
-unsigned insertor::WriteStringTable(stringoffsmap& data, const string& what)
+void insertor::WriteOtherStrings()
 {
-    if(data.empty()) return NOWHERE;
-    
-    FILE *log = GetLogFile("mem", "log_addrs");
-
-    data.GenerateNeederList();
-
-    const stringoffsmap::neederlist_t &neederlist = data.neederlist;
-    
-    unsigned tableptr = NOWHERE;
-    unsigned datapage = NOWHERE;
-        
-    StringReceipt receipt;
-
-    if(true) /* First do hosts */
+    fprintf(stderr, "Writing other strings...\n");
+    map<unsigned, PagePtrList> tmp;
+    for(stringlist::const_iterator i=strings.begin(); i!=strings.end(); ++i)
     {
-        vector<unsigned> todo;
-        todo.reserve(data.size() - neederlist.size());
-        unsigned reusenum = 0;
-        for(unsigned stringnum=0; stringnum<data.size(); ++stringnum)
+        if(i->type == stringdata::zptr8
+        || i->type == stringdata::zptr12)
         {
-            if(neederlist.find(stringnum) == neederlist.end())
-                todo.push_back(stringnum);
-            else
-                ++reusenum;
-        }
-
-        unsigned todobytes=0;
-        for(unsigned a=0; a<todo.size(); ++a)
-            todobytes += CalcSize(data[todo[a]].str) + 1;
-
-        vector<freespacerec> Organization(todo.size()+1);
-        
-        Organization[0].len = data.size() * 2;
-        for(unsigned a=0; a<todo.size(); ++a)
-            Organization[a+1].len = CalcSize(data[todo[a]].str) + 1;
-        
-        freespace.OrganizeToAnySamePage(Organization, datapage);
-        
-        tableptr = Organization[0].pos | (datapage << 16);
-        
-        /*
-           datapage     - page
-           todo.size()  - number of strings
-           todobytes    - bytes to write
-           reusenum     - number of strings reused
-           tableptr     - address of the table
-        */
-
-        /* Create the table of pointers */
-        for(unsigned a=0; a<data.size(); ++a)
-        {
-            data[a].offs = tableptr + a*2;
-        }
-
-        unsigned unwritten = 0;
-        for(unsigned a=0; a<todo.size(); ++a)
-        {
-            unsigned stringnum  = todo[a];
-            unsigned ptroffs    = data[stringnum].offs;
-            const ctstring &str = data[stringnum].str;
-
-            unsigned spaceptr = Organization[a+1].pos;
+            const string s = GetString(i->str);
+            vector<unsigned char> data(s.c_str(), s.c_str() + s.size() + 1);
             
-            data[stringnum].offs = spaceptr;
-            
-            if(spaceptr == NOWHERE)
-                ++unwritten;
-            else
-                receipt.WriteZPtr(ptroffs, spaceptr, str);
+            tmp[i->address >> 16].AddItem(data, i->address & 0xFFFF);
         }
-        if(unwritten && log)
-            fprintf(log, "  %u string%s unwritten\n", unwritten, unwritten==1?"":"s");
     }
 
-    if(true) /* Then do parasites */
+    for(map<unsigned, PagePtrList>::iterator
+        i = tmp.begin(); i != tmp.end(); ++i)
     {
-        for(unsigned stringnum=0; stringnum<data.size(); ++stringnum)
+        fprintf(stderr, "Organizing page %02X...\n", i->first);
+        i->second.Create(*this, i->first, "zstring");
+    }
+}
+
+void insertor::WriteStringTable(stringdata::strtype type,
+                                const string& tablename,
+                                const string& what)
+{
+    PagePtrList tmp;
+    unsigned index = 0;
+    for(stringlist::const_iterator i=strings.begin(); i!=strings.end(); ++i)
+    {
+        if(i->type == type)
         {
-            stringoffsmap::neederlist_t::const_iterator i = neederlist.find(stringnum);
-            if(i == neederlist.end()) continue;
-            
-            unsigned parasitenum = i->first;
-            unsigned hostnum     = i->second;
-
-            unsigned hostoffs   = data[hostnum].offs;
-                    
-            unsigned ptroffs    = data[parasitenum].offs;
-            const ctstring &str = data[parasitenum].str;
-            
-            if(hostoffs == NOWHERE)
-            {
-                if(log)
-                    fprintf(log, "  Host %u doesn't exist! ", hostnum);
-                
-                // Try find another host
-                for(hostnum=0; hostnum<data.size(); ++hostnum)
-                {
-                    // Skip parasites
-                    if(neederlist.find(hostnum) != neederlist.end()) continue;
-                    // Skip unwritten ones
-                    if(data[hostnum].offs == NOWHERE) continue;
-                    const ctstring &host = data[hostnum].str;
-                    // Impossible host?
-                    if(host.size() < str.size()) continue;
-                    unsigned extralen = host.size() - str.size();
-                    if(str != host.substr(extralen)) continue;
-                    hostoffs = data[hostnum].offs;
-                    break;
-                }
-                if(hostoffs == NOWHERE)
-                {
-                    if(log)
-                        fprintf(log, "  String %u wasn't written.\n", parasitenum);
-                    continue;
-                }
-                if(log)
-                    fprintf(log, "  Substitute %u assigned for %u.\n",
-                        hostnum, parasitenum);
-            }
-
-            const ctstring &host = data[hostnum].str;
-            
-            unsigned place = hostoffs + CalcSize(host) - CalcSize(str);
-            
-            receipt.WritePtr(ptroffs, place);
+            const string s = GetString(i->str);
+            vector<unsigned char> data(s.c_str(), s.c_str() + s.size() + 1);
+            tmp.AddItem(data, index);
+            index += 2;
         }
     }
-    
-    receipt.Apply(*this, what, datapage);
-
-    return tableptr;
+    if(index) tmp.Create(*this, what, tablename);
 }
 
 void insertor::WriteRelocatedStrings()
 {
-    stringoffsmap data;
-    data = GetStringList(stringdata::item);
-    if(!data.empty())
-    {
-        unsigned itemtable = WriteStringTable(data, "Items");
-        objects.DefineSymbol("ITEMTABLE", itemtable | 0xC00000);
-    }
-    data = GetStringList(stringdata::tech);
-    if(!data.empty())
-    {
-        unsigned techtable = WriteStringTable(data, "Techs");
-        objects.DefineSymbol("TECHTABLE", techtable | 0xC00000);
-    }
-    data = GetStringList(stringdata::monster);
-    if(!data.empty())
-    {
-        unsigned monstertable = WriteStringTable(data, "Monsters");
-        objects.DefineSymbol("MONSTERTABLE", monstertable | 0xC00000);
-    }
+    WriteStringTable(stringdata::item,    "ITEMTABLE", "Items");
+    WriteStringTable(stringdata::tech,    "TECHTABLE", "Techs");
+    WriteStringTable(stringdata::monster, "MONSTERTABLE", "Monsters");
 }
 
 void insertor::GenerateVWF12code()

@@ -79,9 +79,12 @@ private:
     
     void WriteStrings();
     void WriteDictionary();
+    void WriteFixedStrings();
+    void WriteOtherStrings();
     void WriteRelocatedStrings();
-    void WritePageZ(unsigned page, class stringoffsmap&);
-    unsigned WriteStringTable(class stringoffsmap&, const string& what);
+    void WriteStringTable(stringdata::strtype type,
+                          const string& tablename,
+                          const string& what);
     
     /* Used to mark free space in the ROM because of code that is no longer used. */
     void ObsoleteCode(unsigned addr, unsigned bytes, bool barrier=false);
@@ -97,7 +100,6 @@ private:
     
     // Get zstrings of page
     const class stringoffsmap GetZStringList(unsigned pagenum) const;
-    const class stringoffsmap GetStringList(stringdata::strtype type) const;
 
     unsigned CalculateScriptSize() const;
 
