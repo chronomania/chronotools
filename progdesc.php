@@ -30,12 +30,15 @@ Sample of produced script:<pre class=smallerpre
 >;Battle tutorials, Zeal stuff, party stuff
 *z;39 pointerstrings (12pix font)
 \$HSs4:
-Taistelun aikana jokaisen iskun teho vaihtelee iskun mukaan.
+Taistelun aikana jokaisen iskun[nl]
+   teho vaihtelee iskun mukaan.
 \$HSs6:
-Ensinnäkin, voit iskeä myös useampaa, kuin
-   yhtä vihollista kerralla.
+Ensinnäkin, voit iskeä myös[nl]
+   useampaa, kuin yhtä vihollista[nl]
+   kerralla.
 \$HSs8:
-Voit esimerkiksi tähdätä tätä hirviötä...</pre>
+Voit esimerkiksi tähdätä tätä[nl]
+   hirviötä...</pre>
 (Dumped from
 <a href=\"http://hallucinat.ionstream.fi/teemu/engine.html?page=13\"
 >inf's Finnish Chrono Trigger translation</a>).
@@ -98,14 +101,6 @@ dumps to reduce the amount of code written.
 My goal is to make a complete Finnish translation of Chrono Trigger.
 <p>
 The project currently depends on solving the following problems.  
-<p>
-These problems are simply waiting for somebody to study the
-skills needed to solve them (SNES assembly for starters).<br>
-There is no lack of translators (or material to be translated).
-<p>
-If you are a proficient SNES hacker and want to help me with these
-problems, please contact me.<br>My email-address (sigh) is:
-<em>bisqwit a<b style=\"font-weight:lighter\">t i</b>ki <small>dot</small> fi</em>
 
 ", '1.1.1. Item/technique/monster names' => "
 
@@ -249,6 +244,7 @@ Copypaste from the Makefile:
 # VERSION 1.2.0  variable-width 8pix font has stepped in, but has many many bugs.
 # VERSION 1.2.1  more vwf stuff, backup before doing big changes
 # VERSION 1.2.2  vwf stability++, also techniques now vwf. Scrolling bugs.
+# VERSION 1.2.3  lots of more translation
 </pre>
 
 ", '1. See also' => "

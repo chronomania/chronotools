@@ -2,23 +2,29 @@
 #include "rom.hh"
 #include "ctcset.hh"
 #include "settings.hh"
+#include "config.hh"
 
 namespace
 {
+    void WritePtr(ROM &ROM, unsigned addr, unsigned short value)
+    {
+        ROM.Write(addr,   value&255);
+        ROM.Write(addr+1, value>>8);
+    }
+    
     unsigned WritePPtr
     (
         ROM &ROM,
-        unsigned pointeraddr,
+        unsigned pointeraddr, // 24-bit
         const string &string,
-        unsigned spaceptr
+        unsigned spaceptr     // 16-bit
     )
     {
         if(spaceptr == NOWHERE) return spaceptr;
 
         unsigned page = pointeraddr >> 16;
         
-        ROM.Write(pointeraddr,   spaceptr&255);
-        ROM.Write(pointeraddr+1, spaceptr>>8);
+        WritePtr(ROM, pointeraddr, spaceptr);
         
 #if 0
         fprintf(stderr, "Wrote %u bytes at %06X->%04X\n",
@@ -36,17 +42,16 @@ namespace
     unsigned WriteZPtr
     (
         ROM &ROM,
-        unsigned pointeraddr,
+        unsigned pointeraddr, //24-bit
         const string &string,
-        unsigned spaceptr
+        unsigned spaceptr     // 16-bit
     )
     {
         if(spaceptr == NOWHERE) return spaceptr;
 
         unsigned page = pointeraddr >> 16;
         
-        ROM.Write(pointeraddr,   spaceptr&255);
-        ROM.Write(pointeraddr+1, spaceptr>>8);
+        WritePtr(ROM, pointeraddr, spaceptr);
         
 #if 0
         fprintf(stderr, "Wrote %u bytes at %06X->%04X: ",
@@ -113,6 +118,7 @@ namespace
             if(unwritten)
                 fprintf(stderr, "%u string%s unwritten\n", unwritten, unwritten==1?"":"s");
         }
+        
         if(true) /* Then do parasites */
         {
             for(unsigned stringnum=0; stringnum<pagestrings.size(); ++stringnum)
@@ -185,9 +191,14 @@ void insertor::PatchROM(ROM &ROM)
     
     WriteStrings(ROM);
     Write8pixfont(ROM);
-    Write8vpixfont(ROM);
     Write12pixfont(ROM);
     WriteDictionary(ROM);
+
+    if(GetConf("font", "use_vwf8"))
+    {
+        // This function will also generate the code to handle the font.
+        Write8vpixfont(ROM);
+    }
 
     GenerateCode(); 
     WriteCode(ROM);
@@ -373,9 +384,12 @@ void insertor::WriteStrings(ROM &ROM)
                 if(s.size() != i->second.width)
                     fprintf(stderr, "Warning: Fixed string at %06X: len(%u) != space(%u)...\n",
                     pos, s.size(), i->second.width);
+                
+                unsigned size = s.size();
+                if(size > i->second.width) size = i->second.width;
 
                 unsigned a;
-                for(a=0; a<s.size(); ++a)      ROM.Write(pos++, s[a]);
+                for(a=0; a<size; ++a)          ROM.Write(pos++, s[a]);
                 for(; a < i->second.width; ++a)ROM.Write(pos++, 0);
                 break;
             }

@@ -190,6 +190,18 @@ IF IsVowel c2
     TRUE
 FALSE
 
+# Returns true if the written for of the
+# character name ends with a consonant
+# but the pronounced form ends with a vowel.
+FUNCTION IsAlien
+REG c2 c1
+CALL_GET LastChar1 c1
+? c1 Ww
+  CALL_GET LastChar2 c2
+  ? c2 oO
+    TRUE
+FALSE
+
 # Returs true if the character name ends with a vowel.
 FUNCTION EndWithVowel
 REG c1
@@ -238,6 +250,11 @@ RETURN
 FUNCTION HardStem
 VAR Len c
 CALL_GET Length Len
+IF IsAlien
+  CALL OutWord Len
+  OUT '''
+  OUT 't'
+  RETURN
 IF IsAbbrev
   CALL OutWord Len
   OUT ':'
@@ -273,6 +290,10 @@ FUNCTION SoftStem
 VAR Len
 REG chr
 CALL_GET Length Len
+IF IsAlien
+  CALL OutWord Len
+  OUT '''
+  RETURN
 IF IsAbbrev
   CALL OutWord Len
   OUT ':'

@@ -161,6 +161,15 @@ namespace
                     col += w5width;
                     break;
                 }
+                case 0x1E: // Nadia:
+                {
+                	col += ins.GetFont12width(getchronochar('N'));
+                	col += ins.GetFont12width(getchronochar('a'));
+                	col += ins.GetFont12width(getchronochar('d'));
+                	col += ins.GetFont12width(getchronochar('i'));
+                	col += ins.GetFont12width(getchronochar('a'));
+                	break;
+                }
                 default:
                     if(c >= (0x100-get_num_chronochars()))
                     {
@@ -327,7 +336,7 @@ void insertor::LoadFile(FILE *fp)
                         label = label * 10 + c - '0';
                     else
                     {
-                        fprintf(stderr, "$%u: Got char '%c', invalid is!\n", label, c);
+                        fprintf(stderr, "$%u: Got char '%c', invalid is (in label)!\n", label, c);
                     }
                 }
                 else
@@ -341,7 +350,7 @@ void insertor::LoadFile(FILE *fp)
                         label = label * 62 + (c - 'a' + 36);
                     else
                     {
-                        fprintf(stderr, "$%X: Got char '%c', invalid is!\n", label, c);
+                        fprintf(stderr, "$%X: Got char '%c', invalid is (in label)!\n", label, c);
                     }
                 }
             }

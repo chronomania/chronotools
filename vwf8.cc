@@ -59,7 +59,7 @@ namespace
         for(int a=MaxPEI; a>=MinPEI; a-=2) code.EmitCode(0x68, 0x85, a); // pla, sta.
     }
 
-#define CALC_DEBUG 0
+#define CALC_DEBUG 1
     /* Return value: number of bits set */
     int BuildShiftTask(int c, vector<int> &bitsigns, unsigned highest_bit=999)
     {
@@ -411,6 +411,33 @@ namespace
         }
     }
     
+    void GenerateModulo(SNEScode &code, unsigned char n)
+    {
+        // Calculates A %= n
+#if CALC_DEBUG
+        fprintf(stderr, "STA $00:4204\n");
+#endif
+        code.Set16bit_M();
+        code.EmitCode(0x8F, 0x04, 0x42, 0x00); // Dividend
+#if CALC_DEBUG
+        fprintf(stderr, "LDA $%02X; STA $00:4206\n");
+#endif
+        code.Set8bit_M();
+        code.EmitCode(0xA9, n);
+        code.EmitCode(0x8F, 0x06, 0x42, 0x00); // Divisor
+        // Then waste 16 machine cycles
+        // Load the result
+#if CALC_DEBUG
+        fprintf(stderr, "15*NOP; LDA $00:4216\n", n);
+#endif
+        code.EmitCode(0xEA, 0xEA, 0xEA, 0xEA); // 15 cycles
+        code.EmitCode(0xEA, 0xEA, 0xEA, 0xEA); // (rep/sep
+        code.EmitCode(0xEA, 0xEA, 0xEA, 0xEA); //  takes
+        code.EmitCode(0xEA, 0xEA, 0xEA);       // at least 1)
+        code.Set16bit_M();
+        code.EmitCode(0xAF, 0x16, 0x42, 0x00); // Remainder
+    }
+    
     void PrepareEndX(SNEScode &code)
     {
         // END_X = X + LENGTH*2
@@ -570,11 +597,11 @@ namespace
             code.Set8bit_M();
             // FIXME: This is a severe mistake
             // if D != 0, and we haven't verified it!
-            code.EmitCode(0x19, TILEBUF+8*Bitness,0);// ORA [DB:y+NEXT_TILEBUF);
-            code.EmitCode(0x99, TILEBUF+8*Bitness,0);// STA [DB:y+NEXT_TILEBUF);
+            code.EmitCode(0x19, TILEBUF+8*Bitness,0);// ORA [DB:y+NEXT_TILEBUF]
+            code.EmitCode(0x99, TILEBUF+8*Bitness,0);// STA [DB:y+NEXT_TILEBUF]
             code.EmitCode(0xEB);                     // XBA
-            code.EmitCode(0x19, TILEBUF,0);          // ORA [DB:y+TILEBUF);
-            code.EmitCode(0x99, TILEBUF,0);          // STA [DB:y+TILEBUF);
+            code.EmitCode(0x19, TILEBUF,0);          // ORA [DB:y+TILEBUF]
+            code.EmitCode(0x99, TILEBUF,0);          // STA [DB:y+TILEBUF]
             
             code.EmitCode(0xC8);                     // INC Y
             
@@ -789,7 +816,8 @@ namespace
     
     void Generic_ItemFunc(SubRoutine &result,
                           unsigned VRAM_Addr, unsigned Bitness,
-                          unsigned BaseAddr, unsigned Length,
+                          unsigned BaseAddr,
+                          unsigned Lines, unsigned Length,
                           unsigned TileNum)
     {
         SNEScode &code = result.code;
@@ -804,16 +832,47 @@ namespace
         code.EmitCode(0xA9, VRAM_Addr&255, VRAM_Addr/256);
         code.EmitCode(0x85, VRAMADDR);
         
+#if 1
         code.EmitCode(0x8A);             //TXA
-
+        
+        /* TÄMÄ ON LÄHEMPÄNÄ OIKEAA RATKAISUA.
+         * MUTTA SEN SIJAAN ETTÄ LASKETAAN (A-BaseAddr)/128,
+         * PITÄISI LASKEA POSITIO LISTASSA JA OTTAA MODULO
+         * LISTAN KORKEUDEN MUKAAN.
+         */
         // Laske (A - BaseAddr) / 128 * Length + TileNum
         GenerateCalculation(code, BaseAddr, 7, Length, TileNum);
+#else
+        /* TÄMÄKÄÄN MENETELMÄ EI TOIMI, JOS RUUTUA
+         * SKROLLAA EDESTAKAISIN (YLÖS JA ALAS).
+         * RUUDUN SISÄLLÖT ALKAVAT ENNEN PITKÄÄ
+         * HAJOTA, KUN RUUDULLA JO OLEVIA TILEJÄ
+         * MÄÄRITELLÄÄN UUDESTAAN.
+         */
+        code.Set16bit_M();
+        const unsigned Var_Addr=0xFAE6;   // just a random address.
+        const unsigned char Var_Page=0x7F;// hope it isn't important.
+        code.EmitCode(0xAF, Var_Addr&255, Var_Addr/256, Var_Page);
+        GenerateModulo(code, Lines*Length);
+        // Lisätään TileNum-base
+        GenerateCalculation(code, 0,0,1, TileNum);
+#endif
         
         code.EmitCode(0x85, TILENUM);    //STA TILENUM
         code.EmitCode(0x68); //PLA
         /////
         
         result.CallSub(VWF8_DrawS[Bitness]);
+
+#if 1
+#else
+        code.Set16bit_M();
+        code.EmitCode(0xA5, TILENUM);    //LDA TILENUM
+        // Vähennetään TileNum-base
+        GenerateCalculation(code, TileNum,0,1, 0);
+        // Save to global var
+        code.EmitCode(0x8F, Var_Addr&255, Var_Addr/256, Var_Page);
+#endif
         
         Done_ItemFunc(Bitness, code);
     }
@@ -840,7 +899,7 @@ namespace
         // Tätä kutsutaan offseteilla 4FC6..52C6 80:n stepein
         
         // FIXME: Scrolling bug (8 lines)! (Equip selection view)
-        Generic_ItemFunc(result, 0x7000, Bitness, 0x4FC6, 10, 0x030);
+        Generic_ItemFunc(result, 0x7000, Bitness, 0x4FC6, 9,10, 0x030);
         
         // Then return.
         code.EmitCode(0x6B);             // RTL
@@ -864,7 +923,7 @@ namespace
         code.BitnessUnknown();
         
         // FIXME: Scrolling bug! (Shop)
-        Generic_ItemFunc(result, 0x0000, Bitness, 0x2F4A, 11, 0x030);
+        Generic_ItemFunc(result, 0x0000, Bitness, 0x2F4A, 11,11, 0x030);
         
         // Then return.
         code.EmitCode(0x6B);                   // RTL
@@ -887,7 +946,7 @@ namespace
         code.BitnessUnknown();
         
         // FIXME: Scrolling bug (10 lines)! (Item browsing)
-        Generic_ItemFunc(result, 0x0000, Bitness, 0x2F4A, 11, 0x02A);
+        Generic_ItemFunc(result, 0x0000, Bitness, 0x2F4A, 11,11, 0x02A);
 
         // Then return.
         code.EmitCode(0x6B);                   // RTL
@@ -911,7 +970,7 @@ namespace
         code.EmitCode(0xA9, 0x0B, 0xCC); // we overwrote it, do it again.
         
         // FIXME: Scrolling bug (8 lines)! (Status screen)
-        Generic_ItemFunc(result, 0x0000, Bitness, 0x2F4A, 11, 0x02A);
+        Generic_ItemFunc(result, 0x0000, Bitness, 0x2F4A, 9,11, 0x02A);
 
         // Then return.
         code.EmitCode(0x6B);                   // RTL

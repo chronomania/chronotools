@@ -39,11 +39,12 @@ include Makefile.sets
 # VERSION 1.2.0  variable-width 8pix font has stepped in, but has many many bugs.
 # VERSION 1.2.1  more vwf stuff, backup before doing big changes
 # VERSION 1.2.2  vwf stability++, also techniques now vwf. Scrolling bugs.
+# VERSION 1.2.3  lots of more translation
 
 OPTIM=-O3
 #OPTIM=-O0
 
-VERSION=1.2.2
+VERSION=1.2.3
 ARCHFILES=xray.c xray.h \
           viewer.c \
           ctcset.cc ctcset.hh \
@@ -71,8 +72,8 @@ ARCHFILES=xray.c xray.h \
           README transnotes.txt Makefile.sets
 
 EXTRA_ARCHFILES=\
-          ct_try.txt \
-          ct8fnFI.tga ct16fnFI.tga ct8fnFIv.tga
+          ct.cfg ct_try.txt ct8fnFI.tga ct16fn.tga ct8fnV.tga \
+          FIN/ct.txt FIN/ct16fn.tga FIN/ct8fn.tga FIN/ct8fnV.tga FIN/README
 
 ARCHNAME=chronotools-$(VERSION)
 ARCHDIR=archives/
