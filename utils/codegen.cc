@@ -1719,7 +1719,7 @@ void EmitBarrier()
 }
 void EmitBranch(const std::string& s, const std::string& target)
 {
-    if(s == "bra")
+    if(s == "bra" || s == "brl")
     {
         // No FinishNode here.
         // The followup label will be attached to the previous instruction.

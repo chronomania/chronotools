@@ -134,7 +134,7 @@ void Conjugatemap::Work(ctstring &s, formit fit)
                 form.used   = true;
                 form.prefix = byte;
 
-#if 0                
+#if 0
                 fprintf(stderr, " \n  Assigned ControlCode 0x%04X for %s ",
                     form.prefix,
                     WstrToAsc(form.func).c_str());

@@ -371,7 +371,8 @@ bool freespacemap::OrganizeToAnyPage(vector<freespacerec> &blocks)
     
     vector<unsigned> organization = PackBins(holes, items);
     
-    bool Errors = false;
+    unsigned ErrorSize=0;
+    unsigned ErrorCount=0;
     for(unsigned a=0; a<blocks.size(); ++a)
     {
         unsigned itemsize = blocks[a].len;
@@ -388,18 +389,19 @@ bool freespacemap::OrganizeToAnyPage(vector<freespacerec> &blocks)
         }
         else
         {
-            Errors = true;
+            ++ErrorCount;
+            ErrorSize += itemsize;
         }
         blocks[a].pos = spaceptr;
     }
-    if(Errors)
+    if(ErrorCount != 0)
         if(!quiet)
         {
-            fprintf(stderr, "ERROR: Organization failed\n");
+            fprintf(stderr, "ERROR: Organization failed (%u errors, %u bytes)\n", ErrorCount, ErrorSize);
             if(log)
-            fprintf(log, "ERROR: Organization failed\n");
+            fprintf(log, "ERROR: Organization failed (%u errors, %u bytes)\n", ErrorCount, ErrorSize);
         }
-    return Errors;
+    return ErrorCount != 0;
 }
 
 bool freespacemap::OrganizeToAnySamePage(vector<freespacerec> &blocks, unsigned &page)

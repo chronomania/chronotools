@@ -1,3 +1,4 @@
+#include <iostream>
 #include <cstdio>
 #include <set>
 #include <map>
@@ -10,6 +11,10 @@
 
 #include "casegen.hh"
 #include "codegen.hh"
+
+#include "autoptr"
+
+#define DEBUG_TABLECODE 0
 
 namespace
 {
@@ -517,15 +522,18 @@ namespace
         {
             if(vars.find(name) == vars.end())
             {
-                // pino-osoitteet pienenevät pushatessa.
+                // stack addresses get smaller when pushing.
                 //    s = 6E5
                 //   pha - this goes to 6E5
                 //   pha - this goes to 6E4
                 //   pha - this goes to 6E3
-                // tämän jälkeen s = 6E2.
+                // after that, s = 6E2.
                 // Thus, [s+1] refers to var1, [s+2] to var2, and so on.
                 
                 unsigned stackpos = vars.size() + 1;
+                
+                // FIXME: Should order the vars so that reg vars are last!
+                // In order to get proper stack positions.
                 
                 vars[name].is_regvar = false;
                 vars[name].stackpos = stackpos;
@@ -544,7 +552,7 @@ namespace
                 CheckCodeStart();
                 DeallocateVars();
                 
-                EmitBranch("bra", Target);
+                EmitBranch("brl", Target);
                 EmitBarrier();
                 UndefineCarry();
 
@@ -627,7 +635,17 @@ namespace
             {
                 vars[name].read = true;
 
-                if(ALstate.Var.Is(name)) return;
+                if(ALstate.Var.Is(name))
+                {
+                    /* AL already has the value. */
+                    if(need_16bit && !AHstate.Const.Is(0))
+                    {
+                        Emit(CreateImmedIns("and", 0xFF), Want16bitA);
+                        AHstate.Const.Set(0);
+                        AHstate.Var.Invalidate();
+                    }
+                    return;
+                }
 
                 unsigned stackpos = GetStackOffset(name);
                 vars[name].loaded = true;
@@ -1154,6 +1172,40 @@ namespace
             
             --LoopCount;
         }
+        void LOAD_CHARACTER()
+        {
+            CheckCodeStart();
+            Emit("tax", Want16bitXY);
+            EmitBranch("jsr", WstrToAsc(LoopHelperName));
+            Assume(Assume16bitXY, Assume8bitA);
+            Assume(CarryUnknown);
+        }
+        void LOAD_LAST_CHAR()
+        {
+            CheckCodeStart();
+            Emit("inc", Want8bitA, Want16bitXY);
+            Emit("pha");
+             Emit("ldx #0");
+             std::string BeginLabel = GenLabel();
+             std::string EndLabel   = GenLabel();
+             EmitLabel(BeginLabel);
+              EmitBranch("jsr", WstrToAsc(LoopHelperName));
+              EmitBranch("beq", EndLabel);
+              Emit("inx");
+              EmitBranch("bra", BeginLabel);
+              EmitBarrier();
+             EmitLabel(EndLabel);
+            Assume(Assume16bitXY, Assume8bitA);
+            Assume(CarryUnknown);
+            Emit("lda #0");
+            Emit("xba");
+            Emit("txa", Want8bitXY);
+            Emit("sec");
+            Emit(CreateStackIns("sbc", 1));
+            Emit("plx");
+            LOAD_CHARACTER();
+        }
+        
         void OUT_CHARACTER()
         {
             // outputs character in A
@@ -1194,10 +1246,1059 @@ const std::vector<std::wstring> Split
     return words;
 }
 
+static
+const std::wstring Trim(const std::wstring& s)
+{
+    unsigned n_begin = 0;
+    while(n_begin < s.size() && (s[n_begin] == L' ' || s[n_begin] == L'\t')) ++n_begin;
+    unsigned endpos = s.size();
+    while(endpos > n_begin && (s[endpos-1] == L' ' || s[endpos-1] == L'\t')) --endpos;
+    return s.substr(n_begin, endpos-n_begin);
+}
+static
+const std::wstring GetCSet(const std::set<wchar_t>& chars)
+{
+    std::wstring result;
+    for(std::set<wchar_t>::const_iterator
+        i = chars.begin(); i != chars.end(); ++i)
+    {
+        result += *i;
+    }
+    return result;
+}
+
+
+static
+const std::string ConvStr(const std::wstring& s)
+{
+    wstringOut conv;
+    conv.SetSet(getcharset());
+    return conv.puts(s);
+}
+
+
+class TableParser
+{
+    static const std::wstring GetSetFuncName(wchar_t setch)
+    {
+        return wformat(L"CheckCharSet_%lc", setch);
+    }
+    
+    struct Component
+    {
+        enum
+        {
+            compare_lastch_set,
+            compare_lastch_set2,
+            compare_lastch_boolfunc,
+            compare_boolfunc,
+            compare_endfunc
+        } type;
+        
+        unsigned          lastchpos;
+        unsigned          lastchpos2;
+        std::set<wchar_t> chars;
+        std::wstring ref;
+
+    public:
+        Component(): type(compare_lastch_set), lastchpos(0), lastchpos2(0) {}
+        
+        void LastEqSet(unsigned l, const std::set<wchar_t>& s) { lastchpos=l; chars=s; type=compare_lastch_set; }
+        void LastEqSet2(unsigned l, unsigned l2)
+        {
+            lastchpos=std::min(l,l2);
+            lastchpos2=std::max(l,l2);
+            type=compare_lastch_set2;
+        }
+        void LastBoolFunc(unsigned l, const std::wstring& s)  { lastchpos=l; ref=s; type=compare_lastch_boolfunc; }
+        void SetBoolFunc(const std::wstring& s)   { ref=s; type=compare_boolfunc; }
+        void SetEndFunc(const std::wstring& s)   { ref=s; type=compare_endfunc; }
+        
+        const std::wstring GetCSet() const
+        {
+            return ::GetCSet(chars);
+        }
+        
+        bool operator==(const Component& b) const
+        {
+            if(type != b.type) return false;
+            if(type==compare_lastch_set || type==compare_lastch_boolfunc) { if(lastchpos!=b.lastchpos) return false; }
+            if(type==compare_lastch_set2) { if(lastchpos2!=b.lastchpos2) return false; }
+            if(type==compare_boolfunc
+            || type==compare_endfunc
+            || type==compare_lastch_boolfunc) { if(ref != b.ref) return false; }
+            if(type==compare_lastch_set) { if(chars != b.chars) return false; }
+            return true;
+        }
+        bool operator!=(const Component& b) const { return !operator==(b); }
+        bool operator< (const Component& b) const
+        {
+            if(type != b.type) return type < b.type;
+            if(type==compare_lastch_set || type==compare_lastch_boolfunc) { if(lastchpos!=b.lastchpos) return lastchpos < b.lastchpos; }
+            if(type==compare_lastch_set2) { if(lastchpos2!=b.lastchpos2) return lastchpos2 < b.lastchpos2; }
+            if(type==compare_boolfunc
+            || type==compare_endfunc
+            || type==compare_lastch_boolfunc) { if(ref != b.ref) return ref < b.ref; }
+            if(type==compare_lastch_set) { if(chars != b.chars) return GetCSet() < b.GetCSet(); }
+            return false;
+        }
+        
+        bool IsCombinableWith(const Component& b) const
+        {
+            if(type != b.type) return false;
+            if(type == compare_boolfunc
+            || type == compare_endfunc
+            || type == compare_lastch_boolfunc) { if(ref != b.ref) return false; }
+            if(type == compare_lastch_set
+            || type == compare_lastch_set2
+            || type == compare_lastch_boolfunc)
+            {
+                if(lastchpos != b.lastchpos) return false;
+            }
+            if(type == compare_lastch_set2)
+            {
+                if(lastchpos2 != b.lastchpos2) return false;
+            }
+            return true;
+        }
+        void CombineWith(const Component& b)
+        {
+            chars.insert(b.chars.begin(), b.chars.end());
+        }
+    };
+    struct Action
+    {
+        enum
+        {
+            output_char,
+            output_context,
+            output_ref,
+            call_function
+        } type;
+        
+        wchar_t ch;
+        unsigned last_but;
+        std::wstring func;
+        unsigned chpos;
+
+    public:
+        Action(): type(output_char), ch('?') {}
+        
+        void OutCh(wchar_t c) { ch=c; type=output_char; }
+        void OutCtx(unsigned n) { last_but=n; type=output_context; }
+        void OutRef(unsigned c) { chpos=c; type=output_ref; }
+        void CallFunc(const std::wstring& s) { func=s; type=call_function; }
+        
+        bool operator==(const Action& b) const
+        {
+            if(type != b.type) return false;
+            if(type==output_char) { if(ch != b.ch) return false; }
+            if(type==output_context) { if(last_but != b.last_but) return false; }
+            if(type==output_ref) { if(chpos != b.chpos) return false; }
+            if(type==call_function) { if(func != b.func) return false; }
+            return true;
+        }
+        bool operator!=(const Action& b) const { return !operator==(b); }
+        bool operator< (const Action& b) const
+        {
+            if(type != b.type) return type < b.type;
+            if(type==output_char) { if(ch != b.ch) return ch < b.ch; }
+            if(type==output_context) { if(last_but != b.last_but) return last_but < b.last_but; }
+            if(type==output_ref) { if(chpos != b.chpos) return chpos < b.chpos; }
+            if(type==call_function) { if(func != b.func) return func < b.func; }
+            return false;
+        }
+    };
+
+    const std::set<wchar_t> BuildCharset(const std::wstring& s) const
+    {
+        std::set<wchar_t> result;
+        for(unsigned a=0; a<s.size(); ++a)
+        {
+            result.insert(s[a]);
+            std::map<wchar_t, wchar_t>::const_iterator i;
+            i = l2u.find(s[a]); if(i != l2u.end()) result.insert(i->second);
+            i = u2l.find(s[a]); if(i != u2l.end()) result.insert(i->second);
+        }
+        return result;
+    }
+    
+    struct Rule
+    {
+        std::set<Component> components;
+        
+        bool operator==(const Rule& b) const
+        {
+            return components == b.components;
+        }
+        bool operator!= (const Rule& b) const { return !operator==(b); }
+        bool operator< (const Rule& b) const
+        {
+            return components < b.components;
+        }
+        
+    public:
+        bool HasComponent(const Component& com) const
+        {
+            return components.find(com) != components.end();
+        }
+        void DeleteComponent(const Component& com)
+        {
+            components.erase(com);
+        }
+        
+        bool IsCombinableWith(const Rule& b) const
+        {
+            if(components.size() != b.components.size()) return false;
+            if(components.size() != 1) return false;
+            for(std::set<Component>::const_iterator
+                i=components.begin(),
+                j=b.components.begin(); i!=components.end(); ++i,++j)
+            {
+                if(!i->IsCombinableWith(*j)) return false;
+            }
+            return true;
+        }
+        void CombineWith(const Rule& b)
+        {
+            std::set<Component> newset;
+            
+            for(std::set<Component>::iterator
+                i=components.begin(),
+                j=b.components.begin(); i!=components.end(); ++i,++j)
+            {
+                Component tmp = *i;
+                tmp.CombineWith(*j);
+                newset.insert(tmp);
+            }
+            components = newset;
+        }
+    
+        void GenerateCode(Assembler& Asm, unsigned& indent) const
+        {
+            for(std::set<Component>::const_iterator
+                i=components.begin(); i!=components.end(); ++i)
+            {
+                Asm.INDENT_LEVEL(indent);
+
+                const Component& com = *i;
+                
+                switch(com.type)
+                {
+                    case Component::compare_boolfunc:
+                    {
+#if DEBUG_TABLECODE
+                        std::cout << ConvStr(wformat(L"%*sIF %ls\n", indent,"", com.ref.c_str()));
+                        std::cout << std::flush;
+#endif
+                        Asm.CALL_FUNC(com.ref);
+                        Asm.COMPARE_BOOL(indent);
+                        indent += 2;
+                        break;
+                    }
+                    case Component::compare_endfunc:
+                    {
+#if DEBUG_TABLECODE
+                        std::cout << ConvStr(wformat(L"%*sRETURN IF %ls\n", indent,"", com.ref.c_str()));
+                        std::cout << std::flush;
+#endif
+                        Asm.CALL_FUNC(com.ref);
+                        Asm.COMPARE_BOOL(0);
+                        indent += 2;
+                        break;
+                    }
+                    case Component::compare_lastch_boolfunc:
+                    {
+#if DEBUG_TABLECODE
+                        std::cout << ConvStr(wformat(L"%*sIF %ls LastChar[%u]\n", indent,"", com.ref.c_str(), com.lastchpos));
+                        std::cout << std::flush;
+#endif
+                        Asm.LOAD_VAR(wformat(L"%u", com.lastchpos));
+                        Asm.CALL_FUNC(L"LastCharN");
+                        Asm.STORE_VAR(Asm.MagicVarName);
+                        Asm.LOAD_VAR(Asm.MagicVarName);
+                        Asm.CALL_FUNC(com.ref);
+                        Asm.COMPARE_BOOL(indent);
+                        indent += 2;
+                        break;
+                    }
+                    case Component::compare_lastch_set:
+                    {
+#if DEBUG_TABLECODE
+                        std::cout << ConvStr(wformat(L"%*s? LastChar[%u] %ls\n",  indent,"", com.lastchpos, com.GetCSet().c_str()));
+                        std::cout << std::flush;
+#endif
+                        Asm.LOAD_VAR(wformat(L"%u", com.lastchpos));
+                        Asm.CALL_FUNC(L"LastCharN");
+                        Asm.STORE_VAR(Asm.MagicVarName);
+                        Asm.LOAD_VAR(Asm.MagicVarName);
+                        Asm.SELECT_CASE(com.GetCSet(), indent);
+                        indent += 2;
+                        break;
+                    }
+                    case Component::compare_lastch_set2:
+                    {
+#if DEBUG_TABLECODE
+#endif
+                        //////////// FIXME: not correct yet.
+                        Asm.LOAD_VAR(wformat(L"%u", com.lastchpos));
+                        Asm.CALL_FUNC(L"LastCharN");
+                        Asm.LOAD_VAR(wformat(L"%u", com.lastchpos2));
+                        Asm.CALL_FUNC(L"LastCharN");
+                        Asm.STORE_VAR(Asm.MagicVarName);
+                        Asm.LOAD_VAR(Asm.MagicVarName);
+                        Asm.COMPARE_EQUAL(Asm.MagicVarName, indent);
+                        indent += 2;
+                        break;
+                    }
+                }
+            }
+        }
+    };
+    struct Compilation
+    {
+        std::vector<Action> actions;
+        
+        bool operator== (const Compilation& b) const
+        {
+            return actions == b.actions;
+        }
+        bool operator!= (const Compilation& b) const { return !operator==(b); }
+        bool operator< (const Compilation& b) const
+        {
+            return actions < b.actions;
+        }
+
+    public:
+        void GenerateCode(Assembler& Asm, const unsigned indent) const
+        {
+            Asm.INDENT_LEVEL(indent);
+            
+            for(unsigned a=0; a<actions.size(); ++a)
+            {
+                const Action& act = actions[a];
+                switch(act.type)
+                {
+                    case Action::output_char:
+                    {
+#if DEBUG_TABLECODE
+                        std::cout << ConvStr(wformat(L"%*sOUT '%lc'\n", indent,"", act.ch)) << std::flush;
+#endif
+                        Asm.LOAD_VAR(wformat(L"'%lc'", act.ch), true);
+                        Asm.OUT_CHARACTER();
+                            break;
+                    }
+                    case Action::output_context:
+                    {
+#if DEBUG_TABLECODE
+                        std::cout << ConvStr(wformat(L"%*sCALL OutWordBut %u\n", indent,"", act.last_but));
+#endif
+                        Asm.LOAD_VAR(wformat(L"%u", act.last_but));
+                        Asm.CALL_FUNC(L"OutWordBut");
+                        break;
+                    }
+                    case Action::output_ref:
+                    {
+#if DEBUG_TABLECODE
+                        std::cout << ConvStr(wformat(L"%*sOUT LastChar[%u]\n", indent,"",  act.chpos));
+#endif
+                        Asm.LOAD_VAR(wformat(L"%u", act.chpos));
+                        Asm.CALL_FUNC(L"LastCharN");
+                        Asm.STORE_VAR(Asm.MagicVarName);
+                        Asm.LOAD_VAR(Asm.MagicVarName, true);
+                        Asm.OUT_CHARACTER();
+                        break;
+                    }
+                    case Action::call_function:
+                    {
+#if DEBUG_TABLECODE
+                        std::cout << ConvStr(wformat(L"%*sCALL %ls\n", indent,"", act.func.c_str()));
+#endif
+                        Asm.CALL_FUNC(act.func);
+                        break;
+                    }
+                }
+            }
+            if(!actions.empty())
+            {
+#if DEBUG_TABLECODE
+                std::cout << ConvStr(wformat(L"%*sTRUE\n", indent,""));
+                std::cout << std::flush;
+#endif
+                //Asm.BOOLEAN_RETURN(false);
+                Asm.VOID_RETURN();
+            }
+            else
+            {
+                //Emit("nop");
+            }
+        }
+    };
+    
+    struct RuleTree;
+    typedef autoeqptr<RuleTree> RuleTreePtr;
+    struct RuleTree: public ptrable
+    {
+        std::vector<RuleTreePtr> subtrees;
+        Rule rule;
+        Compilation compilation;
+    
+        bool operator== (const RuleTree& b) const
+        {
+            return rule == b.rule
+                && subtrees == b.subtrees
+                && compilation == b.compilation;
+        }
+        bool operator!= (const RuleTree& b) const { return !operator==(b); }
+        bool operator< (const RuleTree& b) const
+        {
+            if(rule != b.rule) return rule < b.rule;
+            if(compilation != b.compilation) return compilation < b.compilation;
+            return subtrees < b.subtrees;
+        }
+        
+    private:
+        void Assimilate(const RuleTree& r)
+        {
+            rule.components.insert
+            (r.rule.components.begin(), 
+             r.rule.components.end());
+            compilation.actions.insert
+            (compilation.actions.end(),
+             r.compilation.actions.begin(),
+             r.compilation.actions.end());
+            subtrees.insert
+            (subtrees.end(),
+             r.subtrees.begin(),
+             r.subtrees.end());
+        }
+        
+        bool HasEqualConsequence(RuleTree& b) const
+        {
+            return subtrees    == b.subtrees
+                && compilation == b.compilation;
+        }
+        
+        bool OptimizeCommonComponents()
+        {
+            /* Find out how many times each component is used */
+            Component best_cond;   //what component?
+            unsigned best_count=0; //how many times? (for scoring)
+            unsigned best_pos  =0; //where is the first occurance?
+            
+            /* Note: Must preserve the order, and thus must not have gaps
+             * in the matching condition lists.
+             */
+            
+            for(unsigned s=0; s<subtrees.size(); ++s)
+            {
+                std::map<Component, unsigned> component_amounts;
+                
+                const Rule& r = subtrees[s]->rule;
+                std::set<Component>::const_iterator j;
+                
+                for(j = r.components.begin(); j != r.components.end(); ++j)
+                {
+                    unsigned n_found = 1;
+                    
+                    for(unsigned s2=s+1; s2<subtrees.size(); ++s2)
+                    {
+                        const Rule& r2 = subtrees[s2]->rule;
+                        if(!r2.HasComponent(*j)) break;
+                        ++n_found;
+                    }
+                    if(n_found > best_count)
+                    {
+                        best_count = n_found;
+                        best_pos   = s;
+                        best_cond  = *j;
+                    }
+                }
+            }
+            
+            if(best_count > 1)
+            {
+                RuleTree* newtree = new RuleTree;
+                newtree->rule.components.insert(best_cond);
+                
+                unsigned n_trees = 0;
+                for(unsigned s=best_pos; s<subtrees.size(); ++s, ++n_trees)
+                {
+                    Rule& r = subtrees[s]->rule;
+                    
+                    std::set<Component>::iterator j = r.components.find(best_cond);
+                    if(j == r.components.end()) break;
+                    
+                    r.components.erase(j);
+                    newtree->subtrees.push_back(subtrees[s]);
+                }
+                subtrees.erase(subtrees.begin()+best_pos+1,
+                               subtrees.begin()+best_pos+n_trees);
+                subtrees[best_pos] = newtree;
+                return true;
+            }
+            return false;
+        }
+        
+        void OptimizeCommonResults()
+        {
+            for(unsigned s=0; s+1<subtrees.size(); ++s)
+            {
+                RuleTree& t1 =*subtrees[s+0];
+                RuleTree& t2 =*subtrees[s+1];
+                
+                if(t1.rule.IsCombinableWith(t2.rule)
+                && t1.HasEqualConsequence(t2))
+                {
+                    t1.rule.CombineWith(t2.rule);
+                    subtrees.erase(subtrees.begin() + (s+1));
+                    --s;
+                    continue;
+                }
+            }
+        }
+
+    public:
+        void Optimize()
+        {
+        Reoptimize:
+            if(compilation.actions.empty() && subtrees.size() == 1)
+            {
+                RuleTreePtr tmp = *subtrees.begin();
+                subtrees.clear();
+                Assimilate(*tmp);
+                goto Reoptimize;
+            }
+        
+            for(unsigned s=0; s<subtrees.size(); ++s)
+                subtrees[s]->Optimize();
+
+            if(OptimizeCommonComponents())
+                goto Reoptimize;
+            
+            OptimizeCommonResults();
+        }
+
+        typedef std::map<Compilation, unsigned> ActionUsageMap;
+        typedef std::map<RuleTree, std::wstring> RuleTreeConversionMap;
+        
+        void FindCommonActions(ActionUsageMap& map)
+        {
+            if(!compilation.actions.empty())
+            {
+                ++map[compilation];
+            }
+            for(unsigned s=0; s<subtrees.size(); ++s)
+                subtrees[s]->FindCommonActions(map);
+        }
+        
+        void ConvertTreeToFunctions(RuleTreeConversionMap& map)
+        {
+            for(unsigned s=0; s<subtrees.size(); ++s)
+            {
+                subtrees[s]->ConvertTreeToFunctions(map);
+            }
+            
+            std::wstring funcname;
+            RuleTreeConversionMap::iterator i = map.find(*this);
+            if(i == map.end())
+            {
+                funcname = wformat(L"RuleTree%u", map.size());
+                map[*this] = funcname;
+            }
+            else
+                funcname = i->second;
+            
+            rule.components.clear();
+            compilation.actions.clear();
+            
+            Component tmp;
+            tmp.SetEndFunc(funcname);
+            rule.components.insert(tmp);
+            subtrees.clear();
+        }
+        
+        void ReplaceAllActionByCall(const Compilation& example, const std::wstring& funame)
+        {
+            if(compilation == example)
+            {
+                compilation.actions.clear();
+                Action act;
+                act.CallFunc(funame);
+                compilation.actions.push_back(act);
+            }
+            for(unsigned s=0; s<subtrees.size(); ++s)
+                subtrees[s]->ReplaceAllActionByCall(example, funame);
+        }
+
+        unsigned CountLastCh() const
+        {
+            unsigned max_lastch = 0;
+            
+            for(std::set<Component>::const_iterator
+                i=rule.components.begin(); i!=rule.components.end(); ++i)
+            {
+                switch(i->type)
+                {
+                    case Component::compare_lastch_set2:
+                        max_lastch = std::max(max_lastch, i->lastchpos2);
+                        /* passthru */                    
+                    case Component::compare_lastch_set:
+                    case Component::compare_lastch_boolfunc:
+                        max_lastch = std::max(max_lastch, i->lastchpos);
+                        break;
+                    case Component::compare_boolfunc: ;
+                    case Component::compare_endfunc: ;
+                }
+            }
+            for(unsigned s=0; s<subtrees.size(); ++s)
+            {
+                const RuleTree& p = *subtrees[s];
+                max_lastch = std::max(max_lastch, p.CountLastCh());
+            }
+            return max_lastch;
+        }
+        
+        void GenerateCode(Assembler& Asm, unsigned indent) const
+        {
+#if 0
+            std::cout << "<\n";
+#endif
+            rule.GenerateCode(Asm, indent);
+            
+            for(unsigned s=0; s<subtrees.size(); ++s)
+            {
+                const RuleTree& p = *subtrees[s];
+                p.GenerateCode(Asm, indent);
+            }
+            
+            compilation.GenerateCode(Asm, indent);
+#if 0
+            std::cout << ">\n";
+#endif
+        }
+    };
+    
+    class Function
+    {
+        RuleTree rules;
+
+        void GenerateCode(const RuleTree& rules, Assembler& Asm) const
+        {
+            rules.GenerateCode(Asm, 2);
+            
+            // last, reset the intenting
+            Asm.INDENT_LEVEL(0);
+            Asm.VOID_RETURN();
+        }
+        
+        void InitAsmVars(Assembler& Asm) const
+        {
+            Asm.DECLARE_REGVAR(Asm.MagicVarName);
+        }
+        
+    public:
+        void Define(const Rule& rule, const Compilation& compilation)
+        {
+            RuleTree*r = new RuleTree;
+            r->rule        = rule;
+            r->compilation = compilation;
+            rules.subtrees.push_back(r);
+        }
+        
+        void FindCommonActions(RuleTree::ActionUsageMap& map)
+        {
+            rules.FindCommonActions(map);
+        }
+        void ReplaceAllActionByCall(const Compilation& example, const std::wstring& funame)
+        {
+            rules.ReplaceAllActionByCall(example, funame);
+        }
+        void ConvertTreeToFunctions(RuleTree::RuleTreeConversionMap& map)
+        {
+            rules.ConvertTreeToFunctions(map);
+        }
+
+        void Optimize()
+        {
+            rules.Optimize();
+        }
+        
+        void Generate(Assembler& Asm) const
+        {
+            InitAsmVars(Asm);
+            GenerateCode(rules, Asm);
+        }
+    };
+    
+    void BuildFunction(Rule& rule, Compilation& compilation,
+                       const std::wstring& mask,
+                       const std::wstring& result)
+    {
+        std::map<wchar_t, unsigned> set_refs;
+
+        /* First find out how many bytes of the mask
+         * and the result are common after the star.
+         */
+        unsigned result_ignore_after_star = 0;
+        unsigned result_star_pos = result.find(L'*');
+        for(unsigned b=0; b<mask.size(); ++b)
+        {
+            wchar_t ch = mask[b];
+            if(ch == '*') continue;
+            
+            /* Filters don't eat bytes */
+            std::map<wchar_t, std::wstring>::const_iterator filti = filters.find(ch);
+            if(filti != filters.end()) continue;
+            
+            if(result_star_pos != result.npos
+            && result_star_pos+1 < result.size()
+            && ch == result[result_star_pos+1])
+            {
+                ++result_ignore_after_star;
+                ++result_star_pos;
+            }
+            else
+            {
+                result_star_pos = result.npos;
+                break;
+            }
+        }
+        
+        if(mask.substr(0,1) != L"*")
+        {
+            fprintf(stderr,
+                "ERROR: Can not define function(%s,%s) - must begin with *\n",
+                ConvStr(mask).c_str(), ConvStr(result).c_str());
+            return;
+        }
+        
+        /* Now, generate the comparison rules. */
+        unsigned last_count=0;
+        for(unsigned b=mask.size(); b-->0; )
+        {
+            wchar_t ch = mask[b];
+            if(ch == '*') { break; }
+            
+            /* Filters don't eat bytes */
+            std::map<wchar_t, std::wstring>::const_iterator filti = filters.find(ch);
+            if(filti != filters.end())
+            {
+                Component com;
+                com.SetBoolFunc(filti->second);
+                rule.components.insert(com);
+                continue;
+            }
+            
+            std::map<wchar_t, unsigned>::const_iterator refi = set_refs.find(ch);
+            if(refi != set_refs.end())
+            {
+                Component com;
+                com.LastEqSet2(last_count, refi->second);
+                rule.components.insert(com);
+                
+                ++last_count;
+                continue;
+            }
+            std::map<wchar_t, std::set<wchar_t> >::const_iterator cseti = charsets.find(ch);
+            if(cseti != charsets.end())
+            {
+#if 0
+                std::cout << ConvStr(wformat(L"Charset('%lc'): '%ls'\n", ch, GetCSet(cseti->second).c_str()));
+                std::cout << std::flush;
+#endif
+                
+                Component com;
+                com.LastBoolFunc(last_count, GetSetFuncName(ch));
+                set_refs[ch] = last_count;
+                rule.components.insert(com);
+                
+                ++last_count;
+                continue;
+            }
+            std::wstring tmp; tmp += ch;
+            Component com;
+            com.LastEqSet(last_count, BuildCharset(tmp));
+            rule.components.insert(com);
+            
+            ++last_count;
+        }
+        
+#if 0
+        std::cout << WstrToAsc(wformat(L"# mask(%ls)result(%ls)last(%u)ignore(%u)\n",
+                         mask.c_str(), result.c_str(), last_count, result_ignore_after_star));
+#endif
+        last_count -= result_ignore_after_star;
+        
+        bool seen_star=false;
+        for(unsigned b=0; b<result.size(); ++b)
+        {
+            wchar_t ch = result[b];
+            if(ch == '*')
+            {
+                seen_star=true;
+                Action act;
+                act.OutCtx(last_count);
+                compilation.actions.push_back(act);
+                continue;
+            }
+            if(seen_star && result_ignore_after_star > 0)
+            {
+                --result_ignore_after_star;
+                continue;
+            }
+#if 0
+        std::cout << WstrToAsc(wformat(L"# > chr(%lc)\n", ch));
+#endif
+            
+            std::map<wchar_t, unsigned>::const_iterator refi = set_refs.find(ch);
+            if(refi != set_refs.end())
+            {
+                Action act;
+                act.OutRef(refi->second);
+                compilation.actions.push_back(act);
+                continue;
+            }
+            std::map<wchar_t, std::wstring>::const_iterator filti = filters.find(ch);
+            if(filti != filters.end())
+            {
+                Action act;
+                act.CallFunc(filti->second);
+                compilation.actions.push_back(act);
+                continue;
+            }
+            Action act;
+            act.OutCh(ch);
+            compilation.actions.push_back(act);
+        }
+    }
+    
+public:
+    void Parse(const std::vector<std::wstring>& lines)
+    {
+        std::wstring lo, up;
+        
+        typedef std::list<std::wstring> funclist;
+        typedef std::map<unsigned, funclist> collist;
+        
+        collist columns;
+        
+        for(unsigned a=0; a<lines.size(); ++a)
+        {
+            const std::wstring& line = lines[a];
+            if(line.empty()) continue;
+            switch(line[0])
+            {
+                case '>': up = line.substr(1); break; // uppercase charset
+                case '<': lo = line.substr(1); break; // lowercase charset
+                case ':':
+                {
+                    if(line.size() < 3) continue;
+
+                    /* Build u2l and l2u (case conversion maps) */
+                    for(unsigned b=0; b<up.size() && b<lo.size(); ++b)
+                    {
+                        u2l[up[b]] = lo[b]; 
+                        l2u[lo[b]] = up[b];
+                    }
+
+                    wchar_t ch = line[1];
+                    switch(line[2])
+                    {
+                        case '/': filters[ch]  = line.substr(3); break;
+                        case '=':
+                        {
+                            charsets[ch] = BuildCharset(line.substr(3));
+                            break;
+                        }
+                    }
+                    break;
+                }
+                case '#': case ';': continue; //comment
+                case '=':
+                {
+                    /* Find the column positions and function names from the header */
+                    for(unsigned b=0; b<line.size(); ++b)
+                    {
+                        if(line[b]=='=' || line[b]==' ' || line[b]==' ' || line[b]=='|') continue;
+                        unsigned begin = b;
+                        while(b < line.size() && line[b]!=' ')++b;
+                        const std::wstring funame = line.substr(begin, b-begin);
+                        columns[begin].push_back(funame);
+                    }
+                    break;
+                }
+                default:
+                {
+                    /* Anything else - assume it's a mask */
+                    unsigned barpos = line.find(L'|');
+                    if(barpos == line.npos) continue;
+                    
+                    std::wstring mask = Trim(line.substr(0, barpos));
+                    for(collist::const_iterator next, i = columns.begin(); i != columns.end(); i=next)
+                    {
+                        next = i; ++next;
+                        unsigned begin = i->first;
+                        unsigned end = line.size();
+                        if(next != columns.end()) end = next->first;
+                        
+                        std::wstring col = Trim(line.substr(begin, end-begin));
+                        
+                        for(funclist::const_iterator j = i->second.begin(); j != i->second.end(); ++j)
+                        {
+                            Rule r;
+                            Compilation c;
+                            
+#if 0
+                            std::cout << ConvStr(
+                                wformat(L"BuildFunction(%ls)Mask(%ls)Result(%ls)\n",
+                                        j->c_str(),mask.c_str(),col.c_str()));
+                            std::cout << std::flush;
+#endif
+        
+                            BuildFunction(r, c, mask, col);
+                            
+                            functions[*j].Define(r, c);
+                        }
+                    }
+                }
+            }
+        }
+        
+        for(std::map<std::wstring, Function>::iterator
+            i = functions.begin(); i != functions.end(); ++i)
+        {
+            i->second.Optimize();
+        }
+
+        RuleTree::ActionUsageMap map;
+        for(std::map<std::wstring, Function>::iterator
+            i = functions.begin(); i != functions.end(); ++i)
+        {
+            i->second.FindCommonActions(map);
+        }
+        
+        /*
+        for(std::map<std::wstring, Function>::iterator
+            i = functions.begin(); i != functions.end(); ++i)
+        {
+            i->second.ConvertTreeToFunctions(ruletreemap);
+        }
+        */
+        
+        unsigned counter = 0;
+        for(RuleTree::ActionUsageMap::const_iterator
+            i = map.begin(); i != map.end(); ++i)
+        {
+            if(i->second >= 2)
+            {
+                const std::wstring funame = wformat(L"ActionFun%u", counter++);
+                actionmap[funame] = i->first;
+
+                for(std::map<std::wstring, Function>::iterator
+                    j = functions.begin(); j != functions.end(); ++j)
+                {
+                    j->second.ReplaceAllActionByCall(i->first, funame);
+                }
+            }
+        }
+    }
+    
+    void Generate(Assembler& Asm) const
+    {
+        for(std::map<wchar_t, std::set<wchar_t> >::const_iterator
+            i = charsets.begin(); i != charsets.end(); ++i)
+        {
+            std::wstring name = GetSetFuncName(i->first);
+#if DEBUG_TABLECODE
+            std::wcout << L"FUNCTION " << name << std::endl;
+#endif
+            Asm.START_FUNCTION(name);
+            Asm.INDENT_LEVEL(0);
+            Asm.DECLARE_REGVAR(Asm.MagicVarName);
+            Asm.LOAD_VAR(Asm.MagicVarName);
+            Asm.SELECT_CASE(GetCSet(i->second), 0);
+              Asm.INDENT_LEVEL(2);
+              Asm.BOOLEAN_RETURN(true);
+            Asm.INDENT_LEVEL(0);
+            Asm.BOOLEAN_RETURN(false);
+            Asm.END_FUNCTION();
+#if DEBUG_TABLECODE
+            //std::wcout << L"END FUNCTION\n";
+#endif
+        }
+        
+        for(std::map<std::wstring, Compilation>::const_iterator
+            i = actionmap.begin(); i != actionmap.end(); ++i)
+        {
+#if DEBUG_TABLECODE
+            std::wcout << L"FUNCTION " << i->first << std::endl;
+#endif
+            Asm.START_FUNCTION(i->first);
+            Asm.INDENT_LEVEL(0);
+            
+            i->second.GenerateCode(Asm, 2);
+            
+            Asm.INDENT_LEVEL(0);
+            Asm.VOID_RETURN();
+            Asm.END_FUNCTION();
+#if DEBUG_TABLECODE
+            //std::wcout << L"END FUNCTION\n";
+#endif
+        }        
+        
+        for(RuleTree::RuleTreeConversionMap::const_iterator
+            i = ruletreemap.begin(); i != ruletreemap.end(); ++i)
+        {
+#if DEBUG_TABLECODE
+            std::wcout << L"FUNCTION " << i->second << std::endl;
+#endif
+            Asm.START_FUNCTION(i->second);
+            Asm.INDENT_LEVEL(0);
+            
+            i->first.GenerateCode(Asm, 2);
+            
+            Asm.INDENT_LEVEL(0);
+            Asm.BOOLEAN_RETURN(true);
+            Asm.END_FUNCTION();
+#if DEBUG_TABLECODE
+            //std::wcout << L"END FUNCTION\n";
+#endif
+        }
+        
+        for(std::map<std::wstring, Function>::const_iterator
+            i = functions.begin(); i != functions.end(); ++i)
+        {
+#if DEBUG_TABLECODE
+            std::wcout << L"FUNCTION " << i->first << std::endl;
+#endif
+            Asm.START_FUNCTION(i->first);
+            Asm.INDENT_LEVEL(0);
+            
+            i->second.Generate(Asm);
+            
+            Asm.INDENT_LEVEL(0);
+            Asm.VOID_RETURN();
+            Asm.END_FUNCTION();
+#if DEBUG_TABLECODE
+            //std::wcout << L"END FUNCTION\n";
+#endif
+        }
+    }
+private:
+    RuleTree::RuleTreeConversionMap ruletreemap;
+    std::map<std::wstring, Compilation> actionmap;
+    std::map<wchar_t, wchar_t> u2l, l2u; // case conversions
+    std::map<wchar_t, std::set<wchar_t> > charsets;
+    std::map<wchar_t, std::wstring> filters;
+    std::map<std::wstring, Function> functions;
+};
+
 
 void Compile(FILE *fp)
 {
     Assembler Asm;
+    TableParser Tables;
     
     std::wstring file;
     
@@ -1240,7 +2341,7 @@ void Compile(FILE *fp)
         if(words.empty())
         {
             fprintf(stderr, "Weird, '%s' is empty line?\n",
-                WstrToAsc(Buf).c_str());
+                ConvStr(Buf).c_str());
             continue;
         }
         
@@ -1268,6 +2369,23 @@ void Compile(FILE *fp)
                 Asm.LOAD_VAR(words[1]);
             }
             Asm.VOID_RETURN();
+        }
+        else if(firstword == "BEGIN_TABLES")
+        {
+            std::vector<std::wstring> lines;
+            while(a < file.size())
+            {
+                std::wstring Buf;
+                
+                // Get line
+                unsigned b=a;
+                while(b<file.size() && file[b]!='\n') ++b;
+                Buf = file.substr(a, b-a); a = b+1;
+                
+                if(Buf == L"END_TABLES") break;
+                lines.push_back(Buf);
+            }
+            Tables.Parse(lines);
         }
         else if(firstword == "VAR")
         {
@@ -1322,6 +2440,18 @@ void Compile(FILE *fp)
             Asm.LOAD_VAR(words[2]);
             Asm.STORE_VAR(words[1]);
         }
+        else if(firstword == "LOAD_CHAR")
+        {
+            Asm.LOAD_VAR(words[2], true);
+            Asm.LOAD_CHARACTER();
+            Asm.STORE_VAR(words[1]);
+        }
+        else if(firstword == "LOAD_LAST_CHAR")
+        {
+            Asm.LOAD_VAR(words[2]);
+            Asm.LOAD_LAST_CHAR();
+            Asm.STORE_VAR(words[1]);
+        }
         else if(firstword == "=")
         {
             if(WstrToAsc(words[2]) == "0")
@@ -1371,6 +2501,7 @@ void Compile(FILE *fp)
             fprintf(stderr, "  ERROR: What's this? '%s'\n", firstword.c_str());
     }
     Asm.END_FUNCTION();
+    Tables.Generate(Asm);
 }
 
 int main(int argc, const char *const *argv)

@@ -25,18 +25,6 @@ LET left c
 }
 RETURN
 
-# Returns the given'th character of the name. Count from 1.
-FUNCTION CharNumber
-VAR num limit c
-LET limit c
-LET num 0
-{
-  INC num
-  = num limit
-    RETURN c
-}
-RETURN 0
-
 # Calculate the length of the character name
 FUNCTION Length
 VAR Len
@@ -51,11 +39,11 @@ FUNCTION Do_Crononick
 VAR c1 c2 c3 c4 c5 Len
 CALL_GET Length Len
 = Len 5
-  CALL_GET CharNumber c1 1
-  CALL_GET CharNumber c2 2
-  CALL_GET CharNumber c3 3
-  CALL_GET CharNumber c4 4
-  CALL_GET CharNumber c5 5
+  LOAD_CHAR c1 0
+  LOAD_CHAR c2 1
+  LOAD_CHAR c3 2
+  LOAD_CHAR c4 3
+  LOAD_CHAR c5 4
   IF IsConso c1
     IF IsConso c2
       # If starts with two consonants

@@ -32,6 +32,10 @@
 #     Increment the value of name
 #  DEC name
 #     Decrement the value of name
+#  LOAD_CHAR var number
+#     Gets the numberth character (0+) of the name and stores to var.
+#  LOAD_LAST_CHAR var number
+#     Gets the numberth character (0+) of the name from end and stores to var.
 #  { 
 #     Loop over the character name, store current character in variable "c".
 #  }
@@ -52,8 +56,8 @@
 #     Calls the bool-func name1.
 #     If value given, will be passed as param.
 #     Process subblock if true retval.
-#  CALL_GET name1 name2 [param]
-#     Calls the integer-func name1, return value to name2.
+#  CALL_GET name var [param]
+#     Calls the integer-func name, return value to var.
 #  CALL name1 [value]
 #     Calls a function, ignores the return value.
 #     If value given, will be passed as param.
@@ -80,10 +84,12 @@ FALSE
 # Returns true if the parameter sounds
 # like a vowel when at end of a word.
 FUNCTION IsVowelTypeChar
-VAR c
-IF IsVowel c
+VAR param
+REG c
+LET param c
+IF IsVowel param
   TRUE
-? c 0123456
+? param 0123456
   TRUE
 FALSE
 
@@ -162,41 +168,11 @@ LET Len 0
 }
 RETURN Len
 
-# Returns the third last character of the character name
-# The implementation may look scary, but this language
-# does not contain indexing.
-FUNCTION LastChar3
-VAR c1 c2 c3 c
-LET c1 0
-LET c2 0
-LET c3 0
-{
-  LET c3 c2
-  LET c2 c1
-  LET c1 c
-}
-RETURN c3
-
-# Returns the second last character of the character name
-FUNCTION LastChar2
-VAR c1 c2 c
-LET c1 0
-LET c2 0
-{
-  LET c2 c1
-  LET c1 c
-}
-RETURN c2
-
-# Returns the last character of the character name
-FUNCTION LastChar1
-VAR c1
+# Returns the Nth last character of the character name
+FUNCTION LastCharN
 REG c
-LET c1 0
-{
-  LET c1 c
-}
-RETURN c1
+LOAD_LAST_CHAR c c
+RETURN c
 
 # Returns true if the character name doesn't look pronouncable.
 # This applies to names which contain only consonants or end with numbers.
@@ -229,9 +205,9 @@ FALSE
 # Returns true if the character name ends with vowel+s
 FUNCTION IsEs
 REG c2 c
-CALL_GET LastChar2 c2
+CALL_GET LastCharN c2 1
 IF IsVowelTypeChar c2
-  CALL_GET LastChar1 c
+  CALL_GET LastCharN c 0
   ? c sS
     TRUE
 FALSE
@@ -239,9 +215,9 @@ FALSE
 # Returns true if the character name ends with "de"
 FUNCTION IsDe
 REG c2 c
-CALL_GET LastChar2 c2
+CALL_GET LastCharN c2 1
 ? c2 dD
-  CALL_GET LastChar1 c
+  CALL_GET LastCharN c 0
   ? c eE
     TRUE
 FALSE
@@ -252,9 +228,9 @@ FALSE
 # This happens for names that end with "ow" (foreign only).
 FUNCTION IsAlien
 REG c2 c1
-CALL_GET LastChar1 c1
+CALL_GET LastCharN c1 0
 ? c1 Ww
-  CALL_GET LastChar2 c2
+  CALL_GET LastCharN c2 1
   ? c2 oO
     TRUE
 FALSE
@@ -262,7 +238,7 @@ FALSE
 # Returs true if the character name ends with a vowel.
 FUNCTION EndWithVowel
 REG c1
-CALL_GET LastChar1 c1
+CALL_GET LastCharN c1 0
 IF IsVowelTypeChar c1
   TRUE
 FALSE
@@ -272,8 +248,8 @@ FUNCTION DoubleHard
 VAR c3
 REG c2
 IF EndWithVowel
-  CALL_GET LastChar3 c3
-  CALL_GET LastChar2 c2
+  CALL_GET LastCharN c3 2
+  CALL_GET LastCharN c2 1
   = c3 c2
     IF IsKPT c2
       TRUE
@@ -282,11 +258,11 @@ FALSE
 # Returns true if the character name ends with "aki" or "äki".
 FUNCTION AkiEnd
 REG c3 c2 c1
-CALL_GET LastChar3 c3
+CALL_GET LastCharN c3 2
 ? c3 aAäÄ
-  CALL_GET LastChar2 c2
+  CALL_GET LastCharN c2 1
   ? c2 kK
-    CALL_GET LastChar1 c1
+    CALL_GET LastCharN c1 0
     ? c1 iI
       TRUE
 FALSE
@@ -299,8 +275,23 @@ LET left c
 {
   = left 0
     RETURN
-  OUT c
   DEC left
+  OUT c
+}
+RETURN
+
+# Outputs the character name except the last N.
+FUNCTION OutWordBut
+VAR len left tmp
+REG c
+LET left c
+CALL_GET Length len
+{
+  LET tmp c
+  = len left
+    RETURN
+  DEC len
+  OUT tmp
 }
 RETURN
 
@@ -315,17 +306,16 @@ RETURN
 #  -ki+e
 #     +i
 FUNCTION HardStem
-VAR Len c
-CALL_GET Length Len
+VAR c
 IF IsAlien
-  CALL OutWord Len
+  CALL OutWordBut 0
   OUT '''
   OUT 't'
   RETURN
 IF IsAbbrev
-  CALL OutWord Len
+  CALL OutWordBut 0
   OUT ':'
-  CALL_GET LastChar1 c
+  CALL_GET LastCharN c 0
   ? c flmnrswxFLMNRSWX479
     OUT 'ä'
     RETURN
@@ -337,23 +327,22 @@ IF IsAbbrev
   OUT 't'
   RETURN
 IF IsEs
-  CALL OutWord Len
+  CALL OutWordBut 0
   OUT 't'
   RETURN
 IF IsDe
-  CALL OutWord Len
+  CALL OutWordBut 0
   OUT 't'
   OUT 't'
   RETURN
 IF EndWithVowel
   IF AkiEnd
-    DEC Len
-    CALL OutWord Len
+    CALL OutWordBut 1
     OUT 'e'
     RETURN
-  CALL OutWord Len
+  CALL OutWordBut 0
   RETURN
-CALL OutWord Len
+CALL OutWordBut 0
 OUT 'i'
 RETURN
 
@@ -366,88 +355,73 @@ RETURN
 # -xxi+xi
 #     +i
 FUNCTION SoftStem
-VAR Len
 REG chr
-CALL_GET Length Len
 IF IsAlien
-  CALL OutWord Len
+  CALL OutWordBut 0
   OUT '''
   RETURN
 IF IsAbbrev
-  CALL OutWord Len
+  CALL OutWordBut 0
   OUT ':'
   RETURN
 IF IsEs
-  DEC Len
-  CALL OutWord Len
+  CALL OutWordBut 1
   OUT 'k'
   OUT 's'
   OUT 'e'
   RETURN
 IF IsDe
-  DEC Len
-  DEC Len
-  CALL OutWord Len
+  CALL OutWordBut 2
   OUT 't'
   OUT 'e'
   OUT 'e'
   RETURN
 IF EndWithVowel
   IF DoubleHard
-    DEC Len
-    DEC Len
-    CALL OutWord Len
-    CALL_GET LastChar1 chr
+    CALL OutWordBut 2
+    CALL_GET LastCharN chr 0
     OUT chr
     RETURN
   IF AkiEnd
-    DEC Len
-    DEC Len
-    CALL OutWord Len
+    CALL OutWordBut 2
     OUT 'e'
     RETURN
-  CALL OutWord Len
+  CALL OutWordBut 0
   RETURN
-CALL OutWord Len
+CALL OutWordBut 0
 OUT 'i'
 RETURN
 
 # Outputs the stem of the word for essive conjugation.
 FUNCTION EssiveStem
-VAR Len
-CALL_GET Length Len
 IF IsAlien
-  CALL OutWord Len
+  CALL OutWordBut 0
   OUT '''
   RETURN
 IF IsAbbrev
-  CALL OutWord Len
+  CALL OutWordBut 0
   OUT ':'
   RETURN
 IF IsEs
-  DEC Len
-  CALL OutWord Len
+  CALL OutWordBut 1
   OUT 'k'
   OUT 's'
   OUT 'e'
   RETURN
 IF IsDe
-  DEC Len
-  DEC Len
-  CALL OutWord Len
+  CALL OutWordBut 2
   OUT 't'
   OUT 'e'
   OUT 'e'
   RETURN
 IF EndWithVowel
   IF AkiEnd
-    DEC Len
-    CALL OutWord Len
+    CALL OutWordBut 1
     OUT 'e'
     RETURN
-  CALL OutWord Len
+  CALL OutWordBut 0
   RETURN
-CALL OutWord Len
+CALL OutWordBut 0
 OUT 'i'
 RETURN
 
@@ -460,32 +434,28 @@ RETURN
 # -xxi+xii
 #     +ii
 FUNCTION IllativeStem
-VAR Len chr
-CALL_GET Length Len
+VAR chr
 IF IsAlien
-  CALL OutWord Len
+  CALL OutWordBut 0
   OUT '''
   OUT 'h'
   OUT 'u'
   RETURN
 IF IsAbbrev
-  CALL OutWord Len
+  CALL OutWordBut 0
   OUT ':'
   CALL Out_A
   CALL Out_A
   RETURN
 IF IsEs
-  DEC Len
-  CALL OutWord Len
+  CALL OutWordBut 1
   OUT 'k'
   OUT 's'
   OUT 'e'
   OUT 'e'
   RETURN
 IF IsDe
-  DEC Len
-  DEC Len
-  CALL OutWord Len
+  CALL OutWordBut 2
   OUT 't'
   OUT 'e'
   OUT 'e'
@@ -495,25 +465,21 @@ IF IsDe
   RETURN
 IF EndWithVowel
   IF DoubleHard
-    DEC Len
-    DEC Len
-    CALL OutWord Len
-    CALL_GET LastChar1 chr
+    CALL OutWordBut 2
+    CALL_GET LastCharN chr 0
     OUT chr
     OUT chr
     RETURN
   IF AkiEnd
-    DEC Len
-    DEC Len
-    CALL OutWord Len
+    CALL OutWordBut 2
     OUT 'e'
     OUT 'e'
     RETURN
-  CALL OutWord Len
-  CALL_GET LastChar1 chr
+  CALL OutWordBut 0
+  CALL_GET LastCharN chr 0
   OUT chr
   RETURN
-CALL OutWord Len
+CALL OutWordBut 0
 OUT 'i'
 OUT 'i'
 RETURN

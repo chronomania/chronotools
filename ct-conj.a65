@@ -27,6 +27,9 @@
 
 #define RTL_ADDR_C2             $5841   ; Where RTL can be found in page $C2
 
+#define NAME_ADDRESS            $50 ; Where player name address will be stored
+#define PLAYER_NUMBER           $53 ; Where player number will be stored
+
 ;**CUSTOMIZE**
 ; Omit creation of these:
 #define OMIT_Do_LTA
@@ -39,58 +42,61 @@ Conjugator:
 .(
         .al
 
-        #define Choice(name) cmp #CODE_##name: bne +: jsr name: bra DidConj
+        #define Choice(name) \
+        	cmp #CODE_##name: \
+        	bne next##name : \
+       		SET_16_BIT_A() : \
+       		pei (NAME_ADDRESS+0) : \
+       		pei (NAME_ADDRESS+2) : \
+       		jsr GetPlayerNo : \
+       		jsr name : \
+       		bra DidConj : \
+       	      next##name :
 
 ;**CUSTOMIZE**
  #ifndef OMIT_Do_N
-      + Choice(Do_N)
+        Choice(Do_N)
  #endif
  #ifndef OMIT_Do_A
-      + Choice(Do_A)
+        Choice(Do_A)
  #endif
  #ifndef OMIT_Do_LLA
-      + Choice(Do_LLA)
+        Choice(Do_LLA)
  #endif
  #ifndef OMIT_Do_LTA
-      + Choice(Do_LTA)
+        Choice(Do_LTA)
  #endif
  #ifndef OMIT_Do_SSA
-      + Choice(Do_SSA)
+        Choice(Do_SSA)
  #endif
  #ifndef OMIT_Do_KSI
-      + Choice(Do_KSI)
+        Choice(Do_KSI)
  #endif
  #ifndef OMIT_Do_LLE
-      + Choice(Do_LLE)
+        Choice(Do_LLE)
  #endif
  #ifndef OMIT_Do_STA
-      + Choice(Do_STA)
+        Choice(Do_STA)
  #endif
  #ifndef OMIT_Do_TTA
-      + Choice(Do_TTA)
+        Choice(Do_TTA)
  #endif
  #ifndef OMIT_Do_NA
-      + Choice(Do_NA)
+        Choice(Do_NA)
  #endif
  #ifndef OMIT_Do_HUN
-      + Choice(Do_HUN)
+        Choice(Do_HUN)
  #endif
 
-      + ; If it was none of the choices, call the original function.
+        ; If it was none of the choices, call the original function.
         jsr Outc
         bra ConjEnd
 
-DidConj:
-        .al
-        pha
-         lda $31 ; verify once again what was the player name
-         and #$00FF
-	 cmp #$11
-	 bne +
-	  inc $3D ; eat the param
-      + pla
-        inc $31 ; skip next byte = prevent the game displaying the name.
-	
+DidConj:; cleanup the conjugator
+	SET_16_BIT_A()
+	pla : sta NAME_ADDRESS+2
+	pla : sta NAME_ADDRESS+0
+
 ConjEnd:SET_8_BIT_A()
         rtl
 
@@ -125,93 +131,66 @@ OutcHelper:
          rts
 
 
-LoopHelper:
+GetPlayerNo:
     .(
+    	SET_16_BIT_AX()
+    	phx
+    	pha
+    	 lda #0
+    	 SET_8_BIT_A()
+    	 lda #$7E
+    	 sta NAME_ADDRESS+2
+    	 lda [$31]
+    	 cmp #$20 : beq Epoch
+    	 cmp #$1B : bcs PartyMember
+    	 cmp #$11 : beq ParamMember
+    	 sec: sbc #$13
+    	 bra GotMember
+    PartyMember:
+         sec: sbc #$1B
+         tax
+         lda @MEMBER_TABLE,x
+         bra GotMember
+    Epoch:
+         lda #8
+         sta PLAYER_NUMBER
+         SET_16_BIT_A()
+         lda #!EPOCH_NAME_ADDRESS
+         sta NAME_ADDRESS
+         bra Done
+    ParamMember:
+         lda [$3D]
+         inc $3D  ;skip to the next param
+    GotMember:
+    	 sta PLAYER_NUMBER
+    	 SET_16_BIT_AX()
+    	 asl : tax
+    	 lda @CHAR_NAME_ADDRESS_TABLE,x
+    	 sta NAME_ADDRESS
+    Done:
+    	SET_16_BIT_AX()
+   	inc $31  ;skip the param of conjugation
+    	pla
+    	plx
+    	rts
+    .)
+
+LoopHelper:
+   .(
         ; Fetches the X'th letter of the character's name in question.
         ; Does not modify X.
         ; Uses Y.
         ; Returns the letter in A.
         ; Expected to return with A=8-bit, X=16-bit, AH=0
+        ; Input is X=16-bit
         
-        SET_16_BIT_AX()
-        phx
-         ldy #0
-         tya       ; zero the upper 8 bits of A
-         SET_8_BIT_A()
-         
-         lda #$7E
-         sta $0239 ; Save segment now for later use
-         
-         ; Id of the name
-         lda [$31]
-         
-         cmp #$20
-         beq Epoch  ; Is it Epoch? ( = 20 )
-         
-         ; Not Epoch.
-         cmp #$1B
-         bcs Member ; If member? ( >= 1B )
-
-         ; Not a member, just a character name.
-         ; Character names are:
-         ;  11=[member]
-         ;  13=Crono
-         ;  14=Marle
-         ;  15=Lucca
-         ;  16=Robo
-         ;  17=Frog
-         ;  18=Ayla
-         ;  19=Magus
-         
-         ;  1A=[crononick] is not handled here.
-         
-         cmp #$11
-         beq GetMemberNumber
-         
-         sec: sbc #$13
-         bra GetCharName
-
-GetMemberNumber:
-	 lda [$3D]
-
-GetCharName:
-         ;8bit here
-         asl
-         tax
-         
-         SET_16_BIT_A()
-         ; Get the pointer to the name
-         lda @CHAR_NAME_ADDRESS_TABLE,x
-
-GotCharPointer:
-         ;16bit here
-         sta $0237 ; Save offset
-        plx
-        txy
-        ; Get y'th char from the name
-        lda [$37],y
-        and #$00FF
+        SET_8_BIT_A()
+        tdc : xba : txy
+        ; Get x'th char from the name
+        lda [NAME_ADDRESS],y
         ;Letters in character name are always 8-bit.
         ;Character names are 0-terminated.
-        SET_8_BIT_A()
         rts
-
-Member:  ; Yes, member1(1B), member2(1C) or member3(1D)
-         ; 8bit when entry here
-         .as
-         sec: sbc #$1B
-         tax
-         ; Get member number
-         lda @MEMBER_TABLE,x
-         bra GetCharName
-
-Epoch:   ; Yes, Epoch.
-         ; 8bit when entry here
-         SET_16_BIT_A()
-         ; Load Epoch address
-         lda #!EPOCH_NAME_ADDRESS
-         ; Continue with character name handling
-         bra GotCharPointer
    .)
 
 .)

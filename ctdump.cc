@@ -544,7 +544,7 @@ int main(int argc, const char* const* argv)
     
     fprintf(stderr,
         "Chrono Trigger script dumper version "VERSION"\n"
-        "Copyright (C) 1992,2004 Bisqwit (http://iki.fi/bisqwit/)\n");
+        "Copyright (C) 1992,2005 Bisqwit (http://iki.fi/bisqwit/)\n");
     
     if(argc != 2)
     {
