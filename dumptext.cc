@@ -2,10 +2,15 @@
 #include "strload.hh"
 #include "symbols.hh"
 #include "msgdump.hh"
+#include "config.hh"
 
 #include "dumptext.hh"
 
-static ucs4string dict[256];
+namespace
+{
+    ucs4string dict_converted[256];
+    ctstring dict_unconverted[256];
+}
 
 void LoadDict(unsigned offs, unsigned len)
 {
@@ -14,9 +19,13 @@ void LoadDict(unsigned offs, unsigned len)
     for(unsigned a=0; a<strings.size(); ++a)
     {
         const ctstring &s = strings[a];
-        ucs4string tmp;
-        for(unsigned b=0; b<s.size(); ++b)tmp += getucs4(s[b], cset_12pix);
-        dict[a + 0x21] = tmp;
+        
+        dict_unconverted[a + 0x21] = s;
+        
+        ucs4string tmp(s.size(), 0);
+        for(unsigned b=0; b<s.size(); ++b)
+            tmp[b] = getucs4(s[b], cset_12pix);
+        dict_converted[a + 0x21] = tmp;
     }
 }
 
@@ -28,15 +37,10 @@ void DumpDict()
 
     for(unsigned a=0; a<256; ++a)
     {
-        const ucs4string &s = dict[a];
-        
+        const ucs4string &s = dict_converted[a];
         if(s.empty()) continue;
 
-        string line;
-
-        for(unsigned b=0; b<s.size(); ++b)
-            line += conv.putc(s[b]);
-
+        string line = conv.puts(s);
         line += conv.putc(';');
         
         PutBase16Label(a);
@@ -75,6 +79,13 @@ const ucs4string Disp12Char(ctchar k)
     // Override these special ones to get proper formatting:
     switch(k)
     {
+        /*
+            [nl] is a linefeed.
+            [pausenl] is a pause, then linefeed.
+            [cls] is a screen clearing.
+            [pause] is a pause, then clear screen.
+        */
+    
         case 0x05: return AscToWstr("[nl]\n");
         case 0x06: return AscToWstr("[nl]\n   ");
         case 0x07: return AscToWstr("[pausenl]\n");
@@ -98,8 +109,8 @@ const ucs4string Disp12Char(ctchar k)
     // are quite obfuscated in the ROM. We use hardcoded
     // symbol map instead of trying to decipher the ROM.
     
-    if(k < 256 && !dict[k].empty())
-        return dict[k];
+    if(k < 256 && !dict_converted[k].empty())
+        return dict_converted[k];
 
     ucs4 tmp = getucs4(k, cset_12pix);
     if(tmp == ilseq)
@@ -114,7 +125,128 @@ const ucs4string Disp12Char(ctchar k)
     return result;
 }
 
+namespace
+{
+    const ctstring AttemptUnwrapParagraph(const ctstring& para)
+    {
+        const ctchar space  = getchronochar(' ');
+        const ctchar colon  = getchronochar(':');
+        const ctchar period = getchronochar('.');
+        const ctchar que    = getchronochar('?');
+        const ctchar excl   = getchronochar('!');
+        const ctchar lquo   = getchronochar((unsigned char)'«');
+        const ctchar rquo   = getchronochar((unsigned char)'»');
+        
+        ctstring space3(3, space);
+        
+        bool line_firstword = true;
+        bool first_line     = true;
+        bool indented       = para.substr(0, 3) == space3;
+        bool had_delimiter  = false;
+        
+        const Symbols::revtype &symbols = Symbols.GetRev(16);
+        
+        ctstring result = para;
+        for(unsigned a=0; a<result.size(); ++a)
+        {
+            ctchar k = result[a];
+            if(k < 256 && !dict_unconverted[k].empty())
+            {
+                result.replace(a, 1, dict_unconverted[k]);
+                k = result[a];
+            }
+            
+            if(k == 0x05 /* nl */
+            || k == 0x07 /* pausenl */)
+            {
+                /* FIXME: This is not a good check for $6q2o and similar */
+                if(result[a+1] == lquo)
+                {
+                    had_delimiter = true;
+                }
+                
+                if(result.find(space3 + space3, a+1) != result.npos)
+                {
+                    /* Abort wrapping - there's preformatted text following. */
+                    return result;
+                }
+                
+                if(!had_delimiter && k != 0x07 && !line_firstword)
+                {
+                    if(indented && result.substr(a+1, 3) == space3)
+                    {
+                        result.replace(a, 4, 1, space);
+                        continue;
+                    }
+                    if(!indented && result.substr(a+1, 3) != space3)
+                    {
+                        result.replace(a, 1, 1, space);
+                        continue;
+                    }
+                }
+                line_firstword = true;
+                first_line = false;
+                indented = result.substr(a+1, 3) == space3;
+                continue;
+            }
+            
+            had_delimiter =
+                k == colon || k == period
+             || k == que || k == excl
+                 /* FIXME: Not a good check against "..." */
+             || (k >= 0x21 && symbols.find(k) != symbols.end())
+                 /* FIXME: Not a good check against $8SFk and similar */
+             || k == 0x0D || k == 0x0E || k == 0x0F
+             || k == rquo
+                 ;
+            
+            if(k == colon && line_firstword)
+                indented = true;
 
+            if(k == space || k == colon)
+                line_firstword = false;
+        }
+        return result;
+    }
+
+    void AttemptUnwrap(ctstring& line)
+    {
+        const bool Attempt = GetConf("dumper", "attempt_unwrap");
+        if(!Attempt) return;
+        
+        ctstring space3(3, getchronochar(' '));
+        
+        /* Replace all [nl3] with [nl] + 3 spaces and so on */
+        for(unsigned a=0; a<line.size(); ++a)
+        {
+            switch(line[a])
+            {
+                case 0x06: line[a] = 0x05; break;
+                case 0x08: line[a] = 0x07; break;
+                case 0x0A: line[a] = 0x09; break;
+                case 0x0C: line[a] = 0x0B; break;
+                default: continue;
+            }
+            line.insert(a+1, space3);
+            a += space3.size();
+        }
+        
+        ctstring result;
+        unsigned parabegin = 0;
+        for(unsigned a=0; a<=line.size(); ++a)
+        {
+            if(a == line.size()
+            || line[a] == 0x09 /* cls */
+            || line[a] == 0x0B /* pause */)
+            {
+                result += AttemptUnwrapParagraph(line.substr(parabegin, a-parabegin));
+                if(a < line.size()) result += line[a];
+                parabegin = a+1;
+            }
+        }
+        line = result;
+    }
+}
 
 void DumpZStrings(const unsigned offs,
                   const string& what,
@@ -132,8 +264,10 @@ void DumpZStrings(const unsigned offs,
     wstringOut conv(getcharset());    
     for(unsigned a=0; a<strings.size(); ++a)
     {
-        string line;
-        const ctstring &s = strings[a];
+        ucs4string line;
+        ctstring s = strings[a];
+        
+        if(dolf) AttemptUnwrap(s);
 
         for(unsigned b=0; b<s.size(); ++b)
         {
@@ -143,7 +277,7 @@ void DumpZStrings(const unsigned offs,
                 {
                     char Buf[64];
                     sprintf(Buf, "[delay %02X]", (unsigned char)s[++b]);
-                    line += conv.puts(AscToWstr(Buf));
+                    line += AscToWstr(Buf);
                     break;
                 }
                 case 0x12:
@@ -156,18 +290,19 @@ void DumpZStrings(const unsigned offs,
                         strcpy(Buf, "[monster]");
                     else
                         sprintf(Buf, "[12][%02X]", (unsigned char)s[b]);
-                    line += conv.puts(AscToWstr(Buf));
+                    line += AscToWstr(Buf);
                     break;
                 }
                 default:
                 {
-                    line += conv.puts(Disp12Char(s[b]));
+                    line += Disp12Char(s[b]);
                 }
             }
         }
 
         PutBase62Label(offs + a*2);
-        PutContent(line, dolf);
+        
+        PutContent(conv.puts(line), dolf);
     }
     
     EndBlock();

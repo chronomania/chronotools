@@ -119,7 +119,7 @@ struct Image
 };
 
 
-void insertor::LoadAllUserCode()
+void insertor::WriteUserCode()
 {
     if(true) /* load code */
     {

@@ -605,14 +605,18 @@ public:
 
 unsigned Uncompress                 /* Return value: compressed size */
     (const unsigned char *Memory,   /* Pointer to the compressed data */
-     vector<unsigned char>& Target  /* Where to decompress to */
+     vector<unsigned char>& Target, /* Where to decompress to */
+     const unsigned char *End
     )
 {
     Target.clear();
     
+    #define NEED_BYTES(n) do { if(Memory+n > End) return 0; } while(0)
+    
     const unsigned char *Begin = Memory, *Endpos = NULL;
     unsigned endtmp;
     
+    NEED_BYTES(2);
     endtmp = *Memory | (Memory[1] << 8); Memory += 2;
 #ifdef DEBUG_DECOMPRESS
     fprintf(stderr, "  $%03X: endpos %04X\n", Memory-Begin-2, endtmp);
@@ -645,6 +649,7 @@ unsigned Uncompress                 /* Return value: compressed size */
         {
             while(Memory == Endpos)
             {
+                NEED_BYTES(1);
                 counter = *Memory++;
 #ifdef DEBUG_DECOMPRESS
                 fprintf(stderr, "  $%03X: counter %02X\n", Memory-Begin-1, counter);
@@ -652,6 +657,7 @@ unsigned Uncompress                 /* Return value: compressed size */
                 counter &= 0x3F;
                 if(!counter) goto End;
                 
+                NEED_BYTES(2);
                 endtmp = *Memory | (Memory[1] << 8); Memory += 2;
 #ifdef DEBUG_DECOMPRESS
                 fprintf(stderr, "  $%03X: endpos %04X\n", Memory-Begin-2, endtmp);
@@ -660,6 +666,7 @@ unsigned Uncompress                 /* Return value: compressed size */
             }
             /* Fetch instructions */
             
+            NEED_BYTES(1);
             bits = *Memory++;
             if(bits) break;
             
@@ -674,6 +681,7 @@ unsigned Uncompress                 /* Return value: compressed size */
                 Target.size()+8);
 #endif
             
+            NEED_BYTES(8);
             /* Literal 8 bytes */
             for(unsigned n=0; n<8; ++n) Target.push_back(*Memory++);
         }
@@ -686,6 +694,7 @@ unsigned Uncompress                 /* Return value: compressed size */
             {
                 /* Fetch offset and length, copy. */
                 
+                NEED_BYTES(2);
                 unsigned code;
                 code = *Memory | (Memory[1] << 8); Memory += 2;
                 unsigned Length = (code >> OffsetBits) + 3;
@@ -702,6 +711,7 @@ unsigned Uncompress                 /* Return value: compressed size */
             }
             else
             {
+                NEED_BYTES(1);
                 /* Literal 1 byte */
                 unsigned char c = *Memory++;
 #ifdef DEBUG_DECOMPRESS

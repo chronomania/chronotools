@@ -183,6 +183,8 @@ Copypaste from the Makefile:
 # VERSION 1.11.3 is another backup
 # VERSION 1.11.4 is another backup again
 # VERSION 1.11.5 another... big structural changes
+# VERSION 1.11.6 backup copy... this version has bugs
+# VERSION 1.11.7 unwraps the script when dumping, if configured so
 </pre>
 
 Users of previous versions are advised to do the following:

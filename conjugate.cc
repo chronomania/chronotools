@@ -194,7 +194,7 @@ void Conjugatemap::Work(insertor& ins, ctstring &s)
         Work(ins, s, i);
 }
 
-void insertor::GenerateConjugatorCode()
+void insertor::WriteConjugator()
 {
     const Conjugatemap::formlist &forms = Conjugater->GetForms();
     

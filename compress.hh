@@ -11,7 +11,8 @@ using std::vector;
 
 unsigned Uncompress                 /* Return value: compressed size */
     (const unsigned char *Memory,   /* Pointer to the compressed data */
-     vector<unsigned char>& Target  /* Where to decompress to */
+     vector<unsigned char>& Target, /* Where to decompress to */
+     const unsigned char *End = NULL
     );
 
 const vector<unsigned char> Compress /* Return value: compressed data */

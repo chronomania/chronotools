@@ -7,6 +7,7 @@ using namespace std;
 #include "ctcset.hh"
 #include "config.hh"
 #include "symbols.hh"
+#include "rommap.hh"
 #include "rom.hh"
 #include "conjugate.hh"
 #include "typefaces.hh"
@@ -40,7 +41,7 @@ namespace
         //for(unsigned a=0; a<n; ++a) PutC(s[a], fp);
     }
 
-    void GeneratePatch(ROM &ROM, unsigned offset, const char *fn)
+    void GeneratePatch(class ROM &ROM, unsigned offset, const char *fn)
     {
         fprintf(stderr, "Creating %s\n", fn);
         
@@ -106,18 +107,24 @@ namespace
         fwrite("EOF",   1, 3, fp);
         fclose(fp);
     }
-    void GeneratePatches(ROM &ROM)
+    void GeneratePatches(class ROM &ROM)
     {
         const string Name = WstrToAsc(GetConf("general", "gamename"));
         
         /* Set game name */
-        for(unsigned a=0; a<21; ++a)
-            ROM.Write(0xFFC0 + a, a < Name.size() ? Name[a] : ' ');
+        vector<unsigned char> Buf(21, ' ');
+        for(unsigned a=0; a < Buf.size() && a < Name.size(); ++a)
+            Buf[a] = Name[a];
         
-        /* FIXME: should there be a language code at $FFB5? */
+        ROM.AddPatch(Buf, 0xFFC0, "game name");
+        
+        /* Should there be a language code at $FFB5? */
+        /* No - it would affect PAL/NTSC things */
         
         GeneratePatch(ROM, 0,   WstrToAsc(GetConf("patch", "patchfn_nohdr")).c_str());
         GeneratePatch(ROM, 512, WstrToAsc(GetConf("patch", "patchfn_hdr")).c_str());
+        
+        ShowProtMap2();
     }
 }
 
@@ -214,12 +221,14 @@ int main(void)
     ins->ReportFreeSpace();
 
     fprintf(stderr, "--\n");
+    
+    ins->WriteEverything();
+    
+    fprintf(stderr, "--\n");
+    
     fprintf(stderr, "Creating a virtual ROM...\n");
-    ROM ROM(4194304);
-    
-    ins->LoadImages();
-    ins->GenerateCode();
-    
+    class ROM ROM(4194304);
+
     ins->PatchROM(ROM);
 
     fprintf(stderr, "--\n");

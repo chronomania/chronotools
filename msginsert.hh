@@ -9,6 +9,8 @@ void MessageApplyingDictionary();
 void MessageMeasuringScript();
 void MessageReorganizingFonts();
 void MessageLinkingModules(unsigned count);
+void MessageWritingStrings();
+void MessageWritingDict();
 
 void MessageLoadingItem(const string& header);
 void MessageZSection(const string& header);
@@ -26,3 +28,7 @@ void MessageSymbolIgnored(const ucs4string& symbol);
 void MessageTFStartError(const ucs4string& tf);
 void MessageTFEndError(const ucs4string& tf);
 void MessageTooLongText(const ctstring& input, const ctstring& output);
+void MessageModuleWithoutAddress(const string& name);
+void MessageUndefinedSymbol(const string& name);
+void MessageDuplicateDefinition(const string& name, unsigned nmods, unsigned ndefs);
+void MessageUndefinedSymbols(unsigned n);

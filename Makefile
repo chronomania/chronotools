@@ -103,6 +103,7 @@ DEPDIRS = utils/
 # VERSION 1.11.4 is another backup again
 # VERSION 1.11.5 another... big structural changes
 # VERSION 1.11.6 backup copy... this version has bugs
+# VERSION 1.11.7 unwraps the script when dumping, if configured so
 
 #OPTIM=-Os
 # -fshort-enums
@@ -114,7 +115,7 @@ OPTIM=-O3
 
 CXXFLAGS += -I.
 
-VERSION=1.11.6
+VERSION=1.11.7
 ARCHFILES=utils/xray.cc utils/xray.h \
           utils/viewer.c \
           utils/vwftest.cc \
@@ -245,7 +246,7 @@ ctinsert: \
 		space.o writeout.o stringoffs.o \
 		dictionary.o images.o fonts.o typefaces.o \
 		rom.o dataarea.o snescode.o pageptrlist.o \
-		conjugate.o o65.o o65linker.o \
+		conjugate.o o65.o o65linker.o rommap.o \
 		 miscfun.o tgaimage.o extras.o compress.o \
 		 symbols.o logfiles.o settings.o \
 		 config.o confparser.o ctcset.o wstring.o

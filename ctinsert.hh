@@ -26,12 +26,12 @@ public:
     
     void LoadImage(const string &fn, unsigned address);
 
-    void LoadImages();
-    void GenerateCode();
+    void WriteEverything();
     void DictionaryCompress();
 
     unsigned GetFont12width(ctchar chronoch) const;
     
+    void ClearROM(class ROM &ROM) const;
     void PatchROM(class ROM &ROM) const;
 
     void ReportFreeSpace();
@@ -74,11 +74,13 @@ private:
     
     class Conjugatemap *Conjugater;
     
-    void GenerateVWF12code();
-    void GenerateConjugatorCode();
-    
-    void WriteStrings();
+    void WriteImages();
+    void WriteVWF12();
+    void WriteFont8();
+    void WriteConjugator();
+    void WriteUserCode();
     void WriteDictionary();
+    void WriteStrings();
     void WriteFixedStrings();
     void WriteOtherStrings();
     void WriteRelocatedStrings();
@@ -102,9 +104,6 @@ private:
     const class stringoffsmap GetZStringList(unsigned pagenum) const;
 
     unsigned CalculateScriptSize() const;
-
-    void LoadAllUserCode();
-    void LinkAndLocateCode();
 };
 
 #endif

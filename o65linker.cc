@@ -288,7 +288,7 @@ void O65linker::Link()
         Object& o = *objects[a];
         if(o.linkage.type != LinkageWish::LinkHere)
         {
-            fprintf(stderr, "O65 linker: Module %s is still without address\n", o.name.c_str());
+            MessageModuleWithoutAddress(o.name);
             continue;
         }
         
@@ -321,13 +321,12 @@ void O65linker::Link()
             
             if(found == 0 && !defcount)
             {
-                fprintf(stderr, "O65 linker: Symbol '%s' still undefined\n", ext.c_str());
+                MessageUndefinedSymbol(ext);
                 // FIXME: where?
             }
             else if((found+defcount) != 1)
             {
-                fprintf(stderr, "O65 linker: Symbol '%s' defined in %u module(s) and %u global(s)\n",
-                    ext.c_str(), found, defcount);
+                MessageDuplicateDefinition(ext, found, defcount);
             }
             
 /*
@@ -347,7 +346,7 @@ void O65linker::Link()
         }
         if(!o.extlist.empty())
         {
-            fprintf(stderr, "O65 linker: Still %u undefined symbol(s)\n", o.extlist.size());
+            MessageUndefinedSymbols(o.extlist.size());
             // FIXME: where?
         }
         

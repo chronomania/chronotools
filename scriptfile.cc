@@ -39,7 +39,7 @@ void StartBlock(const char* blocktype, const string& reason, unsigned intparam)
     char *Buf = new char[strlen(blocktype) + 64];
     sprintf(Buf, blocktype, intparam);
     
-    bool newlabel = CurLabel != Buf;
+    bool newlabel = true;//CurLabel != Buf;
     bool comment = !CurLabelComment.empty();
     
     if(newlabel)

@@ -138,6 +138,16 @@ void MessageLinkingModules(unsigned count)
     fprintf(stderr, "Linking %u modules... ", count);
     Resume();
 }
+void MessageWritingStrings()
+{
+    fprintf(stderr, "Writing strings... ");
+    Resume();
+}
+void MessageWritingDict()
+{
+    fprintf(stderr, "Writing dictionary... ");
+    Resume();
+}
 
 void MessageLoadingItem(const string& header)
 {
@@ -231,5 +241,34 @@ void MessageTooLongText(const ctstring& input, const ctstring& output)
         "... ",
         DispString(input).c_str(),
         DispString(output).c_str());
+    Resume();
+}
+
+void MessageModuleWithoutAddress(const string& name)
+{
+    Error();
+    fprintf(stderr, "O65 linker: Module %s is still without address\n", name.c_str());
+    Resume();
+}
+
+void MessageUndefinedSymbol(const string& name)
+{
+    Error();
+    fprintf(stderr, "O65 linker: Symbol '%s' still undefined\n", name.c_str());
+    Resume();
+}
+
+void MessageDuplicateDefinition(const string& name, unsigned nmods, unsigned ndefs)
+{
+    Error();
+    fprintf(stderr, "O65 linker: Symbol '%s' defined in %u module(s) and %u global(s)\n",
+        name.c_str(), nmods, ndefs);
+    Resume();
+}
+
+void MessageUndefinedSymbols(unsigned n)
+{
+    Error();
+    fprintf(stderr, "O65 linker: Still %u undefined symbol(s)\n", n);
     Resume();
 }

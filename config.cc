@@ -18,6 +18,8 @@ characterset=\"iso-8859-15\"\n\
 font8fn=\"ct8fn.tga\"\n\
 font12fn=\"ct16fn.tga\"\n\
 log_map=\"ct_map.log\"\n\
+log_ptr=\"ct_ptr.log\"\n\
+attempt_unwrap=true\n\
 [mem]\n\
 log_addrs=\"ct_addr.log\"\n\
 [font]\n\

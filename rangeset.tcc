@@ -59,6 +59,8 @@ template<typename Key>
 typename rangeset<Key>::const_iterator
     rangeset<Key>::find(const Key& v) const
 {
+    /* FIXME: Should use lower_bound, upper_bound or something */
+    
     for(const_iterator a=data.begin(); a!=data.end(); ++a)
         if(a->contains(v)) return a;
     return data.end();

@@ -26,7 +26,6 @@ public:
 
     const std::vector<unsigned char> GetContent() const;
     
-    // FIXME: This function is not 100% certainly working correctly
     const std::vector<unsigned char> GetContent(unsigned begin, unsigned size) const;
 };
 

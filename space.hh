@@ -39,6 +39,23 @@ public:
     
     void VerboseDump() const;
     
+    // Uses segment-relative addresses (16-bit)
+    void Add(unsigned page, unsigned begin, unsigned length);
+    void Del(unsigned page, unsigned begin, unsigned length);
+    
+    // Uses absolute addresses (24-bit) (no segment wrapping!!)
+    void Add(unsigned longaddr, unsigned length);
+    void Del(unsigned longaddr, unsigned length);
+    
+    void OrganizeO65linker(class O65linker& objects);
+    
+    const std::set<unsigned> GetPageList() const;
+    const freespaceset& GetList(unsigned pagenum) const;
+
+    /* These don't need to be private, but they are
+     * now to ensure Chronotools doesn't use them.
+     */
+private:
     // Returns segment-relative address (16-bit)
     unsigned Find(unsigned page, unsigned length);
     // Returns abbsolute address (24-bit)
@@ -47,17 +64,6 @@ public:
     unsigned Size() const;
     unsigned Size(unsigned page) const;
     unsigned GetFragmentation(unsigned page) const;
-    
-    const std::set<unsigned> GetPageList() const;
-    const freespaceset& GetList(unsigned pagenum) const;
-    
-    // Uses segment-relative addresses (16-bit)
-    void Add(unsigned page, unsigned begin, unsigned length);
-    void Del(unsigned page, unsigned begin, unsigned length);
-    
-    // Uses absolute addresses (24-bit) (no segment wrapping!!)
-    void Add(unsigned longaddr, unsigned length);
-    void Del(unsigned longaddr, unsigned length);
     
     // Uses segment-relative addresses (16-bit)
     bool Organize(std::vector<freespacerec> &blocks, unsigned pagenum);
@@ -70,8 +76,6 @@ public:
     // Uses segment-relative addresses (16-bit), sets page
     bool OrganizeToAnySamePage(std::vector<freespacerec> &blocks, unsigned &page);
     // Return value: errors-flag
-    
-    void OrganizeO65linker(class O65linker& objects);
     
     void Compact();
 };

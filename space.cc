@@ -104,6 +104,7 @@ void freespacemap::DumpPageMap(unsigned pagenum) const
     }
 }
 
+#include "rommap.hh"
 void freespacemap::VerboseDump() const
 {
     FILE *log = GetLogFile("mem", "log_addrs");
@@ -119,9 +120,9 @@ void freespacemap::VerboseDump() const
             unsigned recpos = reci->lower;
             unsigned reclen = reci->upper - recpos;
             
-            unsigned pos = (page << 16) | recpos | 0xC00000;
-            fprintf(log, "$%06X-%06X: Free %7u bytes: %s\n",
-                pos, pos+reclen-1, reclen, "FREE");
+            unsigned pos = (page << 16) | recpos;
+            
+            MarkFree(pos & 0x3FFFFF, reclen, "free");
         }
     }
 }
@@ -228,6 +229,8 @@ void freespacemap::Del(unsigned longaddr, unsigned length)
 
 void freespacemap::Compact()
 {
+    for(iterator i = begin(); i != end(); ++i)
+        i->second.compact();
 }
 
 bool freespacemap::Organize(vector<freespacerec> &blocks, unsigned pagenum)
@@ -492,6 +495,8 @@ unsigned freespacemap::FindFromAnyPage(unsigned length)
 
 void freespacemap::OrganizeO65linker(O65linker& objects)
 {
+    Compact();
+    
     vector<unsigned> sizes = objects.GetSizeList();
     vector<unsigned> addrs = objects.GetAddrList();
     

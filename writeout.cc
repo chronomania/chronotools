@@ -8,29 +8,34 @@
 #include "logfiles.hh"
 #include "rangeset.hh"
 #include "pageptrlist.hh"
+#include "msginsert.hh"
+
+void insertor::ClearROM(ROM &ROM) const
+{
+    const bool ClearSpace = GetConf("patch", "clear_free_space");
+    if(!ClearSpace) return;
+
+    fprintf(stderr, "Initializing all free space to zero...\n");
+
+    set<unsigned> pages = freespace.GetPageList();
+    for(set<unsigned>::const_iterator i = pages.begin(); i != pages.end(); ++i)
+    {
+        freespaceset list = freespace.GetList(*i);
+        
+        for(freespaceset::const_iterator j = list.begin(); j != list.end(); ++j)
+        {
+            const unsigned recpos = j->lower;
+            const unsigned reclen = j->upper - recpos;
+            unsigned offs = (*i << 16) | recpos;
+            
+            ROM.SetZero(offs, reclen, "clear free space");
+        }
+    }
+}
 
 void insertor::PatchROM(ROM &ROM) const
 {
-    const bool ClearSpace = GetConf("patch", "clear_free_space");
-    
-    if(ClearSpace)
-    {
-        fprintf(stderr, "Initializing all free space to zero...\n");
-
-        set<unsigned> pages = freespace.GetPageList();
-        for(set<unsigned>::const_iterator i = pages.begin(); i != pages.end(); ++i)
-        {
-            freespaceset list = freespace.GetList(*i);
-            
-            for(freespaceset::const_iterator j = list.begin(); j != list.end(); ++j)
-            {
-                const unsigned recpos = j->lower;
-                const unsigned reclen = j->upper - recpos;
-                unsigned offs = (*i << 16) | recpos;
-                for(unsigned a=0; a < reclen; ++a) ROM.Write(offs+a, 0);
-            }
-        }
-    }
+    ClearROM(ROM);
     
     fprintf(stderr, "Inhabitating the ROM image...\n");
     
@@ -48,54 +53,22 @@ void insertor::PatchROM(ROM &ROM) const
     freespace.VerboseDump();
 }
 
-void insertor::GenerateCode()
+void insertor::WriteEverything()
 {
-    WriteFixedStrings();
-    WriteOtherStrings();
-    WriteRelocatedStrings();
-
-    GenerateVWF12code();
-    GenerateConjugatorCode();
-    
-    LoadAllUserCode();
-    
-    objects.AddLump(Font8.GetTiles(), GetConst(TILETAB_8_ADDRESS), "8x8 tiles");
-    
-    // The dictionary fits almost anywhere.
+    // These don't have to be in any particular order.
+    WriteImages();
+    WriteStrings();
+    WriteFont8();
+    WriteVWF12();
+    WriteConjugator();
+    WriteUserCode();
     WriteDictionary();
-
-    // Do this after all code has been generated.
-    LinkAndLocateCode();
     
     const bool UseThinNumbers = GetConf("font", "use_thin_numbers");
     
     // Patch the name entry function
     //  FIXME: Make this read the pointers from "strings" instead
     
-#if 0
-    // - disabled. Now requires the entry HXVk instead of HXBj and $HXBl.
-    // $HXVk
-    if(ROM.touched(0x3FC4D3))
-    {
-        // Write the address of name input strings.
-        ROM.Write(0x02E553, ROM[0x3FC4D3]);
-        ROM.Write(0x02E554, ROM[0x3FC4D4]);
-        ROM.Write(0x02E555, 0xFF);
-    }
-    if(ROM.touched(0x3FC4D5))
-    {
-        ROM.Write(0x02E331, ROM[0x3FC4D5]);
-        ROM.Write(0x02E332, ROM[0x3FC4D6]);
-        ROM.Write(0x02E333, 0xFF);
-    }
-#endif
-
-    // Testataan moottoria
-    // ROM.Write(0x0058DE, 0xA9); //lda A, $08
-    // ROM.Write(0x0058DF, 0x07);
-    // ROM.Write(0x0058E0, 0xEA); //nop
-    // ROM.Write(0x0058E1, 0xEA);
-
     if(UseThinNumbers)
     {
         PlaceByte(0x73, 0x02F21B, "thin '0'");
@@ -105,49 +78,23 @@ void insertor::GenerateCode()
         //PlaceByte(0xD4, 0x02F21B, "thick '0'");
     }
 
-    objects.SortByAddress();
-}
-
-void insertor::LinkAndLocateCode()
-{
-    /* Organize the code blobs */    
+    /* Everything has been written. */
+    
+    /* Now organize them. */
     freespace.OrganizeO65linker(objects);
     
-    /* Link the code blobs. */
+    /* Resolve all references. */
     objects.Link();
-}
-
-void insertor::WriteDictionary()
-{
-    fprintf(stderr, "Writing dictionary...\n");
-
-    PagePtrList tmp;
-    
-    for(unsigned a=0; a<dict.size(); ++a)
-    {
-        const string s = GetString(dict[a]);
-        vector<unsigned char> Buf(s.size() + 1);
-        std::copy(s.begin(), s.begin()+s.size(), Buf.begin()+1);
-        Buf[0] = s.size();
-        
-        tmp.AddItem(Buf, a*2);
-    }
-    
-    tmp.Create(*this, "dict", "DICT_TABLE");
-    
-    objects.AddReference("DICT_TABLE", OffsPtrFrom(GetConst(DICT_OFFSET)));
-    objects.AddReference("DICT_TABLE", PagePtrFrom(GetConst(DICT_SEGMENT1)));
-    objects.AddReference("DICT_TABLE", PagePtrFrom(GetConst(DICT_SEGMENT2)));
 }
 
 void insertor::WriteFixedStrings()
 {
-    fprintf(stderr, "Writing fixed-length strings...\n");
-    
     for(stringlist::const_iterator i=strings.begin(); i!=strings.end(); ++i)
     {
         if(i->type == stringdata::fixed)
         {
+            MessageWorking();
+            
             unsigned pos = i->address;
             const ctstring &s = i->str;
             
@@ -180,15 +127,24 @@ void insertor::WriteFixedStrings()
 
 void insertor::WriteOtherStrings()
 {
-    fprintf(stderr, "Writing other strings...\n");
     map<unsigned, PagePtrList> tmp;
     for(stringlist::const_iterator i=strings.begin(); i!=strings.end(); ++i)
     {
         if(i->type == stringdata::zptr8
         || i->type == stringdata::zptr12)
         {
+            MessageWorking();
+            
             const string s = GetString(i->str);
             vector<unsigned char> data(s.c_str(), s.c_str() + s.size() + 1);
+            
+#if 0
+            fprintf(stderr, "String: '%s'", DispString(i->str).c_str());
+            fprintf(stderr, "\n");
+            for(unsigned a=0; a<data.size(); ++a)
+                fprintf(stderr, " %02X", data[a]);
+            fprintf(stderr, "\n");
+#endif
             
             tmp[i->address >> 16].AddItem(data, i->address & 0xFFFF);
         }
@@ -197,19 +153,50 @@ void insertor::WriteOtherStrings()
     for(map<unsigned, PagePtrList>::iterator
         i = tmp.begin(); i != tmp.end(); ++i)
     {
-        fprintf(stderr, "Organizing page %02X...\n", i->first);
+        char Buf[64]; sprintf(Buf, "page $%02X", i->first);
+        MessageLoadingItem(Buf);
+        
+        MessageWorking();
+        
         i->second.Create(*this, i->first, "zstring");
     }
+}
+
+void insertor::WriteDictionary()
+{
+    MessageWritingDict();
+
+    PagePtrList tmp;
+    
+    for(unsigned a=0; a<dict.size(); ++a)
+    {
+        const string s = GetString(dict[a]);
+        vector<unsigned char> Buf(s.size() + 1);
+        std::copy(s.begin(), s.begin()+s.size(), Buf.begin()+1);
+        Buf[0] = s.size();
+        
+        tmp.AddItem(Buf, a*2);
+    }
+    
+    tmp.Create(*this, "dict", "DICT_TABLE");
+    
+    objects.AddReference("DICT_TABLE", OffsPtrFrom(GetConst(DICT_OFFSET)));
+    objects.AddReference("DICT_TABLE", PagePtrFrom(GetConst(DICT_SEGMENT1)));
+    objects.AddReference("DICT_TABLE", PagePtrFrom(GetConst(DICT_SEGMENT2)));
+    
+    MessageDone();
 }
 
 void insertor::WriteStringTable(stringdata::strtype type,
                                 const string& tablename,
                                 const string& what)
 {
+    MessageLoadingItem(what);
     PagePtrList tmp;
     unsigned index = 0;
     for(stringlist::const_iterator i=strings.begin(); i!=strings.end(); ++i)
     {
+        MessageWorking();
         if(i->type == type)
         {
             const string s = GetString(i->str);
@@ -228,7 +215,21 @@ void insertor::WriteRelocatedStrings()
     WriteStringTable(stringdata::monster, "MONSTERTABLE", "Monsters");
 }
 
-void insertor::GenerateVWF12code()
+void insertor::WriteStrings()
+{
+    MessageWritingStrings();
+    WriteFixedStrings();
+    WriteOtherStrings();
+    WriteRelocatedStrings();
+    MessageDone();
+}
+
+void insertor::WriteFont8()
+{
+    objects.AddLump(Font8.GetTiles(), GetConst(TILETAB_8_ADDRESS), "8x8 tiles");
+}
+
+void insertor::WriteVWF12()
 {
     const unsigned font_begin = get_font_begin();
     const unsigned tilecount  = Font12.GetCount();

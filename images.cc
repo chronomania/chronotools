@@ -56,7 +56,7 @@ void LoadImageData
     }
 }
 
-void insertor::LoadImages()
+void insertor::WriteImages()
 {
     MessageLoadingImages();
     

@@ -7,9 +7,11 @@ class PagePtrList
 {
 public:
     void AddItem(const std::vector<unsigned char>&, unsigned short ptraddr);
+#if 0
     void AddItem(const std::string&, unsigned short ptraddr);
-    
-    void Create(class insertor& ins, unsigned char page,
+#endif
+    void Create(class insertor& ins,
+                int page,
                 const std::string& what,
                 const std::string& tablename = "");
 
@@ -18,7 +20,6 @@ public:
                 const std::string& tablename = "");
 
 private:
-    void Sort();
     void Combine();
 
     struct Reference

@@ -1,6 +1,7 @@
 #include "rom.hh"
 #include "config.hh"
 #include "logfiles.hh"
+#include "rommap.hh"
 
 // Far call takes four bytes:
 //     22 63 EA C0 = JSL $C0:$EA63
@@ -40,15 +41,20 @@ void ROM::AddPatch(const vector<unsigned char> &code, unsigned addr, const strin
     
     FILE *log = GetLogFile("mem", "log_addrs");
     
-    if(log)
-        fprintf(log, "$%06X-%06X: Write %6u bytes: %s\n",
-            0xC00000 | addr,
-            0xC00000 | (addr + code.size() - 1),
-            code.size(),
-            what.c_str());
-
     unsigned rompos = addr & 0x3FFFFF;
     
     for(unsigned a=0; a<code.size(); ++a)
         Write(rompos++, code[a]);
+
+    MarkProt(addr & 0x3FFFFF, code.size(), what);
 }
+
+void ROM::SetZero(unsigned addr, unsigned len, const std::string& why)
+{
+    for(unsigned a=0; a < len; ++a) Write(addr + a, 0);
+}
+
+
+void PutAscii(const string&) {}
+void StartBlock(const char*, const string&, unsigned) {}
+void EndBlock() {}

@@ -36,13 +36,13 @@ void Symbols::Load()
     // (See $C2:5811 in assembler code)
 
     // 0x04 seems to do nothing
-    defbsym(nl,          0x05)
+    defbsym(nl,          0x05) // linefeed
     defbsym(nl3,         0x06)
-    defbsym(pausenl,     0x07)
+    defbsym(pausenl,     0x07) // pause, then linefeed
     defbsym(pausenl3,    0x08)
-    defbsym(cls,         0x09)
+    defbsym(cls,         0x09) // clear screen
     defbsym(cls3,        0x0A)
-    defbsym(pause,       0x0B)
+    defbsym(pause,       0x0B) // pause, then clear screen
     defbsym(pause3,      0x0C)
     defbsym(num8,        0x0D)
     defbsym(num16,       0x0E)

@@ -16,6 +16,8 @@ public:
 
     void clear() { data.clear(); }
     
+    bool empty() const { return data.empty(); }
+    
     void erase(const Key& lo, const Key& up);
     void set(const Key& lo, const Key& up, const Value& v);
     const_iterator find(const Key& lo) const;

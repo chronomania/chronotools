@@ -3,6 +3,7 @@
 #include <map>
 
 #include "pageptrlist.hh"
+#include "msginsert.hh"
 #include "ctinsert.hh"
 
 using namespace std;
@@ -17,12 +18,15 @@ bool PagePtrList::Data::operator< (const Data& b) const
 
 void PagePtrList::Data::Combine(Data& b, unsigned offset)
 {
-    for(unsigned a=0; a<b.refs.size(); ++a)
-    {
-        b.refs[a].offset += offset;
-        refs.push_back(b.refs[a]);
-    }
-    b.data.clear();
+    // "b" is better, but it is supposed to leave as empty.
+    
+    data.clear();
+    data.swap(b.data);
+    
+    for(unsigned a=0; a<refs.size(); ++a)
+        refs[a].offset += offset;
+    
+    refs.insert(refs.end(), b.refs.begin(), b.refs.end());
     b.refs.clear();
 }
 
@@ -32,23 +36,24 @@ void PagePtrList::AddItem(const vector<unsigned char>& d,
     items.push_back(Data(d, ptraddr));
 }
 
+#if 0
 void PagePtrList::AddItem(const string& s,
                           unsigned short ptraddr)
 {
     vector<unsigned char> d(s.data(), s.data() + s.size());
     items.push_back(Data(d, ptraddr));
 }
-
-void PagePtrList::Sort()
-{
-    sort(items.begin(), items.end());
-}
+#endif
 
 void PagePtrList::Combine()
 {
+    sort(items.begin(), items.end());
+    
     unsigned n = 0, c = 0, t = 0;
-    for(unsigned a=0; a<items.size(); ++a)
+    for(unsigned a=items.size(); a-- > 0; )
     {
+        MessageWorking();
+        
         t += items[a].data.size();
         for(unsigned b=a; ++b != items.size(); )
         {
@@ -72,7 +77,7 @@ void PagePtrList::Combine()
                             a, b, B.size(), pos);
                     */
                     
-                    items[b].Combine(items[a], pos);
+                    items[a].Combine(items[b], pos);
                     
                     goto Done;
                 }
@@ -81,30 +86,47 @@ void PagePtrList::Combine()
     Done: ;
     }
     
+    /*
     fprintf(stderr, "%u/%u strings combined, saving %u/%u bytes\n",
         n, items.size(), c, t);
+    */
 }
 
 namespace
 {
-    static unsigned refcounter = 0;
+    const string CreateRefName()
+    {
+        static unsigned refcounter = 0;
+        char Buf[64];
+        std::sprintf(Buf, "<ref%u>", ++refcounter);
+        return Buf;
+    }
 }
 
 void PagePtrList::Create(insertor& ins,
-                         unsigned char page,
+                         int page,
                          const std::string& what,
                          const std::string& tablename)
 {
-    Sort();
     Combine();
     
     O65linker::LinkageWish wish;
-    wish.SetLinkagePage(page);
+    if(page >= 0)
+    {
+        wish.SetLinkagePage(page);
+    }
+    else
+    {
+        wish.SetLinkageGroup(ins.objects.CreateLinkageGroup());
+    }
     
     map<unsigned short, string> NamedRefs;
     
+    const string objname = what + " data";
     for(unsigned a=0; a<items.size(); ++a)
     {
+        MessageWorking();
+        
         const Data& d = items[a];
         if(d.data.empty()) continue;
         
@@ -113,51 +135,54 @@ void PagePtrList::Create(insertor& ins,
         
         for(unsigned b=0; b<d.refs.size(); ++b)
         {
-            char Buf[64];
-            std::sprintf(Buf, "<ref%u>", ++refcounter);
-        
-            string name = Buf;
+            const string name = CreateRefName();
             tmp.DeclareCodeGlobal(name, d.refs[b].offset);
             NamedRefs[d.refs[b].ptraddr] = name;
         }
         
         //char Buf[64];
         //sprintf(Buf, " #%u", a);
-        ins.objects.AddObject(tmp, what, wish);
+        ins.objects.AddObject(tmp, objname, wish);
     }
     
     for(map<unsigned short, string>::const_iterator
-        i = NamedRefs.begin(); i != NamedRefs.end(); ++i)
+        i = NamedRefs.begin(); i != NamedRefs.end(); )
     {
+        MessageWorking();
+        
         //fprintf(stderr, "Now: %u\t%s\n", i->first, i->second.c_str());
 
-        unsigned address = i->first | (page << 16) | 0xC00000;
         O65 tmp;
         
         unsigned first = i->first, prev = first;
         
         map<unsigned short, string>::const_iterator last;
         
-        for(last=i, prev=first; ++last != NamedRefs.end(); prev = last->first)
+        unsigned n=1;
+        for(last=i, prev=first; ++last != NamedRefs.end(); ++n, prev = last->first)
         {
             if(last->first != prev+2) break;
         }
 
-        unsigned n = (prev - first + 1);
-        tmp.ResizeCode(2 * n);
+        tmp.ResizeCode(n * 2);
         
-        for(last=i, prev=first; ++last != NamedRefs.end(); prev = last->first)
+        for(unsigned a=0; a<n; ++a)
         {
-            if(last->first != prev+2) break;
-            tmp.DeclareWordRelocation(i->second, prev - first);
-            i = last;
+            tmp.DeclareWordRelocation(i->second, a*2);
+            ++i;
         }
         
-        wish.SetAddress(address);
-        tmp.LocateCode(address);
-        if(!tablename.empty()) tmp.DeclareCodeGlobal(tablename, address);
-        ins.objects.AddObject(tmp, what+" table", wish);
-        //fprintf(stderr, "Wrote %u pointers...\n", n);
+        if(!tablename.empty()) tmp.DeclareCodeGlobal(tablename, 0);
+        if(page >= 0)
+        {
+            unsigned address = first | (page << 16) | 0xC00000;
+            wish.SetAddress(address);
+            tmp.LocateCode(address);
+        }
+        ins.objects.AddObject(tmp,
+            tablename.empty()
+                ? what+" table"
+                : tablename, wish);
     }
 }
 
@@ -165,72 +190,7 @@ void PagePtrList::Create(insertor& ins,
                          const std::string& what,
                          const std::string& tablename)
 {
-    Sort();
-    Combine();
-    
-    O65linker::LinkageWish wish;
-    wish.SetLinkageGroup(ins.objects.CreateLinkageGroup());
-    
-    map<unsigned short, string> NamedRefs;
-    
-    for(unsigned a=0; a<items.size(); ++a)
-    {
-        const Data& d = items[a];
-        if(d.data.empty()) continue;
-        
-        O65 tmp;
-        tmp.LoadCodeFrom(d.data);
-        
-        for(unsigned b=0; b<d.refs.size(); ++b)
-        {
-            char Buf[64];
-            std::sprintf(Buf, "<ref%u>", ++refcounter);
-        
-            string name = Buf;
-            tmp.DeclareCodeGlobal(name, d.refs[b].offset);
-            
-            NamedRefs[d.refs[b].ptraddr] = name;
-        }
-        
-        ins.objects.AddObject(tmp, what, wish);
-    }
-
-/*    
-    fprintf(stderr, "Named refs:\n");
-    for(map<unsigned short, string>::const_iterator
-        i = NamedRefs.begin(); i != NamedRefs.end(); ++i)
-    {
-        fprintf(stderr, "%u\t%s\n", i->first, i->second.c_str());
-    }
-*/
-    
-    for(map<unsigned short, string>::const_iterator
-        i = NamedRefs.begin(); i != NamedRefs.end(); ++i)
-    {
-        O65 tmp;
-        
-        unsigned first = i->first, prev = first;
-        
-        map<unsigned short, string>::const_iterator last;
-        
-        for(last=i, prev=first; ++last != NamedRefs.end(); prev = last->first)
-        {
-            if(last->first != prev+2) break;
-        }
-
-        unsigned n = (prev - first + 1);
-        tmp.ResizeCode(2 * n);
-        
-        for(last=i, prev=first; ++last != NamedRefs.end(); prev = last->first)
-        {
-            if(last->first != prev+2) break;
-            tmp.DeclareWordRelocation(i->second, prev - first);
-            i = last;
-        }
-        
-        if(!tablename.empty()) tmp.DeclareCodeGlobal(tablename, 0);
-        ins.objects.AddObject(tmp, what+" table", wish);
-    }
+    Create(ins, -1, what, tablename);
 }
 
 #if 0
@@ -258,8 +218,6 @@ int main(void)
     tmp.AddItem("kis",   12);
     tmp.AddItem("koira", 16);
     tmp.AddItem("sa",    14);
-    
-    tmp.Sort();
     
     Dump(tmp);
     tmp.Combine();

@@ -62,6 +62,8 @@ static void Dump12Font()
                      + (ROM[GetConst(VWF12_TAB2_OFFSET)+1] << 8)
                      + (FontSeg << 16);
     
+#if 0
+    /* Nobody understands this message anyway. */
     if(FontPtr2 != FontPtr1 + 0x1800)
     {
         fprintf(stderr,
@@ -69,6 +71,7 @@ static void Dump12Font()
             "The high part of 12pix font isn't immediately after the low part:\n"
             "%06X != %06X+1800\n", FontPtr2, FontPtr1);
     }
+#endif
     
     const string what = "12pix font";
     
@@ -195,6 +198,7 @@ namespace
         DumpGFX_4bit(0x3FDA64,  6, 2, "elemental symbol 4", "elem4.tga", pal); //fire
     }
 
+#if 0
     {   static const unsigned pal[16] =
     {
     0x8B8B8B,0xD5D5D5,0xB4BDC5,
@@ -259,6 +263,7 @@ namespace
     };
 
         DumpGFX_4bit(0x3FEB88,  6, 6, "character 8 portrait (b/w)", "face8.tga");
+#endif
     }
 
     void DumpText()
@@ -466,7 +471,7 @@ int main(int argc, const char* const* argv)
     BlockComment(";dictionary, used for compression. don't try to translate it.\n");
     DumpDict();
     DumpFonts();
-    //DumpGFX();
+    DumpGFX();
     DumpText();
     
     FindEndSpaces();

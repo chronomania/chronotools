@@ -9,7 +9,8 @@ using std::string;
 
 extern unsigned char *ROM;
 
-void ShowProtMap();
+void ShowProtMap();  // from dumper's view
+void ShowProtMap2(); // from insertor's view
 
 void MarkFree(unsigned begin, unsigned length, const string& reason="");
 void MarkProt(unsigned begin, unsigned length, const string& reason="");

@@ -95,8 +95,16 @@ void DumpGFX_Compressed_4bit(unsigned addr,
 {
     vector<unsigned char> Target;
     
-    unsigned origsize = Uncompress(ROM + (addr&0x3FFFFF), Target);
+    unsigned origsize = Uncompress(ROM + (addr&0x3FFFFF), Target,
+                                   ROM + 0x400000);
     unsigned size = Target.size();
+    
+    if(!origsize)
+    {
+        fprintf(stderr, "Can't create %s (%s) - broken\n",
+            fn.c_str(), what.c_str());
+        return;
+    }
     
 #if 0
     fprintf(stderr, "Created %s: Uncompressed %u bytes from %u bytes...\n",
