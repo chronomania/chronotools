@@ -236,7 +236,7 @@ static void DumpScript(const vector<string> &tab, bool dolf)
     {
         const string &s = tab[a];
         printf("$%u", a);
-        if(dolf)putchar('\n');else printf(":\t");
+        if(dolf)putchar('\n');else printf(":");
 
         for(unsigned b=0; b<s.size(); ++b)
         {
@@ -254,7 +254,7 @@ static void DumpTable(const vector<string> &tab, void (*Disp)(unsigned char))
     for(unsigned a=0; a<tab.size(); ++a)
     {
         const string &s = tab[a];
-        printf("$%u:\t", a);
+        printf("$%u:", a);
         for(unsigned b=0; b<s.size(); ++b)
             Disp(s[b]);
         printf("\n");
@@ -382,7 +382,7 @@ static void ListSpaces(void)
                     printf("*%02X:S ;Free space in segment $%02X:\n", page, page);
                     freehere = true;
                 }
-                printf("$%u:\t%04X;%04X\n", p-freebegin, freebegin, p);
+                printf("$%u:%04X;%04X\n", p-freebegin, freebegin, p);
             }
         }
         if(freehere)

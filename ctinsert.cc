@@ -16,10 +16,11 @@ using namespace std;
 #include "ctcset.hh"
 #include "miscfun.hh"
 
-static const bool rebuild_dict         = !false;
-static const bool sort_dictionary      = false;
-static const unsigned MaxDictWordLen   = 32;
-static const unsigned MaxDictRecursLen = 3;
+static const bool rebuild_dict             = !false;
+static const bool sort_dictionary          = false;
+static const unsigned MaxDictWordLen       = 20;
+static const unsigned MaxDictRecursLen     = 3;
+static const unsigned DictMaxSpacesPerWord = 4;
 
 class insertor
 {
@@ -27,12 +28,22 @@ class insertor
 
     map<string, char> symbols2, symbols8, symbols16;
     
-    typedef struct
-    {
+    class stringdata
+    {public:
         string str;
         enum { zptr8, zptr16, fixed } type;
         unsigned width; // used if type==fixed;
-    } stringdata;
+    };
+    class substringrec
+    {
+        unsigned count;
+        double importance;
+    public:
+        substringrec() : count(0), importance(0) {}
+        void mark(double imp) { ++count; importance += 1.0/imp; }
+        unsigned getcount() const { return count; }
+        double getimportance() const { return 1.0/(importance / count);}
+    };
 
     typedef pair<unsigned/*pos*/,unsigned/*len*/> freespacerec;
     typedef set<freespacerec> freespaceset;
@@ -214,14 +225,14 @@ void insertor::WriteROM()
         {
     Flush16:;
             // terminology: potilas=needle, tohtori=haystack
-
-            multimap<unsigned/*potilas*/, unsigned/*tohtori*/> belong;
+            map<unsigned/*potilas*/, unsigned/*tohtori*/> neederlist;
             
             fprintf(stderr, "Writing %u strings...\n", pagestrings.size());
             for(unsigned potilasnum=0; potilasnum<pagestrings.size(); ++potilasnum)
             {
                 const string &potilas = pagestrings[potilasnum];
                 unsigned longest=0, tohtoribest=0;
+                bool isneeder = false;
                 for(unsigned tohtorinum=potilasnum+1;
                              tohtorinum<pagestrings.size();
                              ++tohtorinum)
@@ -236,9 +247,10 @@ void insertor::WriteROM()
                         {
                             longest = extralen;
                             tohtoribest = tohtorinum;
+                            isneeder = true;
                         }
                 }
-                if(longest)
+                if(isneeder)
                 {
                     /*
                     fprintf(stderr, "String %u(",potilasnum);
@@ -247,7 +259,7 @@ void insertor::WriteROM()
                     fprintf(stderr, DispString(pagestrings[tohtoribest]).c_str());
                     fprintf(stderr, ")\n");
                     */
-                    belong.insert(pair<unsigned,unsigned> (potilasnum, tohtoribest));
+                    neederlist[potilasnum] = tohtoribest;
                 }
             }
             /* Nyt noissa mapeissa on listattu, kuka
@@ -266,9 +278,9 @@ void insertor::WriteROM()
                 for(unsigned stringnum=0; stringnum<pagestrings.size(); ++stringnum)
                 {
                     if(done.find(stringnum) != done.end())continue;
-                    multimap<unsigned,unsigned>::const_iterator i = belong.find(stringnum);
+                    map<unsigned,unsigned>::const_iterator i = neederlist.find(stringnum);
                     // If this string does not require any other string
-                    if(i == belong.end())
+                    if(i == neederlist.end())
                     {
                         pageoffs[stringnum] = WriteZPtr(ROM, Touched, pageoffs[stringnum], pagestrings[stringnum]);
                         done.insert(stringnum);
@@ -296,6 +308,7 @@ void insertor::WriteROM()
         
         string s = i->second.str;
         
+        #if 0
         if(i->second.type == stringdata::zptr16)
         {
             unsigned char replacement[2];
@@ -310,6 +323,7 @@ void insertor::WriteROM()
                 if(replacement[0] == 0xA0)replacement[0] = 0xF1;
             }
         }
+        #endif
         
         pagestrings.push_back(s);
         pageoffs.push_back(i->first);
@@ -404,19 +418,25 @@ static bool dictsorter(const string &a, const string &b)
 /* Build the dictionary. */
 void insertor::MakeDictionary()
 {
-    list<string> stringlist;
+    map<unsigned, unsigned> spaceperpage;
     
-    map<unsigned, stringdata>::const_iterator i;
-    for(i=strings.begin(); i!=strings.end(); ++i)
+    for(freespacemap::const_iterator i=freespace.begin(); i!=freespace.end(); ++i)
     {
-        if(i->second.type != stringdata::zptr16)
-            continue;
-        stringlist.push_back(i->second.str);
+        unsigned thisfree = 0, hunkcount = 0;
+        for(freespaceset::const_iterator j=i->second.begin(); j!=i->second.end(); ++j)
+        {
+            thisfree += j->second;
+            ++hunkcount;
+        }
+        spaceperpage[i->first] = thisfree;
     }
     
     unsigned origsize=0, dictbytes=0;
-    for(list<string>::iterator l = stringlist.begin(); l != stringlist.end(); ++l)
-        origsize += l->size();
+    for(stringmap::const_iterator i=strings.begin(); i!=strings.end(); ++i)
+    {
+        if(i->second.type != stringdata::zptr16)continue;        
+        origsize += i->second.str.size();
+    }
     
     if(rebuild_dict)
     {
@@ -428,92 +448,147 @@ void insertor::MakeDictionary()
             "Rebuilding the dictionary. This will take probably a long time!\n"
             "You should take a lunch break or something now.\n"
         );
-        for(unsigned substrcount=0; substrcount<dictsize; ++substrcount)
+        for(unsigned dictcount=0; dictcount<dictsize; ++dictcount)
         {
-            map<string, unsigned> substringtable;
-            
-            fprintf(stderr, "Finding substrings... %u/%u", substrcount+1, dictsize);
+            fprintf(stderr, "Finding substrings... %u/%u", dictcount+1, dictsize);
 
             unsigned tickpos=0;
-            
-            /* For each string */
-            list<string>::iterator l;
-            unsigned stringcounter=0;
-            for(l = stringlist.begin(); l != stringlist.end(); ++l, ++stringcounter)
+
+			/* Calculate the ROM usage for the strings per page */
+            map<unsigned, unsigned> usageperpage;
+
+            /* Note: This code is really copypaste from WriteROM() */
+            vector<string> pagestrings;
+            unsigned prevpage = 0xFFFF;
+            for(stringmap::const_iterator i=strings.begin(); ; ++i)
             {
+                if(i == strings.end()) goto Flush16;
+                
+                if(i->second.type != stringdata::zptr16
+                && i->second.type != stringdata::zptr8)continue;
+                
+                if((i->first >> 16) != prevpage)
+                {
+            Flush16:;
+                    // terminology: potilas=needle, tohtori=haystack
+                    set<unsigned> needer;
+                    for(unsigned potilasnum=0; potilasnum<pagestrings.size(); ++potilasnum)
+                    {
+                        const string &potilas = pagestrings[potilasnum];
+                        for(unsigned tohtorinum=potilasnum+1;
+                                     tohtorinum<pagestrings.size();
+                                     ++tohtorinum)
+                        {
+                            const string &tohtori = pagestrings[tohtorinum];
+                            if(tohtori.size() < potilas.size())
+                                continue;
+                            
+                            unsigned extralen = tohtori.size()-potilas.size();
+                            if(potilas == tohtori.substr(extralen))
+                            {
+                                needer.insert(potilasnum);
+                                break;
+                            }
+                        }
+                    }
+                    for(unsigned stringnum=0; stringnum<pagestrings.size(); ++stringnum)
+                    {
+                        if(needer.find(stringnum) == needer.end())
+                            usageperpage[prevpage] += pagestrings[stringnum].size() + 1;
+                    }
+                    if(i == strings.end())break;
+                    pagestrings.clear();
+                }
+                prevpage = i->first >> 16;                
+                pagestrings.push_back(i->second.str);
+            }
+            
+            /* Find substrings from each string */
+            unsigned stringcounter=0;
+            
+            map<string, substringrec> substringtable;
+            
+            for(stringmap::const_iterator i=strings.begin(); i!=strings.end(); ++i, ++stringcounter)
+            {
+                if(i->second.type != stringdata::zptr16)
+                    continue;
+                const unsigned page = i->first >> 16;
+                
+                /* Weight value for this string is how urgent the compression is */
+                const double importance = usageperpage[page] / (double)spaceperpage[page];
+                const string &s = i->second.str;
+
                 if(tickpos)
                     --tickpos;
                 else
                 {
                     /* Just tell where we are */
-                    tickpos=256;
-                    double totalpos = substrcount;
-                    totalpos += stringcounter / (double)stringlist.size();
+                    tickpos = 256;
+                    double totalpos = dictcount;
+                    totalpos += stringcounter / (double)strings.size();
                     totalpos /= (double)dictsize;
                     if(totalpos==0.0)totalpos=1e-10;
                     //totalpos = pow(totalpos, 0.3);
                     
-                    time_t now = time(NULL);
-                    double diff = difftime(now, begin);
-                    double total = diff/totalpos;
-                    double left = total-diff;
-                    char Buf[64];
-                    sprintf(Buf, " - about %.2f minutes left...", left/60.0);
-                    fputs(Buf, stderr);
-                    for(unsigned a=0; Buf[a]; ++a)putc(8, stderr);
+                    for(unsigned a=fprintf(stderr,
+                          " - about %.2f minutes left...", (difftime(time(NULL),begin)*(1.0/totalpos - 1)) / 60.0);
+                        a-->0; )putc(8, stderr);
                 }
                 
-                const string &s = *l;
                 /* Substrings start from each position in the string */
                 for(unsigned a=0; a<s.size(); ++a)
                 {
-                    unsigned c=0;
                     /* And are each length */
                     unsigned speco=0, spaco=0, nospaco=0;
-                    for(unsigned b=a; b<s.size(); ++b)
+                    for(unsigned c=0, b=a; b<s.size(); ++b)
                     {
+                        if(++c > MaxDictWordLen)break;
+                        
                         unsigned char ch = s[b];
-                        /* But can't contain all possible bytes */
-                        if(ch < 0x20)break;
+                        /* But can't contain all possible bytes      */
+                        /* (Dictionary words can't contain [nl] etc) */
+                        if(ch <= 0x20)break;
                         if((ch >= 0x21 && ch < 0xA0) || ch == 0xF1)
                         {
-                        	if(speco >= MaxDictRecursLen)break;
-                        	++speco;
+                            if(speco >= MaxDictRecursLen)break;
+                            ++speco;
                         }
                         else if(ch == 0xEF)
                         {
-                        	if(spaco >= 1 && nospaco > 0)break;
-                        	++spaco;
+                            if(nospaco > 0
+                            && (spaco+1) >= DictMaxSpacesPerWord)break;
+                            ++spaco;
                         }
                         else
                         {
-                        	if(spaco > 1)break;
-                        	++nospaco;
+                            if(spaco > DictMaxSpacesPerWord)break;
+                            ++nospaco;
                         }
                         
-                        if(++c >= 2)
+                        if(c >= 2)
                         {
-                            /* Cumulate the substring usage counter by its length */
-                            substringtable[s.substr(a,c)] += c;
+                            /* Cumulate the substring usage counter */
+                            substringtable[s.substr(a,c)].mark(importance);
                         }
-                        if(c >= MaxDictWordLen)break;
                     }
                 }
             }
             
             fprintf(stderr, "\r%8u substrings; ", substringtable.size());
             
-            //map<unsigned, unsigned>::const_iterator bestj = substringtable.end();
-            map<string, unsigned>::const_iterator j,bestj;
+            //map<unsigned, substringrec>::const_iterator bestj = substringtable.end();
+            map<string, substringrec>::const_iterator j,bestj;
             
             /* Now find the substring that has the biggest score */
-            int bestscore=0;
+            double bestscore=0;
             for(j = substringtable.begin();
                 j != substringtable.end();
                 ++j)
             {
                 const string &word = j->first;
-                int realscore = j->second - (j->second / word.size());
+                unsigned oldbytes = j->second.getcount() * word.size();
+                unsigned newbytes = j->second.getcount();
+                double realscore = (oldbytes - newbytes) * j->second.getimportance();
                 if(realscore > bestscore)
                 {
                     bestj = j;
@@ -522,22 +597,24 @@ void insertor::MakeDictionary()
             }
             
             /* Add it to dictionary */
-            const string &bestword = bestj->first;
-            //int bestscore = bestj->second;
             
+            /* bestword = the substring to be replaced with one byte */
+            const string &bestword = bestj->first;
+            
+            /* dictword = the string to be displayed when the byte is met */
             string dictword;
             for(unsigned a=0; a<bestword.size(); ++a)
             {
-            	unsigned char c = bestword[a];
-            	if(c >= 0x21 && c < 0xA0)
-            		dictword += dict[c-0x21];
-            	else if(c == 0xF1)
-            		dictword += dict[0x7F];
-            	else
-            		dictword += (char)c;
+                unsigned char c = bestword[a];
+                if(c >= 0x21 && c < 0xA0)
+                    dictword += dict[c-0x21];
+                else if(c == 0xF1)
+                    dictword += dict[0x7F];
+                else
+                    dictword += (char)c;
             }
 
-            printf("$%u:\t%s; score: %u\n", dict.size(), DispString(dictword).c_str(), bestscore);
+            printf("$%u:%s; score: %.1f\n", dict.size(), DispString(dictword).c_str(), bestscore);
             fflush(stdout);
             
             /* Remove the selected substring from the source strings,
@@ -548,8 +625,12 @@ void insertor::MakeDictionary()
             replacement[0] = 0x21 + dict.size();
             replacement[1] = '\0';
             if(replacement[0] == 0xA0)replacement[0] = 0xF1;
-            for(l = stringlist.begin(); l != stringlist.end(); ++l)
-                *l = str_replace(bestword, (const char *)replacement, *l);
+
+            for(stringmap::iterator i=strings.begin(); i!=strings.end(); ++i)
+            {
+                if(i->second.type != stringdata::zptr16) continue;
+                i->second.str = str_replace(bestword, (const char *)replacement, i->second.str);
+            }
 
             dictbytes += bestword.size()+1;
             dict.push_back(dictword);
@@ -561,10 +642,9 @@ void insertor::MakeDictionary()
         if(sort_dictionary)
             sort(dict.begin(), dict.end(), dictsorter);
         unsigned col=0;
-        vector<string>::iterator d;
-        for(d=dict.begin(); d!=dict.end(); ++d)
+        for(unsigned d=0; d<dict.size(); ++d)
         {
-            const string &bestword = *d;
+            const string &bestword = dict[d];
 
             fprintf(stderr, "'%s%*c",
                 DispString(bestword).c_str(),
@@ -573,17 +653,28 @@ void insertor::MakeDictionary()
             
             dictbytes += bestword.size()+1;
             
-            list<string>::iterator l;
-            for(l = stringlist.begin(); l != stringlist.end(); ++l)
-                *l = str_replace(bestword, "?", *l);
+            unsigned char replacement[2];
+            replacement[0] = 0x21 + d;
+            replacement[1] = '\0';
+            if(replacement[0] == 0xA0)replacement[0] = 0xF1;
+
+            for(stringmap::iterator i=strings.begin(); i!=strings.end(); ++i)
+            {
+                if(i->second.type != stringdata::zptr16) continue;
+                i->second.str = str_replace(bestword, (const char *)replacement, i->second.str);
+            }
         }
         if(col)putc('\n', stderr);
         replacedict = dict;
     }
 
+
     unsigned resultsize=0;
-    for(list<string>::iterator l = stringlist.begin(); l != stringlist.end(); ++l)
-        resultsize += l->size();
+    for(stringmap::const_iterator i=strings.begin(); i!=strings.end(); ++i)
+    {
+        if(i->second.type != stringdata::zptr16)continue;        
+        resultsize += i->second.str.size();
+    }
     
     fprintf(stderr, "Original script size: %u bytes; new script size: %u bytes\n"
                     "Saved: %u bytes; dictionary size: %u bytes\n",
@@ -748,12 +839,12 @@ void insertor::LoadFile(FILE *fp)
                     fprintf(stderr, "$%u: Got char '%c', invalid is!\n", label, c);
                 }
             }
-            if(c == ':')
+            /*if(c == ':')
             {
                 cget(c);
                 if(c != '\t')
                     fprintf(stderr, "$%u: Got char '%c', tab expected!\n", label, c);
-            }
+            }*/
             string content;
             /*string spaces;*/
             for(;;)
