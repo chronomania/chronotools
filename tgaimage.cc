@@ -14,7 +14,11 @@ namespace
 }
 
 TGAimage::TGAimage(const string &filename)
-    : xdim(0), ydim(0), xsize(8), ysize(8), xbox(32)
+    : xdim(0), ydim(0),
+      palsize(), pixbitness(),
+      data(), palette_in(),
+      xsize(8), ysize(8),
+      xbox(32)
 {
     FILE *fp = fopen(filename.c_str(), "rb");
     if(!fp)
@@ -86,7 +90,8 @@ TGAimage::TGAimage(unsigned x, unsigned y, unsigned char color)
     : xdim(x), ydim(y),
       palsize(0), pixbitness(8),
       data(x*y, color),
-      xsize(8),ysize(18), xbox(32)
+      xsize(8),ysize(18), xbox(32),
+      palette_in()
 {
 }
 

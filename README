@@ -360,6 +360,35 @@ $C2:5900 7C 03 59    JMP [PB:word[PB:$5903+x]]  ;$C2:5B15 A:0026 X:0026 Y:0013 D
 ;   $0230[byte] <- $01
 ;   Hyppy $5BF5
 
+
+$C2:5A8E A7 3D       LDA [$3D]  [$00:0000]   A:0A00 X:00FF Y:00FF D:0000 DB:7E S:09FF P:envMXdiZC HC:000 VC:225 00
+$C2:5A90 C2 20       REP #$20                A:0A00 X:00FF Y:00FF D:0000 DB:7E S:09FF P:envMXdiZC HC:000 VC:225 00
+$C2:5A92 E6 3D       INC $3D    [$00:003D]   A:0A00 X:00FF Y:00FF D:0000 DB:7E S:09FF P:envMXdiZC HC:000 VC:225 00
+$C2:5A94 E2 20       SEP #$20                A:0A00 X:00FF Y:00FF D:0000 DB:7E S:09FF P:envMXdiZC HC:000 VC:225 00
+$C2:5A96 8F 02 42 00 STA $004202[$00:4202]   A:0A00 X:00FF Y:00FF D:0000 DB:7E S:09FF P:envMXdiZC HC:000 VC:225 00
+$C2:5A9A A9 0B       LDA #$0B                A:0A00 X:00FF Y:00FF D:0000 DB:7E S:09FF P:envMXdiZC HC:000 VC:225 00
+$C2:5A9C 8F 03 42 00 STA $004203[$00:4203]   A:0A00 X:00FF Y:00FF D:0000 DB:7E S:09FF P:envMXdiZC HC:000 VC:225 00
+$C2:5AA0 EA          NOP                     A:0A00 X:00FF Y:00FF D:0000 DB:7E S:09FF P:envMXdiZC HC:000 VC:225 00
+$C2:5AA1 18          CLC                     A:0A00 X:00FF Y:00FF D:0000 DB:7E S:09FF P:envMXdiZC HC:000 VC:225 00
+$C2:5AA2 C2 20       REP #$20                A:0A00 X:00FF Y:00FF D:0000 DB:7E S:09FF P:envMXdiZC HC:000 VC:225 00
+$C2:5AA4 AF 16 42 00 LDA $004216[$00:4216]   A:0A00 X:00FF Y:00FF D:0000 DB:7E S:09FF P:envMXdiZC HC:000 VC:225 00
+$C2:5AA8 69 C4 15    ADC #$15C4              A:0011 X:B0E0 Y:0000 D:0000 DB:7E S:06EB P:envmxdIzC HC:900 VC:143 00
+$C2:5AAB 8D 37 02    STA $0237  [$7E:0237]   A:0011 X:B0E0 Y:0000 D:0000 DB:7E S:06EB P:envmxdIzC HC:900 VC:143 00
+$C2:5AAE E2 20       SEP #$20                A:0011 X:B0E0 Y:0000 D:0000 DB:7E S:06EB P:envmxdIzC HC:900 VC:143 00
+$C2:5AB0 A9 CC       LDA #$CC                A:0A00 X:00FF Y:00FF D:0000 DB:7E S:09FF P:envMXdiZC HC:1074 VC:044 00
+$C2:5AB2 8D 39 02    STA $0239  [$7E:0239]   A:0A00 X:00FF Y:00FF D:0000 DB:7E S:09FF P:envMXdiZC HC:1074 VC:044 00
+$C2:5AB5 20 34 5D    JSR $5D34  [$7E:5D34] -- STRLEN, STOPS WHEN SPACE OR MAXLEN=11
+$C2:5AB8 8D 3A 02    STA $023A  [$7E:023A]   A:0A00 X:00FF Y:00FF D:0000 DB:7E S:09FF P:envMXdiZC HC:1074 VC:044 00
+$C2:5ABB A7 37       LDA [$37]  [$00:0000]   A:0A00 X:00FF Y:00FF D:0000 DB:7E S:09FF P:envMXdiZC HC:1074 VC:044 00
+$C2:5ABD C9 2F       CMP #$2F                A:0001 X:000C Y:0002 D:0100 DB:00 S:06FD P:envMxdizc HC:274 VC:000 00
+$C2:5ABF D0 0D       BNE $0D    [$5ACE]      A:0001 X:000C Y:0002 D:0100 DB:00 S:06FD P:envMxdizc HC:274 VC:000 00
+$C2:5AC1 C2 20       REP #$20                A:0001 X:000C Y:0002 D:0100 DB:00 S:06FD P:envMxdizc HC:274 VC:000 00
+$C2:5AC3 EE 37 02    INC $0237  [$00:0237]   A:0001 X:000C Y:0002 D:0100 DB:00 S:06FD P:envMxdizc HC:274 VC:000 00
+$C2:5AC6 E2 20       SEP #$20                A:0001 X:000C Y:0002 D:0100 DB:00 S:06FD P:envMxdizc HC:274 VC:000 00
+$C2:5AC8 20 23 5D    JSR $5D23  [$00:5D23] -- STRLEN, STOPS WHEN SPACE OR MAXLEN=10
+$C2:5ACB 8D 3A 02    STA $023A  [$00:023A]   A:0001 X:000C Y:0002 D:0100 DB:00 S:06FD P:envMxdizc HC:274 VC:000 00
+$C2:5ACE 80 2C       BRA $2C    [$5AFC]      A:0001 X:000C Y:0002 D:0100 DB:00 S:06FD P:envMxdizc HC:274 VC:000 00
+
 // [item]-KÄSITTELIJÄ 5B9B-5BD5
 ;Tekee tämän:
 ;   Haetaan itemin numero (lda $7F:$0200)
@@ -1190,6 +1219,78 @@ $C2:BDE6 20 65 EF    JSR PB:$EF65         ;$C2:EF65     A:CC0B X:3024 Y:16D7 D:0
 $C2:BDE9 28          PLP                                A:0BDC X:303A Y:16E2 D:0000 DB:7E PB:C2 
 $C2:BDEA 60          RTS                                A:0BDC X:303A Y:16E2 D:0000 DB:7E PB:C2 
 
+// Copies a monster name to screen without attributes.
+$CC:ED10 BD FF 98    LDA $98FF,x[$7E:98FF]   A:0000 X:0000 Y:0010 D:0000 DB:7E S:06E4 P:envmxdiZC HC:510 VC:256 00
+; Loaded monster number. Multiply by 11
+; by calculating n*4 + n*8 - n
+$CC:ED13 0A          ASL A                   A:005E X:0000 Y:0010 D:0000 DB:7E S:06E4 P:envmxdizC HC:544 VC:256 00
+$CC:ED14 0A          ASL A                   A:00BC X:0000 Y:0010 D:0000 DB:7E S:06E4 P:envmxdizc HC:556 VC:256 00
+$CC:ED15 85 82       STA $82    [$00:0082]   A:0178 X:0000 Y:0010 D:0000 DB:7E S:06E4 P:envmxdizc HC:568 VC:256 00
+$CC:ED17 0A          ASL A                   A:0178 X:0000 Y:0010 D:0000 DB:7E S:06E4 P:envmxdizc HC:596 VC:256 00
+$CC:ED18 18          CLC                     A:02F0 X:0000 Y:0010 D:0000 DB:7E S:06E4 P:envmxdizc HC:608 VC:256 00
+$CC:ED19 65 82       ADC $82    [$00:0082]   A:02F0 X:0000 Y:0010 D:0000 DB:7E S:06E4 P:envmxdizc HC:620 VC:256 00
+$CC:ED1B 38          SEC                     A:0468 X:0000 Y:0010 D:0000 DB:7E S:06E4 P:envmxdizc HC:648 VC:256 00
+$CC:ED1C FD FF 98    SBC $98FF,x[$7E:98FF]   A:0468 X:0000 Y:0010 D:0000 DB:7E S:06E4 P:envmxdizC HC:660 VC:256 00
+-
+; A is now monster number*11
+$CC:ED1F AA          TAX                     A:040A X:0000 Y:0010 D:0000 DB:7E S:06E4 P:envmxdizC HC:694 VC:256 00
+$CC:ED20 BF 00 65 CC LDA $CC6500,x[$CC:690A] A:040A X:040A Y:0010 D:0000 DB:7E S:06E4 P:envmxdizC HC:706 VC:256 00
+$CC:ED24 8D A0 94    STA $94A0  [$7E:94A0]   A:BEA7 X:040A Y:0010 D:0000 DB:7E S:06E4 P:eNvmxdizC HC:742 VC:256 00
+$CC:ED27 BF 02 65 CC LDA $CC6502,x[$CC:690C] A:BEA7 X:040A Y:0010 D:0000 DB:7E S:06E4 P:eNvmxdizC HC:776 VC:256 00
+$CC:ED2B 8D A2 94    STA $94A2  [$7E:94A2]   A:BACD X:040A Y:0010 D:0000 DB:7E S:06E4 P:eNvmxdizC HC:812 VC:256 00
+$CC:ED2E BF 04 65 CC LDA $CC6504,x[$CC:690E] A:BACD X:040A Y:0010 D:0000 DB:7E S:06E4 P:eNvmxdizC HC:846 VC:256 00
+$CC:ED32 8D A4 94    STA $94A4  [$7E:94A4]   A:BEC4 X:040A Y:0010 D:0000 DB:7E S:06E4 P:eNvmxdizC HC:882 VC:256 00
+$CC:ED35 BF 06 65 CC LDA $CC6506,x[$CC:6910] A:BEC4 X:040A Y:0010 D:0000 DB:7E S:06E4 P:eNvmxdizC HC:916 VC:256 00
+$CC:ED39 8D A6 94    STA $94A6  [$7E:94A6]   A:FFFF X:040A Y:0010 D:0000 DB:7E S:06E4 P:eNvmxdizC HC:952 VC:256 00
+$CC:ED3C BF 08 65 CC LDA $CC6508,x[$CC:6912] A:FFFF X:040A Y:0010 D:0000 DB:7E S:06E4 P:eNvmxdizC HC:986 VC:256 00
+$CC:ED40 8D A8 94    STA $94A8  [$7E:94A8]   A:FFFF X:040A Y:0010 D:0000 DB:7E S:06E4 P:eNvmxdizC HC:1022 VC:256 00
+$CC:ED43 BF 0A 65 CC LDA $CC650A,x[$CC:6914] A:FFFF X:040A Y:0010 D:0000 DB:7E S:06E4 P:eNvmxdizC HC:1056 VC:256 00
+$CC:ED47 8D AA 94    STA $94AA  [$7E:94AA]   A:AAFF X:040A Y:0010 D:0000 DB:7E S:06E4 P:eNvmxdizC HC:1092 VC:256 00
+$CC:ED4A 7B          TDC                     A:AAFF X:040A Y:0010 D:0000 DB:7E S:06E4 P:eNvmxdizC HC:1126 VC:256 00
+$CC:ED4B 8D AB 94    STA $94AB  [$7E:94AB]   A:0000 X:040A Y:0010 D:0000 DB:7E S:06E4 P:envmxdiZC HC:1138 VC:256 00
+$CC:ED4E E2 20       SEP #$20                A:0000 X:040A Y:0010 D:0000 DB:7E S:06E4 P:envmxdiZC HC:1172 VC:256 00
+$CC:ED50 20 63 F0    JSR $F063  [$7E:F063]   A:0000 X:040A Y:0010 D:0000 DB:7E S:06E4 P:envMxdiZC HC:1190 VC:256 00
+; This function does the following:
+;   Copy 16 bytes from 94A0 to 94C0
+;   Fill 94A0-94BF with $FF 
+;   Copy 16 bytes from 94C0 to 94A0, and put 16 * $FF to 94B0
+; After that:
+;   $80 has the line number! Multiply by 12.
+$CC:ED53 A5 80       LDA $80    [$00:0080]   A:0000 X:000B Y:94D0 D:0000 DB:7E S:06E4 P:envMxdiZc HC:022 VC:260 00
+$CC:ED55 0A          ASL A                   A:0000 X:000B Y:94D0 D:0000 DB:7E S:06E4 P:envMxdiZc HC:042 VC:260 00
+$CC:ED56 0A          ASL A                   A:0000 X:000B Y:94D0 D:0000 DB:7E S:06E4 P:envMxdiZc HC:054 VC:260 00
+$CC:ED57 85 82       STA $82    [$00:0082]   A:0000 X:000B Y:94D0 D:0000 DB:7E S:06E4 P:envMxdiZc HC:066 VC:260 00
+$CC:ED59 0A          ASL A                   A:0000 X:000B Y:94D0 D:0000 DB:7E S:06E4 P:envMxdiZc HC:086 VC:260 00
+$CC:ED5A 18          CLC                     A:0000 X:000B Y:94D0 D:0000 DB:7E S:06E4 P:envMxdiZc HC:098 VC:260 00
+$CC:ED5B 65 82       ADC $82    [$00:0082]   A:0000 X:000B Y:94D0 D:0000 DB:7E S:06E4 P:envMxdiZc HC:110 VC:260 00
+$CC:ED5D A8          TAY                     A:0000 X:000B Y:94D0 D:0000 DB:7E S:06E4 P:envMxdiZc HC:130 VC:260 00
+$CC:ED5E 7B          TDC                     A:0000 X:000B Y:0000 D:0000 DB:7E S:06E4 P:envMxdiZc HC:142 VC:260 00
+$CC:ED5F AA          TAX                     A:0000 X:000B Y:0000 D:0000 DB:7E S:06E4 P:envMxdiZc HC:154 VC:260 00
+$CC:ED60 BD A0 94    LDA $94A0,x[$7E:94A0]   A:0000 X:0000 Y:0000 D:0000 DB:7E S:06E4 P:envMxdiZc HC:166 VC:260 00
+$CC:ED63 99 BC AC    STA $ACBC,y[$7E:ACBC]   A:00A7 X:0000 Y:0000 D:0000 DB:7E S:06E4 P:eNvMxdizc HC:192 VC:260 00
+$CC:ED66 C8          INY                     A:00A7 X:0000 Y:0000 D:0000 DB:7E S:06E4 P:eNvMxdizc HC:218 VC:260 00
+$CC:ED67 E8          INX                     A:00A7 X:0000 Y:0001 D:0000 DB:7E S:06E4 P:envMxdizc HC:230 VC:260 00
+$CC:ED68 E0 0C 00    CPX #$000C              A:00A7 X:0001 Y:0001 D:0000 DB:7E S:06E4 P:envMxdizc HC:242 VC:260 00
+$CC:ED6B D0 F3       BNE $F3    [$ED60]      A:00A7 X:0001 Y:0001 D:0000 DB:7E S:06E4 P:eNvMxdizc HC:260 VC:260 00
+-
+$CC:ED6D 7B          TDC                     A:00FF X:000C Y:000C D:0000 DB:7E S:06E4 P:envMxdiZC HC:136 VC:261 00
+$CC:ED6E AA          TAX                     A:0000 X:000C Y:000C D:0000 DB:7E S:06E4 P:envMxdiZC HC:148 VC:261 00
+$CC:ED6F BD B0 94    LDA $94B0,x[$7E:94B0]   A:0000 X:0000 Y:000C D:0000 DB:7E S:06E4 P:envMxdiZC HC:160 VC:261 00
+$CC:ED72 99 BC AC    STA $ACBC,y[$7E:ACC8]   A:00FF X:0000 Y:000C D:0000 DB:7E S:06E4 P:eNvMxdizC HC:186 VC:261 00
+$CC:ED75 C8          INY                     A:00FF X:0000 Y:000C D:0000 DB:7E S:06E4 P:eNvMxdizC HC:212 VC:261 00
+$CC:ED76 E8          INX                     A:00FF X:0000 Y:000D D:0000 DB:7E S:06E4 P:envMxdizC HC:224 VC:261 00
+$CC:ED77 E0 0C 00    CPX #$000C              A:00FF X:0001 Y:000D D:0000 DB:7E S:06E4 P:envMxdizC HC:236 VC:261 00
+$CC:ED7A D0 F3       BNE $F3    [$ED6F]      A:00FF X:0001 Y:000D D:0000 DB:7E S:06E4 P:eNvMxdizc HC:254 VC:261 00
+-
+$CC:ED7C E6 80       INC $80    [$00:0080]   A:00FF X:000C Y:0018 D:0000 DB:7E S:06E4 P:envMxdiZC HC:468 VC:000 00
+$CC:ED7E E6 80       INC $80    [$00:0080]   A:00FF X:000C Y:0018 D:0000 DB:7E S:06E4 P:envMxdizC HC:502 VC:000 00
+$CC:ED80 A5 80       LDA $80    [$00:0080]   A:00FF X:000C Y:0018 D:0000 DB:7E S:06E4 P:envMxdizC HC:536 VC:000 00
+$CC:ED82 C9 06       CMP #$06                A:0002 X:000C Y:0018 D:0000 DB:7E S:06E4 P:envMxdizC HC:556 VC:000 00
+$CC:ED84 D0 81       BNE $81    [$ED07]      A:0002 X:000C Y:0018 D:0000 DB:7E S:06E4 P:eNvMxdizc HC:568 VC:000 00
+
+
+
+
 
 
 ; Tämä lienee geneerinen tekstintulostusrutiini 8x8-fontille.
@@ -1852,38 +1953,55 @@ $C1:0A90 85 AF       STA $AF     [$0000AF]  A:0028 X:0002 Y:0002 D:0000 DB:7E PB
 $C1:0A92 BD EB 95    LDA $95EB,x [$7E95ED]  A:0028 X:0002 Y:0002 D:0000 DB:7E PB:C1 S:06D6 P:en
 $C1:0A95 85 88       STA $88     [$000088]  A:000C X:0002 Y:0002 D:0000 DB:7E PB:C1 S:06D6 P:en
 $C1:0A97 85 86       STA $86     [$000086]  A:000C X:0002 Y:0002 D:0000 DB:7E PB:C1 S:06D6 P:en
+; 3 lines to output = counter set to 2.
 $C1:0A99 A9 02       LDA #$02               A:000C X:0002 Y:0002 D:0000 DB:7E PB:C1 S:06D6 P:en
 $C1:0A9B 85 87       STA $87     [$000087]  A:0002 X:0002 Y:0002 D:0000 DB:7E PB:C1 S:06D6 P:en
 $C1:0A9D 64 89       STZ $89     [$000089]  A:0002 X:0002 Y:0002 D:0000 DB:7E PB:C1 S:06D6 P:en
 $C1:0A9F 18          CLC                    A:0002 X:0002 Y:0002 D:0000 DB:7E PB:C1 S:06D6 P:en
 $C1:0AA0 A5 88       LDA $88     [$000088]  A:0002 X:0002 Y:0002 D:0000 DB:7E PB:C1 S:06D6 P:en
+; scrolling position?
 $C1:0AA2 65 AF       ADC $AF     [$0000AF]  A:000C X:0002 Y:0002 D:0000 DB:7E PB:C1 S:06D6 P:en
+; $80 = first tech number.
 $C1:0AA4 85 80       STA $80     [$000080]  A:0034 X:0002 Y:0002 D:0000 DB:7E PB:C1 S:06D6 P:en
 $C1:0AA6 64 81       STZ $81     [$000081]  A:0034 X:0002 Y:0002 D:0000 DB:7E PB:C1 S:06D6 P:en
 $C1:0AA8 7B          TDC                    A:0034 X:0002 Y:0002 D:0000 DB:7E PB:C1 S:06D6 P:en
+; $82 = target within display buffer
 $C1:0AA9 85 82       STA $82     [$000082]  A:0000 X:0002 Y:0002 D:0000 DB:7E PB:C1 S:06D6 P:en
 $C1:0AAB 85 83       STA $83     [$000083]  A:0000 X:0002 Y:0002 D:0000 DB:7E PB:C1 S:06D6 P:en
+
+
+; Go and create this line
 $C1:0AAD 20 0B 0B    JSR $0B0B   [$C10B0B]  A:0000 X:0002 Y:0002 D:0000 DB:7E PB:C1 S:06D6 P:en
-;
+; next:
+;  - increment tech number
+;  - increment line (offset += #$0080)
+
 $C1:0AB0 E6 80       INC $80     [$000080]  A:002D X:0008 Y:0004 D:0000 DB:7E PB:C1 S:06E3 P:en
 $C1:0AB2 C2 21       REP #$21               A:002D X:0008 Y:0004 D:0000 DB:7E PB:C1 S:06E3 P:en
 $C1:0AB4 A5 82       LDA $82     [$000082]  A:002D X:0008 Y:0004 D:0000 DB:7E PB:C1 S:06E3 P:en
 $C1:0AB6 69 80 00    ADC #$0080             A:0000 X:0008 Y:0004 D:0000 DB:7E PB:C1 S:06E3 P:en
 $C1:0AB9 85 82       STA $82     [$000082]  A:0080 X:0008 Y:0004 D:0000 DB:7E PB:C1 S:06E3 P:en
+
 $C1:0ABB 7B          TDC                    A:0080 X:0008 Y:0004 D:0000 DB:7E PB:C1 S:06E3 P:en
 $C1:0ABC E2 20       SEP #$20               A:0000 X:0008 Y:0004 D:0000 DB:7E PB:C1 S:06E3 P:en
 $C1:0ABE 20 0B 0B    JSR $0B0B   [$C10B0B]  A:0000 X:0008 Y:0004 D:0000 DB:7E PB:C1 S:06E3 P:en
-;
+
+;Same as above!!
+$C1:0ACC E6 80       INC $80     [$000080]  A:0100 X:0088 Y:0004 D:0000 DB:7E PB:C1 S:06E3 P:en
 $C1:0AC1 C2 21       REP #$21               A:002D X:0088 Y:0004 D:0000 DB:7E PB:C1 S:06E3 P:en
 $C1:0AC3 A5 82       LDA $82     [$000082]  A:002D X:0088 Y:0004 D:0000 DB:7E PB:C1 S:06E3 P:en
 $C1:0AC5 69 80 00    ADC #$0080             A:0080 X:0088 Y:0004 D:0000 DB:7E PB:C1 S:06E3 P:en
 $C1:0AC8 85 82       STA $82     [$000082]  A:0100 X:0088 Y:0004 D:0000 DB:7E PB:C1 S:06E3 P:en
+
 $C1:0ACA E2 20       SEP #$20               A:0100 X:0088 Y:0004 D:0000 DB:7E PB:C1 S:06E3 P:en
-$C1:0ACC E6 80       INC $80     [$000080]  A:0100 X:0088 Y:0004 D:0000 DB:7E PB:C1 S:06E3 P:en
+
 $C1:0ACE C6 87       DEC $87     [$000087]  A:0100 X:0088 Y:0004 D:0000 DB:7E PB:C1 S:06E3 P:en
 $C1:0AD0 D0 DB       BNE $0AAD   [-37]      A:0100 X:0088 Y:0004 D:0000 DB:7E PB:C1 S:06E3 P:en
 ;
 $C1:0AD2 60          RTS                    A:0200 X:01A4 Y:0012 D:0000 DB:7E PB:C1 S:06E3 P:en
+
+; But somehow if I combine those lines,
+; it won't do the same...
 
 
 
@@ -1897,25 +2015,25 @@ $C1:0B13 9D A0 94    STA $94A0,x [$7E94BE]  A:FFFF X:001E Y:0002 D:0000 DB:7E PB
 $C1:0B16 CA          DEX                    A:FFFF X:001E Y:0002 D:0000 DB:7E PB:C1 S:06D4 P:eN
 $C1:0B17 CA          DEX                    A:FFFF X:001D Y:0002 D:0000 DB:7E PB:C1 S:06D4 P:en
 $C1:0B18 10 F9       BPL $0B13   [-7]       A:FFFF X:001C Y:0002 D:0000 DB:7E PB:C1 S:06D4 P:en
-;
+-
 $C1:0B1A 7B          TDC                    A:FFFF X:FFFE Y:0002 D:0000 DB:7E PB:C1 S:06D4 P:eN
 $C1:0B1B E2 20       SEP #$20               A:0000 X:FFFE Y:0002 D:0000 DB:7E PB:C1 S:06D4 P:en
 $C1:0B1D A6 80       LDX $80     [$000080]  A:0000 X:FFFE Y:0002 D:0000 DB:7E PB:C1 S:06D4 P:en
 $C1:0B1F BD D0 94    LDA $94D0,x [$7E9504]  A:0000 X:0034 Y:0002 D:0000 DB:7E PB:C1 S:06D4 P:en
-$C1:0B22 C9 FF       CMP #$FF               A:0057 X:0034 Y:0002 D:0000 DB:7E PB:C1 S:06D4 P:en
+$C1:0B22 C9 FF       CMP #$FF   = UNKNOWN FIXME
 $C1:0B24 F0 2C       BEQ $0B52   [+44]      A:0057 X:0034 Y:0002 D:0000 DB:7E PB:C1 S:06D4 P:en
-$C1:0B26 C9 FE       CMP #$FE               A:0057 X:0034 Y:0002 D:0000 DB:7E PB:C1 S:06D4 P:en
+$C1:0B26 C9 FE       CMP #$FE   = UNKNOWN FIXME
 $C1:0B28 F0 28       BEQ $0B52   [+40]      A:0057 X:0034 Y:0002 D:0000 DB:7E PB:C1 S:06D4 P:en
-$C1:0B2A C9 FD       CMP #$FD               A:0057 X:0034 Y:0002 D:0000 DB:7E PB:C1 S:06D4 P:en
+$C1:0B2A C9 FD       CMP #$FD   = TRIPLE TECHNIQUES MARKER
 $C1:0B2C F0 11       BEQ $0B3F   [+17]      A:0057 X:0034 Y:0002 D:0000 DB:7E PB:C1 S:06D4 P:en
-$C1:0B2E C9 FC       CMP #$FC               A:0057 X:0034 Y:0002 D:0000 DB:7E PB:C1 S:06D4 P:en
+$C1:0B2E C9 FC       CMP #$FC   = DOUBLE TECHNIQUES MARKER
 $C1:0B30 F0 08       BEQ $0B3A   [+8]       A:0057 X:0034 Y:0002 D:0000 DB:7E PB:C1 S:06D4 P:en
-$C1:0B32 C9 FB       CMP #$FB               A:0057 X:0034 Y:0002 D:0000 DB:7E PB:C1 S:06D4 P:en
+$C1:0B32 C9 FB       CMP #$FB   = UNKNOWN FIXME
 $C1:0B34 D0 21       BNE $0B57   [+33]      A:0057 X:0034 Y:0002 D:0000 DB:7E PB:C1 S:06D4 P:en
 ;
 ; Tapaus $FB
 $C1:0B36 A6 88       LDX $88
-$C1:0B38 80 45       BRA $0B7F
+$C1:0B38 80 45       BRA $0B7F --- puts a blank name.
 ; Tapaus $FC
 $C1:0B3A A2 00 00    LDX #$0000 ;double techniques
 $C1:0B3D 80 03       BRA $0B42   [+3]
@@ -1949,25 +2067,142 @@ $C1:0B65 38          SEC                    A:0414 X:000C Y:0002 D:0000 DB:7E PB
 $C1:0B66 E5 8E       SBC $8E     [$00008E]  A:0414 X:000C Y:0002 D:0000 DB:7E PB:C1 S:06D4 P:en
 $C1:0B68 18          CLC                    A:03BD X:000C Y:0002 D:0000 DB:7E PB:C1 S:06D4 P:en
 ;     Now, A = tech index * 11 (a*8+a*4-a)
-;15C4 = tech-taulun osoite
+;15C4 = tech-table address
 $C1:0B69 69 C4 15    ADC #$15C4             A:03BD X:000C Y:0002 D:0000 DB:7E PB:C1 S:06D4 P:en
 $C1:0B6C AA          TAX                    A:1981 X:000C Y:0002 D:0000 DB:7E PB:C1 S:06D4 P:en
 $C1:0B6D A0 A0 94    LDY #$94A0             A:1981 X:1981 Y:0002 D:0000 DB:7E PB:C1 S:06D4 P:en
 $C1:0B70 A9 0A 00    LDA #$000A             A:1981 X:1981 Y:94A0 D:0000 DB:7E PB:C1 S:06D4 P:eN
 $C1:0B73 54          MVN 7E CC              A:000A X:1981 Y:94A0 D:0000 DB:7E PB:C1 S:06D4 P:en
-;
+; Copies the tech name.
 $C1:0B76 7B          TDC                    A:FFFF X:198C Y:94AB D:0000 DB:7E PB:C1 S:06D4 P:en
 $C1:0B77 E2 20       SEP #$20               A:0000 X:198C Y:94AB D:0000 DB:7E PB:C1 S:06D4 P:en
-;perään nullterminator
+;adds a nullterminator
 $C1:0B79 99 00 00    STA $0000,y [$7E94AB]  A:0000 X:198C Y:94AB D:0000 DB:7E PB:C1 S:06D4 P:en
 $C1:0B7C 20 A9 01    JSR $01A9   [$C101A9]  A:0000 X:198C Y:94AB D:0000 DB:7E PB:C1 S:06D4 P:en
 ;; End your patch here
-;1A9 yllä
+;01A9 listed above
+-- ROUTINE 0B7F
+------------
+-- Increments the tech counter
+-- Fills the sides with 3 blanks
+-- Copies $0B bytes from $94A0+y to $9A2F+x
+-- And    $0B bytes from $94B0+y to $99EF+x with attr $2D.
+$C1:0B7F E6 88       INC $88    [$00:0088]   A:C8B0 X:0060 Y:0000 D:0000 DB:7E S:06E1 P:eNvMxdi
+$C1:0B81 20 D3 0B    JSR $0BD3  [$7E:0BD3]   A:C8B0 X:0060 Y:0000 D:0000 DB:7E S:06E1 P:envMxdi
+$C1:0B84 7B          TDC                     A:002D X:0006 Y:0003 D:0000 DB:7E S:06E1 P:envMxdi
+$C1:0B85 A8          TAY                     A:0000 X:0006 Y:0003 D:0000 DB:7E S:06E1 P:envMxdi
+$C1:0B86 A6 82       LDX $82    [$00:0082]   A:0000 X:0006 Y:0000 D:0000 DB:7E S:06E1 P:envMxdi
+$C1:0B88 B9 A0 94    LDA $94A0,y[$7E:94A0]   A:0000 X:0000 Y:0000 D:0000 DB:7E S:06E1 P:envMxdi
+$C1:0B8B 9D 2F 9A    STA $9A2F,x[$7E:9A2F]   A:008A X:0000 Y:0000 D:0000 DB:7E S:06E1 P:eNvMxdi
+$C1:0B8E E8          INX                     A:008A X:0000 Y:0000 D:0000 DB:7E S:06E1 P:eNvMxdi
+$C1:0B8F A9 2D       LDA #$2D                A:008A X:0001 Y:0000 D:0000 DB:7E S:06E1 P:envMxdi
+$C1:0B91 9D 2F 9A    STA $9A2F,x[$7E:9A30]   A:002D X:0001 Y:0000 D:0000 DB:7E S:06E1 P:envMxdi
+$C1:0B94 E8          INX                     A:002D X:0001 Y:0000 D:0000 DB:7E S:06E1 P:envMxdi
+$C1:0B95 C8          INY                     A:002D X:0002 Y:0000 D:0000 DB:7E S:06E1 P:envMxdi
+$C1:0B96 C0 0B 00    CPY #$000B              A:002D X:0002 Y:0001 D:0000 DB:7E S:06E1 P:envMxdi
+$C1:0B99 D0 ED       BNE $ED    [$0B88]      A:002D X:0002 Y:0001 D:0000 DB:7E S:06E1 P:eNvMxdi
+-
+$C1:0B9B 7B          TDC                     A:002D X:0016 Y:000B D:0000 DB:7E S:06E1 P:envMxdi
+$C1:0B9C A8          TAY                     A:0000 X:0016 Y:000B D:0000 DB:7E S:06E1 P:envMxdi
+$C1:0B9D A6 82       LDX $82    [$00:0082]   A:0000 X:0016 Y:0000 D:0000 DB:7E S:06E1 P:envMxdi
+$C1:0B9F B9 B0 94    LDA $94B0,y[$7E:94B0]   A:0000 X:0000 Y:0000 D:0000 DB:7E S:06E1 P:envMxdi
+$C1:0BA2 9D EF 99    STA $99EF,x[$7E:99EF]   A:00FF X:0000 Y:0000 D:0000 DB:7E S:06E1 P:eNvMxdi
+$C1:0BA5 E8          INX                     A:00FF X:0000 Y:0000 D:0000 DB:7E S:06E1 P:eNvMxdi
+$C1:0BA6 A9 2D       LDA #$2D                A:00FF X:0001 Y:0000 D:0000 DB:7E S:06E1 P:envMxdi
+$C1:0BA8 9D EF 99    STA $99EF,x[$7E:99F0]   A:002D X:0001 Y:0000 D:0000 DB:7E S:06E1 P:envMxdi
+$C1:0BAB E8          INX                     A:002D X:0001 Y:0000 D:0000 DB:7E S:06E1 P:envMxdi
+$C1:0BAC C8          INY                     A:002D X:0002 Y:0000 D:0000 DB:7E S:06E1 P:envMxdi
+$C1:0BAD C0 0B 00    CPY #$000B              A:002D X:0002 Y:0001 D:0000 DB:7E S:06E1 P:envMxdi
+$C1:0BB0 D0 ED       BNE $ED    [$0B9F]      A:002D X:0002 Y:0001 D:0000 DB:7E S:06E1 P:eNvMxdi
+-
+$C1:0BB2 4C 00 0C 60 JMP $0C00 and RTS
+-
+-- ROUTINE 0BB6
+-- Increments the tech counter
+-- Fills the sides with 3 blanks
+-- Then Copies $12 bytes from $94A0,y to $9A29+x with attr $2D.
+$C1:0BB6 E6 88       INC $88    [$00:0088]   A:005C X:0008 Y:0012 D:0000 DB:7E S:06E1 P:envMxdi
+$C1:0BB8 20 D3 0B    JSR $0BD3  [$7E:0BD3]   A:005C X:0008 Y:0012 D:0000 DB:7E S:06E1 P:envMxdi
+$C1:0BBB 7B          TDC                     A:002D X:0186 Y:0003 D:0000 DB:7E S:06E1 P:envMxdi
+$C1:0BBC A8          TAY                     A:0000 X:0186 Y:0003 D:0000 DB:7E S:06E1 P:envMxdi
+$C1:0BBD A6 82       LDX $82    [$00:0082]   A:0000 X:0186 Y:0000 D:0000 DB:7E S:06E1 P:envMxdi
+$C1:0BBF B9 A0 94    LDA $94A0,y[$7E:94A0]   A:0000 X:0180 Y:0000 D:0000 DB:7E S:06E1 P:envMxdi
+$C1:0BC2 9D 29 9A    STA $9A29,x[$7E:9BA9]   A:005B X:0180 Y:0000 D:0000 DB:7E S:06E1 P:envMxdi
+$C1:0BC5 E8          INX                     A:005B X:0180 Y:0000 D:0000 DB:7E S:06E1 P:envMxdi
+$C1:0BC6 A9 2D       LDA #$2D                A:005B X:0181 Y:0000 D:0000 DB:7E S:06E1 P:envMxdi
+$C1:0BC8 9D 29 9A    STA $9A29,x[$7E:9BAA]   A:002D X:0181 Y:0000 D:0000 DB:7E S:06E1 P:envMxdi
+$C1:0BCB E8          INX                     A:002D X:0181 Y:0000 D:0000 DB:7E S:06E1 P:envMxdi
+$C1:0BCC C8          INY                     A:002D X:0182 Y:0000 D:0000 DB:7E S:06E1 P:envMxdi
+$C1:0BCD C0 12 00    CPY #$0012              A:002D X:0182 Y:0001 D:0000 DB:7E S:06E1 P:envMxdi
+$C1:0BD0 D0 ED       BNE $ED    [$0BBF]      A:002D X:0182 Y:0001 D:0000 DB:7E S:06E1 P:eNvMxdi
+-
+$C1:0BD2 60          RTS                     A:002D X:01A4 Y:0012 D:0000 DB:7E S:06E1 P:envMxdi
+-
+-- ROUTINE 0BD3
+------------
+-- Puts 3 * $2DFF to $9A99+x and $99E9+x
+$C1:0BD3 7B          TDC                     A:0000 X:000B Y:94D0 D:0000 DB:7E S:06DF P:envMxdi
+$C1:0BD4 A8          TAY                     A:0000 X:000B Y:94D0 D:0000 DB:7E S:06DF P:envMxdi
+$C1:0BD5 A6 82       LDX $82    [$00:0082]   A:0000 X:000B Y:0000 D:0000 DB:7E S:06DF P:envMxdi
+$C1:0BD7 A9 FF       LDA #$FF                A:0000 X:0000 Y:0000 D:0000 DB:7E S:06DF P:envMxdi
+$C1:0BD9 9D 29 9A    STA $9A29,x[$7E:9A29]   A:00FF X:0000 Y:0000 D:0000 DB:7E S:06DF P:eNvMxdi
+$C1:0BDC E8          INX                     A:00FF X:0000 Y:0000 D:0000 DB:7E S:06DF P:eNvMxdi
+$C1:0BDD A9 2D       LDA #$2D                A:00FF X:0001 Y:0000 D:0000 DB:7E S:06DF P:envMxdi
+$C1:0BDF 9D 29 9A    STA $9A29,x[$7E:9A2A]   A:002D X:0001 Y:0000 D:0000 DB:7E S:06DF P:envMxdi
+$C1:0BE2 E8          INX                     A:002D X:0001 Y:0000 D:0000 DB:7E S:06DF P:envMxdi
+$C1:0BE3 C8          INY                     A:002D X:0002 Y:0000 D:0000 DB:7E S:06DF P:envMxdi
+$C1:0BE4 C0 03 00    CPY #$0003              A:002D X:0002 Y:0001 D:0000 DB:7E S:06DF P:envMxdi
+$C1:0BE7 D0 EE       BNE $EE    [$0BD7]      A:002D X:0002 Y:0001 D:0000 DB:7E S:06DF P:eNvMxdi
+-
+$C1:0BE9 7B          TDC                     A:002D X:0006 Y:0003 D:0000 DB:7E S:06DF P:envMxdi
+$C1:0BEA A8          TAY                     A:0000 X:0006 Y:0003 D:0000 DB:7E S:06DF P:envMxdi
+$C1:0BEB A6 82       LDX $82    [$00:0082]   A:0000 X:0006 Y:0000 D:0000 DB:7E S:06DF P:envMxdi
+$C1:0BED A9 FF       LDA #$FF                A:0000 X:0000 Y:0000 D:0000 DB:7E S:06DF P:envMxdi
+$C1:0BEF 9D E9 99    STA $99E9,x[$7E:99E9]   A:00FF X:0000 Y:0000 D:0000 DB:7E S:06DF P:eNvMxdi
+$C1:0BF2 E8          INX                     A:00FF X:0000 Y:0000 D:0000 DB:7E S:06DF P:eNvMxdi
+$C1:0BF3 A9 2D       LDA #$2D                A:00FF X:0001 Y:0000 D:0000 DB:7E S:06DF P:envMxdi
+$C1:0BF5 9D E9 99    STA $99E9,x[$7E:99EA]   A:002D X:0001 Y:0000 D:0000 DB:7E S:06DF P:envMxdi
+$C1:0BF8 E8          INX                     A:002D X:0001 Y:0000 D:0000 DB:7E S:06DF P:envMxdi
+$C1:0BF9 C8          INY                     A:002D X:0002 Y:0000 D:0000 DB:7E S:06DF P:envMxdi
+$C1:0BFA C0 03 00    CPY #$0003              A:002D X:0002 Y:0001 D:0000 DB:7E S:06DF P:envMxdi
+$C1:0BFD D0 EE       BNE $EE    [$0BED]      A:002D X:0002 Y:0001 D:0000 DB:7E S:06DF P:eNvMxdi
+-
+$C1:0BFF 60          RTS                     A:002D X:0006 Y:0003 D:0000 DB:7E S:06DF P:envMxdi
+-
+-- ROUTINE 0C00
+------------
+-- Puts 4 * $2DFF to $9A45+x and $9A05+x
+$C1:0C00 7B          TDC                     A:002D X:0016 Y:000B D:0000 DB:7E S:06E1 P:envMxdi
+$C1:0C01 A8          TAY                     A:0000 X:0016 Y:000B D:0000 DB:7E S:06E1 P:envMxdi
+$C1:0C02 A6 82       LDX $82    [$00:0082]   A:0000 X:0016 Y:0000 D:0000 DB:7E S:06E1 P:envMxdi
+$C1:0C04 A9 FF       LDA #$FF                A:0000 X:0000 Y:0000 D:0000 DB:7E S:06E1 P:envMxdi
+$C1:0C06 9D 45 9A    STA $9A45,x[$7E:9A45]   A:00FF X:0000 Y:0000 D:0000 DB:7E S:06E1 P:eNvMxdi
+$C1:0C09 E8          INX                     A:00FF X:0000 Y:0000 D:0000 DB:7E S:06E1 P:eNvMxdi
+$C1:0C0A A9 2D       LDA #$2D                A:00FF X:0001 Y:0000 D:0000 DB:7E S:06E1 P:envMxdi
+$C1:0C0C 9D 45 9A    STA $9A45,x[$7E:9A46]   A:002D X:0001 Y:0000 D:0000 DB:7E S:06E1 P:envMxdi
+$C1:0C0F E8          INX                     A:002D X:0001 Y:0000 D:0000 DB:7E S:06E1 P:envMxdi
+$C1:0C10 C8          INY                     A:002D X:0002 Y:0000 D:0000 DB:7E S:06E1 P:envMxdi
+$C1:0C11 C0 04 00    CPY #$0004              A:002D X:0002 Y:0001 D:0000 DB:7E S:06E1 P:envMxdi
+$C1:0C14 D0 EE       BNE $EE    [$0C04]      A:002D X:0002 Y:0001 D:0000 DB:7E S:06E1 P:eNvMxdi
+$C1:0C16 7B          TDC                     A:002D X:0008 Y:0004 D:0000 DB:7E S:06E1 P:envMxdi
+$C1:0C17 A8          TAY                     A:0000 X:0008 Y:0004 D:0000 DB:7E S:06E1 P:envMxdi
+$C1:0C18 A6 82       LDX $82    [$00:0082]   A:0000 X:0008 Y:0000 D:0000 DB:7E S:06E1 P:envMxdi
+$C1:0C1A A9 FF       LDA #$FF                A:0000 X:0000 Y:0000 D:0000 DB:7E S:06E1 P:envMxdi
+$C1:0C1C 9D 05 9A    STA $9A05,x[$7E:9A05]   A:00FF X:0000 Y:0000 D:0000 DB:7E S:06E1 P:eNvMxdi
+$C1:0C1F E8          INX                     A:00FF X:0000 Y:0000 D:0000 DB:7E S:06E1 P:eNvMxdi
+$C1:0C20 A9 2D       LDA #$2D                A:00FF X:0001 Y:0000 D:0000 DB:7E S:06E1 P:envMxdi
+$C1:0C22 9D 05 9A    STA $9A05,x[$7E:9A06]   A:002D X:0001 Y:0000 D:0000 DB:7E S:06E1 P:envMxdi
+$C1:0C25 E8          INX                     A:002D X:0001 Y:0000 D:0000 DB:7E S:06E1 P:envMxdi
+$C1:0C26 C8          INY                     A:002D X:0002 Y:0000 D:0000 DB:7E S:06E1 P:envMxdi
+$C1:0C27 C0 04 00    CPY #$0004              A:002D X:0002 Y:0001 D:0000 DB:7E S:06E1 P:envMxdi
+$C1:0C2A D0 EE       BNE $EE    [$0C1A]      A:002D X:0002 Y:0001 D:0000 DB:7E S:06E1 P:eNvMxdi
+-
+$C1:0C2C 60          RTS                     A:002D X:0008 Y:0004 D:0000 DB:7E S:06E1 P:envMxdi
+	
 
 
-$C1:0B52 A6 88       LDX $88
-$C1:0B54 4C B6 0B    JMP $0BB6
-
+'
+--------------------------------------------------------------
 
 
 ; DMA-function 2DF1:

@@ -55,7 +55,7 @@ public:
     
     // Copy constructor, assignment operator
     O65(const O65 &);
-    void operator= (const O65 &);
+    const O65& operator= (const O65 &);
     
     /* Loads an object file from the specified file */
     void Load(FILE *fp);

@@ -125,6 +125,8 @@ const Symbols::revtype& Symbols::GetRev(unsigned ind) const
 }
 
 Symbols::Symbols()
+   : symbols2(), symbols8(), symbols16(),
+     rev2(), rev8(), rev16()
 {
     Load();
 #if 0 /* nobody cares */

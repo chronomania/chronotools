@@ -14,6 +14,8 @@ public:
     typedef typename Cont::const_iterator const_iterator;
     typedef typename Cont::iterator iterator;
 
+    rangeset() : data() {}
+    
     void clear() { data.clear(); }
     
     bool empty() const { return data.empty(); }
@@ -31,8 +33,6 @@ public:
                              Listtype& target);
     
     void compact();
-    
-    rangeset() {}
     
     // default copy cons. and assign-op. are fine
 };

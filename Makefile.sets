@@ -5,21 +5,31 @@ CXX=g++
 #CXX=remotegcc -soktober -- g++
 
 # Options for compiling, generally.
-CPPFLAGS=-DVERSION=\"$(VERSION)\" -pipe -g
-#         -fmessage-length=0
+CPPFLAGS=-DVERSION=\"$(VERSION)\" -pipe -g \
+         -fmessage-length=0
 
-WARNINGS=-Wall -W
-#    -pedantic \
-#    -Wundef -Wcast-qual -Wpointer-arith -Wstrict-prototypes \
-#    -Wconversion -Wmissing-prototypes -Wwrite-strings \
-#    -Wsign-compare -Wredundant-decls \
-#    -Wtraditional -Wcast-align
+WARNINGS=-Wall -W \
+    -pedantic \
+    -Wundef \
+    -Wcast-qual \
+    -Wpointer-arith \
+    -Wstrict-prototypes \
+    -Wconversion \
+    -Wmissing-prototypes \
+    -Wwrite-strings \
+    -Wsign-compare \
+    -Wredundant-decls \
+    -Wcast-align
+
+#    -Wtraditional
 
 # C specific warnings
 CCOPTS=$(WARNINGS) -Waggregate-return -Wshadow -Winline
 
 # C++ specific warnings
-CXXOPTS=$(WARNINGS)
+CXXOPTS=$(WARNINGS) \
+	-Woverloaded-virtual
+#	-Weffc++
 
 # Optimization
 OPTIM=-ffast-math -O

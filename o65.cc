@@ -54,6 +54,10 @@ class O65::Defs
     std::set<unsigned> undefines;
     std::map<unsigned, unsigned> defines;
 public:
+    Defs(): symno(), nosym(), undefines(), defines()
+    {
+    }
+    
     unsigned AddUndefined(const string& name)
     {
         unsigned a = symno.size();
@@ -121,7 +125,7 @@ public:
 public:    
     typedef Relocdata<unsigned> RT; RT R;
 public:
-    Segment(): base(0)
+    Segment(): space(), base(0), publics(), R()
     {
     }
 private:
@@ -131,10 +135,12 @@ private:
     void LoadRelocations(FILE* fp);
 };
 
-O65::O65(): defs(new Defs),
-            code(NULL), data(NULL),
-            zero(NULL), bss(NULL),
-            error(false)
+O65::O65()
+   : customheaders(),
+     defs(new Defs),
+     code(NULL), data(NULL),
+     zero(NULL), bss(NULL),
+     error(false)
 {
 }
 
@@ -148,7 +154,8 @@ O65::~O65()
 }
 
 O65::O65(const O65& b)
-    : defs(new Defs(*b.defs)),
+    : customheaders(),
+      defs(new Defs(*b.defs)),
       code(b.code ? new Segment(*b.code) : NULL),
       data(b.data ? new Segment(*b.data) : NULL),
       zero(b.zero ? new Segment(*b.zero) : NULL),
@@ -156,14 +163,15 @@ O65::O65(const O65& b)
       error(b.error)
 {
 }
-void O65::operator= (const O65& b)
+const O65& O65::operator= (const O65& b)
 {
-    if(&b == this) return;
+    if(&b == this) return *this;
     delete code; code = b.code ? new Segment(*b.code) : NULL;
     delete data; data = b.data ? new Segment(*b.data) : NULL;
     delete zero; zero = b.zero ? new Segment(*b.zero) : NULL;
     delete bss; bss = b.bss ? new Segment(*b.bss) : NULL;
     delete defs; defs = new Defs(*b.defs);
+    return *this;
 }
 
 void O65::Load(FILE* fp)

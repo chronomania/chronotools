@@ -54,15 +54,15 @@ public:
         return b.state != state;
     }
     tristate operator|| (tristate b) const
-    {
-        if(b.state == 1 || state == 1) return 1; // certainly
-        if(b.state > 1 || state > 1) return 2; // possibly
+    { 
+        if(state == 1 || b.state == 1) return 1; // certainly
+        if(state > 1 || b.state > 1) return 2; // possibly
         return 0; // not
     }
     tristate operator&& (tristate b) const
     {
-        if(b.state == 1 && state == 1) return 1; // certainly
-        if(b.state == 0 || state == 0) return 0; // never
+        if(state == 1 && b.state == 1) return 1; // certainly
+        if(state == 0 || b.state == 0) return 0; // never
         return 2; // possibly
     }
     tristate operator&& (bool b) const { return b ? state : false; }

@@ -1,12 +1,17 @@
 include Makefile.sets
 
 # Building for Windows:
-#HOST=/usr/local/mingw32/bin/i586-mingw32msvc-
+#HOST=/opt/xmingw/bin/i386-mingw32msvc-
 #CFLAGS += -Iwinlibs
 #CPPFLAGS += -Iwinlibs
 #CXXFLAGS += -Iwinlibs
-#LDOPTS = -L/usr/local/mingw32/lib
+#LDOPTS += -L/opt/xmingw/lib
 #LDFLAGS += -Lwinlibs -liconv
+
+# Or:
+#HOST=/usr/local/mingw32/bin/i586-mingw32msvc-
+#LDOPTS = -L/usr/local/mingw32/lib
+
 
 # Building for native:
 HOST=
@@ -115,6 +120,9 @@ DEPDIRS = utils/
 # VERSION 1.13.1 added support for free relocation of all script text
 # VERSION 1.13.2 is a minor bugfix to the expansion patch
 # VERSION 1.13.3 is a bugfix to the checksum fixer
+# VERSION 1.13.4 is a fix to the dumper. 600ad castle texts are now again ok.
+# VERSION 1.13.5 is another dumper fix, but also finishes the battle VWF8 support
+# VERSION 1.13.6 is yet another fix, but also finishes the monster name code
 
 #OPTIM=-Os
 # -fshort-enums
@@ -127,7 +135,7 @@ OPTIM=-O3
 
 CXXFLAGS += -I.
 
-VERSION=1.13.3
+VERSION=1.13.6
 ARCHFILES=utils/xray.cc utils/xray.h \
           utils/viewer.c \
           utils/vwftest.cc \
@@ -425,6 +433,11 @@ fullzip: \
 		DOCS/ct-moglogo.a65 \
 		DOCS/ct-conj.code DOCS/ct-crononick.code \
 		DOCS/ct8fnV.tga \
+		ct-vwf8.a65 ct-vwf8.o65 \
+		timebox.a65 timebox.ips \
+		relocstr.a65 relocstr.o65 \
+		ct-conj.a65 \
+		ct-crononick.a65 \
 		README.TXT
 	@rm -rf $(ARCHNAME)
 	- mkdir $(ARCHNAME){,/utils,/etc,/DOCS}

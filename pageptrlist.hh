@@ -26,6 +26,9 @@ public:
     unsigned Size() const;
     const std::vector<unsigned char> GetS() const;
 
+public:
+    PagePtrList(): items() { }
+    
 private:
     struct PagePtrInfo;
     void Create(class insertor& ins,

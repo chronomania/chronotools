@@ -167,7 +167,7 @@ const ctstring LoadZString(unsigned beginoffs,
         unsigned int byte = ROM[p];
         
         /* FIXME: Invent a better way to see this */
-        if(extrasizes.size() == 2)
+        if(extrasizes.size() == 1)
         {
             if(byte == 1 || byte == 2)
             {

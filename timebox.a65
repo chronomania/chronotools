@@ -22,3 +22,25 @@
 ;ldx #$D03E
 ;lda #$FF
 ;stx $020D
+
+
+;*= $C10B34
+;.byt $F0, $21
+
+
+;*= $C10A99
+;.as : lda #$03
+;*= $C10ABE
+;bra next
+;*= $C10ACE
+;next:
+
+
+;.al
+;*= $C10AC1
+;inc $80
+;rep #$21
+;lda $82
+;adc #$0080
+;sta $82
+;sep #$20

@@ -10,9 +10,9 @@ RoomScriptFunctionB8:
 	
 	tyx
 	inx
-	lda $7F2001,x : sta $2B : inx
-	lda $7F2001,x : sta $2C : inx
-	lda $7F2001,x : sta $2D : inx
+	lda $7F2001,x : sta $2B : inx ;offset lo byte
+	lda $7F2001,x : sta $2C : inx ;offset hi byte
+	lda $7F2001,x : sta $2D : inx ;page
 	
 	; Convert address
 	
@@ -24,17 +24,17 @@ RoomScriptFunctionB8:
 	phx
 	 ; Increment address by 2
 	 ldx $2B : inx : inx : stx $2B
-	 ; Load word
+	 ; Load word (offset)
 	 lda [$2B]
 	 ; Increment address by 2
 	 inx : inx : stx $2B
 	 tax
 	 SET_8_BIT_A()
-	 ; Load byte
+	 ; Load byte (page)
 	 lda [$2B]
 	 ; Store new address
-	 stx $2B
-	 sta $2D
+	 stx $2B ;write offset
+	 sta $2D ;write page
 	plx
 
 End:	SET_8_BIT_A()

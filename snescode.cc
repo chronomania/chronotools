@@ -8,7 +8,6 @@
 #include "tgaimage.hh"
 #include "compress.hh"
 #include "settings.hh"
-#include "config.hh"
 #include "refer.hh"
 #include "rommap.hh"
 #include "ctinsert.hh"
@@ -118,7 +117,8 @@ struct Image
           const ucs4string& tabsym,
           const ucs4string& palsym,
           const ucs4string& palsizesym)
-      : image(img), tab_sym(tabsym), pal_sym(palsym), palsize_sym(palsizesym)
+      : image(img), tab_sym(tabsym), pal_sym(palsym), palsize_sym(palsizesym),
+        ImgData(), Palette(), OriginalSize()
     {
     }
     

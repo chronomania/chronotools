@@ -126,7 +126,7 @@ BitmapSendHelper:
     ; Decompress graphics.
     ; Send bitmaps.
     ; Send tiles.
-    ; The game loads all 15 palettes from $7E2200 each fram
+    ; The game loads all 15 palettes from $7E2200 each frame
     ; FIXME: All 15?
 
 

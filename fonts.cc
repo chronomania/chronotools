@@ -587,7 +587,7 @@ namespace
                 cur_label = Buf;
                 cur_line  = "";
             }
-            cur_line += MapChars[map[c]];
+            cur_line += MapChars[(unsigned char)map[c]];
             used[map[c]] = true;
             if(++col >= width)
             {

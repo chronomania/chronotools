@@ -55,6 +55,8 @@ class ConfParser
             operator unsigned() const { return IField; }
             operator double() const { return DField; }
             operator const ucs4string& () const { return SField; }
+         public:
+            Element(): IField(0), DField(0), SField() { }
         };
 
         unsigned IField() const;
@@ -73,6 +75,8 @@ class ConfParser
         std::vector<Element> elements;
 
         void append(const Field& f);
+     public:
+        Field(): elements() { }
     };
 
     typedef std::vector<Field::Element> ElemVec;
@@ -87,6 +91,8 @@ class ConfParser
         std::string SectName;
         typedef map<std::string, Field> FieldMap;
         FieldMap fields;
+     public:
+        Section(): SectName(), fields() { }
     };
 
 
@@ -100,6 +106,8 @@ class ConfParser
 
     typedef map<std::string, Section> SecMap;
     SecMap sections;
+ public:
+    ConfParser(): sections() { }
 };
 
 #endif

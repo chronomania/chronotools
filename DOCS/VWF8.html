@@ -21,12 +21,13 @@ SMALL    {font-size:70%}
   <h1>Chronotools - variable width 8pix font</h1>
   <h2 class=level2> 0. Contents </h2>
   
-  This is the documentation of chronotools-1.13.0.
-<div class=toc><table cellspacing=0 cellpadding=0 class=toc><tr><td width="50%" valign=middle align=left nowrap class=toc>&nbsp;&nbsp;&nbsp;1. <a href="#h0">Introduction</a><br>&nbsp;&nbsp;&nbsp;2. <a href="#font">VWF8 font</a><br></td>
-<td width="50%" valign=middle align=left nowrap class=toc>&nbsp;&nbsp;&nbsp;3. <a href="#code">VWF8 code</a><br>&nbsp;&nbsp;&nbsp;4. <a href="#convert">Conversion of the tables in script</a><br>&nbsp;&nbsp;&nbsp;5. <a href="#download">Downloading</a><br></td>
+  This is the documentation of chronotools-1.13.6.
+<div class=toc><table cellspacing=0 cellpadding=0 class=toc><tr><td width="50%" valign=middle align=left nowrap class=toc>&nbsp;&nbsp;&nbsp;1. <a href="#h0">Introduction</a><br>&nbsp;&nbsp;&nbsp;2. <a href="#font">VWF8 font</a><br>&nbsp;&nbsp;&nbsp;3. <a href="#code">VWF8 code</a><br></td>
+<td width="50%" valign=middle align=left nowrap class=toc>&nbsp;&nbsp;&nbsp;4. <a href="#convert">Conversion of the tables in script</a><br>&nbsp;&nbsp;&nbsp;5. <a href="#bugs">Known problems</a><br>&nbsp;&nbsp;&nbsp;6. <a href="#download">Downloading</a><br></td>
 </tr></table></div><H2 id="h0" class="level2"><a name="h0"></a>1. Introduction</H2><div class="level2" id="divh0">
    
 If you find the standard item name length limit (10 characters plus symbol)
+or the standard tech name length limit (10 characters plus symbol)
 too restricting, forcing you to make ridiculous abbreviations,
 you can install a support for variable width 8pix font.
 <p>
@@ -58,12 +59,17 @@ load_code "ct-vwf8.o65"
 add_call_of "EquipLeftItemFunc"  $C2A5AA 4  false
 add_call_of "EquipRightItemFunc" $C2F2DC 1  true
 add_call_of "ItemListFunc"       $C2B053 13 false
-add_call_of "TechListFunc"       $C2BDB2 52 true
 add_call_of "EquipLeftHelper"    $C2A57D 14  false
 add_call_of "EquipLeftHelper2"   $C2A5B6 2   false
 add_call_of "BattleItemFunc"     $C109C1 32 false
-#add_call_of "BattleTechFunc"     $C10B5B 32 false
 add_call_of "DialogItemCall"     $C25BA1 36 false
+
+# VWF for techs: Have your tech list in *t format and use:
+add_call_of "BattleTechFunc"     $C10B5B 32 false
+add_call_of "BattleTechHelper"   $C10A99 0 false
+add_call_of "DialogTechCall"     $C25A90 55 false 
+add_call_of ""                   $C10ABE 16 false
+add_call_of "TechListFunc"       $C2BDB2 52 true
 </pre>
 
 This tells the insertor that it must include code from <code>ct-vwf8.o65</code>
@@ -86,16 +92,21 @@ When you are ready to get rid of the item length limit, replace the
 Same goes for techs: <code>*l11</code> is changed to <code>t11</code>,
 and for monsters <code>*l11</code> is changed to <code>m11</code>.
 <p>
-However at the moment only the item conversion works.
+Note: Monster name conversion does not work yet.
 
-</div><H2 id="download" class="level2"><a name="download"></a>5. Downloading</H2><div class="level2" id="divdownload">
+</div><H2 id="bugs" class="level2"><a name="bugs"></a>5. Known problems</H2><div class="level2" id="divbugs">
+
+If you use the VWF8 patch for items, the equipment screen will be slowed
+down and is a big sluggish to use. This problem is currently unsolved.
+
+</div><H2 id="download" class="level2"><a name="download"></a>6. Downloading</H2><div class="level2" id="divdownload">
    The official home page of chronotools
    is at <a href="http://iki.fi/bisqwit/source/chronotools.html">http://iki.fi/bisqwit/source/chronotools.html</a>.<br>
    Check there for new versions.
 </div> <p align=right><small>Generated from
-       <tt>source/VWF8.php</tt> (last updated: Wed, 28 Jan 2004 20:31:19 +0200)<br>
+       <tt>source/VWF8.php</tt> (last updated: Sat,  5 Jun 2004 22:17:30 +0300)<br>
   with <tt>docmaker.php</tt> (last updated: Sun,  9 May 2004 04:55:44 +0300)<br>
-  at Sun,  9 May 2004 06:09:20 +0300</small>
+  at Sun,  6 Jun 2004 01:59:28 +0300</small>
  </p>
 </body>
 </html>

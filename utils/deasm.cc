@@ -229,12 +229,14 @@ namespace
         std::map<unsigned, exprp> mem_data;
         std::map<unsigned, exprp> mem_abs;
         
+#if 0 /* ASSIGN INITIAL REGISTER CONTENTS? */
         reg_contents['Y'] = new Expr(Expr::NamedConstant, "scriptpointer");
         reg_contents['Y']->SetBitness(16);
         reg_contents['D'] = new Expr(Expr::NamedConstant, "zeropage");
         reg_contents['D']->SetBitness(16);
         reg_contents['B'] = new Expr(Expr::NamedConstant, "datapage");
         reg_contents['B']->SetBitness(8);
+#endif
         
         for(ExprChain::iterator next,j = chain.begin(); j != chain.end(); j=next)
         {
@@ -252,11 +254,12 @@ namespace
             
             if(exp.type == Expr::Assign)
             {
-                Expr& p1 = *exp.p1;
-                Expr& p2 = *exp.p2;
+                //Expr& p1 = *exp.p1;
+                //Expr& p2 = *exp.p2;
                 
                 bool Eat = false;
-#if 1
+
+#if 0 /* CHECK EATING? */
                 switch(p1.type)
                 {
                     case Expr::Register:
@@ -1157,8 +1160,8 @@ int main(void)
     
     DisAssemble();
     
-    FixJumps();
-    FixReps();
+    FixJumps(); // Jump to jump -> jump
+    FixReps();  // Find REP/SEP and convert them.
     
     DisplayCode();
     

@@ -43,7 +43,7 @@ namespace
         virtual void GetCSet() = 0;
         
     public:
-        CharacterSet()
+        CharacterSet() : revmap(), revmapfirst(), cset()
         {
         }
         virtual ~CharacterSet()

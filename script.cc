@@ -49,9 +49,10 @@ namespace
             }
         }
     public:
-        ScriptCharGet(FILE *f) : fp(f), cacheptr(0)
+        ScriptCharGet(FILE *f) : conv(getcharset()),
+                                 fp(f), cacheptr(0),
+                                 cache()
         {
-            conv.SetSet(getcharset());
         /* - nobody cares
             fprintf(stderr, "Built script character set converter\n");
         */
@@ -71,6 +72,9 @@ namespace
             }
             return c;
         }
+    private:
+        const ScriptCharGet& operator=(const ScriptCharGet&);
+        ScriptCharGet(const ScriptCharGet& );
     };
     
     bool CumulateBase62(unsigned& label, const string& header, int c)
@@ -422,7 +426,7 @@ void insertor::LoadFile(FILE *fp)
             while(c != (ucs4)EOF && c != '\n') { cget(c); }
             
             model.ref_id  = 0;
-            model.tab_id = 0;
+            model.tab_id  = 0;
             model.width   = 0;
             model.address = 0;
 
@@ -461,6 +465,7 @@ void insertor::LoadFile(FILE *fp)
                     if(header[0] == 'Z')
                     {
                         fprintf(stderr, "\nWarning: *Z ineffective (*z assumed) when pointers used\n");
+                        header[0] = 'z';
                     }
                 }
                 
@@ -906,7 +911,7 @@ void insertor::WriteOtherStrings()
     {
         unsigned ref_id = i->first - 1;
         
-        unsigned table_bytes = refstats[ref_id].size;
+        //unsigned table_bytes = refstats[ref_id].size;
         unsigned table_start = refstats[ref_id].begin;
 
         char Symbol[64]; sprintf(Symbol, "reloc_ref_%u_zstring", ref_id);

@@ -38,13 +38,17 @@ class ConfParser::CharIStream
     
     ucs4 nextChar;
     unsigned line;
+ private:
+    const CharIStream& operator=(const CharIStream&);
+    CharIStream(const CharIStream&);
 };
 
 ConfParser::CharIStream::CharIStream(FILE *f):
-    fp(f), cacheptr(0), line(1)
+    conv(getcharset()),
+    fp(f),
+    cache(), cacheptr(0),
+    nextChar(getC()), line(1)
 {
-    conv.SetSet(getcharset());
-    nextChar = getC();
 }
 
 ucs4 ConfParser::CharIStream::getC()
@@ -104,7 +108,7 @@ const ucs4string ConfParser::CharIStream::getLine()
 
 bool ConfParser::CharIStream::equal(ucs4 c1, char c2) const
 {
-    return c1 == c2;
+    return c1 == (unsigned char)c2;
 }
 
 bool ConfParser::CharIStream::isSpace(ucs4 c) const

@@ -15,6 +15,8 @@ private:
     
     void Optimize(map::iterator i);
 public:
+    DataArea(): blobs() { }
+    
     void WriteByte(unsigned pos, unsigned char byte);
     unsigned char GetByte(unsigned pos) const;
     

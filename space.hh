@@ -27,7 +27,7 @@ struct freespacerec
 
 typedef rangeset<unsigned> freespaceset;
 
-/* page->list */
+/* (rom)page -> list */
 class freespacemap : public std::map<unsigned, freespaceset>
 {
     bool quiet;

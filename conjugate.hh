@@ -27,6 +27,8 @@ public:
         bool          used;
         ctchar        prefix;
         unsigned      maxwidth;
+    public:
+        form(): data(), func(), used(false), prefix(), maxwidth(0) { }
     };
     
     typedef list<form> formlist;

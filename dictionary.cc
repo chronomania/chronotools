@@ -48,6 +48,8 @@ namespace
         unsigned pagenum;
         double urgency;
         ctstring script;
+    public:
+        PageScript(): pagenum(), urgency(), script() { }
     };
 
     typedef list<PageScript> PageScriptList;
@@ -72,6 +74,7 @@ namespace
 
     public:
         substringtable()
+           : data()
         {
         }
 
@@ -145,6 +148,11 @@ namespace
         bool was_previously_effectless;
     public: // input
         time_t begintime;
+    public:
+        Finder(): rep_word(), dict_word(),
+                  was_extended(), was_previously_effectless(),
+                  begintime()
+        { }
     private:
         hash_set<ctstring> effectless;
 
@@ -301,7 +309,7 @@ namespace
     public:
         void Do(const PageScriptList& uncompressed_pages,
                 const PageScriptList& compressed_pages,
-                const double pos, const double scale,
+                //const double pos, const double scale,
                 const vector<ctstring>& dict,
                 const Conjugatemap* const Conjugater
                )
@@ -815,7 +823,9 @@ NULL);
         
         fprintf(stderr, "/%u bytes; %u/%u", CalcScriptSize(pages), dict.size(), dict_fullsize);
 
-        Finder.Do(saved_pages, pages, dict.size(), dict_fullsize, dict, Conjugater);
+        Finder.Do(saved_pages, pages,
+                  //dict.size(), dict_fullsize,
+                  dict, Conjugater);
         
         const ctstring& rep_word = Finder.rep_word;
         const ctstring& dictword = Finder.dict_word;

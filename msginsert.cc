@@ -179,14 +179,14 @@ void MessageUnknownHeader(const string& header)
     fprintf(stderr, "Unknown header '%s'...", header.c_str());
     Resume();
 }
-void MessageInvalidLabelChar(ucs4 c, unsigned label, const string& header)
+void MessageInvalidLabelChar(ucs4 c, unsigned label, const string& /*header*/)
 {
     Error();
     fprintf(stderr,
             "$%X: Got char '%c', invalid is (in label)!", label, c);
     Resume();
 }
-void MessageInvalidLabelChar(ucs4 c, const string& label, const string& header)
+void MessageInvalidLabelChar(ucs4 c, const string& label, const string& /*header*/)
 {
     Error();
     fprintf(stderr,

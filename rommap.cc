@@ -402,9 +402,8 @@ namespace
     struct ROMinfo
     {
         unsigned romsize;
-        ROMinfo()
+        ROMinfo() : romsize(GetConf("general", "romsize"))
         {
-            romsize = GetConf("general", "romsize");
             if(romsize != 32
             && romsize != 48
             && romsize != 64)

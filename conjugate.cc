@@ -180,6 +180,7 @@ unsigned Conjugatemap::GetMaxWidth(ctchar c) const
 }
 
 Conjugatemap::Conjugatemap(const insertor &ins)
+   : forms(), charmap()
 {
     Load(ins);
 /* - nobody cares

@@ -60,6 +60,8 @@
 
 ;  Item table address:
 ;    ITEMTABLE     - CONST
+;  Tech table address:
+;    TECHTABLE     - CONST
 
 #define RTL_IN_PAGE_C2 $5841 ; address of RTL in page C2
 
@@ -578,7 +580,7 @@ Trans:
         sbc #$0080
         rts
       + ;Special
-        sec
+c        sec
         ; itemchars were placed at the beginning
         sbc #$0020
         rts
@@ -589,89 +591,98 @@ GetItemName:
         ;      Ah,Y=address of string
         ;
         
-        ; This is a copy of the routine at $C2F2E2
-        
         SET_16_BIT_AX()
         and #$00FF
         asl
         
-#if 0 ; OLD CODE
-        tay
-        lda $7D00,y     ; $7E7D00 HAS ITEM OFFSET LIST.
-        tay
-        lda #$CC0B      ; ITEMLIST SEGMENT, LENGTH
-#else ; NEW CODE
         phx 
          tax
          lda @ITEMTABLE,x
          tay
         plx
         .byt $A9, $F0+11, ^ITEMTABLE   ;Al=length, Ah=itemtable seg
-#endif
         rts
-GetItemName2:
-#if 0 ; OLD CODE
-        ; In - Al=item number
-        ; Out- Al=maxlen
-        ;      Ah,Y=address of string
-        ;
-        ; This is a copy of the code at $C109C1
-        SET_16_BIT_A()
-        and #$00FF
-        sta $84
-        asl
-        asl
-        sta $8E
-        asl
-        clc:adc $8E
-        sec:sbc $84
-        clc
-        adc #$0B5E  ;ITEM LIST OFFSET
-        tay
-        lda #$CC0B  ;ITEM LIST SEGMENT, LENGTH
-        rts
-#else ; NEW CODE
-        bra GetItemName
-#endif
 
 DialogItemCall:
         jsr GetItemName
-        SET_8_BIT_A()
         iny ;skip the first char
+DialogItemCallPart2:
+        SET_8_BIT_A()
         sty $0237
         xba
         sta $0239
         ldy #0
-        jsr +
+        jsr TinyStrlenFunc
         ; return value: length
         tya
         rtl
-      - iny
-      + ; Sort of strlen function
+
+      - iny ; this is part of the strlen func
+TinyStrlenFunc:
+        ; Sort of strlen function
         lda [$37],y
         bne -
         rts
 
-GetTechName2:
-        ; In - Al=item number
+DialogMonsterCall:
+        jsr GetMonsterName
+        bra DialogItemCallPart2
+
+
+GetTechName:
+        ; In - Al=tech number
         ; Out- Al=maxlen
         ;      Ah,Y=address of string
         ;
-        ; This is a copy of the code at $C10B5B
-        SET_16_BIT_A()
+        
+        SET_16_BIT_AX()
         and #$00FF
-        sta $8E
         asl
-        asl
-        sta $90
-        asl
-        clc:adc $90
-        sec:sbc $8E
-        clc
-        adc #$15C4  ;TECH LIST OFFSET
-        tay
-        lda #$CC0B  ;TECH LIST SEGMENT, LENGTH
+        
+        phx 
+         tax
+         lda @TECHTABLE,x
+         tay
+        plx
+        .byt $A9, $F0+11, ^TECHTABLE   ;Al=length, Ah=itemtable seg
         rts
+
+GetMonsterName:
+        ; In - Al=monster number
+        ; Out- Al=maxlen
+        ;      Ah,Y=address of string
+        ;
+        
+        SET_16_BIT_AX()
+        and #$00FF
+        asl
+        
+        phx 
+         tax
+         lda @MONSTERTABLE,x
+         tay
+        plx
+        .byt $A9, $F0+11, ^MONSTERTABLE   ;Al=length, Ah=itemtable seg
+        rts
+
+DialogTechCall:
+        jsr GetTechName
+        SET_8_BIT_A()
+        sty $0237
+        xba
+        sta $0239
+        
+        lda [$37]
+        cmp #$2F    ; Is the first char a star?
+        bne +
+        ldy $0237   ; It is a star - skip it.
+        iny
+        sty $0237
+      + ldy #0
+        jsr TinyStrlenFunc
+        ; return value: length
+        tya
+        rtl
 
 EquipLeftHelper:
         lda $0F62,y : sta $04CA  ; copy item count (copied from jap. version)
@@ -826,43 +837,32 @@ TechListFunc:
         ;    Al     = tech number
         ;    $61    = screen address
         ;    $7700  = table of tech colour attributes
-        
-        ; C2BDB2 does this:
-        
-        SET_8_BIT_AX()
+        .xl
         phy ;Save Y...
-         
-         ; Get tech address AND tech colour code!
-         ;
-         sta @$004202  ;tech number
-         tay
-         lda #11
-         sta @$004203  ;multiply by 11
-         
-         ldx #4*3      ;palette 3
-         lda $7700,y   ;load tech attribute
-         bit #$40
-         bne GotAttr
-         ldx #4*0      ;palette 0
-         bit #$80
-         beq GotAttr
-         bit $78       ;test if $80 was already given
-         bmi GotAttr
-         ldx #4*2      ;palette 2
-GotAttr:
-         stx $7E       ;save attr.
+         SET_8_BIT_AX()
+         pha
+          ; C2BDB2 does this.
+          ; Get tech colour code
+          ;
+          tay
+          ldx #4*3      ;palette 3
+          lda $7700,y   ;load tech attribute
+          bit #$40
+          bne GotAttr
+          ldx #4*0      ;palette 0
+          bit #$80
+          beq GotAttr
+          bit $78       ;test if $80 was already given
+          bmi GotAttr
+          ldx #4*2      ;palette 2
+GotAttr:  stx $7E       ;save attr.
+         pla
+
+         jsr GetTechName
+         .al
+         sty W_VRAMADDR ; just a temporary location.
         ply
         
-        SET_16_BIT_AX()
-        lda #$15C4    ;TECH LIST OFFSET
-        
-        clc:adc @$004216 ;got technum*11
-        ; A is now our source address...
-        
-        sta W_VRAMADDR ; save source address somewhere
-        
-        lda #$CC0B    ;TECH LIST SEGMENT $CC, LENGTH $0B
-
         ALLOCATE()
         pha
          tya        ; Y just happens to be our position in tech list here
@@ -925,7 +925,7 @@ BattleItemFunc:
         
         ;ldy #$0B5E
         ;lda #$CC0B
-        jsr GetItemName2
+        jsr GetItemName
 
         SET_16_BIT_A()
         ALLOCATE()
@@ -974,18 +974,20 @@ BattleItemFunc:
         ; Must leave with A=8bit, X=16bit
         rtl
 
+BattleTechHelper:
+	.as
+	lda #$03
+	sta $87
+	rtl
+
 BattleTechFunc:
+        .al
+        .xl
         ; Code here
         ;In:
-        ;    A = item number
-        ;  $86 = tech-line counter (ignore)
+        ;    A = tech number
+        ;  $86 = 0200, 0100. Doesn't seem useful.
         ;  $80 = something that runs with step 5, goes to X
-        ;  $82 = ($86+1)*128 ?
-        ; $1580=table(index with X):
-        ;          $1580 = item number
-        ;          $1582 = disabled-flags (& $80)
-        ;          $1583 = ?
-        ;          $1584 = katakana thing
         ;Usable:
         ;  $8E = tech number (temp)
         ;  $90 = tech number*4 (temp)
@@ -997,20 +999,18 @@ BattleTechFunc:
         ;    DB=7E
         ;Can use:
         ;    X, Y, A
-        SET_16_BIT_AX()
-        
-        ;ldy #$0B5E
-        ;lda #$CC0B
-        jsr GetTechName2
-
-        SET_16_BIT_A()
+        jsr GetTechName
         ALLOCATE()
+        
+        ; Y = tech offset
+        ; Ah = tech segment
+        ; Al = tech name length
         
         pha
          lda $80
          and #$00FF
 
-         ; Now we have item list scrolling position.
+         ; Now we have tech list scrolling position.
          sta @$004204   ;dividend
          lda #3
          sta @$004206   ;divisor
@@ -1048,6 +1048,59 @@ BattleTechFunc:
         SET_8_BIT_A()
         
         ; Must leave with A=8bit, X=16bit
+        rtl
+
+
+BattleMonsterFunc:
+        .al
+        .xl
+        ; Code here
+        ;In:
+        ;    A = tech number
+        ;  $80 = line number * 2
+        ;Todo:
+        ;    write tile numbers to $7E94A0
+        ;Assume:
+        ;    DB=7E
+        ;Can use:
+        ;    X, Y, A
+        jsr GetMonsterName
+        ALLOCATE()
+        
+        ; Y = tech offset
+        ; Ah = tech segment
+        ; Al = tech name length
+        
+        SET_8_BIT_A()
+        
+        sty P_STR
+        xba
+        sta P_STR+2
+        
+        tdc : tay
+      - cpy #$000C
+        beq +
+        lda [P_STR],y
+        beq +
+        sta $94A0,y
+        lda #$FF
+        sta $94B0,y
+        iny
+        bra -
+      + lda #$FF
+      - cpy #$000C
+        beq +
+        sta $94A0,y
+        sta $94B0,y
+        iny
+        bra -
+        
+      + SET_16_BIT_A()
+        UNALLOCATE()
+        SET_8_BIT_A()
+        
+        ; Must leave with A=8bit, X=16bit, Ah=0
+        tdc
         rtl
 
 

@@ -3,9 +3,11 @@
 #include "logfiles.hh"
 #include "rommap.hh"
 
-ROM::ROM(unsigned siz): length(siz)
+ROM::ROM(unsigned siz)
+   : Data(), length(siz)
 {
     unsigned romsize = GetConf("general", "romsize");
+    // hmm...
 }
 
 ROM::~ROM()
@@ -47,7 +49,7 @@ void ROM::AddPatch(const vector<unsigned char> &code, unsigned addr, const strin
 {
     if(code.empty()) return;
     
-    FILE *log = GetLogFile("mem", "log_addrs");
+    //FILE *log = GetLogFile("mem", "log_addrs");
     
     /* & 0x3FFFFF removed from here */
     const unsigned rompos = addr;
@@ -58,7 +60,7 @@ void ROM::AddPatch(const vector<unsigned char> &code, unsigned addr, const strin
     MarkProt(rompos, code.size(), what);
 }
 
-void ROM::SetZero(unsigned addr, unsigned len, const std::string& why)
+void ROM::SetZero(unsigned addr, unsigned len, const std::string& /*why*/)
 {
     for(unsigned a=0; a < len; ++a) Write(addr + a, 0);
 }

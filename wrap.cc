@@ -32,7 +32,7 @@ const ctstring insertor::WrapDialogLines(const ctstring &dialog) const
     unsigned w5width     = (GetFont12width( dblw_char ) ) * 5;
     
     const unsigned fontbegin = get_font_begin();
-    const unsigned dictend   = fontbegin;
+    //const unsigned dictend   = fontbegin;
 
     unsigned wrappos = 0;
     unsigned wrapcol = 0;

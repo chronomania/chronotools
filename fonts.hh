@@ -23,6 +23,8 @@ class Font12data
     void LoadBoxAs(unsigned boxno, unsigned tileno, class TGAimage &);
     
 public:
+    Font12data(): widths(), tiletab1(), tiletab2(), charcount(), fn() { }
+    
     void Load(const string &filename);
     
     // Returns a table insertable to ROM.
@@ -49,6 +51,7 @@ class Font8data
     virtual unsigned GetCount() const;
     
 public:
+    Font8data(): tiletable(), widths(), fn() { }
     virtual ~Font8data() { }
     
     void Load(const string &filename);

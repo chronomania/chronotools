@@ -9,6 +9,7 @@ $text = Array(
    '1. Introduction' => "
    
 If you find the standard item name length limit (10 characters plus symbol)
+or the standard tech name length limit (10 characters plus symbol)
 too restricting, forcing you to make ridiculous abbreviations,
 you can install a support for variable width 8pix font.
 <p>
@@ -40,12 +41,17 @@ load_code \"ct-vwf8.o65\"
 add_call_of \"EquipLeftItemFunc\"  \$C2A5AA 4  false
 add_call_of \"EquipRightItemFunc\" \$C2F2DC 1  true
 add_call_of \"ItemListFunc\"       \$C2B053 13 false
-add_call_of \"TechListFunc\"       \$C2BDB2 52 true
 add_call_of \"EquipLeftHelper\"    \$C2A57D 14  false
 add_call_of \"EquipLeftHelper2\"   \$C2A5B6 2   false
 add_call_of \"BattleItemFunc\"     \$C109C1 32 false
-#add_call_of \"BattleTechFunc\"     \$C10B5B 32 false
 add_call_of \"DialogItemCall\"     \$C25BA1 36 false
+
+# VWF for techs: Have your tech list in *t format and use:
+add_call_of \"BattleTechFunc\"     \$C10B5B 32 false
+add_call_of \"BattleTechHelper\"   \$C10A99 0 false
+add_call_of \"DialogTechCall\"     \$C25A90 55 false 
+add_call_of \"\"                   \$C10ABE 16 false
+add_call_of \"TechListFunc\"       \$C2BDB2 52 true
 </pre>
 
 This tells the insertor that it must include code from <code>ct-vwf8.o65</code>
@@ -68,6 +74,11 @@ When you are ready to get rid of the item length limit, replace the
 Same goes for techs: <code>*l11</code> is changed to <code>t11</code>,
 and for monsters <code>*l11</code> is changed to <code>m11</code>.
 <p>
-However at the moment only the item conversion works.
+Note: Monster name conversion does not work yet.
+
+", 'bugs:1. Known problems' => "
+
+If you use the VWF8 patch for items, the equipment screen will be slowed
+down and is a big sluggish to use. This problem is currently unsolved.
 
 ");

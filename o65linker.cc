@@ -32,6 +32,10 @@ public:
     }
     
     Object()
+    : object(),
+      name(),
+      extlist(),
+      linkage()
     {
     }
     
@@ -394,9 +398,8 @@ void O65linker::Link()
 
     if(!referers.empty())
     {
-        fprintf(stderr,
-            "O65 linker: Leftover references found.\n");
-        
+        //fprintf(stderr,
+        //    "O65 linker: Leftover references found.\n");
         for(unsigned a=0; a<referers.size(); ++a)
             fprintf(stderr,
                 "O65 linker: Unresolved reference: %s\n",
@@ -412,7 +415,13 @@ void O65linker::Link()
         }
 }
 
-O65linker::O65linker(): symcache(new SymCache), num_groups_used(0), linked(false)
+O65linker::O65linker()
+   : symcache(new SymCache),
+     objects(),
+     defines(),
+     referers(),
+     num_groups_used(0),
+     linked(false)
 {
 }
 
@@ -441,20 +450,28 @@ namespace
         unsigned addr;
 
         bool operator< (const IPS_item& b) const { return addr < b.addr; }
+     public:
+        IPS_item(): addr(0) { }
     };
     
     struct IPS_global: public IPS_item
     {
         string   name;
+     public:
+        IPS_global(): IPS_item(), name() { }
     };
     struct IPS_extern: public IPS_item
     {
         string   name;
         unsigned size;
+     public:
+        IPS_extern(): IPS_item(), name(), size() { }
     };
     struct IPS_lump: public IPS_item
     {
         vector<unsigned char> data;
+     public:
+        IPS_lump(): IPS_item(), data() { }
     };
 }
 

@@ -576,15 +576,20 @@ public:
           max_offset((1 << Depth) - 1),
           min_length(3),
           max_length((1 << (16-Depth)) - 1 + min_length),
-          SavingMap(*this)
+          SavingMap(*this),
+          FirstControlByte(0x00),
+          OtherControlByte(0x00),
+          Only8bits() // assigned by Compress()
+#ifdef SUPER_POSITIONS
+          ,AllSuperPositions()
+#endif
     {
-        unsigned char ControlByte = 0;
-        if(Depth == 11) ControlByte |= 0x40;
-        
-        FirstControlByte = ControlByte;
-        OtherControlByte = ControlByte;
-        
-        if(seg == 0x7F) FirstControlByte |= 1;
+        if(Depth == 11)
+        {
+            FirstControlByte |= 0x40;
+            OtherControlByte |= 0x40;
+        }
+        if(seg == 0x7F) FirstControlByte |= 0x01;
     }
     
     const vector<unsigned char> Compress() const
@@ -627,6 +632,9 @@ public:
             }
         return results[bestsizeindex].GetResult();
     }
+private:
+    const Compressor& operator=(const Compressor& );
+    Compressor(const Compressor&);
 };
 
 

@@ -373,25 +373,47 @@ namespace
         BlockComment(";1000ad (various indoors)\n"
                      ";600ad (various indoors)\n"
                      ";2300ad (various indoors)\n");
-        DumpMZStrings(0x370000, "dialog", 456);
+        DumpMZStrings(0x370000, "dialog", 217);
 
-        BlockComment(";2300ad (various indoors)\n"
-                     ";end of time (gaspar's stories, Spekkio etc)\n"
-                     ";600ad (Ozzie's scenes, Magus battle, castle)\n"
-                     ";1999ad Lavos scenes\n"
-                     ";12kbc various scenes\n"
-                     ";1000ad castle scenes\n");
-        DumpMZStrings(0x374900, "dialog", 1203);
+        BlockComment(";1000ad (various indoors)\n"
+                     ";600ad (various indoors)\n");
+        DumpMZStrings(0x3701B2, "dialog", 111);
+
+        BlockComment(";2300ad (various indoors)\n");
+        DumpMZStrings(0x370290, "dialog", 128);
+
+        BlockComment(";2300ad (various indoors)\n");
+        DumpMZStrings(0x374900, "dialog", 240);
+
+        BlockComment(";end of time (gaspar's stories, Spekkio etc)\n");
+        DumpMZStrings(0x374AE0, "dialog", 178);
+        
+        BlockComment(";1999ad Lavos scenes\n");
+        DumpMZStrings(0x374C44, "dialog", 179);
+        
+        BlockComment(";12kbc (blackbird scenes)\n");
+        DumpMZStrings(0x374DAA, "dialog", 187);
+
+        BlockComment(";600ad castle scenes\n");
+        DumpMZStrings(0x374F20, "dialog", 244);
+        
+        BlockComment(";1000ad castle scenes\n");
+        DumpMZStrings(0x375108, "dialog", 175);
 
         BlockComment(";1000ad jail scenes\n"
                      ";600ad bridge battle stuff\n"
-                     ";1000ad (melchior, medina village)\n"
-                     ";65Mbc\n"
-                     ";12kbc\n"
-                     ";600ad (Toma stuff, Marco&Fiona stuff)\n"
+                     ";1000ad (melchior, medina village)\n");
+        DumpMZStrings(0x384650, "dialog", 256);
+
+        BlockComment(";65Mbc\n"
+                     ";12kbc\n");
+        DumpMZStrings(0x384850, "dialog", 256);
+
+        BlockComment(";600ad (Toma stuff, Marco&Fiona stuff)\n"
                      ";1000ad (Cyrus stuff)\n"
                      ";Black Omen\n");
-        DumpMZStrings(0x384650, "dialog", 678);
+        DumpMZStrings(0x384A50, "dialog", 166);
+        
 
         BlockComment(";600ad (Cathedral, other indoors)\n"
                      ";12kbc (out- and indoors)\n");

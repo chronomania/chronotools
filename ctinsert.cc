@@ -122,7 +122,7 @@ namespace
     {
         unsigned size = GetROMsize();
         unsigned sizebyte = 0;
-        for(sizebyte=0; (1 << sizebyte)*1024 < size; ++sizebyte);
+        for(sizebyte=0; (1 << sizebyte)*1024U < size; ++sizebyte);
         
         if(size >= 0x600000)
         {
@@ -191,7 +191,17 @@ void insertor::ReportFreeSpace()
     freespace.Report();
 }
 
-insertor::insertor(): Conjugater(NULL)
+insertor::insertor()
+   : objects(),
+     strings(),
+     refers(),
+     table_counter(),
+     dict(),
+     Font8(),
+     Font8v(),
+     Font12(),
+     freespace(),
+     Conjugater(NULL)
 {
 }
 

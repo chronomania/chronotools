@@ -71,6 +71,9 @@ public:
     const string putc(ucs4 p) const;
     const string puts(const ucs4string &s) const;
     bool isok(ucs4 p) const;
+private:
+    wstringOut(const wstringOut&);
+    const wstringOut& operator=(const wstringOut&);
 };
 
 /* An input class */
@@ -88,6 +91,9 @@ public:
 
     const ucs4string putc(char p) const;
     const ucs4string puts(const string &s) const;
+private:
+    wstringIn(const wstringIn&);
+    const wstringIn& operator=(const wstringIn&);
 };
 
 extern const ucs4string AscToWstr(const string &s);

@@ -26,6 +26,8 @@ private:
     public:
         void AddFixup(SegType s, Type addr) { Fixups.push_back(FixupType(s, addr)); }
         void AddReloc(Type addr, const VarType& s) { Relocs.push_back(RelocType(addr, s)); }
+        
+        RT(): Fixups(), Relocs() { }
     };
     
     typedef std::pair<unsigned,unsigned> r2_t;
@@ -38,6 +40,8 @@ public:
     typedef RT<r2_t>     R16hi_t;  R16hi_t R16hi;   // addr,lowpart
     typedef RT<r2_t>     R24seg_t; R24seg_t R24seg; // addr,offspart
     typedef RT<unsigned> R24_t;    R24_t R24;       // addr
+    
+    Relocdata(): R16(), R16lo(), R16hi(), R24seg(), R24() { }
 };
 
 #endif

@@ -58,6 +58,8 @@ private:
         
         unsigned ref_id; // used if zptr8 or zptr12
         unsigned tab_id; // used if zptr8 or zptr12
+    public:
+        stringdata(): str(), type(), width(), address(), ref_id(), tab_id() { }
     };
     
     typedef list<stringdata> stringlist;
@@ -110,6 +112,9 @@ private:
 
     unsigned CalculateScriptSize() const;
     const list<pair<unsigned, ctstring> > GetScriptByPage() const;
+private:
+    insertor(const insertor&);
+    const insertor&operator=(const insertor&);
 };
 
 #endif

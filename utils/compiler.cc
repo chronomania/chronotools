@@ -99,9 +99,9 @@ namespace
             bool read,written,loaded;
             bool is_regvar;
             
-            variable() : stackpos(0),read(false),written(false),loaded(false)
+            variable() : stackpos(0),read(false),written(false),loaded(false),
+                         is_regvar(false)
             {
-                is_regvar = false;
             }
         };
         
@@ -121,6 +121,8 @@ namespace
                 flags.Combine(GetAssumption());
                 carry.Combine(GetCarryAssumption());
             }
+        public:
+            BranchStateData(): flags(), carry() { }
         };
         
         struct BranchData
@@ -129,6 +131,8 @@ namespace
             std::string label;
             
             BranchStateData state;
+        public:
+            BranchData(): level(), label(), state() { }
         };
         typedef list<BranchData> branchlist_t;
         branchlist_t openbranches;
@@ -137,6 +141,8 @@ namespace
         {
             FlagAssumption flags;
             unsigned    varcount;
+        public:
+            FunctionData(): flags(), varcount(0) { }
         };
         typedef map<ucs4string, FunctionData> functionlist_t;
         functionlist_t functiondata;
@@ -149,6 +155,7 @@ namespace
             unsigned value;
         public:
             ConstState() : known(false),value(0) {}
+        
             void Invalidate() { known=false; }
             bool Known() const { return known; }
             void Set(unsigned v) { known=true; value=v; }
@@ -173,7 +180,9 @@ namespace
         {
             ConstState Const;
             VarState Var;
-            
+        public:
+            regstate(): Const(), Var() { }
+                
             void Invalidate() { Const.Invalidate(); Var.Invalidate(); }
         };
         
@@ -446,7 +455,16 @@ namespace
         const ucs4string MagicVarName;
         
         Assembler()
-        : LoopHelperName(GetConf("compiler", "loophelpername")),
+        : CurSubName(),
+          vars(),
+          started(),
+          LoopCount(),
+          openbranches(),
+          functiondata(),
+          PendingCall(),
+          ALstate(), AHstate(),
+          LoopStack(),
+          LoopHelperName(GetConf("compiler", "loophelpername")),
           OutcHelperName(GetConf("compiler", "outchelpername")),
           MagicVarName(GetConf("compiler", "magicvarname"))
         {
@@ -873,8 +891,11 @@ namespace
                 CaseHandler(class Assembler& a,
                             const std::string &posilabel)
                 : LastWasBra(false), ChainCompare(false),
+                  LastCompare(),
                   BraPending(false),
-                  PendingLabel(posilabel)
+                  PendingLabel(posilabel),
+                  LastCompareType(),
+                  jumps()
                 {
                 }
                 

@@ -57,6 +57,7 @@ enum csettype
     normalset,
     pokemonset,
     chronoset,
+    mkrset,
     
     CSETCOUNT
 };
@@ -69,8 +70,10 @@ static char merktab[4][4][4][4];
 
 static void initmerktab(void)
 {
-    //FILE *fp = fopen("/usr/lib/kbd/consolefonts/cp437-8x8", "rb");
-    //FILE *fp = fopen("/home/root/pokedex/cp437-8x8", "rb");
+#if 0
+    FILE *fp = fopen("/usr/lib/kbd/consolefonts/cp437-8x8", "rb");
+    FILE *fp = fopen("/home/root/pokedex/cp437-8x8", "rb");
+#endif
     FILE *fp = fopen("cp437-8x8", "rb");
     unsigned char Fontti[256][8];
     int a,b,c,d;
@@ -130,9 +133,9 @@ static void initmerktab(void)
 
 static unsigned char REV(unsigned char n)
 {
-    n = ((n>>1) & 0x55) | ((n<<1) & 0xAA); // Swap 0[1], 1[1]
-    n = ((n>>2) & 0x33) | ((n<<2) & 0xCC); // Swap 0[2], 2[2]
-    n = ((n>>4) & 0x0F) | ((n<<4) & 0xF0); // Swap 0[4], 4[4]
+    n = ((n>>1) & 0x55) | ((n<<1) & 0xAA); /* Swap 0[1], 1[1] */
+    n = ((n>>2) & 0x33) | ((n<<2) & 0xCC); /* Swap 0[2], 2[2] */
+    n = ((n>>4) & 0x0F) | ((n<<4) & 0xF0); /* Swap 0[4], 4[4] */
     return n;
 }
 
@@ -160,7 +163,10 @@ static void WriteVCSA(int fd, unsigned chr, unsigned attr)
 {
 	attr = (unsigned char) attr;
 	chr  = (unsigned char) chr;
-    //if(chr < 0x20 || chr > 0x7E)chr = '.';
+    
+    if(chr == 0x00) chr = '^';
+    else if(chr < 0x20 || (chr > 0x7E && chr < 0xA0))chr = '.';
+    
     SLsmg_gotorc(SlangPos/COLS, SlangPos%COLS);
     SLsmg_set_color(attr);
     SLsmg_write_char(chr);
@@ -211,7 +217,7 @@ static void display(void)
     for(y=0; y<LINES/4; y++)
         for(x=0; x < (COLS-X)/4; x++)
         {
-            char tab[8][8];
+            unsigned char tab[8][8];
             int cy, cx;
             char attr = 0x70;
             for(cy=0; cy<8; cy++)
@@ -314,6 +320,7 @@ static void display(void)
         switch(usecset)
         {
             case normalset:
+            case mkrset:
                 break;
             case pokemonset:
             {
@@ -353,24 +360,67 @@ static void display(void)
             writ('P', attr);
             writ('O', attr);
             writ('K', attr);
-            chr = '‚';
+            chr = 0x82;
+        }
+        if(usecset == mkrset && *s==0x04)
+        {
+            attr = searchtype?15:9;
+            writ('[', attr);
+            writ('n', attr);
+            writ('l', attr);
+            chr = ']';
         }
         
         if(usecset == chronoset
         && (unsigned char)*s >= 0x21
         && (unsigned char)*s <  0xA0)
         {
-        	unsigned dict_start = (
-        	             data[CT_HDR+0x0258DE] + 256*data[CT_HDR+0x0258DF]
-        	           + 65536*data[CT_HDR+0x0258E0]
-        	                      ) & 0x3FFFFF;
+            unsigned dict_start = 0;
+        	if(0x0258E0 < size)
+        	{
+                dict_start = (
+                             data[CT_HDR+0x0258DE] + 256*data[CT_HDR+0x0258DF]
+                           + 65536*data[CT_HDR+0x0258E0]
+                                      ) & 0x3FFFFF;
+        	}
+        	if(dict_start + 256*2 < size)
+        	{
+                unsigned dict_ind = (unsigned char)*s - 0x21;
+                unsigned dict_ptr  = CT_HDR+dict_start + dict_ind*2;
+                unsigned dict_addr = CT_HDR+(dict_start&0xFF0000) + data[dict_ptr] + 256*data[dict_ptr+1];
         	
-        	unsigned dict_ind = (unsigned char)*s - 0x21;
+                unsigned count=data[dict_addr++];
+                
+                if(count > 16) count = 16;
+                
+                /*
+                attr = 12;
+                writ("0123456789ABCDEF"[(dict_addr>>20)&15], attr);
+                writ("0123456789ABCDEF"[(dict_addr>>16)&15], attr);
+                writ("0123456789ABCDEF"[(dict_addr>>12)&15], attr);
+                writ("0123456789ABCDEF"[(dict_addr>> 8)&15], attr);
+                writ("0123456789ABCDEF"[(dict_addr>> 4)&15], attr);
+                writ("0123456789ABCDEF"[(dict_addr    )&15], attr);
+                */
+                attr = searchtype?10:2;
+                
+                while(count-- > 0)
+                {
+                    chr = data[dict_addr++];
+                    chr = set3[(unsigned char)chr];
+                    if(count) writ(chr, attr);
+                }
+        	}
+        }
+        if(usecset == mkrset
+        && (unsigned char)*s == 0x02
+          )
+        {
+        	unsigned dict_start = 0x00B8E0;
+        	
+        	unsigned dict_ind = (unsigned char)*++s;
         	unsigned dict_ptr  = CT_HDR+dict_start + dict_ind*2;
         	unsigned dict_addr = CT_HDR+(dict_start&0xFF0000) + data[dict_ptr] + 256*data[dict_ptr+1];
-        	unsigned count=data[dict_addr++];
-        	
-        	if(count > 16) count = 16;
         	
         	/*
         	attr = 12;
@@ -383,11 +433,10 @@ static void display(void)
         	*/
         	attr = searchtype?10:2;
         	
-        	while(count-- > 0)
+        	while(data[dict_addr] != 0)
         	{
         		chr = data[dict_addr++];
-        		chr = set3[(unsigned char)chr];
-        		if(count) writ(chr, attr);
+        		if(data[dict_addr] != 0) writ(chr, attr);
         	}
         }
         
@@ -404,7 +453,7 @@ static void display(void)
 
         if(usecset != normalset && chr == '¶')
         {
-Hex:        attr = (searchtype && !(searchtype%searchstep)) ? 11:3;
+Hex:        attr = (searchtype && !(searchtype%searchstep)) ? 15 : 3;
             writ(("0123456789ABCDEF"[(unsigned char)*s>>4]), attr);
             chr = "0123456789ABCDEF"[*s&15];
         }

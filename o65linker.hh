@@ -81,7 +81,7 @@ public:
 private:
     // Copying prohibited
     O65linker(const O65linker& );
-    void operator= (const O65linker& );
+    const O65linker& operator= (const O65linker& );
 
 private:
     void LinkSymbol(const string& name, unsigned value);

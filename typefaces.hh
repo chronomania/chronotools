@@ -15,7 +15,9 @@ class Typeface
     unsigned begin, end;
     unsigned condense;
 public:
-    Typeface() { }
+    Typeface() : begin_marker(), end_marker(),
+                 offset(), begin(), end(), condense() { }
+
     Typeface(const ucs4string&b, const ucs4string &e,
              unsigned o,unsigned B,unsigned E,unsigned C)
      : begin_marker(b), end_marker(e),

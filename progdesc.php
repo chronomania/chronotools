@@ -85,7 +85,7 @@ Last updated:
 <tr><td>Compression algorithms</td>
     <td>100%</td> <td>everything works</td></tr>
 <tr><td>Item/tech/monster font handling</td>
-    <td>90%</td> <td>tech/monster code is useless</td></tr>
+    <td>99%</td> <td>equipment screen lags</td></tr>
 <tr><td>Graphics handling</td>
     <td>95%</td> <td>minor details left</td></tr>
 <tr><td>Signature feature</td>
@@ -193,6 +193,11 @@ Copypaste from the Makefile:
 # VERSION 1.12.3 fixes a bug that caused utils/codegen.cc not compile
 # VERSION 1.13.0 added support for expansion to 48 Mbit or 64 Mbit
 # VERSION 1.13.1 added support for free relocation of all script text
+# VERSION 1.13.2 is a minor bugfix to the expansion patch
+# VERSION 1.13.3 is a bugfix to the checksum fixer
+# VERSION 1.13.4 is a fix to the dumper. 600ad castle texts are now again ok.
+# VERSION 1.13.5 is another dumper fix, but also finishes the battle VWF8 support
+# VERSION 1.13.6 is yet another fix, but also finishes the monster name code
 </pre>
 
 Users of previous versions are advised to do the following:
@@ -391,7 +396,7 @@ elämän!</pre>
 <img src=\"/src/chronotools-vwf8.png\" alt=\"It works!\" align=right>
 Item, monster and technique names in Chrono Trigger are limited to 10 characters
 (restriction is enforced by both the screen layout and the ROM space).<br>
-This is way too little for Finnish, which has long words.
+This is way too little for many languages with long words.
 <p>
 For this reason Chronotools creates a vwf8 engine that allows
 the game to draw the names in thinner font that fits on the screen.
@@ -425,6 +430,7 @@ may have when compared to the standard English version:
   <ul>
    <li>Item names longer than 11 characters (new feature)</li>
    <li>Item names displayed in thinner font (new feature)</li>
+   <li>Technique names longer than 11 characters (new feature)</li>
    <li>Technique names displayed in thinner font (new feature)</li>
    <li>Ayla using a special version of Crono's name (orig. in jap. only)</li>
    <li>Equip screen showing the item count (orig. in jap. only)</li>

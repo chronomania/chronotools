@@ -17,13 +17,13 @@ namespace
       = (*(const short *)"\1\0\0\0\0\0\0\0" == 1) ? "UCS-4LE" : "UCS-4BE";
 }
 
-wstringOut::wstringOut() : charset(midset)
+wstringOut::wstringOut() : converter(), tester(), charset(midset)
 {
     converter = iconv_open(charset.c_str(), midset);
     tester = iconv_open(charset.c_str(), midset);
 }
 
-wstringOut::wstringOut(const char *setname) : charset(midset)
+wstringOut::wstringOut(const char *setname) : converter(), tester(), charset(midset)
 {
     converter = iconv_open(charset.c_str(), midset);
     tester = iconv_open(charset.c_str(), midset);
@@ -111,14 +111,14 @@ bool wstringOut::isok(ucs4 p) const
     return true;
 }
 
-wstringIn::wstringIn() : charset(midset)
+wstringIn::wstringIn()
+   : converter(iconv_open(midset, midset)), charset(midset)
 {
-    converter = iconv_open(midset, charset.c_str());
 }
 
-wstringIn::wstringIn(const char *setname) : charset(midset)
+wstringIn::wstringIn(const char *setname)
+   : converter(iconv_open(midset, midset)), charset(midset)
 {
-    converter = iconv_open(midset, charset.c_str());
     SetSet(setname);
 }
 
