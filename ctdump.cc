@@ -329,13 +329,14 @@ static void FindEndSpaces(void)
             {
                 if(ROM[blapos] == blanks[blank])
                 {
+                	static const unsigned minlen = 128;
                     ++blanklen;
-                    if(blanklen == 80)
+                    if(blanklen == minlen)
                     {
-                        for(unsigned a=0; a<80; ++a)
-                            space[blapos-63+a] = true;
+                        for(unsigned a=0; a<minlen; ++a)
+                            space[blapos-(minlen-1)+a] = true;
                     }
-                    if(blanklen >= 80)
+                    if(blanklen >= minlen)
                         space[blapos] = true;
                 }
                 else
@@ -510,6 +511,6 @@ int main(void)
     // Episode list
     DumpStrings(0x3FD03E);
     
-    //FindEndSpaces();
+    FindEndSpaces();
     ListSpaces();
 }

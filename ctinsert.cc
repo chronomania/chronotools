@@ -114,7 +114,7 @@ public:
         ROM[pointeraddr  ] = spaceptr & 255;
         ROM[pointeraddr+1] = spaceptr >> 8;
         
-        fprintf(stderr, "Wrote %u bytes at %06X->%04X\n", string.size()+1, pointeraddr, spaceptr);
+        //fprintf(stderr, "Wrote %u bytes at %06X->%04X\n", string.size()+1, pointeraddr, spaceptr);
         
         spaceptr += page<<16;
         for(unsigned a=0; a<=string.size(); ++a)
@@ -146,9 +146,9 @@ public:
         ROM[pointeraddr  ] = spaceptr & 255;
         ROM[pointeraddr+1] = spaceptr >> 8;
         
-        fprintf(stderr, "Wrote %u bytes at %06X->%04X: ", string.size()+1, pointeraddr, spaceptr);
+        //fprintf(stderr, "Wrote %u bytes at %06X->%04X: ", string.size()+1, pointeraddr, spaceptr);
         //fprintf(stderr, DispString(string).c_str());
-        fprintf(stderr, "\n");
+        //fprintf(stderr, "\n");
         
         spaceptr += page<<16;
         for(unsigned a=0; a<=string.size(); ++a)
@@ -177,6 +177,26 @@ public:
         for(i=strings.begin(); ; ++i)
         {
             if(i == strings.end()) goto Flush16;
+            
+            if(i->second.type == stringdata::fixed)
+            {
+            	const string &s = i->second.str;
+            	unsigned pos = i->first;
+            	unsigned a;
+            	for(a=0; a<s.size(); ++a)
+            	{
+            		ROM[pos] = s[a];
+            		Touched[pos] = true;
+            		++pos;
+            	}
+            	for(; a < i->second.width; ++a)
+            	{
+            		ROM[pos] = 0;
+            		Touched[pos] = true;
+            		++pos;
+            	}
+            	continue;
+            }
 
             if(i->second.type != stringdata::zptr16
             && i->second.type != stringdata::zptr8)continue;
@@ -234,15 +254,16 @@ public:
                 
                 set<unsigned> done;
                 while(done.size() != pagestrings.size())
-                    for(unsigned a=0; a<pagestrings.size(); ++a)
+                {
+                    for(unsigned stringnum=0; stringnum<pagestrings.size(); ++stringnum)
                     {
-                        if(done.find(a) != done.end())continue;
-                        multimap<unsigned,unsigned>::const_iterator i = belong1.find(a);
+                        if(done.find(stringnum) != done.end())continue;
+                        multimap<unsigned,unsigned>::const_iterator i = belong1.find(stringnum);
                         // If this string does not require any other string
                         if(i == belong1.end())
                         {
-                            pageoffs[a] = WriteZPtr(ROM, Touched, pageoffs[a], pagestrings[a]);
-                            done.insert(a);
+                            pageoffs[stringnum] = WriteZPtr(ROM, Touched, pageoffs[stringnum], pagestrings[stringnum]);
+                            done.insert(stringnum);
                         }
                         else
                         {
@@ -251,12 +272,13 @@ public:
                             {
                                 unsigned b = i->second;
                                 //fprintf(stderr, "Reusing pointer!\n");
-                                pageoffs[a] = WriteZPtr(ROM, Touched, pageoffs[a], pagestrings[a],
-                                                        pageoffs[b] + pagestrings[b].size()-pagestrings[a].size());
-                                done.insert(a);
+                                pageoffs[stringnum] = WriteZPtr(ROM, Touched, pageoffs[stringnum], pagestrings[stringnum],
+                                                        pageoffs[b] + pagestrings[b].size()-pagestrings[stringnum].size());
+                                done.insert(stringnum);
                             }
                         }
                     }
+                }
                 
                 if(i == strings.end())break;
                 pagestrings.clear();

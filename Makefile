@@ -4,7 +4,8 @@ CPPFLAGS=-Wall -W -pedantic -g
 LDFLAGS=-L/usr/lib/graphics
 
 # VERSION 1.0.3 was the first working! :D
-VERSION=1.0.3
+# VERSION 1.0.4 handled fixed strings too
+VERSION=1.0.4
 ARCHFILES=xray.c xray.h \
           viewer.c \
           ctcset.cc \
