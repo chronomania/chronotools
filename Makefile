@@ -27,10 +27,11 @@ include Makefile.sets
 # VERSION 1.1.4  conjugating finally works!
 # VERSION 1.1.5  some bugfixes
 # VERSION 1.1.6  fixed an allocation bug and optimized the code generator a bit
+# VERSION 1.1.7  some translation, more asm changes
 
 OPTIM=-O3
 
-VERSION=1.1.6
+VERSION=1.1.7
 ARCHFILES=xray.c xray.h \
           viewer.c \
           ctcset.cc ctcset.hh \

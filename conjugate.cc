@@ -30,7 +30,7 @@ void Conjugatemap::Load()
     tmp.data = CreateMap
         ( "Cronoa", "Marlea", "Luccaa",
           "Roboa", "Frogia", "Froggia",
-          "Aylaa", "Magusta", "Epochia",
+          "Aylaa", "Magusta", "Maguksea", "Magusia", "Epochia",
           "[member1]:a", "[member2]:a", "[member3]:a",
           "[member1]:ä", "[member2]:ä", "[member3]:ä",
           0 );
@@ -203,26 +203,18 @@ namespace
         SubRoutine result;
         SNEScode &code = result.code;
         
-    #define CALL_OLD \
-        { \
-            SNEScode::FarToNearCall call = code.PrepareFarToNearCall(); \
-            code.Set16bit_M(); \
-            code.AddCode(0xA5, 0x35); /* lda $0235 */\
-            call.Proceed(0xC25DC8);   /* call */\
-            code.BitnessUnknown(); \
-        }
-
+        SNEScode::RelativeBranch branchEnd = code.PrepareRelativeBranch();
         SNEScode::RelativeBranch branchOut = code.PrepareRelativeBranch();
         
         const map<CnjType, unsigned char> &prefixes = Conjugatemap.GetPref();
         
-        bool first = true;
+        bool first=true;
         
         map<CnjType, unsigned char>::const_iterator i;
         for(i=prefixes.begin(); i!=prefixes.end(); ++i)
         {
             SNEScode::RelativeBranch branchSkip = code.PrepareRelativeBranch();
-            if(first) code.Set8bit_M();
+            code.Set8bit_M();
             code.AddCode(0xC9, i->second); //cmp a, *
             code.AddCode(0xD0, 0);         //bne
             branchSkip.FromHere();
@@ -241,31 +233,18 @@ namespace
                 
                 code.AddCode(0x22, 0,0,0);
                 result.requires[funcname].insert(code.size() - 3);
-                code.BitnessUnknown();
                 
-                // FIXME: Add call to the function
-
                 if(first)
                 {
-                    branchOut.ToHere();
-                    
+                	branchOut.ToHere();
+                	code.BitnessUnknown();
                     code.Set16bit_M();
                     
                     // increment the pointer (skip the name printing)
                     code.AddCode(0xE6, 0x31);
 
-                    // pop 3 bytes, then do RTL although
-                    // was called with JSR, not JSL...
-                    code.Set8bit_M();
-                    code.AddCode(0x68, 0x68); // pha - pop the offset we're not using
-                    code.AddCode(0x68);       // pha - pop the segment
-                    code.Set16bit_X();
-                    code.AddCode(0xFA); // plx - get local return address
-                    code.AddCode(0x48); // pha - push segment
-                    code.AddCode(0xDA); // phx - push the address
-                    
-                    // And return.
-                    code.AddCode(0x6B);       //rtl
+                    code.AddCode(0x80, 0); // bra - jump out
+                    branchEnd.FromHere();
                     
                     first = false;
                 }
@@ -279,15 +258,21 @@ namespace
             branchSkip.Proceed();
         }
         
+        SNEScode::FarToNearCall call = code.PrepareFarToNearCall();
+        call.Proceed(0xC25DC4);   /* call */
+        
+        branchEnd.ToHere();
+        code.BitnessUnknown();
+        
         // Ready to return
-        code.Set16bit_M();
-        code.AddCode(0xA5, 0x35); //lda [$00:D+$35]
+        code.Set8bit_M();
         code.AddCode(0x6B);       //rtl
-
+        
+        branchEnd.Proceed();
         branchOut.Proceed();
 
         // This function will be called from.
-        code.AddCallFrom(0xC25DC4);
+        code.AddCallFrom(0xC258C2);
         
         return result;
     }

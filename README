@@ -338,14 +338,7 @@ $C2:5C0E 85 35       STA [$00:D+$35]      ;$00:0235     A:00C8 X:0038 Y:001F D:0
 $C2:5C10 E2 20       SEP $20                            A:00C8 X:0038 Y:001F D:0200 DB:00 PB:C2
 // Piirretään merkki.
 $C2:5C12 20 C4 5D    JSR [DB:$5DC4]       ;$00:5DC4     A:00C8 X:0038 Y:001F D:0200 DB:00 PB:C2
-
-// Piirtää siis merkin joka on osoitteessa $00:0235.
-// Tänne päädytään kahdesta osoitteesta:
-//  - C2:5C12 (dictionary/character name)
-//  - C2:58C4 (plain character)
-$C2:5DC4 C2 20       REP $20                            A:00C8 X:0038 Y:001F D:0200 DB:00 PB:C2
-
-//...
+// Tästä jatketaan.
 $C2:5C15 A9 00       LDA A, $00                         A:0000 X:0028 Y:0050 D:0200 DB:00 PB:C2
 // Vähennetään merkkijonon pituutta yhdellä
 $C2:5C17 C6 3A       DEC [$00:D+$3A]      ;$00:023A     A:0000 X:0028 Y:0050 D:0200 DB:00 PB:C2
@@ -370,7 +363,175 @@ $C2:5C34 85 15       STA [$00:D+$15]      ;$00:0215     A:0010 X:0000 Y:00A0 D:0
 $C2:5C36 60          RTS                                A:0010 X:0000 Y:00A0 D:0200 DB:00 PB:C2
 
 
+// 5DC4: piirtää merkin, joka on osoitteessa $00:0235.
+// Tänne päädytään kahdesta osoitteesta:
+//  - C2:5C12 (dictionary/character name)
+//  - C2:58C4 (plain character)
+$C2:5DC4 C2 20       REP $20                            A:00EF X:0000 Y:0030 D:0200 DB:7E PB:C2
+$C2:5DC6 A5 35       LDA [$00:D+$35]      ;$00:0235     A:00EF X:0000 Y:0030 D:0200 DB:7E PB:C2
+$C2:5DC8 0A          ASL A                              A:00EF X:0000 Y:0030 D:0200 DB:7E PB:C2
+$C2:5DC9 0A          ASL A                              A:01DE X:0000 Y:0030 D:0200 DB:7E PB:C2
+$C2:5DCA 0A          ASL A                              A:03BC X:0000 Y:0030 D:0200 DB:7E PB:C2
+$C2:5DCB 85 6C       STA [$00:D+$6C]      ;$00:026C     A:0778 X:0000 Y:0030 D:0200 DB:7E PB:C2
+$C2:5DCD 0A          ASL A                              A:0778 X:0000 Y:0030 D:0200 DB:7E PB:C2
+$C2:5DCE 65 6C       ADC [$00:D+$6C]      ;$00:026C     A:0EF0 X:0000 Y:0030 D:0200 DB:7E PB:C2
+// merkki*8 + merkki*16. A on nyt 24*merkki.
+$C2:5DD0 18          CLC                                A:1668 X:0000 Y:0030 D:0200 DB:7E PB:C2
+$C2:5DD1 69 60 20    ADC A, $2060                       A:1668 X:0000 Y:0030 D:0200 DB:7E PB:C2
+// Lisätään fontin osoite.
+$C2:5DD4 85 76       STA [$00:D+$76]      ;$00:0276     A:36C8 X:0000 Y:0030 D:0200 DB:7E PB:C2
+// $0276 sisältää nyt pointterin merkkiin.
+$C2:5DD6 A5 35       LDA [$00:D+$35]      ;$00:0235     A:36C8 X:0000 Y:0030 D:0200 DB:7E PB:C2
+$C2:5DD8 4A          LSR A                              A:00EF X:0000 Y:0030 D:0200 DB:7E PB:C2
+$C2:5DD9 0A          ASL A                              A:0077 X:0000 Y:0030 D:0200 DB:7E PB:C2
+$C2:5DDA 0A          ASL A                              A:00EE X:0000 Y:0030 D:0200 DB:7E PB:C2
+$C2:5DDB 0A          ASL A                              A:01DC X:0000 Y:0030 D:0200 DB:7E PB:C2
+$C2:5DDC 85 6C       STA [$00:D+$6C]      ;$00:026C     A:03B8 X:0000 Y:0030 D:0200 DB:7E PB:C2
+$C2:5DDE 0A          ASL A                              A:03B8 X:0000 Y:0030 D:0200 DB:7E PB:C2
+$C2:5DDF 65 6C       ADC [$00:D+$6C]      ;$00:026C     A:0770 X:0000 Y:0030 D:0200 DB:7E PB:C2
+$C2:5DE1 18          CLC                                A:0B28 X:0000 Y:0030 D:0200 DB:7E PB:C2
+// A = (merkki/2)*24
+$C2:5DE2 69 60 38    ADC A, $3860                       A:0B28 X:0000 Y:0030 D:0200 DB:7E PB:C2
+// $0279 sisältää nyt jonkin ihmeen pointterin.
+$C2:5DE5 85 79       STA [$00:D+$79]      ;$00:0279     A:4388 X:0000 Y:0030 D:0200 DB:7E PB:C2
+// $0234 saattaa olla pikselipositio rivillä.
+$C2:5DE7 A5 34       LDA [$00:D+$34]      ;$00:0234     A:4388 X:0000 Y:0030 D:0200 DB:7E PB:C2
+$C2:5DE9 29 07 00    AND A, $0007                       A:EF00 X:0000 Y:0030 D:0200 DB:7E PB:C2
+// Sijoitetaan $026A:han se.
+$C2:5DEC 85 6A       STA [$00:D+$6A]      ;$00:026A     A:0000 X:0000 Y:0030 D:0200 DB:7E PB:C2
+// $0210 saattaa olla positio ruudulla.
+$C2:5DEE A5 10       LDA [$00:D+$10]      ;$00:0210     A:0000 X:0000 Y:0030 D:0200 DB:7E PB:C2
+$C2:5DF0 18          CLC                                A:7000 X:0000 Y:0030 D:0200 DB:7E PB:C2
+$C2:5DF1 69 08 00    ADC A, $0008                       A:7000 X:0000 Y:0030 D:0200 DB:7E PB:C2
+// Lisättiin 8, ja sijoitetaan $0273:een se (long).
+$C2:5DF4 85 73       STA [$00:D+$73]      ;$00:0273     A:7008 X:0000 Y:0030 D:0200 DB:7E PB:C2
+$C2:5DF6 E2 20       SEP $20                            A:7008 X:0000 Y:0030 D:0200 DB:7E PB:C2
+$C2:5DF8 A5 12       LDA [$00:D+$12]      ;$00:0212     A:7008 X:0000 Y:0030 D:0200 DB:7E PB:C2
+$C2:5DFA 85 75       STA [$00:D+$75]      ;$00:0275     A:707E X:0000 Y:0030 D:0200 DB:7E PB:C2
+// tämä segmentti jonnekin
+$C2:5DFC A9 FF       LDA A, $FF                         A:707E X:0000 Y:0030 D:0200 DB:7E PB:C2
+$C2:5DFE 85 78       STA [$00:D+$78]      ;$00:0278     A:70FF X:0000 Y:0030 D:0200 DB:7E PB:C2
+$C2:5E00 85 7B       STA [$00:D+$7B]      ;$00:027B     A:70FF X:0000 Y:0030 D:0200 DB:7E PB:C2
+// Haetaan merkkipositio rivillä, kerrotaan neljällä
+$C2:5E02 A5 34       LDA [$00:D+$34]      ;$00:0234     A:70FF X:0000 Y:0030 D:0200 DB:7E PB:C2
+$C2:5E04 29 F8       AND A, $F8                         A:7000 X:0000 Y:0030 D:0200 DB:7E PB:C2
+$C2:5E06 4A          LSR A                              A:7000 X:0000 Y:0030 D:0200 DB:7E PB:C2
+$C2:5E07 4A          LSR A                              A:7000 X:0000 Y:0030 D:0200 DB:7E PB:C2
+// Sijoitetaan -> $026E
+$C2:5E08 85 6E       STA [$00:D+$6E]      ;$00:026E     A:7000 X:0000 Y:0030 D:0200 DB:7E PB:C2
+// Nolla -> $026F
+$C2:5E0A 64 6F       STZ [$00:D+$6F]      ;$00:026F     A:7000 X:0000 Y:0030 D:0200 DB:7E PB:C2
+// Kopioidaan $236 -> $262
+$C2:5E0C A5 35       LDA [$00:D+$35]      ;$00:0235     A:7000 X:0000 Y:0030 D:0200 DB:7E PB:C2
+$C2:5E0E 85 62       STA [$00:D+$62]      ;$00:0262     A:70EF X:0000 Y:0030 D:0200 DB:7E PB:C2
+// $214 voisi olla rivi, tai sitten ei...
+$C2:5E10 A5 14       LDA [$00:D+$14]      ;$00:0214     A:70EF X:0000 Y:0030 D:0200 DB:7E PB:C2
+$C2:5E12 29 0F       AND A, $0F                         A:7080 X:0000 Y:0030 D:0200 DB:7E PB:C2
+$C2:5E14 D0 05       BNE $5E1B                          A:7000 X:0000 Y:0030 D:0200 DB:7E PB:C2
+$C2:5E16 20 36 5E    JSR DB:$5E36         ;$7E:5E36     A:7000 X:0000 Y:0030 D:0200 DB:7E PB:C2
+// ??
+$C2:5E19 80 03       BRA $5E1E                          A:0000 X:0000 Y:0000 D:0200 DB:7E PB:C2
+$C2:5E1E A9 00       LDA A, $00                         A:0000 X:0000 Y:0000 D:0200 DB:7E PB:C2
+$C2:5E20 EB          XBA                                A:0000 X:0000 Y:0000 D:0200 DB:7E PB:C2
+$C2:5E21 38          SEC                                A:0000 X:0000 Y:0000 D:0200 DB:7E PB:C2
+$C2:5E22 A5 35       LDA [$00:D+$35]      ;$00:0235     A:0000 X:0000 Y:0000 D:0200 DB:7E PB:C2
+$C2:5E24 E9 A0       SBC A, $A0                         A:00EF X:0000 Y:0000 D:0200 DB:7E PB:C2
+$C2:5E26 AA          TAX                                A:004F X:0000 Y:0000 D:0200 DB:7E PB:C2
+$C2:5E27 18          CLC                                A:004F X:004F Y:0000 D:0200 DB:7E PB:C2
+$C2:5E28 BF E6 60 C2 LDA $C2:($60E6+x)    ;$C2:6135     A:004F X:004F Y:0000 D:0200 DB:7E PB:C2
+$C2:5E2C 65 34       ADC [$00:D+$34]      ;$00:0234     A:0004 X:004F Y:0000 D:0200 DB:7E PB:C2
+$C2:5E2E 85 34       STA [$00:D+$34]      ;$00:0234     A:0004 X:004F Y:0000 D:0200 DB:7E PB:C2
+$C2:5E30 E6 17       INC [$00:D+$17]      ;$00:0217     A:0004 X:004F Y:0000 D:0200 DB:7E PB:C2
+$C2:5E32 A9 00       LDA A, $00                         A:0004 X:004F Y:0000 D:0200 DB:7E PB:C2
+$C2:5E34 EB          XBA                                A:0000 X:004F Y:0000 D:0200 DB:7E PB:C2
+$C2:5E35 60          RTS                                A:0000 X:004F Y:0000 D:0200 DB:7E PB:C2
 
+// Rutiini 5E36: 
+$C2:5E36 8B          PHB                                A:7000 X:0000 Y:0030 D:0200 DB:7E PB:C2
+$C2:5E37 A9 C2       LDA A, $C2                         A:7000 X:0000 Y:0030 D:0200 DB:7E PB:C2
+$C2:5E39 48          PHA                                A:70C2 X:0000 Y:0030 D:0200 DB:7E PB:C2
+$C2:5E3A AB          PLB                                A:70C2 X:0000 Y:0030 D:0200 DB:7E PB:C2
+$C2:5E3B A9 04       LDA A, $04                         A:70C2 X:0000 Y:0030 D:0200 DB:C2 PB:C2
+$C2:5E3D 85 68       STA [$00:D+$68]      ;$00:0268     A:7004 X:0000 Y:0030 D:0200 DB:C2 PB:C2
+$C2:5E3F 64 60       STZ [$00:D+$60]      ;$00:0260     A:7004 X:0000 Y:0030 D:0200 DB:C2 PB:C2
+$C2:5E41 64 61       STZ [$00:D+$61]      ;$00:0261     A:7004 X:0000 Y:0030 D:0200 DB:C2 PB:C2
+$C2:5E43 20 89 5E    JSR DB:$5E89         ;$C2:5E89     A:7004 X:0000 Y:0030 D:0200 DB:C2 PB:C2
+// ??
+$C2:5E46 C2 20       REP $20                            A:0000 X:0000 Y:0000 D:0200 DB:C2 PB:C2
+$C2:5E48 E6 60       INC [$00:D+$60]      ;$00:0260     A:0000 X:0000 Y:0000 D:0200 DB:C2 PB:C2
+$C2:5E4A E6 73       INC [$00:D+$73]      ;$00:0273     A:0000 X:0000 Y:0000 D:0200 DB:C2 PB:C2
+$C2:5E4C E2 20       SEP $20                            A:0000 X:0000 Y:0000 D:0200 DB:C2 PB:C2
+$C2:5E4E 20 89 5E    JSR DB:$5E89         ;$C2:5E89     A:0000 X:0000 Y:0000 D:0200 DB:C2 PB:C2
+// ??
+$C2:5E51 C2 20       REP $20                            A:0000 X:0000 Y:0000 D:0200 DB:C2 PB:C2
+$C2:5E53 E6 60       INC [$00:D+$60]      ;$00:0260     A:0000 X:0000 Y:0000 D:0200 DB:C2 PB:C2
+$C2:5E55 E6 73       INC [$00:D+$73]      ;$00:0273     A:0000 X:0000 Y:0000 D:0200 DB:C2 PB:C2
+$C2:5E57 E2 20       SEP $20                            A:0000 X:0000 Y:0000 D:0200 DB:C2 PB:C2
+$C2:5E59 C6 68       DEC [$00:D+$68]      ;$00:0268     A:0000 X:0000 Y:0000 D:0200 DB:C2 PB:C2
+$C2:5E5B D0 E6       BNE $5E43                          A:0000 X:0000 Y:0000 D:0200 DB:C2 PB:C2
+// - loop
+$C2:5E5D C2 20       REP $20                            A:0000 X:0000 Y:0000 D:0200 DB:C2 PB:C2
+$C2:5E5F A5 73       LDA [$00:D+$73]      ;$00:0273     A:0000 X:0000 Y:0000 D:0200 DB:C2 PB:C2
+$C2:5E61 18          CLC                                A:7010 X:0000 Y:0000 D:0200 DB:C2 PB:C2
+$C2:5E62 69 F0 00    ADC A, $00F0                       A:7010 X:0000 Y:0000 D:0200 DB:C2 PB:C2
+$C2:5E65 85 73       STA [$00:D+$73]      ;$00:0273     A:7100 X:0000 Y:0000 D:0200 DB:C2 PB:C2
+$C2:5E67 E2 20       SEP $20                            A:7100 X:0000 Y:0000 D:0200 DB:C2 PB:C2
+$C2:5E69 A9 08       LDA A, $08                         A:7100 X:0000 Y:0000 D:0200 DB:C2 PB:C2
+$C2:5E6B 85 68       STA [$00:D+$68]      ;$00:0268     A:7108 X:0000 Y:0000 D:0200 DB:C2 PB:C2
+$C2:5E6D 20 89 5E    JSR DB:$5E89         ;$C2:5E89     A:7108 X:0000 Y:0000 D:0200 DB:C2 PB:C2
+// ??
+$C2:5E70 C2 20       REP $20                            A:0000 X:0000 Y:0000 D:0200 DB:C2 PB:C2
+$C2:5E72 E6 60       INC [$00:D+$60]      ;$00:0260     A:0000 X:0000 Y:0000 D:0200 DB:C2 PB:C2
+$C2:5E74 E6 73       INC [$00:D+$73]      ;$00:0273     A:0000 X:0000 Y:0000 D:0200 DB:C2 PB:C2
+$C2:5E76 E2 20       SEP $20                            A:0000 X:0000 Y:0000 D:0200 DB:C2 PB:C2
+$C2:5E78 20 89 5E    JSR DB:$5E89         ;$C2:5E89     A:0000 X:0000 Y:0000 D:0200 DB:C2 PB:C2
+// ??
+$C2:5E7B C2 20       REP $20                            A:0000 X:0000 Y:0000 D:0200 DB:C2 PB:C2
+$C2:5E7D E6 60       INC [$00:D+$60]      ;$00:0260     A:0000 X:0000 Y:0000 D:0200 DB:C2 PB:C2
+$C2:5E7F E6 73       INC [$00:D+$73]      ;$00:0273     A:0000 X:0000 Y:0000 D:0200 DB:C2 PB:C2
+$C2:5E81 E2 20       SEP $20                            A:0000 X:0000 Y:0000 D:0200 DB:C2 PB:C2
+$C2:5E83 C6 68       DEC [$00:D+$68]      ;$00:0268     A:0000 X:0000 Y:0000 D:0200 DB:C2 PB:C2
+$C2:5E85 D0 E6       BNE $5E6D                          A:0000 X:0000 Y:0000 D:0200 DB:C2 PB:C2
+// - loop
+$C2:5E87 AB          PLB                                A:0000 X:0000 Y:0000 D:0200 DB:C2 PB:C2
+$C2:5E88 60          RTS                                A:0000 X:0000 Y:0000 D:0200 DB:7E PB:C2
+
+
+// Rutiini 5E89:
+$C2:5E89 A4 60       LDY [$00:D+$60]      ;$00:0260     A:0000 X:0000 Y:0000 D:0200 DB:C2 PB:C2
+$C2:5E8B B7 76       LDA [long[$00:D+$76]+y] ;$FF:36D1  A:0000 X:0000 Y:0009 D:0200 DB:C2 PB:C2
+$C2:5E8D EB          XBA                                A:0000 X:0000 Y:0009 D:0200 DB:C2 PB:C2
+$C2:5E8E A5 62       LDA [$00:D+$62]      ;$00:0262     A:0000 X:0000 Y:0009 D:0200 DB:C2 PB:C2
+$C2:5E90 4A          LSR A                              A:00EF X:0000 Y:0009 D:0200 DB:C2 PB:C2
+$C2:5E91 90 08       BCC $5E9B                          A:0077 X:0000 Y:0009 D:0200 DB:C2 PB:C2
+
+$C2:5E93 B7 79       LDA [long[$00:D+$79]+y] ;$FF:4391  A:0077 X:0000 Y:0009 D:0200 DB:C2 PB:C2
+$C2:5E95 0A          ASL A                              A:0040 X:0000 Y:0009 D:0200 DB:C2 PB:C2
+$C2:5E96 0A          ASL A                              A:0080 X:0000 Y:0009 D:0200 DB:C2 PB:C2
+$C2:5E97 0A          ASL A                              A:0000 X:0000 Y:0009 D:0200 DB:C2 PB:C2
+$C2:5E98 0A          ASL A                              A:0000 X:0000 Y:0009 D:0200 DB:C2 PB:C2
+$C2:5E99 80 04       BRA $5E9F                          A:0000 X:0000 Y:0009 D:0200 DB:C2 PB:C2
+
+$C2:5E9B B7 79       LDA [long[$00:D+$79]+y] ;$FF:4148
+$C2:5E9D 29 F0       AND A, $F0
+
+$C2:5E9F C2 20       REP $20                            A:0000 X:0000 Y:0009 D:0200 DB:C2 PB:C2
+$C2:5EA1 A8          TAY                                A:0000 X:0000 Y:0009 D:0200 DB:C2 PB:C2
+$C2:5EA2 64 63       STZ [$00:D+$63]      ;$00:0263     A:0000 X:0000 Y:0000 D:0200 DB:C2 PB:C2
+$C2:5EA4 A5 6A       LDA [$00:D+$6A]      ;$00:026A     A:0000 X:0000 Y:0000 D:0200 DB:C2 PB:C2
+$C2:5EA6 29 FF 00    AND A, $00FF                       A:0000 X:0000 Y:0000 D:0200 DB:C2 PB:C2
+$C2:5EA9 0A          ASL A                              A:0000 X:0000 Y:0000 D:0200 DB:C2 PB:C2
+$C2:5EAA AA          TAX                                A:0000 X:0000 Y:0000 D:0200 DB:C2 PB:C2
+$C2:5EAB 98          TYA                                A:0000 X:0000 Y:0000 D:0200 DB:C2 PB:C2
+$C2:5EAC 7C AF 5E    JMP [PB:word[PB:$5EAF+x]] ;$C2:5EBF A:0000 X:0000 Y:0000 D:0200 DB:C2 PB:C
+$C2:5EBF E2 20       SEP $20                            A:0000 X:0000 Y:0000 D:0200 DB:C2 PB:C2
+$C2:5EC1 A6 6E       LDX [$00:D+$6E]      ;$00:026E     A:0000 X:0000 Y:0000 D:0200 DB:C2 PB:C2
+$C2:5EC3 BC E8 5F    LDY DB:($5FE8+x)     ;$C2:5FE8     A:0000 X:0000 Y:0000 D:0200 DB:C2 PB:C2
+$C2:5EC6 97 73       STA [long[$00:D+$73]+y] ;$7E:7018  A:0000 X:0000 Y:0010 D:0200 DB:C2 PB:C2
+$C2:5EC8 BC E6 5F    LDY DB:($5FE6+x)     ;$C2:5FE6     A:0000 X:0000 Y:0010 D:0200 DB:C2 PB:C2
+$C2:5ECB EB          XBA                                A:0000 X:0000 Y:0000 D:0200 DB:C2 PB:C2
+$C2:5ECC 97 73       STA [long[$00:D+$73]+y] ;$7E:7008  A:0000 X:0000 Y:0000 D:0200 DB:C2 PB:C2
+$C2:5ECE 60          RTS                                A:0000 X:0000 Y:0000 D:0200 DB:C2 PB:C2
 
 
    

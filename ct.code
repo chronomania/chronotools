@@ -9,7 +9,7 @@
 #  :B name
 #     declare function returning boolean, handles character name
 #  :Q name
-#     declare function returning boolean, parameter is byte (assigned to 'c')
+#     declare function returning boolean, parameter is byte (assigned to variable "c")
 #  :I name
 #     declare function returning byte
 ## OUT name
@@ -23,7 +23,7 @@
 ## - name
 #     name--
 ## { 
-#     loop over character name, character as 'c'
+#     loop over character name, store current character in variable "c"
 ## }
 #     end character name loop
 ## ? characters
@@ -165,14 +165,14 @@ cq IsVowel Hint
     TRUE
 FALSE
 
-:B EndWithVowel
+:B EndWithVowel <no_c>
 VAR Hint
 ci LastChar1 Hint
 cq IsVowel Hint
   TRUE
 FALSE
 
-:B DoubleHard
+:B DoubleHard <no_c>
 VAR Hint2 Hint3
 cb EndWithVowel
   ci LastChar2 Hint2
@@ -239,7 +239,7 @@ cv OutWord Len
 OUT 'i'
 RET
 
-:B SoftStem
+:B SoftStem <no_c>
 VAR Len Hint
 ci Length Len
 cb IsAbbrev
@@ -273,38 +273,38 @@ cv OutWord Len
 OUT 'i'
 RET
 
-:B Out_A no_vars
+:B Out_A <no_c>
 cb IsFront
   OUT 'ä'
   RET
 OUT 'a'
 RET
 
-:B Do_N no_vars
+:B Do_N <no_c>
 cf SoftStem
 OUT 'n'
 RET
 
-:B Do_A no_vars
+:B Do_A <no_c>
 cf HardStem
 cf Out_A
 RET
 
-:B Do_LLA no_vars
+:B Do_LLA <no_c>
 cf SoftStem
 OUT 'l'
 OUT 'l'
 cf Out_A
 RET
 
-:B Do_LLE no_vars
+:B Do_LLE <no_c>
 cf SoftStem
 OUT 'l'
 OUT 'l'
 OUT 'e'
 RET
 
-:B Do_STA no_vars
+:B Do_STA <no_c>
 cf SoftStem
 OUT 's'
 OUT 't'

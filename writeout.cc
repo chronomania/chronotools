@@ -195,6 +195,11 @@ void insertor::PatchROM(ROM &ROM)
     
     GenerateCode(); 
     
+    // SEP+JSR takes 5 bytes. We overwrote it
+    // with 4 bytes (see conjugate.cc).
+    // Patch with NOP.
+    ROM.Write(0x258C6, 0xEA);
+    
     WriteCode(ROM);
 }
 
