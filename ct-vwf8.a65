@@ -631,6 +631,7 @@ TinyStrlenFunc:
 
 DialogMonsterCall:
         jsr GetMonsterName
+        inc $3D ; Got the name, skip to next parameter.
         bra DialogItemCallPart2
 
 
