@@ -13,6 +13,7 @@
 #
 # Copyright (C) 1992,2003 Bisqwit (http://iki.fi/bisqwit/)
 #
+# Last updated: 22.6.2003
 
 
 # Define some extensions to String class
@@ -21,37 +22,36 @@ class String
   # Is the word front type or back type?
   def front?
     # Find the last character falling to these categories:
-    last = self.gsub(/.*([aouäöyAOUÄÖY123456789]).*/, '\1')
-    if last.size == 1
-      # If definitely front?
-      return true if last =~ /[äöyÄÖY14579]/
-      # If definitely back?
-      return false if last =~ /[aou02368]/i
+    self.gsub(/.*([aouAOUäöyÄÖY0-9])/) do
+      return $1 =~ /[äöyÄÖY14579]/
     end
-    # Use default. (What default?)
-    return true
-    #self.slice(0,1) =~ /[hkqz]/i
+    
+    # No hint, take some reasonable default if e/i present
+    return true if self =~ /[eiéEIÉ]/
+    
+    # No vowels. Guess from the last character.
+    return self !~ /[hkqåHKQÅ]/
   end
   
   # Does the word have a vowel somewhere and not number after it?
   def hasvowel?
-    return self =~ /[aeiouyäöåéÄÖÅÉ][^0123456789]*$/i
+    return self =~ /[aeiouyäöåéAEIOUYÄÖÅÉ][^0-9]*$/
   end
   
   # Get the nth last character of the word
   def lastchar(ind)
     return self.slice(0,1) if size < ind
-    self.slice(-ind,1)
+    self.slice(-ind, 1)
   end
   
   # Is this a vowel? (For 1 char strings)
   def isvowel?
-    self =~ /[aeiouyåäöéÅÄÖÉ]/i
+    self =~ /[aeiouyåäöéAEIOUYÅÄÖÉ]/
   end
   
   # Is this k/p/t (hard consonant)? (For 1 char strings)
   def ishard?
-    self =~ /[kpt]/i
+    self =~ /[kptKPT]/
   end
   
   # Is this word probably a nonword?
@@ -59,26 +59,27 @@ class String
     size == 1 or not hasvowel?
   end
   
+  # Ends with a vowel?
   def endwithvowel?
     lastchar(1).isvowel?
   end
   
   # Does the word end with es/us?
   def esloppu?
-    self =~ /[aeiouåäöéÅÄÖÉ]s$/i
+    self =~ /[aeiouåäöéAEIOUÅÄÖÉ][sS]$/
   end
   
   # Does the word end with hard*2 + vowel?
   def doublehard?
-    size > 2 \
-    and lastchar(1).isvowel? \
+    size >= 3 \
+    and endwithvowel? \
     and lastchar(2) == lastchar(3) \
     and lastchar(2).ishard?
   end
   
   # Does the word end with -aki/-äki, e desired?
   def akiend_e?
-    self =~ /[aäÄ][kpt]i$/i
+    self =~ /[aäAÄ][kptKPT][iI]$/
   end
 
   # Does the word end with -aki/-äki, i desired?
@@ -88,7 +89,9 @@ class String
   end
 end
 
-def hardbody(s, plural=false)
+# Hard stem (used in partitive)
+#
+def hardstem(s, plural=false)
   ret = String.new(s)
   if s.isabbrev?
     # Abbreviation. This isn't very good but there's no better.
@@ -97,17 +100,17 @@ def hardbody(s, plural=false)
     #           P,a -> P:tä
     ret << ':'
     last = s.lastchar(1)
-    if last =~ /[flmnlrswx479]/i
+    if last =~ /.*[flmnlrswx479]/i
       ret << 'ä'
-    elsif last =~ /[z]/i 
+    elsif last =~ /[zZ]/
       ret << 'a'
-    elsif last !~ /[0123456789]/i
+    elsif last !~ /[0-9]/
       ret << 't'
     end
   elsif s.esloppu?
     # If the word ends with s, add "t"
     # Example: Magus,a -> Magusta
-    if(plural)
+    if plural
       ret[-1, 1] = 'ksi'
     else
       ret << 't'
@@ -116,19 +119,21 @@ def hardbody(s, plural=false)
     # If the word does not end with vowel, add "i"
     # Examples: John,a -> Johnia
     #           Frog,a -> Frogia
+    
     ret << (plural ? 'ej' : 'i')
   elsif s.akiend_e?
     # If the word ends with aki or äki, hard ending is ake/äke
     ret[-1, 1] = 'e'
   elsif s.doublehard?
     # If the word ends with hardconsonantdouble + vowel,
-    ret[-1,1] = 'ej'  if(plural)
+    ret[-1, 1] = 'ej'  if(plural)
   end
   ret
 end
 
-
-def softbody(s, plural=false)
+# Soft stem (used in almost everything)
+#
+def softstem(s, plural=false)
   ret = String.new(s)
   if s.isabbrev?
     # Abbreviation. This isn't very good but there's no better.
@@ -163,48 +168,37 @@ end
 # basic form
 #               example: crono
 def nominatiiviksi(s, plural=false)
-  if plural
-    ret = softbody(s, plural)
-    ret << 't'
-  else
-    ret = String.new(s)
-  end
+  (plural ? softstem(s) + 't' : s)
 end
 
 # partitiivi  = the object of action that affects the target
 #               example: cronoa
 def partitiiviksi(s, plural=false)
-  ret = hardbody(s, plural)
-  ret << (ret.front? ? 'ä' : 'a')
+  hardstem(s, plural) + (s.front? ? 'ä' : 'a')
 end
 
 # akkusatiivi = the object of action that affects the target as whole
 #               example: cronon
 def akkusatiiviksi(s, plural=false)
-  ret = softbody(s, plural)
-  ret << (plural ? 't' : 'n')
+  softstem(s, plural) + (plural ? 't' : 'n')
 end
 
 # genetiivi   = owner of something, in English usually "'s"
 #               example: cronon
 def genetiiviksi(s, plural=false)
-  ret = softbody(s, plural)
-  ret << 'n'
+  softstem(s, plural) + 'n'
 end
 
 # adessiivi   = owner/container of something, in English "has" or "in" or "on"
 #               example: cronolla
 def adessiiviksi(s, plural=false)
-  ret = softbody(s, plural)
-  ret << 'll'
-  ret << (ret.front? ? 'ä' : 'a')
+  softstem(s, plural) + (s.front? ? 'llä' : 'lla')
 end
 
 # allatiivi   = target of something, in English sometimes as "to" or "for" preposition
 #               example: cronolle
 def allatiiviksi(s, plural=false)
-  ret = softbody(s, plural)
-  ret << 'lle'
+  softstem(s, plural) + 'lle'
 end
 
 
@@ -218,16 +212,15 @@ def testit(nimi, plural=false)
 end
 
 
-testit "ZGK"
 testit "ZGX"
-testit "R1234"
+testit "R66"
 testit "Magus"
 testit "Teräs"
 testit "John"
 
 testit "Matti"
-testit "Mökki"
-testit "Lucca"
+testit "ARLA"
+testit "Kaisa"
 testit "Lätsä"
 testit "Mäki"
 

@@ -1,9 +1,11 @@
-#CXX=g++
-CXX=g++-2.95
+CXX=g++
+#CXX=g++-2.95
 #CXX=/usr/gcc3/bin/i586-pc-linux-gnu-g++
 CC=$(CXX)
 CPPFLAGS=-Wall -W -pedantic -g -DVERSION=\"$(VERSION)\"
 LDFLAGS=-L/usr/lib/graphics
+
+CXXFLAGS=-O2
 
 # VERSION 1.0.3 was the first working! :D
 # VERSION 1.0.4 handled fixed strings too
@@ -19,16 +21,22 @@ LDFLAGS=-L/usr/lib/graphics
 # VERSION 1.0.14 added taipus.cc
 # VERSION 1.0.15 updated FIN/README and ct_fin.txt, but neither are archived
 # VERSION 1.0.16 added taipus.rb, fixed homepage urls and fixed mmap error checking.
+# VERSION 1.0.17 working again; uses space better; little modularized
 
-VERSION=1.0.16
+VERSION=1.0.17
 ARCHFILES=xray.c xray.h \
           viewer.c \
-          ctcset.cc \
-          ctcset.hh miscfun.cc miscfun.hh \
+          ctcset.cc ctcset.hh \
+          miscfun.cc miscfun.hh \
+          space.cc space.hh \
           wstring.cc wstring.hh \
+          loadin.cc \
+          tgaimage.cc tgaimage.hh \
           ctdump.cc ctinsert.cc \
+          ctinsert.hh \
           makeips.cc unmakeips.cc \
           taipus.cc taipus.rb \
+          spacefind.cc \
           README
 EXTRA_ARCHFILES=ct_eng.txt \
           dictionary5 \
@@ -49,11 +57,12 @@ viewer: viewer.o
 
 ctdump: ctdump.o ctcset.o miscfun.o wstring.o
 	$(CXX) -o $@ $^
-	# -liconv
 
-ctinsert: ctinsert.o ctcset.o miscfun.o wstring.o
+ctinsert: ctinsert.o ctcset.o miscfun.o wstring.o tgaimage.o loadin.o space.o
 	$(CXX) -o $@ $^ $(LDFLAGS) -lm
-	# -liconv
+
+spacefind: spacefind.o
+	$(CXX) -o $@ $^ $(LDFLAGS) -lm
 
 makeips: makeips.cc
 	$(CXX) -o $@ $^
@@ -62,14 +71,16 @@ unmakeips: unmakeips.cc
 
 ct_eng.txt: ctdump chrono-dumpee.smc
 	./ctdump >ct_eng.txt
-ctpatch-hdr.ips ctpatch-nohdr.ips: ctinsert ct_eng.txt \
-	ct16fnFI.tga ct8fnFI.tga
+ctpatch-hdr.ips ctpatch-nohdr.ips: \
+		ctinsert ct_eng.txt \
+		ct16fnFI.tga ct8fnFI.tga
 	./ctinsert
 chrono-patched.smc: unmakeips ctpatch-hdr.ips chrono-dumpee.smc
 	./unmakeips ctpatch-hdr.ips <chrono-dumpee.smc >chrono-patched.smc
 
 snes9xtest: chrono-patched.smc FORCE
-	~/src/snes9x/bisq-1.39/Gsnes9x -stereo -alt -m 256x256[C32/32] -r 7 chrono-patched.smc
+	#~/src/snes9x/bisq-1.39/Gsnes9x -stereo -alt -m 256x256[C32/32] -r 7 chrono-patched.smc
+	~/snes9x -stereo -alt -y 4 -r 7 chrono-patched.smc
 
 clean: FORCE
 	rm -f *.o $(PROGS)

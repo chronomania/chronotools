@@ -544,7 +544,7 @@ $3Llj:Estää «Lock»
 $3Lll:Estää «Stop,» «Slow»
 $3Lln:Suojaa statusta
 $3Llp:???
-$3Llr:50% less time between attacks
+$3Llr:50% nopeampi iskujen lataus
 $3Llt:Cuts «Lightning» hits by 50%
 $3Llv:Cuts «Water» hits by  50%
 $3Llx:
@@ -783,51 +783,51 @@ $3KN1:
 ;tech descs
 *z;117 pointerstrings (12pix font)
 $3MS1:
-$3MS3:Spin-cut nearby enemies
-$3MS5:Slash attack
-$3MS7:Attack using Lightning
-$3MS9:2x damage
-$3MSB:Strikes all enemies
-$3MSD:Bring ally back to life
-$3MSF:Attack enemy w/ Confuse 4 times
-$3MSH:Ultimate damage on all enemies
-$3MSJ:Restore ally's HP (Some)
-$3MSL:Confuse enemy
-$3MSN:Attack enemy w/ Ice
-$3MSP:Heal ally (More)
-$3MSR:Cut ally's wait time by 1 / 2
-$3MST:Damage all enemies w/ Ice 2
-$3MSV:Heal ally (Full)
-$3MSX:Revive & restore all HP
-$3MSZ:Hit all enemies on a line
-$3MSb:Put enemies to sleep
-$3MSd:Fire damage / one enemy
-$3MSf:Damage enemies in bomb area
-$3MSh:Ups ally's phys. def.
-$3MSj:Fire damage / all enemies
-$3MSl:Damage enemies in bomb area
-$3MSn:Strongest Fire magic attack
-$3MSp:Punch enemy
-$3MSr:Restore ally's HP (Some)
-$3MSt:Laser Spin / all enemies
-$3MSv:Tackle enemy
-$3MSx:Restore all allies' HP (Some)
-$3MSz:Hit enemy w/ Multi-Punch
-$3MT1:Damage enemy w/ Meltbeam
-$3MT3:Damage all enemies w/ Max Shock
-$3MT5:Restore ally's HP (Some)
-$3MT7:Snag and slash enemy
-$3MT9:Damage enemy w/ Water
-$3MTB:Restore allies' HP (More)
-$3MTD:Leap-slash an enemy
-$3MTF:Damage all enemies w/ Water
-$3MTH:Restore ally's HP (Full)
-$3MTJ:Low HP = greater damage
-$3MTL:HP(Some) & Status restored
-$3MTN:Rollokick an enemy
-$3MTP:A savage cat attack
-$3MTR:Stone an enemy
-$3MTT:Steal from enemy
+$3MS3:Kierreisku lähimpiin
+$3MS5:Sivallusisku
+$3MS7:Salamaisku
+$3MS9:2x tuho
+$3MSB:Iskee kaikkia
+$3MSD:Kaverin henkiinherätys
+$3MSF:4x hämmennysisku
+$3MSH:Mahtava tuhovoima kaikkiin vih.
+$3MSJ:Parantaa kaveria vähän
+$3MSL:Hämmentää vihollista
+$3MSN:Jääisku
+$3MSP:Parantaa kaveria
+$3MSR:Nopeuttaa kaveria 50%
+$3MST:Isompi jääisku
+$3MSV:Parantaa kaverin
+$3MSX:Elvyttää täyteen kuntoon
+$3MSZ:Linjassa isku
+$3MSb:Nukutus
+$3MSd:Tuli-isku yhteen vih.
+$3MSf:Tuhoa pommin alueella
+$3MSh:Nostaa fyysistä kestävyyttä
+$3MSj:Tuli-isku kaikkiin vih.
+$3MSl:Tuhoa pommin alueella
+$3MSn:Voimakkain tuli-isku
+$3MSp:Lyönti
+$3MSr:Palauttaa kaverin voimia
+$3MSt:Laserisku kaikkiin vih.
+$3MSv:Taklaus
+$3MSx:Palauttaa kaikkien voimia
+$3MSz:Lyöntisarja
+$3MT1:Tuhoava sulatussäde
+$3MT3:Valtava shokkiaalto
+$3MT5:Palauttaa kaverin voimia
+$3MT7:Viiltoisku
+$3MT9:Vesi-isku
+$3MTB:Palauttaa kaverien voimia
+$3MTD:Hyppyisku
+$3MTF:Vesi-isku kaikkiin vih.
+$3MTH:Parantaa kaverin kuntoon
+$3MTJ:Paras toiminta vähissä voimissa
+$3MTL:Parantaa voiman ja statuksen
+$3MTN:Kierrepotku
+$3MTP:Villikissahyökkäys
+$3MTR:Kivettää vihollisen
+$3MTT:Varastaa viholliselta
 $3MTV:Damage enemies w/ Tailspin
 $3MTX:Low HP = greater damage
 $3MTZ:Damage enemy w/ Triple Kick
@@ -903,15 +903,15 @@ $3MVl:Phys. Att. w/ NewMasamune
 
 ;tech related
 *z;4 pointerstrings (12pix font)
-$3MVn:Can't run away
-$3MVp:Single Tech
-$3MVr:Dual Tech
-$3MVt:Triple Tech
+$3MVn:Ei voi paeta
+$3MVp:1x tek.
+$3MVr:2x tek.
+$3MVt:3x tek.
 
 
 ;monsters
 *l11;252 fixed length strings (length: 11 bytes)
-$3PJQ:Nu         
+$3PJQ:Nuu        
 $3PJb:Reptite    
 $3PJm:Terrasaur  
 $3PJx:Kilwala    
@@ -1167,10 +1167,10 @@ $3Q1x:_
 
 ;Weapon Helmet Armor Accessory
 *l10;4 fixed length strings (length: 10 bytes)
-$0j06:__Weapon__
-$0j0G:__Helmet__
-$0j0Q:__Armor___
-$0j0a:Accessory
+$0j06:__Ase_____
+$0j0G:__Kypärä__
+$0j0Q:__Suojus__
+$0j0a:Tarvike__
 
 
 ;Location titles
@@ -1340,33 +1340,33 @@ $3W9x:Liian lähellä vastaiskuun.
 $3W9z:Mortal blow!
 $3WA1:NeedleSpin / Yakra's needle attack.
 $3WA3:Naga-ette's[heartsymbol][heartsymbol][heartsymbol] / Slow spell!
-$3WA5:Ding-a-ling / Chaos
+$3WA5:Dingding! / Kaaos
 $3WA7:Drrrrrooooo...
-$3WA9:Attacked by moving object.
-$3WAB:I'll shred ya.
+$3WA9:Hyökkäysliike havaittu.
+$3WAB:Silvon teidät.
 $3WAD:Hajotus
 $3WAF:AmpliFire
-$3WAH:Ozzie's spell is broken.
-$3WAJ:Ozzie needs help!
-$3WAL:Sand Breath / Darkness
-$3WAN:3 can join together for a Delta Attack.
-$3WAP:Gore, gore, gore, gore...
-$3WAR:Doom, doom, doom, doom...
+$3WAH:Ozzien taiat eivät toimi.
+$3WAJ:Ozzie tarvitsee apua!
+$3WAL:Hiekkahenkäys / pimeys
+$3WAN:3 voi muodostaa yhdessä Deltaiskun
+$3WAP:Verta... Ruumiita...Lihaa...
+$3WAR:Tuomio... Tuho... Kohtalo...
 $3WAT:Rrrrrrrrrr...
-$3WAV:Go ahead! Try and attack...!
-$3WAX:Water wave!!
+$3WAV:Yritä vaan hyökätä...!
+$3WAX:Vesiaalto!
 $3WAZ:Revives the Bit.
 $3WAb:Brief counterattack break.
-$3WAd:Chemically fuse with other members.
-$3WAf:Storing Tornado Energy.
-$3WAh:Tornado Energy has been neutralized.
-$3WAj:AmpliFire Counterattack
+$3WAd:Yhtyy muihin jäseniin kemiallisesti.
+$3WAf:Varastoidaan tornadoenergiaa
+$3WAh:Tornadoenergia neutralisoitu
+$3WAj:Moninkertainen vastahyökkäys
 $3WAl:Tuska...
-$3WAn:What are you aiming at, you fool?
-$3WAp:Yes indeed!
+$3WAn:Mihin tähtäät, pöhkö?
+$3WAp:No niin juuri!
 $3WAr:Hahahaha...
-$3WAt:Shocked!
-$3WAv:Revives from shock.
+$3WAt:Shokissa!
+$3WAv:Palautui shokista.
 $3WAx:Dark Matter / Magus's strongest attack!
 $3WAz:Releases electrocution energy.
 $3WB1:Waltz of the Wind [heartsymbol] /  Chaos
@@ -1384,7 +1384,7 @@ $3WBN:3
 $3WBP:2
 $3WBR:1
 $3WBT:0
-$3WBV:Attack, attack, attack...
+$3WBV:Iske, iske, iske...
 $3WBX:Barrier change/Only Lightning damages.
 $3WBZ:Barrier change / Only Shadow damages.
 $3WBb:Barrier change / Only Fire damages.
@@ -1535,30 +1535,30 @@ $3WGF:Grand Stone / Ultimate phys. attack
 $3WGH:Spell / Random status
 $3WGJ:Dreamless / Ultimate Magic attack
 $3WGL:Invading Light / Slow
-$3WGN:Freeze / Stop
+$3WGN:Jäädytys / pysäytys
 $3WGP:Crying Heavens / Hidden blow
-$3WGR:Defense down!
-$3WGT:I...AM...
+$3WGR:Puolustus tippui!
+$3WGT:Minä...OLEN...
 $3WGV:Area Bomb
 $3WGX:Scouter fights all Mag but «Lightning.»
 $3WGZ:Red Scout fights all mag but «Fire.»
 $3WGb:Blue Scout fights all mag but «Water.»
 $3WGd:Lavos's sigh / Sleep
-$3WGf:Salt
+$3WGf:Suolaa
 $3WGh:Shining Bit / Lightning
 $3WGj:Attack / Will attack with no center bit.
-$3WGl:Copycat Skill / Copy Lightning tech
-$3WGn:Copycat Skill / Copy Shadow tech
-$3WGp:Copycat Skill / Copy Water techniques
-$3WGr:Copycat Skill / Copy Fire techniques
-$3WGt:GolemBoss «Impossible! I'm...s...scared!»
-$3WGv:GolemBoss «I HATE heights!»
-$3WGx:GolemBoss «Chew on this!»
-$3WGz:GolemBoss «5»
-$3WH1:GolemBoss «4»
-$3WH3:GolemBoss «3»
-$3WH5:GolemBoss «2»
-$3WH7:GolemBoss «1»
+$3WGl:Kopiokyky / Kopioi Salama tek.
+$3WGn:Kopiokyky / Kopioi Varjo tek.
+$3WGp:Kopiokyky / Kopioi Vesi tek.
+$3WGr:Kopiokyky / Kopioi Tuli tek.
+$3WGt:GolemPomo «Mahdotonta! Minua... pelottaa!»
+$3WGv:GolemPomo «Vihaan korkeita paikkoja!»
+$3WGx:GolemPomo «Maista tätä!»
+$3WGz:GolemPomo «5»
+$3WH1:GolemPomo «4»
+$3WH3:GolemPomo «3»
+$3WH5:GolemPomo «2»
+$3WH7:GolemPomo «1»
 
 
 ;600ad (castle, masa+mune, naga-ette)
@@ -3461,21 +3461,21 @@ $8UaG:
 [nl]
              Found 1 [item]!
 $8UaI:
-Jurassic[musicsymbol] rhythm[musicsymbol]
+Bombombom[musicsymbol] Bong [musicsymbol]
 $8UaK:
-You're so weak[musicsymbol][nl]
-And I'm so strong[musicsymbol][nl]
-I punched your lights out[musicsymbol][nl]
-Now run along[musicsymbol][musicsymbol]
+Oletpas heikko,[musicsymbol][nl]
+ja mä olen vahva[musicsymbol][nl]
+minä siis voitin,[musicsymbol][nl]
+menepäs siitä nyt![musicsymbol]
 $8UaM:
-They call me Gato[musicsymbol][nl]
-I have metal joints[musicsymbol][nl]
-Beat me up[musicsymbol][nl]
-And earn 15 Silver Points[musicsymbol]
+Aa Gonzales![musicsymbol][nl]
+Olen mahtava![musicsymbol][nl]
+Minut jos voitat,[musicsymbol][nl]
+niin hopeapisteitä saat[musicsymbol]
 $8UaO:
-I lost[musicsymbol] You won[musicsymbol][nl]
-Here's 15 Points[musicsymbol][nl]
-Now wasn't that fun!?[musicsymbol]
+Mä hävisin[musicsymbol] Sä voitit[musicsymbol][nl]
+Tässä 15 hopeapistettä[musicsymbol][nl]
+eikös ollutkin kivaa?[musicsymbol]
 $8UaQ:
 SOLDIER: There they are![nl]
    Don't lose 'em!!
@@ -3533,49 +3533,47 @@ I take the ferry every chance I get!
 $8Ub6:
 Nothing like a ferry ride!
 $8Ub8:
-ELDER: Ha![nl]
-   I run this town![nl]
-   And I'm so rich I don't know what to[nl]
-   do with it all!!
+Mies: Hah![nl]
+   Minä pyöritän tätä kaupunkia.[nl]
+   Minä olen niin rikas etten tiedä[nl]
+   mitä kaikella rahallani tekisin!
 $8UbA:
-Give you 10G if you act like[nl]
-a chicken![nl]
-      Yes.[nl]
-      No.
+Saat 10G jos matkit kanaa![nl]
+   [nl]
+      Okei.[nl]
+      No en varmasti.
 $8UbC:
-ELDER: Bo-oring!
+Mies: Plää!
 $8UbE:
-ELDER: HAAAHAHA![nl]
-   Here ya go, 10G!
+Mies: HAAAHAHA![nl]
+   Tässä on, 10G!
 $8UbG:
 Share and share alike![nl]
 Help the needy![nl]
 Thinkin' about makin' THAT the town[nl]
 motto.
 $8UbI:
-The person I hate most?[nl]
-My dad, of course.
+Ketä eniten vihaan?[nl]
+Isääni, tietenkin.
 $8UbK:
-The person I like most?[nl]
-My dad, of course!
+Kenestä tykkään eniten?[nl]
+Tottakai isästäni!
 $8UbM:
-Dad loves money more than he loves[nl]
-me...
+Isä arvostaa rahaa enemmän[nl]
+kuin minua...
 $8UbO:
-I love my daddy!
+Rakastan isääni!
 $8UbQ:
-The children are slipping away from us.[nl]
-It's so sad...
+Lapset eivät enää välitä meistä.[nl]
+Se on surullista...
 $8UbS:
-I wish my husband were a little less[nl]
-generous.
+Kunpa mieheni ei olisi niin antelias...
 $8UbU:
-Everyone says Daddy's greedy.[nl]
-They're lying, right?
+Kaikki väittävät isää ahneeksi.[nl]
+Se ei ole totta, eihän?
 $8UbW:
-Everyone thinks DAD's generous.[nl]
-Does that mean they think he's cool?[nl]
-Who knows.
+Kaikkien mielestä isä on antelias.[nl]
+Onkohan hän siis heistä cool?
 $8UbY:
 Grandpa & Grandma went to the 1000th[nl]
 Anniversary in Truce.[nl]
@@ -3586,8 +3584,9 @@ $8Ubc:
 Some monsters coexist with humans.[nl]
 Like that piano player.
 $8Ube:
-Everyone's over at the festival.[nl]
-What fools!
+Kaikki ovat menneet festivaaleihin.[nl]
+   Mitä idiootteja! Baarissa dokaus[nl]
+   on paljon parempi vaihtoehto...
 $8Ubg:
 400 years ago a woman named Fiona[nl]
 died trying to save the great forest[nl]
@@ -3611,7 +3610,7 @@ $8Ubo:
 Yeeeoooww![nl]
 It's heavy!
 $8Ubq:
-Don't overdo it!
+Turha yrittää liikaa!
 $8Ubs:
 It was Magus who killed off the[nl]
 forest up north.
@@ -14785,42 +14784,44 @@ This is Leene Square. They say people[nl]
 who hear Leene's Bell ring will have[nl]
 interesting and happy lives!
 $GhLo:
-What's the big deal?[nl]
-So what if we won a war against a[nl]
-Wizard hundreds of years ago!
+Entä sitten?[nl]
+   Ketä kiinnostaa että voitimme[nl]
+   jonkin pöhkön sodan sata vuotta[nl]
+   sitten?
 $GhLq:
-They're still setting up.[nl]
-Why don't you come back in a while?
+He laittautuvat vielä.[nl]
+   Odottaisitteko jonkin aikaa?
 $GhLs:
-I heard Lucca and her dad have[nl]
-made another crazy invention.
+Lucca on tehnyt isänsä kanssa[nl]
+   uuden keksinnön.
 [pause]
-Hope it doesn't blow up like all the[nl]
-others!
+   Toivotaan ettei se tuhoudu kuten[nl]
+   edelliset!
 $GhLu:
-They ought to be ready now.[nl]
-Make for the far side of the Square.
+He lienevät valmiita.[nl]
+   Mene aukion toiselle puolelle.
 [pause]
-Marle: This is going to be fun![nl]
-   Come on, Crono!
+Marle: Tästä tulee hauskaa![nl]
+   Mennään, Crono!
 $GhLw:
-Lucca's device is all set up.[nl]
-She's at the north end of the Square.
+Luccan laite on valmis.[nl]
+   Mene aukion pohjoiselle puolelle.
 $GhLy:
-Marle: Hold your horses![nl]
-   I want to get some candy.
+Marle: Odota sekunti...  [nl]
+   Mietin vielä mitä ottaisin...
 $GhM0:
-Marle: Give me just a second!
+Marle: Odota vielä vähäsen!
 $GhM2:
-Marle: There's no need to drag me[nl]
-   by the arm like some kidnapper!
+Marle: Hei! Ei minua tarvitse[nl]
+   repiä niinkun olisit joku[nl]
+   kidnappaaja!
 $GhM4:
-Marle: Hi![nl]
-   I'd like some of this.
+Marle: Hei,[nl]
+   haluaisin näitä.
 [pause]
-LADY: Sure, young lady.
+Rouva: Toki, neitiseni!
 $GhM6:
-Marle: Thanks for waiting!
+Marle: Kiitos kun odotit, Crono!
 $GhM8:
 Marle: Hee, hee.[nl]
    You're such a pig, Crono!
@@ -14833,33 +14834,32 @@ $GhME:
 Marle: Crono...[nl]
    I'm having a great time!
 $GhMG:
-The merchants went back to their[nl]
-warehouse to stock up on more goods.
+Kauppiaat palasivat kaupunkiin[nl]
+   täyttämään varastojaan.
 $GhMI:
-You have [num8] Silver Points.
+Sinulla on [num8] hopeapistettä.
 [pause]
-Want to exchange 10 Silver Points[nl]
-for 50 G?[nl]
-      Yes.[nl]
-      No.
+Myytkö 50G:llä niitä kymmenen?[nl]
+   [nl]
+      Kyllä.[nl]
+      En.
 $GhMK:
-Not enough Silver Points.
+Et omista tarpeeksi hopeapisteitä.
 $GhMM:
-Come again.
+Näkemiin.
 $GhMO:
 I hate fairs![nl]
 Say, do you know the latest gossip?[nl]
       Yes.[nl]
       No.
 $GhMQ:
-Then scram!
+Nähdään.
 $GhMS:
-Just between us, I heard that the King[nl]
-is distressed over his tomboy of a[nl]
-daughter!
+Ihan meidän kesken... Kuningas[nl]
+   on huolissaan tytöstään.
 [pause]
-Just once, I would like to see how wild[nl]
-she really is!
+   Tahtoisin tosiaan nähdä,[nl]
+   kuinka villi hän on!
 $GhMU:
 TABAN: Step right on up, any of you[nl]
    who have the time and the courage![nl]
@@ -17486,248 +17486,248 @@ I'm so happy I could scream!
 
 ;Item types
 *r;242 pointerstrings (8pix font)
-$HW0O:WEAPON
-$HW0Q:WEAPON
-$HW0S:WEAPON
-$HW0U:WEAPON
-$HW0W:WEAPON
-$HW0Y:WEAPON
-$HW0a:WEAPON
-$HW0c:WEAPON
-$HW0e:WEAPON
-$HW0g:WEAPON
-$HW0i:WEAPON
-$HW0k:WEAPON
-$HW0m:WEAPON
-$HW0o:WEAPON
-$HW0q:WEAPON
-$HW0s:WEAPON
-$HW0u:WEAPON
-$HW0w:WEAPON
-$HW0y:WEAPON
-$HW10:WEAPON
-$HW12:WEAPON
-$HW14:WEAPON
-$HW16:WEAPON
-$HW18:WEAPON
-$HW1A:WEAPON
-$HW1C:WEAPON
-$HW1E:WEAPON
-$HW1G:WEAPON
-$HW1I:WEAPON
-$HW1K:WEAPON
-$HW1M:WEAPON
-$HW1O:WEAPON
-$HW1Q:WEAPON
-$HW1S:WEAPON
-$HW1U:WEAPON
-$HW1W:WEAPON
-$HW1Y:WEAPON
-$HW1a:WEAPON
-$HW1c:WEAPON
-$HW1e:WEAPON
-$HW1g:WEAPON
-$HW1i:WEAPON
-$HW1k:WEAPON
-$HW1m:WEAPON
-$HW1o:WEAPON
-$HW1q:WEAPON
-$HW1s:WEAPON
-$HW1u:WEAPON
-$HW1w:WEAPON
-$HW1y:WEAPON
-$HW20:WEAPON
-$HW22:WEAPON
-$HW24:WEAPON
-$HW26:WEAPON
-$HW28:WEAPON
-$HW2A:WEAPON
-$HW2C:WEAPON
-$HW2E:WEAPON
-$HW2G:WEAPON
-$HW2I:WEAPON
-$HW2K:WEAPON
-$HW2M:WEAPON
-$HW2O:WEAPON
-$HW2Q:WEAPON
-$HW2S:WEAPON
-$HW2U:WEAPON
-$HW2W:WEAPON
-$HW2Y:WEAPON
-$HW2a:WEAPON
-$HW2c:WEAPON
-$HW2e:WEAPON
-$HW2g:WEAPON
-$HW2i:WEAPON
-$HW2k:WEAPON
-$HW2m:WEAPON
-$HW2o:WEAPON
-$HW2q:WEAPON
-$HW2s:WEAPON
-$HW2u:WEAPON
-$HW2w:WEAPON
-$HW2y:WEAPON
-$HW30:WEAPON
-$HW32:WEAPON
-$HW34:WEAPON
-$HW36:WEAPON
-$HW38:WEAPON
-$HW3A:WEAPON
-$HW3C:WEAPON
-$HW3E:WEAPON
-$HW3G:WEAPON
-$HW3I:ARMOR
-$HW3K:ARMOR
-$HW3M:ARMOR
-$HW3O:ARMOR
-$HW3Q:ARMOR
-$HW3S:ARMOR
-$HW3U:ARMOR
-$HW3W:ARMOR
-$HW3Y:ARMOR
-$HW3a:ARMOR
-$HW3c:ARMOR
-$HW3e:ARMOR
-$HW3g:ARMOR
-$HW3i:ARMOR
-$HW3k:ARMOR
-$HW3m:ARMOR
-$HW3o:ARMOR
-$HW3q:ARMOR
-$HW3s:ARMOR
-$HW3u:ARMOR
-$HW3w:ARMOR
-$HW3y:ARMOR
-$HW40:ARMOR
-$HW42:ARMOR
-$HW44:ARMOR
-$HW46:ARMOR
-$HW48:ARMOR
-$HW4A:ARMOR
-$HW4C:ARMOR
-$HW4E:ARMOR
-$HW4G:ARMOR
-$HW4I:ARMOR
-$HW4K:ARMOR
-$HW4M:HELMET
-$HW4O:HELMET
-$HW4Q:HELMET
-$HW4S:HELMET
-$HW4U:HELMET
-$HW4W:HELMET
-$HW4Y:HELMET
-$HW4a:HELMET
-$HW4c:HELMET
-$HW4e:HELMET
-$HW4g:HELMET
-$HW4i:HELMET
-$HW4k:HELMET
-$HW4m:HELMET
-$HW4o:HELMET
-$HW4q:HELMET
-$HW4s:HELMET
-$HW4u:HELMET
-$HW4w:HELMET
-$HW4y:HELMET
-$HW50:HELMET
-$HW52:HELMET
-$HW54:HELMET
-$HW56:HELMET
-$HW58:HELMET
-$HW5A:ACCESSORY
-$HW5C:ACCESSORY
-$HW5E:ACCESSORY
-$HW5G:ACCESSORY
-$HW5I:ACCESSORY
-$HW5K:ACCESSORY
-$HW5M:ACCESSORY
-$HW5O:ACCESSORY
-$HW5Q:ACCESSORY
-$HW5S:ACCESSORY
-$HW5U:ACCESSORY
-$HW5W:ACCESSORY
-$HW5Y:ACCESSORY
-$HW5a:ACCESSORY
-$HW5c:ACCESSORY
-$HW5e:ACCESSORY
-$HW5g:ACCESSORY
-$HW5i:ACCESSORY
-$HW5k:ACCESSORY
-$HW5m:ACCESSORY
-$HW5o:ACCESSORY
-$HW5q:ACCESSORY
-$HW5s:ACCESSORY
-$HW5u:ACCESSORY
-$HW5w:ACCESSORY
-$HW5y:ACCESSORY
-$HW60:ACCESSORY
-$HW62:ACCESSORY
-$HW64:ACCESSORY
-$HW66:ACCESSORY
-$HW68:ACCESSORY
-$HW6A:ACCESSORY
-$HW6C:ACCESSORY
-$HW6E:ACCESSORY
-$HW6G:ACCESSORY
-$HW6I:ACCESSORY
-$HW6K:ACCESSORY
-$HW6M:ACCESSORY
-$HW6O:ACCESSORY
-$HW6Q:ACCESSORY
-$HW6S:ITEM
-$HW6U:ITEM
-$HW6W:ITEM
-$HW6Y:ITEM
-$HW6a:ITEM
-$HW6c:ITEM
-$HW6e:ITEM
-$HW6g:ITEM
-$HW6i:ITEM
-$HW6k:ITEM
-$HW6m:ITEM
-$HW6o:ITEM
-$HW6q:ITEM
-$HW6s:ITEM
-$HW6u:ITEM
-$HW6w:ITEM
-$HW6y:ITEM
-$HW70:ITEM
-$HW72:ITEM
-$HW74:ITEM
-$HW76:ITEM
-$HW78:ITEM
-$HW7A:ITEM
-$HW7C:ITEM
-$HW7E:ITEM
-$HW7G:ITEM
-$HW7I:ITEM
-$HW7K:ITEM
-$HW7M:ITEM
-$HW7O:ITEM
-$HW7Q:ITEM
-$HW7S:ITEM
-$HW7U:ITEM
-$HW7W:ITEM
-$HW7Y:ITEM
-$HW7a:ITEM
-$HW7c:ITEM
-$HW7e:ITEM
-$HW7g:ITEM
-$HW7i:ITEM
-$HW7k:ITEM
-$HW7m:ITEM
-$HW7o:ITEM
-$HW7q:ITEM
-$HW7s:ITEM
-$HW7u:ITEM
-$HW7w:ITEM
-$HW7y:ITEM
-$HW80:ITEM
-$HW82:ITEM
-$HW84:ITEM
-$HW86:ITEM
-$HW88:ITEM
-$HW8A:ITEM
+$HW0O:ASE
+$HW0Q:ASE
+$HW0S:ASE
+$HW0U:ASE
+$HW0W:ASE
+$HW0Y:ASE
+$HW0a:ASE
+$HW0c:ASE
+$HW0e:ASE
+$HW0g:ASE
+$HW0i:ASE
+$HW0k:ASE
+$HW0m:ASE
+$HW0o:ASE
+$HW0q:ASE
+$HW0s:ASE
+$HW0u:ASE
+$HW0w:ASE
+$HW0y:ASE
+$HW10:ASE
+$HW12:ASE
+$HW14:ASE
+$HW16:ASE
+$HW18:ASE
+$HW1A:ASE
+$HW1C:ASE
+$HW1E:ASE
+$HW1G:ASE
+$HW1I:ASE
+$HW1K:ASE
+$HW1M:ASE
+$HW1O:ASE
+$HW1Q:ASE
+$HW1S:ASE
+$HW1U:ASE
+$HW1W:ASE
+$HW1Y:ASE
+$HW1a:ASE
+$HW1c:ASE
+$HW1e:ASE
+$HW1g:ASE
+$HW1i:ASE
+$HW1k:ASE
+$HW1m:ASE
+$HW1o:ASE
+$HW1q:ASE
+$HW1s:ASE
+$HW1u:ASE
+$HW1w:ASE
+$HW1y:ASE
+$HW20:ASE
+$HW22:ASE
+$HW24:ASE
+$HW26:ASE
+$HW28:ASE
+$HW2A:ASE
+$HW2C:ASE
+$HW2E:ASE
+$HW2G:ASE
+$HW2I:ASE
+$HW2K:ASE
+$HW2M:ASE
+$HW2O:ASE
+$HW2Q:ASE
+$HW2S:ASE
+$HW2U:ASE
+$HW2W:ASE
+$HW2Y:ASE
+$HW2a:ASE
+$HW2c:ASE
+$HW2e:ASE
+$HW2g:ASE
+$HW2i:ASE
+$HW2k:ASE
+$HW2m:ASE
+$HW2o:ASE
+$HW2q:ASE
+$HW2s:ASE
+$HW2u:ASE
+$HW2w:ASE
+$HW2y:ASE
+$HW30:ASE
+$HW32:ASE
+$HW34:ASE
+$HW36:ASE
+$HW38:ASE
+$HW3A:ASE
+$HW3C:ASE
+$HW3E:ASE
+$HW3G:ASE
+$HW3I:SUOJUS
+$HW3K:SUOJUS
+$HW3M:SUOJUS
+$HW3O:SUOJUS
+$HW3Q:SUOJUS
+$HW3S:SUOJUS
+$HW3U:SUOJUS
+$HW3W:SUOJUS
+$HW3Y:SUOJUS
+$HW3a:SUOJUS
+$HW3c:SUOJUS
+$HW3e:SUOJUS
+$HW3g:SUOJUS
+$HW3i:SUOJUS
+$HW3k:SUOJUS
+$HW3m:SUOJUS
+$HW3o:SUOJUS
+$HW3q:SUOJUS
+$HW3s:SUOJUS
+$HW3u:SUOJUS
+$HW3w:SUOJUS
+$HW3y:SUOJUS
+$HW40:SUOJUS
+$HW42:SUOJUS
+$HW44:SUOJUS
+$HW46:SUOJUS
+$HW48:SUOJUS
+$HW4A:SUOJUS
+$HW4C:SUOJUS
+$HW4E:SUOJUS
+$HW4G:SUOJUS
+$HW4I:SUOJUS
+$HW4K:SUOJUS
+$HW4M:KYPÄRÄ
+$HW4O:KYPÄRÄ
+$HW4Q:KYPÄRÄ
+$HW4S:KYPÄRÄ
+$HW4U:KYPÄRÄ
+$HW4W:KYPÄRÄ
+$HW4Y:KYPÄRÄ
+$HW4a:KYPÄRÄ
+$HW4c:KYPÄRÄ
+$HW4e:KYPÄRÄ
+$HW4g:KYPÄRÄ
+$HW4i:KYPÄRÄ
+$HW4k:KYPÄRÄ
+$HW4m:KYPÄRÄ
+$HW4o:KYPÄRÄ
+$HW4q:KYPÄRÄ
+$HW4s:KYPÄRÄ
+$HW4u:KYPÄRÄ
+$HW4w:KYPÄRÄ
+$HW4y:KYPÄRÄ
+$HW50:KYPÄRÄ
+$HW52:KYPÄRÄ
+$HW54:KYPÄRÄ
+$HW56:KYPÄRÄ
+$HW58:KYPÄRÄ
+$HW5A:TARVIKE
+$HW5C:TARVIKE
+$HW5E:TARVIKE
+$HW5G:TARVIKE
+$HW5I:TARVIKE
+$HW5K:TARVIKE
+$HW5M:TARVIKE
+$HW5O:TARVIKE
+$HW5Q:TARVIKE
+$HW5S:TARVIKE
+$HW5U:TARVIKE
+$HW5W:TARVIKE
+$HW5Y:TARVIKE
+$HW5a:TARVIKE
+$HW5c:TARVIKE
+$HW5e:TARVIKE
+$HW5g:TARVIKE
+$HW5i:TARVIKE
+$HW5k:TARVIKE
+$HW5m:TARVIKE
+$HW5o:TARVIKE
+$HW5q:TARVIKE
+$HW5s:TARVIKE
+$HW5u:TARVIKE
+$HW5w:TARVIKE
+$HW5y:TARVIKE
+$HW60:TARVIKE
+$HW62:TARVIKE
+$HW64:TARVIKE
+$HW66:TARVIKE
+$HW68:TARVIKE
+$HW6A:TARVIKE
+$HW6C:TARVIKE
+$HW6E:TARVIKE
+$HW6G:TARVIKE
+$HW6I:TARVIKE
+$HW6K:TARVIKE
+$HW6M:TARVIKE
+$HW6O:TARVIKE
+$HW6Q:TARVIKE
+$HW6S:ESINE
+$HW6U:ESINE
+$HW6W:ESINE
+$HW6Y:ESINE
+$HW6a:ESINE
+$HW6c:ESINE
+$HW6e:ESINE
+$HW6g:ESINE
+$HW6i:ESINE
+$HW6k:ESINE
+$HW6m:ESINE
+$HW6o:ESINE
+$HW6q:ESINE
+$HW6s:ESINE
+$HW6u:ESINE
+$HW6w:ESINE
+$HW6y:ESINE
+$HW70:ESINE
+$HW72:ESINE
+$HW74:ESINE
+$HW76:ESINE
+$HW78:ESINE
+$HW7A:ESINE
+$HW7C:ESINE
+$HW7E:ESINE
+$HW7G:ESINE
+$HW7I:ESINE
+$HW7K:ESINE
+$HW7M:ESINE
+$HW7O:ESINE
+$HW7Q:ESINE
+$HW7S:ESINE
+$HW7U:ESINE
+$HW7W:ESINE
+$HW7Y:ESINE
+$HW7a:ESINE
+$HW7c:ESINE
+$HW7e:ESINE
+$HW7g:ESINE
+$HW7i:ESINE
+$HW7k:ESINE
+$HW7m:ESINE
+$HW7o:ESINE
+$HW7q:ESINE
+$HW7s:ESINE
+$HW7u:ESINE
+$HW7w:ESINE
+$HW7y:ESINE
+$HW80:ESINE
+$HW82:ESINE
+$HW84:ESINE
+$HW86:ESINE
+$HW88:ESINE
+$HW8A:ESINE
 
 
 ;Status screen string

@@ -10,6 +10,10 @@
 #define USE_MMAP 1
 #endif
 
+#define LOADP_DEBUG      1
+//#define LOADZ_EXTRASPACE 1
+//#define LOADP_EXTRASPACE 1
+
 using namespace std;
 
 #include "ctcset.hh"
@@ -70,7 +74,6 @@ static void markspace(unsigned offs, unsigned size)
 // Load an array of pascal style strings
 static const vector<string> LoadPStrings(unsigned offset, unsigned count)
 {
-#define LOADP_DEBUG 1
     unsigned segment = offset & 0xFF0000;
     vector<string> strings(count);
 #if LOADP_DEBUG
@@ -95,11 +98,13 @@ static const vector<string> LoadPStrings(unsigned offset, unsigned count)
         
         markspace(stringptr, strings[a].size()+1);
 
+#ifdef LOADP_EXTRASPACE
         for(unsigned freebyte = stringptr + strings[a].size()+1;
             ROM[freebyte] == 0x00 //zero
          || ROM[freebyte] == 0xFF //space
          || ROM[freebyte] == 0xEF //also space
          ; space[freebyte++]=true);
+#endif
     }
 #if LOADP_DEBUG
     if(col)printf("\n");
@@ -147,12 +152,13 @@ static const vector<string> LoadZStrings(unsigned offset, unsigned count=0)
             lastoffs=  stringptr;
             lastlen = foundstring.size();
         }
+#ifdef LOADZ_EXTRASPACE
         for(unsigned freebyte = stringptr + base + foundstring.size();
             ROM[freebyte] == 0x00 //zero
          || ROM[freebyte] == 0xFF //space
          || ROM[freebyte] == 0xEF //also space
          ; space[freebyte++]=true);
-        
+#endif
         if(count)
             strings[a] = foundstring;
         else

@@ -8,7 +8,7 @@ static const char Font16[] =
     "ABCDEFGHIJKLMNOP"   // A0
     "QRSTUVWXYZabcdef"   // B0
     "ghijklmnopqrstuv"   // C0
-#if 1
+#if 0
     "wxyz0123456789!?"   // D0
     "/«»:&()'.,=-+%¶ "   // E0  EE=musicsymbol
     "¶¶å#äöéÉÅ¶¶¶¶ÖÄ_";  // F0  F0=heartsymbol, F1=..., F2=infinity

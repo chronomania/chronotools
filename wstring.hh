@@ -1,29 +1,31 @@
 #ifndef bqtWstringH
 #define bqtWstringH
 
+#define __ENABLE_WSTRING 1
 #include <string>
 
 using namespace std;
 
-#define wstring ucs4string
-typedef unsigned int ucs4;
+////////////// From htmlrecode.hh
+//#define wstring ucs4string
+typedef wchar_t ucs4;
+//typedef unsigned int ucs4;
+//typedef basic_string<ucs4> wstring;
 
-/* Define the wstring type */
-typedef basic_string<ucs4> wstring;
+// Note: address of ilseq must be available
+// Thus don't make this #define
+static const ucs4 ilseq = 0xFFFD;
+static const ucs4 ucsig = 0xFEFF;
 
-/* Define illegal character */
-#define ilseq ((ucs4)(0xFFFD))
-
-/* Define CLEARWSTR() -macro */
 #if 1
 /* libstdc++ 2 way */
 static const wstring emptywstring;
-#define CLEARWSTR(x) x=emptywstring
+#define CLEARSTR(x) x=emptywstring
 #else
 /* libstdc++ 3 way */
-#define CLEARWSTR(x) x.clear()
+#define CLEARSTR(x) x.clear()
 #endif
-#define CLEARSTR(x) CLEARWSTR(x)
+////////////
 
 #include <iconv.h>
 

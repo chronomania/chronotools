@@ -18,335 +18,185 @@
 
 using namespace std;
 
+#include "wstring.hh"
 #include "ctcset.hh"
 #include "miscfun.hh"
+#include "tgaimage.hh"
+#include "ctinsert.hh"
 
 static const bool rebuild_dict             = false;
-static const bool sort_dictionary          = !true;
+static const bool sort_dictionary          = false;
 static const unsigned MaxDictWordLen       = 20;
 static const unsigned MaxDictRecursLen     = 3;
 static const unsigned DictMaxSpacesPerWord = 4;
 static const char font8fn[]  = "ct8fnFI.tga";
 static const char font12fn[] = "ct16fnFI.tga";
 
-class TGAimage
+struct todo_sort
 {
-    unsigned xdim, ydim;
-    vector<char> data;
-    
-    unsigned xsize, ysize; // size of each box
-    unsigned xbox; // boxes per line
-public:
-    TGAimage(const string &filename) : xdim(0), ydim(0)
+    const vector<string> &tab;
+    todo_sort(const vector<string> &t) : tab(t) { }
+    bool operator() (unsigned a, unsigned b) const
     {
-        FILE *fp = fopen(filename.c_str(), "rb");
-        if(!fp) { perror(filename.c_str()); return; }
-        
-        int idlen        = fgetc(fp);
-        fgetc(fp); // color map type, should be 1
-        fgetc(fp); // image type code, should be 1
-        fgetc(fp); fgetc(fp); // palette start
-        int palsize = fgetc(fp); palsize += fgetc(fp)*256; 
-        int palbitness = fgetc(fp); // palette bitness, should be 24
-        fgetc(fp); fgetc(fp);
-        fgetc(fp); fgetc(fp);
-
-        xdim=fgetc(fp); xdim += fgetc(fp)*256;
-        ydim=fgetc(fp); ydim += fgetc(fp)*256;
-        
-        fgetc(fp); // pixel bitness, should be 8
-        fgetc(fp); // misc, should be 0
-        if(idlen)fseek(fp, idlen, SEEK_CUR);
-        if(palsize)fseek(fp, palsize * ((palbitness+7)/8), SEEK_CUR);
-        
-        data.resize(xdim*ydim);
-        
-        for(unsigned y=ydim; y-->0; )
-            fread(&data[y*xdim], 1, xdim, fp);
-        
-        fclose(fp);
-        
-        xsize=8; ysize=8; xbox=32;
-    }
-
-    void setboxsize(unsigned x, unsigned y)
-    {
-        xsize = x;
-        ysize = y;
-    }
-    void setboxperline(unsigned n) { xbox = n; }
-    
-    const vector<char> getbox(unsigned boxnum) const
-    {
-        const unsigned boxposx = (boxnum%xbox) * (xsize+1) + 1;
-        const unsigned boxposy = (boxnum/xbox) * (ysize+1) + 1;
-        /*
-        fprintf(stderr, "fetching box %u (%ux%u @ %ux%u) from %ux%u size image (%u bytes)\n",
-            boxnum,
-            xsize, ysize,
-            boxposx, boxposy,
-            xdim, ydim, data.size());*/
-        
-        vector<char> result(xsize*ysize);
-        unsigned pos=0;
-        for(unsigned ny=0; ny<ysize; ++ny)
-        {
-            unsigned ppos = (boxposy + ny) * xdim + boxposx;
-            for(unsigned nx=0; nx<xsize; ++nx)
-                result[pos++] = data[ppos++];
-        }
-        return result;
+        return tab[a].size() > tab[b].size();
     }
 };
 
-class insertor
+unsigned insertor::WritePPtr
+    (vector<unsigned char> &ROM,
+     vector<bool> &Touched,
+     unsigned pointeraddr,
+     const string &string)
 {
-    map<string, char> symbols2, symbols8, symbols16;
+    unsigned page = pointeraddr >> 16;
+    unsigned spaceptr = freespace.Find(page, string.size() + 1);
+    if(spaceptr == NOWHERE)
+        return spaceptr;
     
-    class stringdata
-    {public:
-        string str;
-        enum { zptr8, zptr16, fixed } type;
-        unsigned width; // used if type==fixed;
-    };
-    class substringrec
-    {
-        unsigned count;
-        double importance;
-    public:
-        substringrec() : count(0), importance(0) {}
-        void mark(double imp) { ++count; importance += 1.0/imp; }
-        unsigned getcount() const { return count; }
-        double getimportance() const { return 1.0/(importance / count);}
-    };
-
-    typedef pair<unsigned/*pos*/,unsigned/*len*/> freespacerec;
-    typedef set<freespacerec> freespaceset;
-    typedef map<unsigned/*page*/, freespaceset> freespacemap;
-    freespacemap freespace;
-    typedef map<unsigned, stringdata> stringmap;
-    stringmap strings;
-
-    vector<string> dict, replacedict;
-    unsigned dictaddr, dictsize;
-
-public:
-    void LoadSymbols();
-    void LoadFile(FILE *fp);
-
-    string DispString(const string &s) const;
-    void MakeDictionary();
+    WriteByte(ROM, Touched, pointeraddr,   spaceptr&255);
+    WriteByte(ROM, Touched, pointeraddr+1, spaceptr>>8);
     
-    void ReportFreeSpace() const;
-    unsigned FindFreeSpace(unsigned page, unsigned length)
-    {
-        freespacemap::iterator mapi = freespace.find(page);
-        if(mapi == freespace.end())
-        {
-            fprintf(stderr,
-                "Can't find %u bytes of free space in page %02X - no space there at all!\n",
-                length, page);
-            return 0x10000;
-        }
-        freespaceset &spaceset = mapi->second;
-        freespaceset::const_iterator reci;
+    //fprintf(stderr, "Wrote %u bytes at %06X->%04X\n", string.size()+1, pointeraddr, spaceptr);
+    
+    spaceptr += page<<16;
+    for(unsigned a=0; a<=string.size(); ++a)
+        WriteByte(ROM, Touched, spaceptr+a, a ? string[a-1] : string.size());
+    
+    return spaceptr & 0xFFFF;
+}
 
-        unsigned bestscore = 0;
-        freespaceset::const_iterator best = spaceset.end();
+unsigned insertor::WriteZPtr
+   (vector<unsigned char> &ROM,
+    vector<bool> &Touched,
+    unsigned pointeraddr,
+    const string &string,
+    unsigned spaceptr)
+{
+    unsigned page = pointeraddr >> 16;
+    
+    if(spaceptr == NOWHERE)
+    {
+        spaceptr = freespace.Find(page, string.size() + 1);
+        if(spaceptr == NOWHERE)
+            return NOWHERE;
+    }
+    
+    WriteByte(ROM, Touched, pointeraddr,   spaceptr&255);
+    WriteByte(ROM, Touched, pointeraddr+1, spaceptr>>8);
+    
+    /*
+    fprintf(stderr, "Wrote %u bytes at %06X->%04X: ",
+        string.size()+1, pointeraddr, spaceptr);
+    fprintf(stderr, DispString(string).c_str());
+    fprintf(stderr, "\n");
+    */
+    
+    spaceptr += page<<16;
+    for(unsigned a=0; a<string.size(); ++a)
+        WriteByte(ROM, Touched, spaceptr+a, string[a]);
+    WriteByte(ROM, Touched, spaceptr+string.size(), 0);
+    return spaceptr & 0xFFFF;
+}
+
+void insertor::Write8pixfont
+   (vector<unsigned char> &ROM,
+    vector<bool> &Touched)
+{
+    TGAimage font8(font8fn);
+    font8.setboxsize(8, 8);
+    font8.setboxperline(32);
+    
+    static const char palette[] = {0,3,1,2,0};
+    
+    vector<unsigned char> tiletable(256*16);
+    
+    unsigned to=0;
+    for(unsigned a=0; a<256; ++a)
+    {
+        vector<char> box = font8.getbox(a);
+        for(unsigned p=0; p<box.size(); ++p)
+            if((unsigned char)box[p] < sizeof(palette))
+                box[p] = palette[box[p]];
         
-        for(reci = spaceset.begin(); reci != spaceset.end(); ++reci)
+        unsigned po=0;
+        for(unsigned y=0; y<8; ++y)
         {
-            if(reci->second == length)
+            unsigned char byte1 = 0;
+            unsigned char byte2 = 0;
+            for(unsigned x=0; x<8; ++x)
             {
-                unsigned pos = reci->first;
-                // Found exact match!
-                spaceset.erase(reci);
-                if(spaceset.size() == 0)
-                	freespace.erase(mapi);
-                return pos;
+                unsigned shift = (7-x);
+                byte1 |= ((box[po]&1)  ) << shift;
+                byte2 |= ((box[po]&2)/2) << shift;
+                ++po;
             }
-            if(reci->second < length)
-                continue;
-            
-            const unsigned score = 0x7FFFFFF-reci->second;
-            if(score > bestscore)
-            {
-                bestscore = score;
-                best = reci;
-                //break;
-            }
+            tiletable[to++] = byte1;
+            tiletable[to++] = byte2;
         }
-        if(!bestscore)
-        {
-            fprintf(stderr,
-                "Can't find %u bytes of free space in page %02X!\n",
-                length, page);
-            return 0x10000;
-        }
-        const unsigned bestpos = best->first;
-        freespacerec tmp(best->first + length, best->second - length);
-        spaceset.erase(best);
-        if(tmp.second)
-            spaceset.insert(tmp);
-        return bestpos;
     }
-    
-    inline void WriteByte(vector<unsigned char> &ROM,
-                          vector<bool> &Touched,
-                          unsigned offs, unsigned char value)
-    {
-        ROM[offs] = value;
-        Touched[offs] = true;
-    }
-    
-    void WritePPtr(vector<unsigned char> &ROM,
-                   vector<bool> &Touched,
-                   unsigned pointeraddr,
-                   const string &string)
-    {
-        unsigned page = pointeraddr >> 16;
-        unsigned spaceptr = FindFreeSpace(page, string.size() + 1);
-        if(spaceptr == 0x10000)
-            return;
-        
-        WriteByte(ROM, Touched, pointeraddr,   spaceptr&255);
-        WriteByte(ROM, Touched, pointeraddr+1, spaceptr>>8);
-        
-        //fprintf(stderr, "Wrote %u bytes at %06X->%04X\n", string.size()+1, pointeraddr, spaceptr);
-        
-        spaceptr += page<<16;
-        for(unsigned a=0; a<=string.size(); ++a)
-            WriteByte(ROM, Touched, spaceptr+a, a ? string[a-1] : string.size());
-    }
+    for(unsigned a=0; a<tiletable.size(); ++a)
+        WriteByte(ROM, Touched, 0x3F8C60+a, tiletable[a]);
+}
 
-    unsigned WriteZPtr(vector<unsigned char> &ROM,
-                       vector<bool> &Touched,
-                       unsigned pointeraddr,
-                       const string &string,
-                       unsigned spaceptr=0x10000)
-    {
-        unsigned page = pointeraddr >> 16;
-        
-        if(spaceptr == 0x10000)
-        {
-            spaceptr = FindFreeSpace(page, string.size() + 1);
-            if(spaceptr == 1)
-                return 0x10000;
-        }
-        
-        WriteByte(ROM, Touched, pointeraddr,   spaceptr&255);
-        WriteByte(ROM, Touched, pointeraddr+1, spaceptr>>8);
-        
-        /*fprintf(stderr, "Wrote %u bytes at %06X->%04X: ", string.size()+1, pointeraddr, spaceptr);
-        fprintf(stderr, DispString(string).c_str());
-        fprintf(stderr, "\n");*/
-        
-        spaceptr += page<<16;
-        for(unsigned a=0; a<=string.size(); ++a)
-            WriteByte(ROM, Touched, spaceptr+a, a==string.size() ? 0 : string[a]);
-        return spaceptr & 0xFFFF;
-    }
+void insertor::Write12pixfont
+   (vector<unsigned char> &ROM,
+    vector<bool> &Touched)
+{
+    TGAimage font12(font12fn);
+    font12.setboxsize(12, 12);
+    font12.setboxperline(32);
     
-    void Write8pixfont(vector<unsigned char> &ROM,
-                       vector<bool> &Touched)
-    {
-        TGAimage font8(font8fn);
-        font8.setboxsize(8, 8);
-        font8.setboxperline(32);
-        
-        static const char palette[] = {0,3,1,2,0};
-        
-        vector<unsigned char> tiletable(256*16);
-        
-        unsigned to=0;
-        for(unsigned a=0; a<256; ++a)
-        {
-            vector<char> box = font8.getbox(a);
-            for(unsigned p=0; p<box.size(); ++p)
-                if((unsigned char)box[p] < sizeof(palette))
-                    box[p] = palette[box[p]];
-            
-            unsigned po=0;
-            for(unsigned y=0; y<8; ++y)
-            {
-                unsigned char byte1 = 0;
-                unsigned char byte2 = 0;
-                for(unsigned x=0; x<8; ++x)
-                {
-                    unsigned shift = (7-x);
-                    byte1 |= ((box[po]&1)  ) << shift;
-                    byte2 |= ((box[po]&2)/2) << shift;
-                    ++po;
-                }
-                tiletable[to++] = byte1;
-                tiletable[to++] = byte2;
-            }
-        }
-        for(unsigned a=0; a<tiletable.size(); ++a)
-            WriteByte(ROM, Touched, 0x3F8C60+a, tiletable[a]);
-    }
+    static const char palette[] = {0,0,1,2,3,0};
     
-    void Write12pixfont(vector<unsigned char> &ROM,
-                        vector<bool> &Touched)
+    vector<unsigned char> tiletable(96 * 24 + 96 * 12);
+    
+    unsigned to=0;
+    for(unsigned a=0; a<96; ++a)
     {
-        TGAimage font12(font12fn);
-        font12.setboxsize(12, 12);
-        font12.setboxperline(32);
-        
-        static const char palette[] = {0,0,1,2,3,0};
-        
-        vector<unsigned char> tiletable(96 * 24 + 96 * 12);
-        
-        unsigned to=0;
-        for(unsigned a=0; a<96; ++a)
-        {
-            vector<char> box = font12.getbox(a);
+        vector<char> box = font12.getbox(a);
 
-            unsigned width=0;
-            while(box[width] != 5 && width<12)++width;
-            
-            for(unsigned p=0; p<box.size(); ++p)
-                if((unsigned char)box[p] < sizeof(palette))
-                    box[p] = palette[box[p]];
-            
-            unsigned po=0;
-            for(unsigned y=0; y<12; ++y)
+        unsigned width=0;
+        while(box[width] != 5 && width<12)++width;
+        
+        for(unsigned p=0; p<box.size(); ++p)
+            if((unsigned char)box[p] < sizeof(palette))
+                box[p] = palette[box[p]];
+        
+        unsigned po=0;
+        for(unsigned y=0; y<12; ++y)
+        {
+            unsigned char byte1 = 0;
+            unsigned char byte2 = 0;
+            unsigned char byte3 = 0;
+            unsigned char byte4 = 0;
+            for(unsigned x=0; x<8; ++x)
             {
-                unsigned char byte1 = 0;
-                unsigned char byte2 = 0;
-                unsigned char byte3 = 0;
-                unsigned char byte4 = 0;
-                for(unsigned x=0; x<8; ++x)
-                {
-                    unsigned shift = (7-x)&7;
-                    byte1 |= ((box[po]&1)  ) << shift;
-                    byte2 |= ((box[po]&2)/2) << shift;
-                    ++po;
-                }
-                for(unsigned x=0; x<4; ++x)
-                {
-                    unsigned shift = (7-x)&7;
-                    byte3 |= ((box[po]&1)  ) << shift;
-                    byte4 |= ((box[po]&2)/2) << shift;
-                    ++po;
-                }
-                tiletable[to++] = byte1;
-                tiletable[to++] = byte2;
-                
-                if(a&1)byte3 <<= 4;
-                tiletable[96*24 + (a>>1)*24 + y*2  ] |= byte3;
-                if(a&1)byte4 <<= 4;
-                tiletable[96*24 + (a>>1)*24 + y*2+1] |= byte4;
+                unsigned shift = (7-x)&7;
+                byte1 |= ((box[po]&1)  ) << shift;
+                byte2 |= ((box[po]&2)/2) << shift;
+                ++po;
             }
+            for(unsigned x=0; x<4; ++x)
+            {
+                unsigned shift = (7-x)&7;
+                byte3 |= ((box[po]&1)  ) << shift;
+                byte4 |= ((box[po]&2)/2) << shift;
+                ++po;
+            }
+            tiletable[to++] = byte1;
+            tiletable[to++] = byte2;
             
-            WriteByte(ROM, Touched, 0x260E6+a, width);
+            if(a&1)byte3 <<= 4;
+            tiletable[96*24 + (a>>1)*24 + y*2  ] |= byte3;
+            if(a&1)byte4 <<= 4;
+            tiletable[96*24 + (a>>1)*24 + y*2+1] |= byte4;
         }
-        for(unsigned a=0; a<tiletable.size(); ++a)
-            WriteByte(ROM, Touched, 0x3F2F60+a, tiletable[a]);
+        
+        WriteByte(ROM, Touched, 0x260E6+a, width);
     }
-    
-    void WriteROM();
-};
+    for(unsigned a=0; a<tiletable.size(); ++a)
+        WriteByte(ROM, Touched, 0x3F2F60+a, tiletable[a]);
+}
 
 void insertor::WriteROM()
 {
@@ -356,15 +206,15 @@ void insertor::WriteROM()
     /*
     {FILE *fp = fopen("chrono-uncompressed.smc", "rb");
     if(fp){fseek(fp,512,SEEK_SET);fread(&ROM[0], 1, ROM.size(), fp);fclose(fp);}}
-	*/
+    */
     
     fprintf(stderr, "Initializing all free space to zero...\n");
     for(freespacemap::const_iterator i=freespace.begin(); i!=freespace.end(); ++i)
         for(freespaceset::const_iterator j=i->second.begin(); j!=i->second.end(); ++j)
         {
-        	unsigned offs = (i->first << 16) | j->first;
-        	for(unsigned a=0; a<j->second; ++a)
-        	    WriteByte(ROM, Touched, offs+a, 0);
+            unsigned offs = (i->first << 16) | j->first;
+            for(unsigned a=0; a<j->second; ++a)
+                WriteByte(ROM, Touched, offs+a, 0);
         }
     
     fprintf(stderr, "Writing dictionary...\n");
@@ -384,6 +234,11 @@ void insertor::WriteROM()
         {
             const string &s = i->second.str;
             unsigned pos = i->first;
+            
+            if(s.size() != i->second.width)
+                fprintf(stderr, "Warning: Fixed string at %06X: len(%u) != space(%u)...\n",
+                pos, s.size(), i->second.width);
+
             unsigned a;
             for(a=0; a<s.size(); ++a)      WriteByte(ROM, Touched, pos++, s[a]);
             for(; a < i->second.width; ++a)WriteByte(ROM, Touched, pos++, 0);
@@ -396,79 +251,175 @@ void insertor::WriteROM()
         if((i->first >> 16) != prevpage)
         {
     Flush16:;
-            // terminology: potilas=needle, tohtori=haystack
-            map<unsigned/*potilas*/, unsigned/*tohtori*/> neederlist;
+            fprintf(stderr, "Writing %u strings... (page %02X)\n",
+                pagestrings.size(),
+                i->first >> 16);
             
-            fprintf(stderr, "Writing %u strings...\n", pagestrings.size());
-            for(unsigned potilasnum=0; potilasnum<pagestrings.size(); ++potilasnum)
+            // parasite -> host
+            map<unsigned, unsigned> neederlist;
+            for(unsigned parasitenum=0;
+                         parasitenum < pagestrings.size();
+                         ++parasitenum)
             {
-                const string &potilas = pagestrings[potilasnum];
-                unsigned longest=0, tohtoribest=0;
-                bool isneeder = false;
-                for(unsigned tohtorinum=potilasnum+1;
-                             tohtorinum<pagestrings.size();
-                             ++tohtorinum)
+                const string &parasite = pagestrings[parasitenum];
+                for(unsigned hostnum = 0;
+                             hostnum < pagestrings.size();
+                             ++hostnum)
                 {
-                    const string &tohtori = pagestrings[tohtorinum];
-                    if(tohtori.size() < potilas.size())
+                    // Can't depend on self
+                    if(hostnum == parasitenum) { Continue: continue; }
+                    // If the host depends on this "parasite", skip it
+                    map<unsigned, unsigned>::iterator i;
+                    for(unsigned tmp=hostnum;;)
+                    {
+                        i = neederlist.find(tmp);
+                        if(i == neederlist.end()) break;
+                        tmp = i->second;
+                        // Host depends on "parasite", skip this
+                        if(tmp == parasitenum) { goto Continue; }
+                    }
+                    
+                    const string &host = pagestrings[hostnum];
+                    if(host.size() < parasite.size())
                         continue;
                     
-                    unsigned extralen = tohtori.size()-potilas.size();
-                    if(potilas == tohtori.substr(extralen))
-                        if(extralen > longest)
+                    unsigned extralen = host.size()-parasite.size();
+                    if(parasite == host.substr(extralen))
+                    {
+                        for(;;)
                         {
-                            longest = extralen;
-                            tohtoribest = tohtorinum;
-                            isneeder = true;
+                            i = neederlist.find(hostnum);
+                            if(i == neederlist.end()) break;
+                            // Our "host" depends on someone else.
+                            // Take his host instead.
+                            hostnum = i->second;
                         }
-                }
-                if(isneeder)
-                {
-                    /*
-                    fprintf(stderr, "String %u(",potilasnum);
-                    fprintf(stderr, DispString(pagestrings[potilasnum]).c_str());
-                    fprintf(stderr, ") depends on string %u(",tohtoribest);
-                    fprintf(stderr, DispString(pagestrings[tohtoribest]).c_str());
-                    fprintf(stderr, ")\n");
-                    */
-                    neederlist[potilasnum] = tohtoribest;
+                        
+                        neederlist[parasitenum] = hostnum;
+                        
+                        // Now if there are parasites referring to this one
+                        for(i=neederlist.begin(); i!=neederlist.end(); ++i)
+                            if(i->second == parasitenum)
+                            {
+                                // rerefer them to this one's host
+                                i->second = hostnum;
+                            }
+
+                        break;
+                    }
                 }
             }
-            /* Nyt noissa mapeissa on listattu, kuka
-             * tarvitsee ket‰kin. Tarvitsemisketjut
-             * eiv‰t voi muodostaa ympyr‰‰, joten nyt
-             * pit‰‰ vain asettaa elementit siihen
-             * j‰rjestykseen, miss‰ ensinn‰ ovat ne,
-             * ketk‰ eiv‰t tarvitse mit‰‰n. Sen j‰lkeen
-             * ne, jotka tarvitsevat, lis‰t‰‰n erikseen
-             * muokaten pointtereita.
-             */
             
-            set<unsigned> done;
-            while(done.size() != pagestrings.size())
+#if 0
+            map<string, vector<unsigned> > needertmp;
+            /* Nyt mapissa on listattu, kuka tarvitsee ket‰kin. */
+            for(map<unsigned,unsigned>::const_iterator
+                j = neederlist.begin();
+                j != neederlist.end();
+                ++j)
+            {
+                needertmp[pagestrings[j->first]].push_back(j->first);
+            }
+            for(map<string, vector<unsigned> >::const_iterator
+                j = needertmp.begin();
+                j != needertmp.end();
+                ++j)
+            {
+                unsigned hostnum = 0;
+                const vector<unsigned> &tmp = j->second;
+
+                unsigned c=0;
+                fprintf(stderr, "String%s", tmp.size()==1 ? "" : "s");
+                for(unsigned a=0; a<tmp.size(); ++a)
+                {
+                    hostnum = neederlist[tmp[a]];
+                    if(++c > 15) { fprintf(stderr, "\n   "); c=0; }
+                    fprintf(stderr, " %u", tmp[a]);
+                }
+                
+                fprintf(stderr, " (%s) depend%s on string %u(%s)\n",
+                    DispString(j->first).c_str(),
+                    tmp.size()==1 ? "s" : "", hostnum,
+                    DispString(pagestrings[hostnum]).c_str());
+            }
+#endif
+            
+            // pageoffs, pagestrings have been defined before this "if" was met.
+            
+            if(true) /* First do hosts */
+            {
+                vector<unsigned> todo;
+                todo.reserve(pagestrings.size() - neederlist.size());
+                unsigned reusenum = 0;
+                for(unsigned stringnum=0; stringnum<pagestrings.size(); ++stringnum)
+                {
+                    if(neederlist.find(stringnum) == neederlist.end())
+                        todo.push_back(stringnum);
+                    else
+                        ++reusenum;
+                }
+
+                fprintf(stderr, "Writing %u strings and reusing %u\n", todo.size(), reusenum);
+                sort(todo.begin(), todo.end(), todo_sort(pagestrings));
+                
+                for(unsigned a=0; a<todo.size(); ++a)
+                {
+                    unsigned stringnum = todo[a];
+                    unsigned ptroffs = pageoffs[stringnum];
+                    const string &str = pagestrings[stringnum];
+
+                    pageoffs[stringnum] = WriteZPtr(ROM, Touched, ptroffs, str);
+                }
+            }
+            if(true) /* Then do parasites */
             {
                 for(unsigned stringnum=0; stringnum<pagestrings.size(); ++stringnum)
                 {
-                    if(done.find(stringnum) != done.end())continue;
-                    map<unsigned,unsigned>::const_iterator i = neederlist.find(stringnum);
-                    // If this string does not require any other string
-                    if(i == neederlist.end())
+                    map<unsigned, unsigned>::const_iterator i;
+                    i = neederlist.find(stringnum);
+                    if(i == neederlist.end()) continue;
+                    
+                    unsigned parasitenum = i->first;
+                    unsigned hostnum     = i->second;
+
+                    unsigned hostoffs = pageoffs[hostnum];
+                            
+                    unsigned ptroffs = pageoffs[parasitenum];
+                    const string &str = pagestrings[parasitenum];
+                    
+                    if(hostoffs == NOWHERE)
                     {
-                        pageoffs[stringnum] = WriteZPtr(ROM, Touched, pageoffs[stringnum], pagestrings[stringnum]);
-                        done.insert(stringnum);
-                    }
-                    else
-                    {
-                        set<unsigned>::const_iterator p = done.find(i->second);
-                        if(p != done.end()) /* The depending string has already been dumped */
+                        fprintf(stderr, "Host %u doesn't exist! ", hostnum);
+                        
+                        // Try find another host
+                        for(hostnum=0; hostnum<pagestrings.size(); ++hostnum)
                         {
-                            unsigned b = i->second;
-                            //fprintf(stderr, "Reusing pointer!\n");
-                            pageoffs[stringnum] = WriteZPtr(ROM, Touched, pageoffs[stringnum], pagestrings[stringnum],
-                                                    pageoffs[b] + pagestrings[b].size()-pagestrings[stringnum].size());
-                            done.insert(stringnum);
+                            // Skip parasites
+                            if(neederlist.find(hostnum) != neederlist.end()) continue;
+                            // Skip unwritten ones
+                            if(pageoffs[hostnum] == NOWHERE) continue;
+                            const string &host = pagestrings[hostnum];
+                            // Impossible host?
+                            if(host.size() < str.size()) continue;
+                            unsigned extralen = host.size() - str.size();
+                            if(str != host.substr(extralen)) continue;
+                            hostoffs = pageoffs[hostnum];
+                            break;
                         }
+                        if(hostoffs == NOWHERE)
+                        {
+                            fprintf(stderr, "String %u not written!\n", parasitenum);
+                            continue;
+                        }
+                        fprintf(stderr, "Substitute %u assigned for %u.\n",
+                            hostnum, parasitenum);
                     }
+
+                    const string &host = pagestrings[hostnum];
+                    
+                    unsigned place = hostoffs + host.size()-str.size();
+                    
+                    WriteZPtr(ROM, Touched, ptroffs, str, place);
                 }
             }
             
@@ -516,29 +467,6 @@ void insertor::WriteROM()
     fwrite("EOF",   1, 5, fp2);
     fclose(fp); fprintf(stderr, "Created %s\n", "ctpatch-nohdr.ips");
     fclose(fp2); fprintf(stderr, "Created %s\n", "ctpatch-hdr.ips");
-}
-
-void insertor::ReportFreeSpace() const
-{
-    fprintf(stderr, "Free space:");
-    freespacemap::const_iterator i;
-    unsigned total=0;
-    for(i=freespace.begin(); i!=freespace.end(); ++i)
-    {
-        freespaceset::const_iterator j;
-        unsigned thisfree = 0, hunkcount = 0;
-        for(j=i->second.begin(); j!=i->second.end(); ++j)
-        {
-            thisfree += j->second;
-            ++hunkcount;
-        }
-        total += thisfree;
-        if(thisfree)
-        {
-            fprintf(stderr, " %02X:%u/%u", i->first, thisfree, hunkcount);
-        }
-    }
-    fprintf(stderr, " - total: %u bytes\n", total);
 }
 
 string insertor::DispString(const string &s) const
@@ -929,290 +857,6 @@ void insertor::LoadSymbols()
     fprintf(stderr, "%u 16pix symbols loaded\n", symbols16.size());
 }
 
-#undef getc
-class ScriptCharGet
-{
-    wstringIn conv;
-    FILE *fp;
-    unsigned cacheptr;
-    wstring cache;
-
-    ucs4 getc_priv()
-    {
-        for(;;)
-        {
-            if(cacheptr < cache.size())
-                return cache[cacheptr++];
-            
-            CLEARWSTR(cache);
-            cacheptr = 0;
-            while(!cache.size())
-            {
-                int c = fgetc(fp);
-                if(c == EOF)break;
-                cache = conv.putc(c);
-            }
-            if(!cache.size()) return (ucs4)EOF;
-        }
-    }
-public:
-    ScriptCharGet(FILE *f) : fp(f), cacheptr(0)
-    {
-        conv.SetSet(getcharset());
-    }
-    ucs4 getc()
-    {
-        ucs4 c = getc_priv();
-        if(c == ';') { do { c = getc_priv(); } while(c != '\n' && c != (ucs4)EOF); }
-        return c;
-    }
-};
-
-void insertor::LoadFile(FILE *fp)
-{
-    if(!fp)return;
-    
-    string header;
-    
-    ucs4 c;
-
-    ScriptCharGet getter(fp);
-    
-    #define cget(c) (c=getter.getc())
-    
-    cget(c);
-    
-    stringdata model;
-    const map<string, char> *symbols = NULL;
-    
-    for(;;)
-    {
-        if(c == (ucs4)EOF)break;
-        if(c == '\n')
-        {
-            cget(c);
-            continue;
-        }
-
-        if(c == '*')
-        {
-            header = "";
-            for(;;)
-            {
-                cget(c);
-                if(c == (ucs4)EOF || isspace(c))break;
-                header += (char)c;
-            }
-            while(c != (ucs4)EOF && c != '\n') { cget(c); }
-            
-            if(header == "z")
-            {
-                model.type = stringdata::zptr16;
-                symbols = &symbols16;
-                fprintf(stderr, "Loading strings for %s", header.c_str());
-            }
-            else if(header == "r")
-            {
-                model.type = stringdata::zptr8;
-                symbols = &symbols2;
-                fprintf(stderr, "Loading strings for %s", header.c_str());
-            }
-            else if(header.size() > 1 && header[0] == 'l')
-            {
-                model.type = stringdata::fixed;
-                model.width = atoi(header.c_str() + 1);
-                symbols = &symbols8;
-                fprintf(stderr, "Loading strings for %s", header.c_str());
-            }
-            else if(header.size() > 3 && header[0] == 'd')
-            {
-                sscanf(header.c_str()+1, "%X:%u", &dictaddr, &dictsize);
-            }
-            else
-            {
-                symbols = NULL;
-            }
-            
-            continue;
-        }
-        
-        if(c == '$')
-        {
-            unsigned label = 0;
-            for(;;)
-            {
-                cget(c);
-                if(c == (ucs4)EOF || c == ':')break;
-                
-                if(header.size() > 0 && (header[0] == 'd' || header[0] == 's'))
-                {
-                    // dictionary labels and free space counts are decimal
-                    if(isdigit(c))
-                        label = label * 10 + c - '0';
-                    else
-                    {
-                        fprintf(stderr, "$%u: Got char '%c', invalid is!\n", label, c);
-                    }
-                }
-                else
-                {
-                    // other labels are 62-base (10+26+26) numbers
-                    if(isdigit(c))
-                        label = label * 62 + c - '0';
-                    else if(c >= 'A' && c <= 'Z')
-                        label = label * 62 + (c - 'A' + 10);
-                    else if(c >= 'a' && c <= 'z')
-                        label = label * 62 + (c - 'a' + 36);
-                    else
-                    {
-                        fprintf(stderr, "$%X: Got char '%c', invalid is!\n", label, c);
-                    }
-                }
-            }
-            wstring content;
-            for(;;)
-            {
-                const bool beginning = (c == '\n');
-                cget(c);
-                if(c == (ucs4)EOF)break;
-                if(beginning && (c == '*' || c == '$'))break;
-                if(c == '\n') { continue; }
-                if(c == '[')
-                {
-                    content += c;
-                    for(;;)
-                    {
-                        cget(c);
-                        content += c;
-                        if(c == ']' || c == (ucs4)EOF)break;
-                    }
-                    continue;
-                }
-                content += c;
-            }
-            
-            if(header.size() == 3 && header[0] == 's')
-            {
-                string ascii = WstrToAsc(content);
-                
-                unsigned page=0, begin=0;
-                sscanf(header.c_str(), "s%X", &page);
-                sscanf(ascii.c_str(), "%X", &begin);
-                
-                fprintf(stderr, "Adding %u bytes of free space at %02X:%04X\n", label, page, begin);
-                freespace[page].insert(pair<unsigned,unsigned> (begin, label));
-                
-                continue;
-            }
-
-            if(header.size() >= 3 && header[0] == 'd')
-            {
-                string newcontent;
-                for(unsigned a=0; a<content.size(); ++a)
-                    newcontent += getchronochar(content[a]);
-                dict.push_back(newcontent);
-                continue;
-            }
-
-            content = str_replace
-            (
-              AscToWstr("[nl]   "),
-              AscToWstr("[nl3]"),
-              content
-            );
-            content = str_replace
-            (
-              AscToWstr("[pause]   "),
-              AscToWstr("[pause3]"),
-              content
-            );
-            content = str_replace
-            (
-              AscToWstr("[pausenl]   "),
-              AscToWstr("[pausenl3]"),
-              content
-            );
-            content = str_replace
-            (
-              AscToWstr("[cls]   "),
-              AscToWstr("[cls3]"),
-              content
-            );
-            
-            string newcontent, code;
-            for(unsigned a=0; a<content.size(); ++a)
-            {
-                map<string, char>::const_iterator i;
-                unsigned char c = content[a];
-                for(unsigned testlen=3; testlen<=5; ++testlen)
-                    if(symbols != NULL && (i = symbols->find
-                        (code = WstrToAsc(content.substr(a, testlen)))
-                                          ) != symbols->end())
-                    {
-                        a += testlen-1;
-                        goto GotCode;
-                    }
-                if(c == '[')
-                {
-                    code = "[";
-                    for(;;)
-                    {
-                        c = content[++a];
-                        code += (char)c;
-                        if(c == ']')break;
-                    }
-                    
-                    if(symbols != NULL && (i = symbols->find(code)) != symbols->end())
-                    {
-                GotCode:
-                        newcontent += i->second;
-                    }
-                    else if(code.substr(0, 7) == "[delay ")
-                    {
-                        newcontent += (char)3;
-                        newcontent += (char)atoi(code.c_str() + 7);
-                    }
-                    else if(code.substr(0, 7) == "[skip ")
-                    {
-                        newcontent += (char)8;
-                        newcontent += (char)atoi(code.c_str() + 6);
-                    }
-                    else if(code.substr(0, 6) == "[ptr ")
-                    {
-                        newcontent += (char)5;
-                        unsigned k = strtol(code.c_str() + 5, NULL, 16);
-                        newcontent += (char)(k & 255);
-                        newcontent += (char)(k >> 8);
-                    }
-                    else if(isdigit(code[1]))
-                    {
-                        newcontent += (char)atoi(code.c_str()+1);
-                        fprintf(stderr, " \nWarning: Raw code: %s", code.c_str());
-                    }
-                    else
-                    {
-                        fprintf(stderr, " \nUnknown code: %s", code.c_str());
-                    }
-                }
-                else
-                    newcontent += getchronochar(c);
-            }
-            
-            model.str = newcontent;
-            strings[label] = model;
-            
-            static char cursbuf[]="-/|\\",curspos=0;
-            if(!(curspos%4)) fprintf(stderr,"%c\010",cursbuf[curspos/4]);
-            curspos=(curspos+1)%(4*4);
-            if(c == '*')fputs(" \n", stderr);
-           
-            continue;
-        }
-        fprintf(stderr, "Unexpected char '%c'\n", c);
-        cget(c);
-    }
-}
-
 int main(void)
 {
     fprintf(stderr,
@@ -1229,11 +873,11 @@ int main(void)
     
     ins.MakeDictionary();
     
-    ins.ReportFreeSpace();
+    ins.freespace.Report();
 
     ins.WriteROM();
     
-    ins.ReportFreeSpace();
+    ins.freespace.Report();
     
     return 0;
 }
