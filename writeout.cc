@@ -191,14 +191,13 @@ void insertor::PatchROM(ROM &ROM)
     
     WriteStrings(ROM);
     Write8pixfont(ROM);
-    Write12pixfont(ROM);
-    WriteDictionary(ROM);
-
     if(GetConf("font", "use_vwf8"))
     {
         // This function will also generate the code to handle the font.
         Write8vpixfont(ROM);
     }
+    Write12pixfont(ROM);
+    WriteDictionary(ROM);
 
     GenerateCode(); 
     WriteCode(ROM);
@@ -217,10 +216,12 @@ void insertor::WriteCode(ROM &ROM) const
     for(i=codes.begin(); i!=codes.end(); ++i)
         ROM.AddPatch(*i);
 
+/*
     // SEP+JSR takes 5 bytes. We overwrote it
     // with 4 bytes (see conjugate.cc).
     // Patch with NOP.
     ROM.Write(ConjugatePatchAddress + 4, 0xEA);
+*/
     
     // Testataan item-listaa
     //ROM.Write(0x02EFB4, 0xA9);
@@ -381,16 +382,20 @@ void insertor::WriteStrings(ROM &ROM)
                 unsigned pos = i->first;
                 const string &s = i->second.str;
                 
-                if(s.size() != i->second.width)
-                    fprintf(stderr, "Warning: Fixed string at %06X: len(%u) != space(%u)...\n",
-                    pos, s.size(), i->second.width);
+                if(s.size() > i->second.width)
+                    fprintf(stderr, "Warning: Fixed string at %06X: len(%u) > space(%u)... '%s'\n",
+                    pos, s.size(), i->second.width, DispString(s).c_str());
                 
                 unsigned size = s.size();
                 if(size > i->second.width) size = i->second.width;
+                
+                // Filler must be 255, or otherwise following problems occur:
+                //     item listing goes zigzag
+                //     12pix item/tech/mons text in battle has garbage (char 0 in font).
 
                 unsigned a;
                 for(a=0; a<size; ++a)          ROM.Write(pos++, s[a]);
-                for(; a < i->second.width; ++a)ROM.Write(pos++, 0);
+                for(; a < i->second.width; ++a)ROM.Write(pos++, 255);
                 break;
             }
             case stringdata::zptr8:
@@ -399,7 +404,7 @@ void insertor::WriteStrings(ROM &ROM)
                 // These are not interesting here, as they're handled below
                 break;
             }
-            // If we omitted something, compiler should warn
+            // If we omitted something, the compiler should warn
        }
    }
    

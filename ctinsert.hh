@@ -84,4 +84,6 @@ private:
     const stringoffsmap GetZStringList(unsigned pagenum) const;
 
     unsigned CalculateScriptSize() const;
+    
+    void LinkAndLocate(class FunctionList& functions);
 };

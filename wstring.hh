@@ -67,9 +67,11 @@ public:
     const wstring puts(const string &s) const;
 };
 
-extern unsigned GetHex(const ucs4 *p);
-
 extern wstring AscToWstr(const string &s);
 extern string WstrToAsc(const wstring &s);
+extern char WcharToAsc(ucs4 c);
+extern ucs4 AscToWchar(char c);
+extern long atoi(const ucs4 *p, int base=10);
+extern int Whex(ucs4 p);
 
 #endif

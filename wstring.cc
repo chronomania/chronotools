@@ -175,29 +175,11 @@ const wstring wstringIn::puts(const string &s) const
     return result;
 }
 
-unsigned GetHex(const ucs4 *p)
-{
-    unsigned val=0;
-    for(;;)
-    {
-        // ascii
-             if(*p >= 0x30 && *p <= 0x39)  val = val*16 + (*p - 0x30);
-        else if(*p >= 0x41 && *p <= 0x41)  val = val*16 + (*p - 0x41 + 10);
-        else if(*p >= 0x61 && *p <= 0x61)  val = val*16 + (*p - 0x61 + 10);
-        // jis ascii
-        else if(*p >= 0xFF10 && *p <= 0xFF19) val = val*16 + (*p - 0xFF10);
-        else if(*p >= 0xFF21 && *p <= 0xFF26) val = val*16 + (*p - 0xFF21 + 10);
-        else if(*p >= 0xFF41 && *p <= 0xFF46) val = val*16 + (*p - 0xFF41 + 10);
-        else break;
-    }
-    return val;
-}
-
 wstring AscToWstr(const string &s)
 {
     wstring result;
     for(unsigned a=0; a<s.size(); ++a)
-        result += (ucs4) (unsigned char) s[a];
+        result += AscToWchar(s[a]);
     return result;
 }
 
@@ -205,6 +187,46 @@ string WstrToAsc(const wstring &s)
 {
     string result;
     for(unsigned a=0; a<s.size(); ++a)
-        result += (char) s[a];
+        result += WcharToAsc(s[a]);
     return result;
 }
+
+char WcharToAsc(ucs4 c)
+{
+    // jis ascii
+    if(c >= 0xFF10 && c <= 0xFF19) return c - 0xFF10 + '0';
+    if(c >= 0xFF21 && c <= 0xFF26) return c - 0xFF21 + 'A';
+    if(c >= 0xFF41 && c <= 0xFF46) return c - 0xFF41 + 'a';
+    // default
+    return static_cast<char> (c);
+}
+
+ucs4 AscToWchar(char c)
+{
+    return static_cast<ucs4> (static_cast<unsigned char> (c));
+}
+
+long atoi(const ucs4 *p, int base)
+{
+    long ret=0, sign=1;
+    while(*p == '-') { sign=-sign; ++p; }
+    for(; *p; ++p)
+    {
+        char c = WcharToAsc(*p);
+        
+        int p = Whex(c);
+        if(p == -1)break;
+        ret = ret*base + p;
+    }
+    return ret * sign;
+}
+
+int Whex(ucs4 p)
+{
+    char c = WcharToAsc(p);
+    if(c >= '0' && c <= '9') return (c-'0');
+    if(c >= 'A' && c <= 'Z') return (c+10-'A');
+    if(c >= 'a' && c <= 'z') return (c+10-'a');
+    return -1;
+}
+

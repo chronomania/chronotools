@@ -245,6 +245,7 @@ Copypaste from the Makefile:
 # VERSION 1.2.1  more vwf stuff, backup before doing big changes
 # VERSION 1.2.2  vwf stability++, also techniques now vwf. Scrolling bugs.
 # VERSION 1.2.3  lots of more translation
+# VERSION 1.2.4  8pix system deciphered, more bugs introduced
 </pre>
 
 ", '1. See also' => "

@@ -40,11 +40,14 @@ include Makefile.sets
 # VERSION 1.2.1  more vwf stuff, backup before doing big changes
 # VERSION 1.2.2  vwf stability++, also techniques now vwf. Scrolling bugs.
 # VERSION 1.2.3  lots of more translation
+# VERSION 1.2.4  8pix system deciphered, more bugs introduced
 
 OPTIM=-O3
 #OPTIM=-O0
+#OPTIM=-O0 -pg -fprofile-arcs
+#LDFLAGS += -pg -fprofile-arcs
 
-VERSION=1.2.3
+VERSION=1.2.4
 ARCHFILES=xray.c xray.h \
           viewer.c \
           ctcset.cc ctcset.hh \
@@ -125,7 +128,7 @@ ctpatch-hdr.ips ctpatch-nohdr.ips: \
 		ctinsert \
 		ct.txt ct.code ct.cfg \
 		ct16fn.tga ct8fn.tga ct8fnFIv.tga
-	./ctinsert
+	time ./ctinsert
 
 chrono-patched.smc: unmakeips ctpatch-hdr.ips chrono-dumpee.smc
 	./unmakeips ctpatch-hdr.ips <chrono-dumpee.smc >chrono-patched.smc 2>/dev/null

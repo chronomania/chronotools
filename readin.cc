@@ -79,9 +79,14 @@ namespace
         
         string result;
         
-        unsigned space3width = (ins.GetFont12width( getchronochar(' ') ) ) * 3;
-        unsigned num8width   = (ins.GetFont12width( getchronochar('8') ) );
-        unsigned w5width     = (ins.GetFont12width( getchronochar('W') ) ) * 5;
+        static const unsigned char spacechar = getchronochar(' ');
+        static const unsigned char colonchar = getchronochar(':');
+        static const unsigned char eightchar = getchronochar('8');
+        static const unsigned char dblw_char = getchronochar('W');
+
+        unsigned space3width = (ins.GetFont12width( spacechar ) ) * 3;
+        unsigned num8width   = (ins.GetFont12width( eightchar ) );
+        unsigned w5width     = (ins.GetFont12width( dblw_char ) ) * 5;
         
         unsigned wrappos = 0;
         unsigned wrapcol = 0;
@@ -95,14 +100,14 @@ namespace
         for(unsigned a=0; a<dialog.size(); ++a)
         {
             unsigned char c = dialog[a];
-
-            if(c == getchronochar(' '))
+            
+            if(c == spacechar)
             {
                 if(!col) wrap_indent = true;
                 wrappos = result.size();
                 wrapcol = col;
             }
-            if(c == getchronochar(':'))
+            if(c == colonchar)
                 wrap_indent = true;
 
             result += c;
@@ -139,7 +144,7 @@ namespace
                 case 0x0F: // num32 -- assume 8888888888
                     col += num8width * 10;
                     break;
-                case 0x1F: // item -- assume ""
+                case 0x1F: // item -- assume "" - FIXME
                 {
                     col += 1;
                     break;
@@ -163,12 +168,13 @@ namespace
                 }
                 case 0x1E: // Nadia:
                 {
-                	col += ins.GetFont12width(getchronochar('N'));
-                	col += ins.GetFont12width(getchronochar('a'));
-                	col += ins.GetFont12width(getchronochar('d'));
-                	col += ins.GetFont12width(getchronochar('i'));
-                	col += ins.GetFont12width(getchronochar('a'));
-                	break;
+                    // This name can't be changed by the player
+                    col += ins.GetFont12width(getchronochar('N'));
+                    col += ins.GetFont12width(getchronochar('a'));
+                    col += ins.GetFont12width(getchronochar('d'));
+                    col += ins.GetFont12width(getchronochar('i'));
+                    col += ins.GetFont12width(getchronochar('a'));
+                    break;
                 }
                 default:
                     if(c >= (0x100-get_num_chronochars()))
@@ -211,9 +217,11 @@ namespace
         if(linecount_error || linelength_error)
         {
             fprintf(stderr,
-                "\n"
+                " \n"
                 "Error: Too long text\n"
-                "In: %s\n",
+                "In:  %s\n"
+                "Out: %s\n",
+                    DispString(dialog).c_str(),
                     DispString(result).c_str());
         }
         
@@ -222,7 +230,7 @@ namespace
             if(warn_wraps)
             {
                 fprintf(stderr,
-                  "\n"
+                  " \n"
                   "Warning: Done some wrapping\n"
                   "In:  %s\n"
                   "Out: %s\n",
@@ -263,9 +271,9 @@ void insertor::LoadFile(FILE *fp)
     cget(c);
     
     stringdata model;
-    const map<string, char> *symbols = NULL;
+    const map<wstring, char> *symbols = NULL;
     
-    set<string> rawcodes;
+    set<wstring> rawcodes;
     
     for(;;)
     {
@@ -283,7 +291,7 @@ void insertor::LoadFile(FILE *fp)
             {
                 cget(c);
                 if(c == (ucs4)EOF || isspace(c))break;
-                header += (char)c;
+                header += WcharToAsc(c);
             }
             while(c != (ucs4)EOF && c != '\n') { cget(c); }
             
@@ -313,8 +321,13 @@ void insertor::LoadFile(FILE *fp)
             {
                 sscanf(header.c_str()+1, "%u", &dictsize);
             }
+            else if(header.size() > 1 && header[0] == 's')
+            {
+                // ok
+            }
             else
             {
+                fprintf(stderr, "Unknown header '%s'\n", header.c_str());
                 symbols = NULL;
             }
             
@@ -329,14 +342,28 @@ void insertor::LoadFile(FILE *fp)
                 cget(c);
                 if(c == (ucs4)EOF || c == ':')break;
                 
-                if(header.size() > 0 && (header[0] == 'd' || header[0] == 's'))
+                if(header.size() > 0 && header[0] == 'd')
                 {
-                    // dictionary labels and free space counts are decimal
+                    // dictionary labels are decimal
                     if(isdigit(c))
                         label = label * 10 + c - '0';
                     else
                     {
                         fprintf(stderr, "$%u: Got char '%c', invalid is (in label)!\n", label, c);
+                    }
+                }
+                else if(header.size() > 0 && header[0] == 's')
+                {
+                    // freespace labels are hex
+                    if(isdigit(c))
+                        label = label * 16 + c - '0';
+                    else if(c >= 'A' && c <= 'z')
+                        label = label * 16 + c + 10 - 'A';
+                    else if(c >= 'A' && c <= 'z')
+                        label = label * 16 + c + 10 - 'a';
+                    else
+                    {
+                        fprintf(stderr, "$%X: Got char '%c', invalid is (in label)!\n", label, c);
                     }
                 }
                 else
@@ -350,7 +377,21 @@ void insertor::LoadFile(FILE *fp)
                         label = label * 62 + (c - 'a' + 36);
                     else
                     {
-                        fprintf(stderr, "$%X: Got char '%c', invalid is (in label)!\n", label, c);
+                        string tmp;
+                        for(unsigned tmpnum=label; tmpnum!=0; )
+                        {
+                            unsigned digit = tmpnum%62;
+                            tmpnum/=62;
+                            string tmp2;
+                            tmp2 += (digit<10)?(digit+'0')
+                                :(digit<36)?(digit+'A'-10)
+                                :(digit+'a'-36);
+                            tmp = tmp2 + tmp;
+                        }
+                        while(tmp.size() < 4)tmp = "0" + tmp;
+                        fprintf(stderr, "$%s", tmp.c_str());
+                        fprintf(stderr, ": Got char '%c', expected ':' (in label)!\n", c);
+                        break;
                     }
                 }
             }
@@ -403,11 +444,13 @@ void insertor::LoadFile(FILE *fp)
                 
                 string ascii = WstrToAsc(content);
                 
-                unsigned page=0, begin=0;
+                unsigned page=0, begin=label, end=0;
                 sscanf(header.c_str(), "s%X", &page);
-                sscanf(ascii.c_str(), "%X", &begin);
+                sscanf(ascii.c_str(), "%X", &end);
                 
-                freespace.Add(page, begin, label);
+                unsigned length = end-begin;
+                
+                freespace.Add(page, begin, length);
                 
                 continue;
             }
@@ -423,90 +466,144 @@ void insertor::LoadFile(FILE *fp)
                 continue;
             }
             
-            content = str_replace
-            (
-              AscToWstr(" [pause]"),
-              AscToWstr("[pause]"),
-              content
-            );
-            content = str_replace
-            (
-              AscToWstr("[nl]   "),
-              AscToWstr("[nl3]"),
-              content
-            );
-            content = str_replace
-            (
-              AscToWstr("[pause]   "),
-              AscToWstr("[pause3]"),
-              content
-            );
-            content = str_replace
-            (
-              AscToWstr("[pausenl]   "),
-              AscToWstr("[pausenl3]"),
-              content
-            );
-            content = str_replace
-            (
-              AscToWstr("[cls]   "),
-              AscToWstr("[cls3]"),
-              content
-            );
+            if(header.size() >= 1 && header[0] == 'z')
+            {
+                content = str_replace
+                (
+                  AscToWstr(" [pause]"),
+                  AscToWstr("[pause]"),
+                  content
+                );
+                content = str_replace
+                (
+                  AscToWstr("[nl]   "),
+                  AscToWstr("[nl3]"),
+                  content
+                );
+                content = str_replace
+                (
+                  AscToWstr("[pause]   "),
+                  AscToWstr("[pause3]"),
+                  content
+                );
+                content = str_replace
+                (
+                  AscToWstr("[pausenl]   "),
+                  AscToWstr("[pausenl3]"),
+                  content
+                );
+                content = str_replace
+                (
+                  AscToWstr("[cls]   "),
+                  AscToWstr("[cls3]"),
+                  content
+                );
+            }
             
-            string newcontent, code;
+            string newcontent;
+            wstring code;
             for(unsigned a=0; a<content.size(); ++a)
             {
-                map<string, char>::const_iterator i;
+                map<wstring, char>::const_iterator i;
                 ucs4 c = content[a];
                 for(unsigned testlen=3; testlen<=5; ++testlen)
-                    if(symbols != NULL && (i = symbols->find
-                        (code = WstrToAsc(content.substr(a, testlen)))
-                                          ) != symbols->end())
-                    {
-                        a += testlen-1;
-                        newcontent += i->second;
-                        goto GotCode;
-                    }
-                if(c == '[')
                 {
-                    code = "[";
-                    for(;;)
+                    if(symbols == NULL) continue;
+                    code = content.substr(a, testlen);
+                    i = symbols->find(code);
+                    if(i == symbols->end()) continue;
+                    
+                    a += testlen-1;
+                    newcontent += i->second;
+                    goto GotCode;
+                }
+                
+                if(c == AscToWchar('['))
+                {
+                    CLEARSTR(code);
+                    for(code += c; ; )
                     {
                         c = content[++a];
-                        code += (char)c;
-                        if(c == ']')break;
+                        code += c;
+                        if(WcharToAsc(c) == ']')break;
                     }
+                    
+                    // Codes used by dialog engine
+                    static const wstring delay = AscToWstr("[delay ");
+                    static const wstring tech  = AscToWstr("[tech]");
+                    static const wstring monster=AscToWstr("[monster]");
+                    
+                    // Codes used by status screen engine
+                    static const wstring code1 = AscToWstr("[next");
+                    static const wstring code2 = AscToWstr("[goto,");
+                    static const wstring code3 = AscToWstr("[func1,");
+                    static const wstring code4 = AscToWstr("[substr,");
+                    static const wstring code5 = AscToWstr("[member,");
+                    static const wstring code6 = AscToWstr("[attrs,");
+                    static const wstring code7 = AscToWstr("[out,");
+                    static const wstring code8 = AscToWstr("[spc,");
+                    static const wstring code9 = AscToWstr("[len,");
+                    static const wstring code10= AscToWstr("[attr,");
+                    static const wstring code11= AscToWstr("[func2,");
+                    static const wstring code12= AscToWstr("[stat,");
+                    static const wstring code0 = AscToWstr("[gfx");
+                    
+                    bool is_12 = header.size() > 0 && header[0] == 'z';
+                    bool is_8  = header.size() > 0 && header[0] == 'r';
                     
                     if(symbols != NULL && (i = symbols->find(code)) != symbols->end())
                     {
                         newcontent += i->second;
                     }
-                    else if(code.substr(0, 7) == "[delay ")
+                    else if(is_12 && code.substr(0, delay.size()) == delay)
                     {
                         newcontent += (char)3;
-                        newcontent += (char)atoi(code.c_str() + 7);
+                        newcontent += (char)atoi(code.c_str() + delay.size(), 10);
                     }
-                    else if(code.substr(0, 6) == "[skip ")
+                    else if(is_12 && code.substr(0, tech.size()) == tech)
                     {
-                        newcontent += (char)8;
-                        newcontent += (char)atoi(code.c_str() + 6);
+                        newcontent += (char)0x12;
+                        newcontent += (char)0x00;
                     }
-                    else if(code.substr(0, 5) == "[ptr ")
+                    else if(is_12 && code.substr(0, monster.size()) == monster)
                     {
-                        newcontent += (char)5;
-                        unsigned k = strtol(code.c_str() + 5, NULL, 16);
-                        newcontent += (char)(k & 255);
-                        newcontent += (char)(k >> 8);
+                        newcontent += (char)0x12;
+                        newcontent += (char)0x01;
                     }
-                    else if(isdigit(code[1]))
+                    else if(is_8 && code.substr(0, code0.size()) == code0)
                     {
-                        newcontent += (char)atoi(code.c_str()+1);
-                        rawcodes.insert(code);
+                    Handle8Code:
+                        const wchar_t *data = code.c_str();
+                        while(*data && *data != ',') ++data;
+                        while(*data == ',')
+                        {
+                            unsigned value = 0, digits = 0;
+                            for(++data; *data && *data!=',' && *data!=']'; ++data,++digits)
+                                value = value*16 + Whex(*data);
+                            while(digits >= 2)
+                            {
+                                newcontent += (char)(value & 255);
+                                value >>= 8;
+                                digits -= 2;
+                            }
+                        }
                     }
+                    else if(is_8 && code.substr(0, code1.size()) == code1) { newcontent += (char)1; goto Handle8Code; }
+                    else if(is_8 && code.substr(0, code2.size()) == code2) { newcontent += (char)2; goto Handle8Code; }
+                    else if(is_8 && code.substr(0, code3.size()) == code3) { newcontent += (char)3; goto Handle8Code; }
+                    else if(is_8 && code.substr(0, code4.size()) == code4) { newcontent += (char)4; goto Handle8Code; }
+                    else if(is_8 && code.substr(0, code5.size()) == code5) { newcontent += (char)5; goto Handle8Code; }
+                    else if(is_8 && code.substr(0, code6.size()) == code6) { newcontent += (char)6; goto Handle8Code; }
+                    else if(is_8 && code.substr(0, code7.size()) == code7) { newcontent += (char)7; goto Handle8Code; }
+                    else if(is_8 && code.substr(0, code8.size()) == code8) { newcontent += (char)8; goto Handle8Code; }
+                    else if(is_8 && code.substr(0, code9.size()) == code9) { newcontent += (char)9; goto Handle8Code; }
+                    else if(is_8 && code.substr(0, code10.size()) == code10) { newcontent += (char)10; goto Handle8Code; }
+                    else if(is_8 && code.substr(0, code11.size()) == code11) { newcontent += (char)11; goto Handle8Code; }
+                    else if(is_8 && code.substr(0, code12.size()) == code12) { newcontent += (char)12; goto Handle8Code; }
                     else
                     {
-                        fprintf(stderr, " \nUnknown code: %s", code.c_str());
+                        newcontent += (char)atoi(code.c_str()+1, 16);
+                        rawcodes.insert(code);
                     }
                 }
                 else
@@ -536,8 +633,8 @@ void insertor::LoadFile(FILE *fp)
     if(rawcodes.size())
     {
         fprintf(stderr, "Warning: Raw codes encountered:");
-        for(set<string>::const_iterator i=rawcodes.begin(); i!=rawcodes.end(); ++i)
-            fprintf(stderr, " %s", i->c_str());
+        for(set<wstring>::const_iterator i=rawcodes.begin(); i!=rawcodes.end(); ++i)
+            fprintf(stderr, " %s", WstrToAsc(*i).c_str());
         fprintf(stderr, "\n");
     }
 }

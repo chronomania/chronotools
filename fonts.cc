@@ -25,13 +25,23 @@ void Font12data::Load(const string &filename)
     for(unsigned a=0; a<get_num_chronochars(); ++a)
     {
         vector<char> box = font12.getbox(a + boxstart);
+#if 0
+        fprintf(stderr, "box %u(+%u):\n", a, boxstart);
+        for(unsigned y=0; y<12; ++y)
+        {
+            fprintf(stderr, "   ");
+            for(unsigned x=0; x<12; ++x)
+                fprintf(stderr, "%u", box[y*12+x]);
+            fprintf(stderr, "\n");
+        }
+#endif
 
         unsigned width=0;
         while(box[width] != 5 && width < 12)++width;
         
         for(unsigned p=0; p<box.size(); ++p)
             if((unsigned char)box[p] < sizeof(palette))
-                box[p] = palette[box[p]];
+                box[p] = palette[ static_cast<unsigned> (box[p]) ];
         
         unsigned po=0;
         for(unsigned y=0; y<12; ++y)
@@ -90,7 +100,7 @@ void Font8data::Load(const string &filename)
 
         for(unsigned p=0; p<box.size(); ++p)
             if((unsigned char)box[p] < sizeof(palette))
-                box[p] = palette[box[p]];
+                box[p] = palette[ static_cast<unsigned> (box[p]) ];
         
         unsigned po=0;
         for(unsigned y=0; y<8; ++y)

@@ -16,6 +16,7 @@ namespace
     {
         wstring cset;
         std::map<ucs4, unsigned char> revmap;
+        vector<unsigned char> revmapfirst;
     public:
         CharacterSet()
         {
@@ -44,6 +45,9 @@ namespace
             {
                 fprintf(stderr, "ctcset error: Configuration not set properly!\n");
             }
+            
+            revmapfirst.clear();
+            revmapfirst.resize(GetConf("font", "charcachesize"), 0);
              
             wstring noncharstr = GetConf("font", "nonchar");
             ucs4 nonchar = noncharstr[0];
@@ -52,9 +56,10 @@ namespace
             {
                 ucs4 c = cset[a];
                 if(c == nonchar) { cset[a] = c = ilseq; }
-                if(c != ilseq)revmap[c] = a;
+                if((unsigned)c < revmapfirst.size()) revmapfirst[(unsigned)c] = a;
+                else if(c != ilseq)revmap[c] = a;
             }
-            fprintf(stderr, "Built charset map\n");
+            fprintf(stderr, "Built charset map (%u noncached)\n", revmap.size());
         }
         ucs4 operator[] (unsigned char ind)
         {
@@ -66,6 +71,8 @@ namespace
             if(p == ilseq)return 0;
             
             if(!cset.size()) Init();
+            
+            if((unsigned)p < revmapfirst.size()) return revmapfirst[(unsigned)p];
             
             map<ucs4, unsigned char>::const_iterator i;
             i = revmap.find(p);

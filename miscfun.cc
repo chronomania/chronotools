@@ -16,7 +16,7 @@ string str_replace(const string &search, unsigned char with, const string &where
             break;
         }
         result += where.substr(a, b-a);
-        result += (char)with;
+        result += static_cast<char> (with);
         a = b + search.size();
     }
     return result;
@@ -64,4 +64,5 @@ unsigned hashstr(const char *s, unsigned len)
         h ^= (c * 707106);
     }
     return (h&0x0000FF00) | ((h>>16)&0xFF);
+    // Paluuarvo on siis 16-bittinen hash!
 }

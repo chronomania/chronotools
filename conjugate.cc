@@ -51,8 +51,8 @@ void Conjugatemap::Load()
             while(b < data.size() && data[b] != ',') ++b;
             
             string s = data.substr(c, b-c);
-
-            unsigned char person = Symbols[16].find(name)->second;
+            
+            unsigned char person = Symbols[16].find(AscToWstr(name))->second;
             string key = str_replace(name, person, s);
             for(unsigned a=0; a<key.size(); ++a)
                 if(key[a] != person)
@@ -69,16 +69,25 @@ void Conjugatemap::Load()
     }
 }
 
+namespace
+{
+    vector<unsigned char> GetAllowedBytesList()
+    {
+        vector<unsigned char> result;
+        const ConfParser::ElemVec& elems = GetConf("conjugator", "bytes").Fields();
+        for(unsigned a=0; a<elems.size(); ++a)
+            result.push_back(elems[a].IField);
+        return result;
+    }
+}
+
 void Conjugatemap::Work(string &s, form &form)
 {
-    vector<unsigned> AllowedBytes;
-    
-    { const ConfParser::ElemVec& elems = GetConf("conjugator", "bytes").Fields();
-    for(unsigned a=0; a<elems.size(); ++a)
-        AllowedBytes.push_back(elems[a]); }
+    static const vector<unsigned char> AllowedBytes = GetAllowedBytesList();
     
     datamap_t::const_iterator i;
     for(i=form.data.begin(); i!=form.data.end(); ++i)
+    {
         for(unsigned a=0; a < s.size(); )
         {
             unsigned b = s.find(i->first, a);
@@ -105,8 +114,8 @@ void Conjugatemap::Work(string &s, form &form)
             }
             
             string tmp;
-            tmp += (char)form.prefix;
-            tmp += (char)i->second;
+            tmp += (char)form.prefix; // conjugater id
+            tmp += (char)i->second;   // character id
             
             // a = b + i->first.size();
             
@@ -114,6 +123,7 @@ void Conjugatemap::Work(string &s, form &form)
             s.insert(b, tmp);
             a = b + tmp.size();
         }
+    }
 }
 
 Conjugatemap::Conjugatemap()
@@ -231,73 +241,5 @@ void insertor::GenerateConjugatorCode()
 
     Functions.RequireFunction(ConjFuncName);
     
-    vector<SNEScode> codeblobs;
-    vector<wstring>  funcnames;
-    
-    for(FunctionList::functions_t::const_iterator
-        i = Functions.functions.begin();
-        i != Functions.functions.end();
-        ++i)
-    {
-        // Omit nonrequired functions.
-        if(!i->second.second) continue;
-        
-        codeblobs.push_back(i->second.first.code);
-        funcnames.push_back(i->first);
-    }
-        
-    vector<freespacerec> blocks(codeblobs.size());
-    for(unsigned a=0; a<codeblobs.size(); ++a)
-        blocks[a].len = codeblobs[a].size();
-    
-    freespace.OrganizeToAnyPage(blocks);
-    
-    for(unsigned a=0; a<codeblobs.size(); ++a)
-    {
-        unsigned addr = blocks[a].pos;
-        codeblobs[a].YourAddressIs(addr);
-        fprintf(stderr, "  Function %s (%u bytes) will be placed at %02X:%04X\n",
-            WstrToAsc(funcnames[a]).c_str(),
-            codeblobs[a].size(),
-            0xC0 | (addr>>16),
-            addr & 0xFFFF);
-    }
-    
-    // All of them are now placed somewhere.
-    // Link them!
-    
-    for(unsigned a=0; a<codeblobs.size(); ++a)
-    {
-        FunctionList::functions_t::const_iterator i = Functions.functions.find(funcnames[a]);
-        
-        const SubRoutine::requires_t &req = i->second.first.requires;
-        for(SubRoutine::requires_t::const_iterator
-            j = req.begin();
-            j != req.end();
-            ++j)
-        {
-            // Find the address of the function we're requiring
-            unsigned req_addr = NOWHERE;
-            for(unsigned b=0; b<funcnames.size(); ++b)
-                if(funcnames[b] == j->first)
-                {
-                    req_addr = codeblobs[b].GetAddress() | 0xC00000;
-                    break;
-                }
-            
-            for(set<unsigned>::const_iterator
-                k = j->second.begin();
-                k != j->second.end();
-                ++k)
-            {
-                codeblobs[a][*k + 0] = req_addr & 255;
-                codeblobs[a][*k + 1] = (req_addr >> 8) & 255;
-                codeblobs[a][*k + 2] = req_addr >> 16;
-            }
-        }
-    }
-    
-    // They have now been linked.
-    
-    codes.insert(codes.begin(), codeblobs.begin(), codeblobs.end());
+    LinkAndLocate(Functions);
 }

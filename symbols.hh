@@ -1,18 +1,17 @@
 #include <map>
-#include <string>
+#include "wstring.hh"
 
 using std::map;
-using std::string;
 
 class Symbols
 {
-    map<string, char> symbols2, symbols8, symbols16;
+    map<wstring, char> symbols2, symbols8, symbols16;
 
-    void AddSym(const char *sym, char c, int targets);
+    void AddSym(const wstring& sym, char c, int targets);
     void Load();
 public:
     Symbols();
-    const map<string, char> &operator[] (unsigned ind) const;
+    const map<wstring, char>& operator[] (unsigned ind) const;
 };
 
 extern Symbols Symbols;

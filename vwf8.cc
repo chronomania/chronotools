@@ -59,7 +59,7 @@ namespace
         for(int a=MaxPEI; a>=MinPEI; a-=2) code.EmitCode(0x68, 0x85, a); // pla, sta.
     }
 
-#define CALC_DEBUG 1
+#define CALC_DEBUG 0
     /* Return value: number of bits set */
     int BuildShiftTask(int c, vector<int> &bitsigns, unsigned highest_bit=999)
     {
@@ -1015,73 +1015,5 @@ void insertor::GenerateVWF8code(unsigned widthtab_addr, unsigned tiletab_addr)
     Functions.RequireFunction(VWF8_I3);
     Functions.RequireFunction(VWF8_T1);
     
-    vector<SNEScode> codeblobs;
-    vector<wstring>  funcnames;
-    
-    for(FunctionList::functions_t::const_iterator
-        i = Functions.functions.begin();
-        i != Functions.functions.end();
-        ++i)
-    {
-        // Omit nonrequired functions.
-        if(!i->second.second) continue;
-        
-        codeblobs.push_back(i->second.first.code);
-        funcnames.push_back(i->first);
-    }
-        
-    vector<freespacerec> blocks(codeblobs.size());
-    for(unsigned a=0; a<codeblobs.size(); ++a)
-        blocks[a].len = codeblobs[a].size();
-    
-    freespace.OrganizeToAnyPage(blocks);
-    
-    for(unsigned a=0; a<codeblobs.size(); ++a)
-    {
-        unsigned addr = blocks[a].pos;
-        codeblobs[a].YourAddressIs(addr);
-        fprintf(stderr, "  Function %s (%u bytes) will be placed at %02X:%04X\n",
-            WstrToAsc(funcnames[a]).c_str(),
-            codeblobs[a].size(),
-            0xC0 | (addr>>16),
-            addr & 0xFFFF);
-    }
-    
-    // All of them are now placed somewhere.
-    // Link them!
-    
-    for(unsigned a=0; a<codeblobs.size(); ++a)
-    {
-        FunctionList::functions_t::const_iterator i = Functions.functions.find(funcnames[a]);
-        
-        const SubRoutine::requires_t &req = i->second.first.requires;
-        for(SubRoutine::requires_t::const_iterator
-            j = req.begin();
-            j != req.end();
-            ++j)
-        {
-            // Find the address of the function we're requiring
-            unsigned req_addr = NOWHERE;
-            for(unsigned b=0; b<funcnames.size(); ++b)
-                if(funcnames[b] == j->first)
-                {
-                    req_addr = codeblobs[b].GetAddress() | 0xC00000;
-                    break;
-                }
-            
-            for(set<unsigned>::const_iterator
-                k = j->second.begin();
-                k != j->second.end();
-                ++k)
-            {
-                codeblobs[a][*k + 0] = req_addr & 255;
-                codeblobs[a][*k + 1] = (req_addr >> 8) & 255;
-                codeblobs[a][*k + 2] = req_addr >> 16;
-            }
-        }
-    }
-    
-    // They have now been linked.
-    
-    codes.insert(codes.begin(), codeblobs.begin(), codeblobs.end());
+    LinkAndLocate(Functions);
 }

@@ -1,7 +1,6 @@
 #include <set>
 #include <map>
 
-#include "snescode.hh"
 #include "compiler.hh"
 #include "wstring.hh"
 #include "config.hh"
@@ -10,13 +9,6 @@
 using namespace std;
 
 #define OPTIMIZE_A
-
-void SubRoutine::CallSub(const wstring &name)
-{
-    code.EmitCode(0x22, 0,0,0);
-    requires[name].insert(code.size()-3);
-    code.BitnessUnknown();
-}
 
 namespace
 {
@@ -670,40 +662,6 @@ namespace
         
         const FunctionList &GetFunctions() const { return functions; }
     };
-}
-
-void FunctionList::Define(const wstring &name, const SubRoutine &sub)
-{
-    functions[name] = make_pair(sub, false);
-}
-
-void FunctionList::RequireFunction(const wstring &name)
-{
-    functions_t::iterator i = functions.find(name);
-    if(i == functions.end())
-    {
-        fprintf(stderr, "Error: Function '%s' not defined!\n",
-            WstrToAsc(name).c_str());
-        return;
-    }
-    bool &required         = i->second.second;
-    const SubRoutine &func = i->second.first;
-    
-    if(required) return;
-#if 0
-    fprintf(stderr, "Requiring function '%s' (%u bytes)...\n",
-        WstrToAsc(name).c_str(),
-        func.code.size());
-#endif
-    required = true;
-    
-    SubRoutine::requires_t::const_iterator j;
-    for(j = func.requires.begin();
-        j != func.requires.end();
-        ++j)
-    {
-        RequireFunction(j->first);
-    }
 }
 
 const FunctionList Compile(FILE *fp)

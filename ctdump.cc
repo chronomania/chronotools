@@ -3,6 +3,7 @@
 #include <string>
 #include <iostream>
 #include <set>
+#include <map>
 
 /* I am sorry for the spaghettiness of this small program... */
 
@@ -31,30 +32,80 @@ static vector<wstring> substrings;
 static const bool TryFindExtraSpace = false;
 static const unsigned ExtraSpaceMinLen = 128;
 
+static void MarkingError(const set<unsigned> &errlist, const char *type)
+{
+    set<unsigned>::const_iterator i;
+    
+    bool begun=false;
+    unsigned first=0;
+    unsigned prev=0;
+    
+    for(i=errlist.begin(); ; ++i)
+    {
+        if(i == errlist.end() || (begun && prev < *i-1))
+        {
+            fprintf(stderr, "Error: %06X-%06X already marked %s\n", first,prev, type);
+            begun = false;
+            if(i == errlist.end()) break;
+        }
+        
+        if(!begun) { begun = true; first = *i; }
+        prev = *i;
+    }
+}
+static void ShowProtMap()
+{
+    static const char *const types[4] = {"?","free","protected","ERROR"};
+    
+    fprintf(stderr, "Prot/free map:\n");
+    unsigned romsize = space.size();
+    
+    bool begun=false;
+    unsigned first=0;
+    unsigned lasttype=0;
+    
+    for(unsigned a=0; a<=romsize; ++a)
+    {
+        unsigned type = 0;
+        if(a == romsize
+        || (begun && lasttype != (type = (space[a]?1:0) + (protect[a]?2:0)))
+          )
+        {
+            fprintf(stderr, "  %06X-%06X: %s (%u bytes)\n",
+                first,a-1, types[lasttype], a-first);
+            begun = false;
+            if(a == romsize) break;
+        }
+        if(!begun) { begun = true; first=a; }
+        lasttype = type;
+    }
+}
+
 static void MarkFree(unsigned begin, unsigned length)
 {
+    set<unsigned> error;
     //fprintf(stderr, "Marking %u bytes free at %06X\n", length, begin);
     for(; length>0; --length)
     {
-        if(protect[begin])
-        {
-            fprintf(stderr, "Error: %06X already marked PROTECTED\n", begin);
-        }
+        if(protect[begin]) error.insert(begin);
         space[begin++] = true;
     }
+    
+    if(error.size()) MarkingError(error, "protected, attempted to free");
 }
 
 static void MarkProt(unsigned begin, unsigned length)
 {
+    set<unsigned> error;
+    
     //fprintf(stderr, "Marking %u bytes protected at %06X\n", length, begin);
     for(; length>0; --length)
     {
-        if(space[begin])
-        {
-            fprintf(stderr, "Error: %06X already marked FREE\n", begin);
-        }
+        if(space[begin]) error.insert(begin);
         protect[begin++] = true;
     }
+
+    if(error.size()) MarkingError(error, "free, attempted to protect");
 }
 
 static void LoadROM()
@@ -143,31 +194,60 @@ static const vector<string> LoadPStrings(unsigned offset, unsigned count)
     return result;
 }
 
+static string LoadZString(unsigned offset, const map<unsigned,unsigned> &extrasizes)
+{
+    string foundstring;
+    
+    for(unsigned p=offset; ; ++p)
+    {
+        if(ROM[p] == 0) break;
+        unsigned byte = ROM[p];
+        foundstring += (char)byte;
+        
+        map<unsigned,unsigned>::const_iterator i;
+        i = extrasizes.find(byte);
+        if(i != extrasizes.end())
+        {
+            unsigned extra = i->second;
+            while(extra-- > 0)
+                foundstring += (char)ROM[++p];
+        }
+    }
+    
+    //printf("\n;Loaded %u bytes from $%06X\n", foundstring.size()+1, offset);
+    
+    MarkFree(offset, foundstring.size() + 1);
+    
+    return foundstring;
+}
+
 // Load an array of C style strings
-static const vector<string> LoadZStrings(unsigned offset, unsigned count=0)
+static const vector<string> LoadZStrings(unsigned offset, unsigned count,
+                                         const map<unsigned,unsigned> &extrasizes)
 {
     const unsigned segment = offset >> 16;
     const unsigned base = segment << 16;
 
-    vector<string> result(count);
+    vector<string> result;
+    result.reserve(count);
 #if LOADZ_DEBUG
     const unsigned maxco=10;
     unsigned col=maxco;
 #endif
     set<unsigned> offsetlist;
     
-    MarkProt(offset, count*2);
-    
     unsigned firstoffs = 0x10000, lastoffs = 0, lastlen = 0;
     for(unsigned a=0; !count || a<count; ++a)
     {
-        if(!count) MarkProt(offset, 2);
         const unsigned stringptr = ROM[offset] + 256*ROM[offset + 1];
         
+        // Jos tämä osoite on listattu jo kertaalleen, break.
         if(offsetlist.find(offset & 0xFFFF) != offsetlist.end())
             break;
-        offsetlist.insert(stringptr);
 
+        MarkProt(offset, 2);
+        offsetlist.insert(stringptr);
+        
 #if LOADZ_DEBUG
         if(col==maxco){printf(";ptr%2u ", a);col=0;}
         else if(!col)printf(";%5u ", a);
@@ -176,9 +256,7 @@ static const vector<string> LoadZStrings(unsigned offset, unsigned count=0)
         if(++col == maxco) { printf("\n"); col=0; }
 #endif
         
-        const string foundstring((const char *)&ROM[stringptr + base]);
-        
-        MarkFree(stringptr+base, foundstring.size()+1);
+        string foundstring = LoadZString(stringptr+base, extrasizes);
         
         if(stringptr < firstoffs) firstoffs = stringptr;
         if(stringptr > lastoffs)
@@ -197,10 +275,7 @@ static const vector<string> LoadZStrings(unsigned offset, unsigned count=0)
          ; ++freebyte,++freebytecount);
         MarkFree(freebytepos, freebytecount);
 #endif
-        if(count)
-            result[a] = foundstring;
-        else
-            result.push_back(foundstring);
+        result.push_back(foundstring);
         
         offset += 2;
     }
@@ -276,44 +351,7 @@ static void FindEndSpaces(void)
     fprintf(stderr, " done\n");
 }
 
-static wstring Disp16Char(unsigned char k)
-{
-    if(substrings[k].size())
-        return substrings[k];
-
-    ucs4 tmp = getucs4(k);
-    if(tmp == ilseq)
-    {
-        char Buf[32];
-        sprintf(Buf, "[%u]", k);
-        return AscToWstr(Buf);
-    }
-    else
-    {
-        wstring result;
-        result += tmp;
-        return result;
-    }
-}
-
 static wstring Disp8Char(unsigned char k)
-{
-    ucs4 tmp = getucs4(k);
-    if(tmp == ilseq)
-    {
-        char Buf[32];
-        sprintf(Buf, "[%u]", k);
-        return AscToWstr(Buf);
-    }
-    else
-    {
-        wstring result;
-        result += tmp;
-        return result;
-    }
-}
-
-static wstring DispFChar(unsigned char k)
 {
     switch(k)
     {
@@ -337,6 +375,7 @@ static wstring DispFChar(unsigned char k)
         case 0x2F: return AscToWstr("[starsymbol]");
         // 0x30..: empty
         
+        /*
         case 0x62: return AscToWstr("[handpart1]");
         case 0x63: return AscToWstr("[handpart1]");
         case 0x67: return AscToWstr("[hpmeter0]");
@@ -348,8 +387,24 @@ static wstring DispFChar(unsigned char k)
         case 0x6D: return AscToWstr("[hpmeter6]");
         case 0x6E: return AscToWstr("[hpmeter7]");
         case 0x6F: return AscToWstr("[hpmeter8]");
+        */
         
-        default: return Disp8Char(k);
+        default:
+        {
+            ucs4 tmp = getucs4(k);
+            if(tmp == ilseq)
+            {
+                char Buf[32];
+                sprintf(Buf, "[%02X]", k);
+                return AscToWstr(Buf);
+            }
+            else
+            {
+                wstring result;
+                result += tmp;
+                return result;
+            }
+        }
     }
 }
 
@@ -372,7 +427,10 @@ static void DumpTable(const vector<string> &tab, wstring (*Disp)(unsigned char))
 static void DumpZStrings(const unsigned offs, unsigned len, bool dolf=true)
 {
     fprintf(stderr, "Dumping strings at %06X...", offs);
-    vector<string> strings = LoadZStrings(offs, len);
+    
+    map<unsigned,unsigned> extrasizes;
+    extrasizes[0x12] = 1;
+    vector<string> strings = LoadZStrings(offs, len, extrasizes);
 
     printf("*z;%u pointerstrings (12pix font)\n", strings.size());
 
@@ -397,14 +455,50 @@ static void DumpZStrings(const unsigned offs, unsigned len, bool dolf=true)
 
         for(unsigned b=0; b<s.size(); ++b)
         {
-            if(s[b] == 3)
+            switch(s[b])
             {
-                char Buf[64];
-                sprintf(Buf, "[delay %02X]", (unsigned char)s[++b]);
-                line += conv.puts(AscToWstr(Buf));
+                case 0x03:
+                {
+                    char Buf[64];
+                    sprintf(Buf, "[delay %02X]", (unsigned char)s[++b]);
+                    line += conv.puts(AscToWstr(Buf));
+                    break;
+                }
+                case 0x12:
+                {
+                    char Buf[64];
+                    ++b;
+                    if(s[b] == 0x00)
+                        strcpy(Buf, "[tech]");
+                    else if(s[b] == 0x01)
+                        strcpy(Buf, "[monster]");
+                    else
+                        sprintf(Buf, "[12][%02X]", (unsigned char)s[b]);
+                    line += conv.puts(AscToWstr(Buf));
+                    break;
+                }
+                default:
+                {
+                    unsigned char k = s[b];
+                    
+                    if(substrings[k].size())
+                        line += conv.puts(substrings[k]);
+                    else
+                    {
+                        ucs4 tmp = getucs4(k);
+                        if(tmp == ilseq)
+                        {
+                            char Buf[32];
+                            sprintf(Buf, "[%02X]", k);
+                            line += conv.puts(AscToWstr(Buf));
+                        }
+                        else
+                        {
+                            line += conv.putc(tmp);
+                        }
+                    }
+                }
             }
-            else
-                line += conv.puts(Disp16Char(s[b]));
         }
         puts(line.c_str());
     }
@@ -412,10 +506,22 @@ static void DumpZStrings(const unsigned offs, unsigned len, bool dolf=true)
     fprintf(stderr, " done\n");
 }
 
-static void DumpStrings(const unsigned offs, unsigned len=0)
+static void Dump8Strings(const unsigned offs, unsigned len=0)
 {
     fprintf(stderr, "Dumping strings at %06X...", offs);
-    vector<string> strings = LoadZStrings(offs, len);
+    map<unsigned,unsigned> extrasizes;
+    extrasizes[2] = 2;
+    extrasizes[3] = 2+2;
+    extrasizes[4] = 3;
+    extrasizes[5] = 2;
+    extrasizes[6] = 2;
+    extrasizes[7] = 2;
+    extrasizes[8] = 1;
+    extrasizes[9] = 1;
+    extrasizes[10] = 1;
+    extrasizes[11] = 2+2;
+    extrasizes[12] = 1+2;
+    vector<string> strings = LoadZStrings(offs, len, extrasizes);
 
     printf("*r;%u pointerstrings (8pix font)\n", strings.size());
 
@@ -435,33 +541,154 @@ static void DumpStrings(const unsigned offs, unsigned len=0)
         }
         line += conv.putc(':');
         
-        const string &s = strings[a];
+        string s = strings[a];
 
+        unsigned attr=0;
         for(unsigned b=0; b<s.size(); ++b)
         {
+            char Buf[64];
+Retry:
             switch(s[b])
             {
                 case 1:
-                    line += conv.puts(AscToWstr("[nl]"));
+                {
+                    line += conv.puts(AscToWstr("[next]"));
                     break;
+                }
+                case 2:
+                {
+                    unsigned c;
+                    c = (unsigned char)s[b+1] + 256*(unsigned char)s[b+2]; b+=2;
+                    sprintf(Buf, "[goto,%04X]", c);
+                    line += conv.puts(AscToWstr(Buf));
+                    break;
+                }
+                case 3:
+                {
+                    unsigned c1, c2;
+                    c1 = (unsigned char)s[b+1] + 256*(unsigned char)s[b+2]; b+=2;
+                    c2 = (unsigned char)s[b+1] + 256*(unsigned char)s[b+2]; b+=2;
+                    sprintf(Buf, "[func1,%04X,%04X]", c1,c2);
+                    line += conv.puts(AscToWstr(Buf));
+                    break;
+                }
+                case 4:
+                {
+                    unsigned c1, c2;
+                    c2 = (unsigned char)s[b+1] + 256*(unsigned char)s[b+2]; b+=2;
+                    c1 = (unsigned char)s[++b];
+                    
+                    if(c1 >= 0xC0)
+                    {
+                        unsigned addr = ((c1&0x3F) << 16) + c2;
+                        
+                        string str = LoadZString(addr, extrasizes);
+                        
+                        //line += conv.putc(AscToWchar('{')); //}
+                        
+                        b -= 3;
+                        s.erase(b, 4);
+                        s.insert(b, str);
+                        goto Retry;
+                    }
+                    
+                    sprintf(Buf, "[substr,%02X%04X]", c1,c2);
+                    line += conv.puts(AscToWstr(Buf));
+                    break;
+                }
                 case 5:
                 {
                     char Buf[64];
-                    unsigned c = (unsigned char)s[++b];
-                    c += 256 * (unsigned char)s[++b];
-                    sprintf(Buf, "[ptr %04X]", c);
+                    unsigned c;
+                    c = (unsigned char)s[b+1] + 256*(unsigned char)s[b+2]; b+=2;
+                    sprintf(Buf, "[member,%04X]", c);
+                    line += conv.puts(AscToWstr(Buf));
+                    break;
+                }
+                case 6:
+                {
+                    char Buf[64];
+                    unsigned c;
+                    c = (unsigned char)s[b+1] + 256*(unsigned char)s[b+2]; b+=2;
+                    sprintf(Buf, "[attrs,%04X]", c);
+                    line += conv.puts(AscToWstr(Buf));
+                    break;
+                }
+                case 7:
+                {
+                    char Buf[64];
+                    unsigned c;
+                    c = (unsigned char)s[b+1] + 256*(unsigned char)s[b+2]; b+=2;
+                    sprintf(Buf, "[out,%04X]", c);
                     line += conv.puts(AscToWstr(Buf));
                     break;
                 }
                 case 8:
                 {
                     char Buf[64];
-                    sprintf(Buf, "[skip %u]", (unsigned char)s[++b]);
+                    unsigned c;
+                    c = (unsigned char)s[++b];
+                    sprintf(Buf, "[spc,%02X]", c);
+                    line += conv.puts(AscToWstr(Buf));
+                    break;
+                }
+                case 9:
+                {
+                    char Buf[64];
+                    unsigned c;
+                    c = (unsigned char)s[++b];
+                    sprintf(Buf, "[len,%02X]", c);
+                    line += conv.puts(AscToWstr(Buf));
+                    break;
+                }
+                case 10:
+                {
+                    char Buf[64];
+                    unsigned c;
+                    c = (unsigned char)s[++b];
+                    sprintf(Buf, "[attr,%02X]", c);
+                    line += conv.puts(AscToWstr(Buf));
+                    attr = c;
+                    break;
+                }
+                case 11:
+                {
+                    unsigned c1, c2;
+                    c1 = (unsigned char)s[b+1] + 256*(unsigned char)s[b+2]; b+=2;
+                    c2 = (unsigned char)s[b+1] + 256*(unsigned char)s[b+2]; b+=2;
+                    sprintf(Buf, "[func2,%04X,%04X]", c1,c2);
+                    line += conv.puts(AscToWstr(Buf));
+                    break;
+                }
+                case 12:
+                {
+                    unsigned c1, c2;
+                    c1 = (unsigned char)s[++b];
+                    c2 = (unsigned char)s[b+1] + 256*(unsigned char)s[b+2]; b+=2;
+                    sprintf(Buf, "[stat,%02X,%04X]", c1,c2);
                     line += conv.puts(AscToWstr(Buf));
                     break;
                 }
                 default:
-                    line += conv.puts(Disp8Char(s[b]));
+                    if(attr & 0x03)
+                    {
+                        line += conv.puts(AscToWstr("[gfx"));
+                        for(;;)
+                        {
+                            unsigned char byte = s[b];
+                            if(byte <= 12) { --b; break; }
+
+                            char Buf[32];
+                            sprintf(Buf, ",%02X", byte);
+                            line += conv.puts(AscToWstr(Buf));
+                            ++b;
+                        }
+                        line += conv.putc(AscToWchar(']'));
+                    }
+                    else
+                    {
+                        line += conv.puts(Disp8Char(s[b]));
+                    }
             }
         }
         puts(line.c_str());
@@ -498,7 +725,7 @@ static void DumpFStrings(unsigned offs, unsigned len, unsigned maxcount=0)
         const string &s = strings[a];
 
         for(unsigned b=0; b<s.size(); ++b)
-            line += conv.puts(DispFChar(s[b]));
+            line += conv.puts(Disp8Char(s[b]));
         puts(line.c_str());
     }
     printf("\n\n");
@@ -564,7 +791,7 @@ static void ListSpaces(void)
                     printf("*s%02X ;Free space in segment $%02X:\n", page, page);
                     freehere = true;
                 }
-                printf("$%u:%04X;%04X\n", p-freebegin, freebegin, p);
+                printf("$%04X:%04X ; %u\n", freebegin, p, p-freebegin);
             }
         }
         if(freehere)
@@ -740,7 +967,6 @@ static void PatchSubStrings()
     substrings[0x0F] = AscToWstr("[num32]");
     // 0x10 seems to do nothing
     substrings[0x11] = AscToWstr("[member]");
-    substrings[0x12] = AscToWstr("[tech]");
     // These names are hardcoded because the ROM was quite
     // obfuscated here. Same for Nadia and Epoch later.
     substrings[0x13] = AscToWstr("Crono");
@@ -940,22 +1166,11 @@ int main(void)
     DumpZStrings(0x3F8400, 39);
     
     puts(";Item types");
-    DumpStrings(0x3FB310, 242);
+    Dump8Strings(0x3FB310, 242);
 
     puts(";Status screen string");
-    //FIXME: These are not correctly dumped yet!
-    //DumpStrings(0x3F158D, 1);
-    //DumpStrings(0x3F0D67, 1);
-    //DumpStrings(0x3FC457, 128);
-    DumpStrings(0x3FC457+2* 2, 2);
-    DumpStrings(0x3FC457+2* 7, 1);
-    DumpStrings(0x3FC457+2*11, 2);
-    DumpStrings(0x3FC457+2*16, 6);
-    DumpStrings(0x3FC457+2*25, 2);
-    //DumpStrings(0x3FC457+2*32, 3);
-    DumpStrings(0x3FC457+2*33, 2);
-    DumpStrings(0x3FC457+2*37, 18);
-    DumpStrings(0x3FC457+2*57, 2);
+    
+    Dump8Strings(0x3FC457, 61);
     
     puts(";Misc prompts");
     DumpZStrings(0x3FCF3B, 7);
@@ -964,10 +1179,10 @@ int main(void)
     DumpZStrings(0x3FD3FE, 50);
     
     puts(";Era list");
-    DumpStrings(0x3FD396, 8);
+    Dump8Strings(0x3FD396, 8);
     
     puts(";Episode list");
-    DumpStrings(0x3FD03E, 27);
+    Dump8Strings(0x3FD03E, 27);
     
     Dump8x8sprites(Font8_Address, 256);
     
@@ -977,6 +1192,8 @@ int main(void)
         FindEndSpaces();
 
     ListSpaces();
+    
+    ShowProtMap();
     
     fprintf(stderr, "Done\n");
 }
