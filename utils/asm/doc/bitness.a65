@@ -1,8 +1,0 @@
-; Define functions for handling the bitness...
-#define SET_8_BIT_A()   sep #$20 : .as
-#define SET_16_BIT_A()  rep #$20 : .al
-#define SET_8_BIT_X()   sep #$10 : .xs
-#define SET_16_BIT_X()  rep #$10 : .xl
-
-#define SET_8_BIT_AX()  sep #$30 : .xs : .as
-#define SET_16_BIT_AX() rep #$30 : .xl : .al
