@@ -283,6 +283,14 @@ void O65::Locate(SegmentSelection seg, unsigned newaddress)
     if(bss)   bss->Locate(seg, diff, seg==BSS);
 }
 
+unsigned O65::GetBase(SegmentSelection seg) const
+{
+    const Segment*const *s = GetSegRef(seg);
+    if(!s) return 0;
+    
+    return (*s)->base;
+}
+
 void O65::LinkSym(const std::string& name, unsigned value)
 {
     unsigned symno = defs->GetSymno(name);
@@ -777,4 +785,12 @@ void O65::Segment::LoadRelocations(FILE* fp)
 const vector<pair<unsigned char, std::string> >& O65::GetCustomHeaders() const
 {
     return customheaders;
+}
+
+/* Get relocation data of the given segment */
+const Relocdata<unsigned> O65::GetRelocData(SegmentSelection seg)
+{
+    const Segment*const *s = GetSegRef(seg);
+    if(!s) return Relocdata<unsigned> ();
+    return (*s)->R;
 }

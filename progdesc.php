@@ -205,6 +205,7 @@ Copypaste from the Makefile:
 # VERSION 1.15.3 conjugator now supports definition by a table.
 # VERSION 1.15.3.1 minor changes in conjugator for severe grammars.
 # VERSION 1.15.3.2 a bugfix in ctdump (deleting the *c block). Added more documentation!
+# VERSION 1.15.3.3 minor changes in default config.
 </pre>
 
 To use the character name changing feature, do a redump with ctdump
@@ -233,9 +234,6 @@ add_call_of \"RoomScriptFunctionB8\" \$C03557 20 true</code><br>
 
 ", 'ctdump:1.1. ctdump' => "
 
-<table cellspacing=0 cellpadding=0 width=\"100%\">
-<tr><td valign=top>
-
 Dumps the script and fonts from a given ROM.<br>
 Requires <tt>chrono-dumpee.smc</tt>.<br>
 Produces the script file, the font files and a couple
@@ -262,24 +260,7 @@ LARA: Lucca and Taban only care about their silly toys!</pre>
 Usage example:
   <code>ctdump chrono-uncompressed.smc</code>
 
-</td><td valign=top align=right>
-
-<table><tr><td align=center>
-<img src=\"/src/chronotools-fin.png\"
-     alt=\"sample\" style=\"padding-right:10px\" ><br>
-<small> Example screenshot in Finnish </small><br>
-<p>
-<img src=\"/src/chronotools-pol.png\"
-     alt=\"sample\" style=\"padding-right:10px\" ><br>
-<small> Example screenshot in Polish </small><br>
-</td></tr></table>
-
-</td></tr></table>
-
 ", 'ctinsert:1.1. ctinsert' => "
-
-<table cellspacing=0 cellpadding=0 width=\"100%\">
-<tr><td valign=top>
 
 Reinserts the (edited) script and (edited) fonts to a ROM.<br>
 Requires the files referenced by <tt>ct.cfg</tt>
@@ -287,16 +268,6 @@ Requires the files referenced by <tt>ct.cfg</tt>
 elemental images and optional extra fonts and code files).<br>
 Produces <tt>ctpatch-hdr.ips</tt> and <tt>ctpatch-nohdr.ips</tt>.<br>
 Curiously, it doesn't require the ROM.
-
-</td><td valign=top align=right>
-
-<table><tr><td align=center>
-<img src=\"/src/chronotools-cro.png\"
-     alt=\"sample\" style=\"padding-right:10px\" ><br>
-<small> Example screenshot in Croatian </small><br>
-</td></tr></table>
-
-</td></tr></table>
 
 ", '1.1. other' => "
 
@@ -566,6 +537,7 @@ If you're uncertain, <a href=\"#copying\">send me email and explain your situati
  <li><a href=\"http://bisqwit.iki.fi/ctfin/dev/compression.html\">Compression</a> (script compression explained)</li>
  <li><a href=\"http://bisqwit.iki.fi/ctfin/dev/conjugation.html\">Conjugation</a> (inflecting character names according to grammar rules)</li>
  <li><a href=\"http://bisqwit.iki.fi/ctfin/dev/crononick.html\">Crononick</a> (Ayla's special version of Crono's name)</li>
+ <li><a href=\"http://bisqwit.iki.fi/ctfin/dev/froggy.html\">Froggy</a> (What's up with \"Robos\" and \"Froggy\")</li>
 </ul>
 
 ", 'undocs:1.1. Undocumented things' => "
@@ -591,6 +563,31 @@ Things that should be documented some day but currently are not:
   technical document</a>
   (a very modest document that got me started in this whole thing)</li>
 </ul>
+
+<hr>
+<h3>Screenshots</h3>
+
+<div style=\"float:left\">
+ <img src=\"/src/chronotools-fin.png\"
+      alt=\"sample\" style=\"padding-right:10px\" ><br>
+ <small> Example screenshot in Finnish </small>
+</div>
+<div style=\"float:left\">
+ <img src=\"/src/chronotools-pol.png\"
+      alt=\"sample\" style=\"padding-right:10px\" ><br>
+ <small> Example screenshot in Polish </small>
+</div>
+<div style=\"float:left\">
+ <img src=\"/src/chronotools-cro.png\"
+      alt=\"sample\" style=\"padding-right:10px\" ><br>
+ <small> Example screenshot in Croatian </small>
+</div>
+<div style=\"float:left\">
+ <img src=\"/src/chronotools-rus.png\"
+      alt=\"sample\" style=\"padding-right:10px\" ><br>
+ <small> Example screenshot in Russian </small>
+</div>
+<br clear=all>
 
 <hr>
 <h3>Help needed!</h3>

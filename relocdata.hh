@@ -4,6 +4,8 @@
 #include <vector>
 #include <utility>
 
+enum SegmentSelection;
+
 template<typename VarType>
 class Relocdata
 {
@@ -42,6 +44,8 @@ public:
     typedef RT<unsigned> R24_t;    R24_t R24;       // addr
     
     Relocdata(): R16(), R16lo(), R16hi(), R24seg(), R24() { }
+    
+    void clear() { R16.clear(); R16lo.clear(); R16hi.clear(); R24seg.clear(); R24.clear(); }
 };
 
 #endif

@@ -5,8 +5,8 @@
  * For loading and linking 65816 object files
  * Copyright (C) 1992,2005 Bisqwit (http://iki.fi/bisqwit/)
  *
- * Version 1.9.0 - Aug 18 2003, Sep 4 2003, Jan 23 2004,
- *                 Jan 31 2004
+ * Version 1.9.1 - Aug 18 2003, Sep 4 2003, Jan 23 2004,
+ *                 Jan 31 2004, Feb 18 2005
  */
 
 #include <cstdio>
@@ -46,6 +46,8 @@ enum SegmentSelection
     BSS=4
 };
 
+#include "relocdata.hh"
+
 class O65
 {
 public:
@@ -61,6 +63,9 @@ public:
     
     /* Relocate the given segment to new address */
     void Locate(SegmentSelection seg, unsigned newaddress);
+    
+    /* Returns the base address of the given segment */
+    unsigned GetBase(SegmentSelection seg) const;
     
     /* Defines the value of a symbol. */
     /* The symbol must have been accessed in order to be defined. */
@@ -108,6 +113,9 @@ public:
     
     /* Set error flag */
     void SetError();
+    
+    /* Get relocation data of the given segment */
+    const Relocdata<unsigned> GetRelocData(SegmentSelection seg);
 
 private:
     class Defs;

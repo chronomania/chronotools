@@ -28,6 +28,7 @@ You need to be a expert in the grammar of your language to do it properly.<br>
 For Finnish, they were the following:
 
 <pre>
+                                    Example names
 Form               Function name   ZGX     R66     Pekka   Magus      Crono  
 -----------------------------------------------------------------------------
 genitive/accusative  Do_N          ZGX:n   R66:n   Pekan   Maguksen   Cronon

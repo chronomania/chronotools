@@ -141,6 +141,7 @@ DEPDIRS = utils/
 # VERSION 1.15.3 conjugator now supports definition by a table.
 # VERSION 1.15.3.1 minor changes in conjugator for severe grammars.
 # VERSION 1.15.3.2 a bugfix in ctdump (deleting the *c block). Added more documentation!
+# VERSION 1.15.3.3 minor changes in default config.
 
 #OPTIM=-Os
 # -fshort-enums
@@ -156,7 +157,7 @@ CFLAGS += -I/usr/include/slang
 LDFLAGS += -L/usr/lib/slang
 
 
-VERSION=1.15.3.2
+VERSION=1.15.3.3
 ARCHFILES=utils/xray.cc utils/xray.h \
           utils/viewer.c \
           utils/vwftest.cc \
@@ -261,6 +262,7 @@ ARCHFILES=utils/xray.cc utils/xray.h \
           DOCS/imageformat.html DOCS/source/imageformat.php \
           DOCS/quickstart.html  DOCS/source/quickstart.php \
           DOCS/fonts.html       DOCS/source/fonts.php \
+          DOCS/froggy.html      DOCS/source/froggy.php \
           DOCS/ct-moglogo.a65 \
           DOCS/ct-conj.code DOCS/ct-crononick.code \
           DOCS/ct8fnV.tga \
@@ -478,6 +480,7 @@ fullzip: \
 		DOCS/imageformat.html \
 		DOCS/quickstart.html  \
 		DOCS/fonts.html       \
+		DOCS/froggy.html      \
 		DOCS/ct-moglogo.a65 \
 		DOCS/ct-conj.code DOCS/ct-crononick.code \
 		DOCS/ct8fnV.tga \
