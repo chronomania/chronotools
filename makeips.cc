@@ -1,7 +1,13 @@
 #include <cstdio>
 #include <unistd.h>
 #include <cstring>
+
+#ifndef WIN32
+/* We use memory mapping in Linux. It's fast. */
 #include <sys/mman.h>
+#define USE_MMAP 1
+#endif
+
 
 using namespace std;
 
@@ -21,11 +27,21 @@ int main(int argc, const char *const *argv)
     if(!f2) { perror(argv[2]); }
     if(!f1 || !f2) { if(f1)fclose(f1); if(f2)fclose(f2); return -1; }
     
+#if USE_MMAP
     fseek(f1, 0, SEEK_END); char *d1 = (char *)
       mmap(NULL, ftell(f1), PROT_READ, MAP_PRIVATE, fileno(f1), 0);
 
     fseek(f2, 0, SEEK_END); char *d2 = (char *)
       mmap(NULL, ftell(f2), PROT_READ, MAP_PRIVATE, fileno(f2), 0);
+#else
+    fseek(f1, 0, SEEK_END); unsigned d1size = ftell(f1);
+    char *d1 = new char[d1size]; rewind(f1);
+    fread(d1, d1size, 1, f1);
+
+    fseek(f2, 0, SEEK_END); unsigned d2size = ftell(f2);
+    char *d2 = new char[d2size]; rewind(f2);
+    fread(d2, d2size, 1, f1);
+#endif
     
     printf("PATCH");
     
@@ -80,8 +96,13 @@ int main(int argc, const char *const *argv)
         }
     }
     
+#ifdef USE_MMAP
     munmap(d1, ftell(f1)); fclose(f1);
     munmap(d2, ftell(f2)); fclose(f2);
+#else
+    delete[] d1; fclose(f1);
+    delete[] d2; fclose(f2);
+#endif
     
     printf("EOF");
     

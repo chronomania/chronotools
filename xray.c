@@ -3,11 +3,8 @@
 #include <string.h>
 #include <unistd.h>
 #include <fcntl.h>
-#ifdef linux
- #include <ggi/ggi.h>
-#else
- #include <allegro.h>
-#endif
+
+#include <ggi/ggi.h>
 
 /*
  Copyright (C) 1992,2003 Bisqwit (http://iki.fi/bisqwit/)

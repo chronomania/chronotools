@@ -145,6 +145,7 @@ ConfParser::operator[](const std::string& sectionName) const
     {
         fprintf(stderr, "Error: Section '%s' not present in configuration file!\n",
             sectionName.c_str());
+        throw invalid_section(sectionName);
     }
     
     return iter->second;
@@ -159,6 +160,7 @@ ConfParser::Section::operator[](const std::string& fieldName) const
     {
         fprintf(stderr, "Error: Field '%s' not present in configuration file section '%s'!\n",
             fieldName.c_str(), SectName.c_str());
+        throw invalid_field(SectName+":"+fieldName);
     }
     return iter->second;
 }

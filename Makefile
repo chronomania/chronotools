@@ -3,6 +3,10 @@ include Makefile.sets
 #CXX=i586-mingw32msvc-g++
 #CC=i586-mingw32msvc-gcc
 #CPP=i586-mingw32msvc-gcc
+#CFLAGS += -Ilibiconv
+#CPPFLAGS += -Ilibiconv
+#CXXFLAGS += -Ilibiconv
+#LDFLAGS += -Llibiconv -liconv
 
 # VERSION 1.0.3  was the first working! :D
 # VERSION 1.0.4  handled fixed strings too
@@ -45,13 +49,14 @@ include Makefile.sets
 # VERSION 1.2.6  using nonstandard hash_map for greatly improved performance
 # VERSION 1.2.7  creating another compiler
 # VERSION 1.2.8  improved dictionary compression
+# VERSION 1.2.9  compiler progress, first windows binaries are working
 
 OPTIM=-O3
 #OPTIM=-O0
 #OPTIM=-O0 -pg -fprofile-arcs
 #LDFLAGS += -pg -fprofile-arcs
 
-VERSION=1.2.8
+VERSION=1.2.9
 ARCHFILES=xray.c xray.h \
           viewer.c \
           ctcset.cc ctcset.hh \
@@ -83,7 +88,8 @@ ARCHFILES=xray.c xray.h \
           binpacker.tcc binpacker.hh \
           compiler2.cc compiler2-parser.inc \
           hash.hh \
-          README transnotes.txt Makefile.sets
+          README transnotes.txt Makefile.sets \
+          libiconv/iconv.h libiconv/libiconv.a 
 
 EXTRA_ARCHFILES=\
           ct.cfg ct_try.txt ct8fnFI.tga ct16fn.tga ct8fnV.tga \
@@ -92,8 +98,8 @@ EXTRA_ARCHFILES=\
 ARCHNAME=chronotools-$(VERSION)
 ARCHDIR=archives/
 
-PROGS=xray viewer ctdump ctinsert makeips unmakeips \
-      spacefind base62 sramdump
+PROGS=ctdump ctinsert makeips unmakeips \
+      spacefind base62 sramdump viewer xray
 
 all: $(PROGS)
 
@@ -126,22 +132,22 @@ spacefind: spacefind.o
 	$(CXX) -o $@ $^ $(LDFLAGS) -lm
 
 sramdump: sramdump.cc config.o confparser.o wstring.o
-	$(CXX) -g -O -Wall -W -pedantic -o $@ $^
+	$(CXX) $(CXXFLAGS) -g -O -Wall -W -pedantic -o $@ $^ $(LDFLAGS)
 base62: base62.cc
-	$(CXX) -g -O -Wall -W -pedantic -o $@ $^
+	$(CXX) $(CXXFLAGS) -g -O -Wall -W -pedantic -o $@ $^ $(LDFLAGS)
 vwftest: \
 		vwftest.cc tgaimage.o fonts.o config.o \
 		confparser.o ctcset.o wstring.o
-	$(CXX) -g -O -Wall -W -pedantic -o $@ $^
+	$(CXX) $(CXXFLAGS) -g -O -Wall -W -pedantic -o $@ $^ $(LDFLAGS)
 
 compiler2.o: compiler2.cc
-	$(CXX) -g -o $@ -c $< $(CXXOPTS) -O0 -fno-default-inline
+	$(CXX) -g -o $@ -c $< $(CXXFLAGS) -O0 -fno-default-inline
 	
 comp2test: compiler2.o config.o confparser.o ctcset.o wstring.o
-	$(CXX) -g -O -Wall -W -pedantic -o $@ $^
+	$(CXX) $(CXXFLAGS) -g -O -Wall -W -pedantic -o $@ $^ $(LDFLAGS)
 
 #ct.txt: ctdump chrono-dumpee.smc
-#	./ctdump < chrono-dumpee.smc >ct_tmp.txt || rm -f ct_tmp.txt && false
+#	./ctdump chrono-dumpee.smc >ct_tmp.txt || rm -f ct_tmp.txt && false
 #	mv ct_tmp.txt ct.txt
 
 ctpatch-hdr.ips ctpatch-nohdr.ips: \
@@ -151,7 +157,7 @@ ctpatch-hdr.ips ctpatch-nohdr.ips: \
 	time ./ctinsert
 
 chrono-patched.smc: unmakeips ctpatch-hdr.ips chrono-uncompressed.smc
-	./unmakeips ctpatch-hdr.ips <chrono-uncompressed.smc >chrono-patched.smc 2>/dev/null
+	./unmakeips ctpatch-hdr.ips chrono-uncompressed.smc chrono-patched.smc 2>/dev/null
 
 snes9xtest: chrono-patched.smc FORCE
 	#~/src/snes9x/bisq-1.39/Gsnes9x -stereo -alt -m 256x256[C32/32] -r 7 chrono-patched.smc
@@ -159,6 +165,14 @@ snes9xtest: chrono-patched.smc FORCE
 
 snes9xtest2: chrono-patched.smc FORCE
 	./snes9x-debug -r 0 chrono-patched.smc
+
+winzip: ctdump ctinsert
+	rm -f ctdump.exe
+	ln ctdump ctdump.exe
+	i586-mingw32msvc-strip ctdump.exe
+	zip -9 $(ARCHNAME)-ctdump-win32.zip ctdump.exe
+	rm -f ctdump.exe
+	mv -f $(ARCHNAME)-ctdump-win32.zip /WWW/src/arch/
 
 clean: FORCE
 	rm -f *.o $(PROGS)

@@ -123,7 +123,7 @@ int main(void)
     ins->LoadFont12(font12fn);
     
     {FILE *fp = fopen(scriptfn.c_str(), "rt");
-    char Buf[8192];setbuffer(fp,Buf,sizeof Buf);
+    char Buf[8192];setvbuf(fp, Buf, _IOFBF, sizeof Buf);
     ins->LoadFile(fp);
     fclose(fp);}
     

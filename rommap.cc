@@ -15,7 +15,7 @@ namespace
 
 unsigned char *ROM;
 
-#ifdef linux
+#ifndef WIN32
 /* We use memory mapping in Linux. It's fast. */
 #include <sys/mman.h>
 #define USE_MMAP 1
@@ -120,13 +120,14 @@ void LoadROM(FILE *fp)
     }
     fseek(fp, 0, SEEK_END);
     unsigned romsize = ftell(fp)-hdrskip;
+    fprintf(stderr, " %u bytes...", romsize);
     ROM = NULL;
 #ifdef USE_MMAP
     /* This takes about 0.0001s on my computer over nfs */
     ROM = (unsigned char *)mmap(NULL, romsize, PROT_READ, MAP_PRIVATE, fileno(fp), hdrskip);
 #endif
     /* mmap could have failed, so revert to reading */
-    if(ROM == (unsigned char*)(-1))
+    if(ROM == NULL || ROM == (unsigned char*)(-1))
     {
         /* This takes about 5s on my computer over nfs */
         ROM = new unsigned char [romsize];
@@ -134,7 +135,7 @@ void LoadROM(FILE *fp)
         fread(ROM, 1, romsize, fp);
     }
     else
-        fprintf(stderr, " memmap succesful,");
+        fprintf(stderr, " memmap succesful (%p),", (const void *)ROM);
     fprintf(stderr, " done");
     space.clear();
     space.resize(romsize);

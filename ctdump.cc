@@ -567,24 +567,32 @@ static void DoLoadDict()
     MarkFree(DictPtr, dictsize*2);
 }
 
-static void LoadROM()
+static void LoadROM(const char *fn)
 {
-    if(isatty(fileno(stdin)))
+    FILE *fp = fopen(fn, "rb");
+    if(!fp)
     {
-        fprintf(stderr, "Usage: ./ctdump < romfile > scriptfile\n");
+        perror(fn);
         return;
     }
-    LoadROM(stdin);
+    LoadROM(fp);
+    fclose(fp);
 }
 
 
-int main(void)
+int main(int argc, const char* const* argv)
 {
     fprintf(stderr,
         "Chrono Trigger script dumper version "VERSION"\n"
         "Copyright (C) 1992,2003 Bisqwit (http://iki.fi/bisqwit/)\n");
     
-    LoadROM();
+    if(argc != 2)
+    {
+        fprintf(stderr, "Usage: ctdump romfilename > scriptfilename\n");
+        return -1;
+    }
+    
+    LoadROM(argv[1]);
 
     printf("; Note: There is a one byte sequence for [nl] and three spaces.\n"
            ";       Don't attempt to save space by removing those spaces,\n"

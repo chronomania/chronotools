@@ -73,7 +73,8 @@ namespace
             cset+= GetConf("font", "font12_2E0").SField();
             cset+= GetConf("font", "font12_2F0").SField();
             
-            if(cset.size() != 768)
+            unsigned extranum = GetConf("font", "num_extra");
+            if(cset.size() < (0x100 + extranum))
             {
                 fprintf(stderr, "ctcset error: Configuration not set properly!\n");
             }

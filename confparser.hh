@@ -5,6 +5,7 @@
 #include <string>
 #include <vector>
 #include <map>
+#include <stdexcept>
 
 using std::FILE;
 using std::map;
@@ -14,6 +15,17 @@ using std::map;
 class ConfParser
 {
  public:
+    class invalid_section: public std::runtime_error
+    {
+    public:
+       explicit invalid_section(const string& arg): runtime_error(arg) {}
+    };
+    class invalid_field: public std::runtime_error
+    {
+    public:
+       explicit invalid_field(const string& arg): runtime_error(arg) {}
+    };
+
     void Parse(FILE *fp);
     void Clear();
 

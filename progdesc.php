@@ -14,6 +14,29 @@ Meant to be useful for anyone who wants to become
 a translator for Chrono Trigger and translate the
 game to their own language.
 
+", '1. Requirements' => "
+
+For source code:
+<blockquote>
+A POSIX compatible system (like Linux or FreeBSD)
+with GNU tools (GNU make, GCC etc) is required.<br>
+These programs are archived as C++ source code.<br>
+If you're a *nix developer, this is for you.
+</blockquote>
+
+For binaries:
+<blockquote>
+I don't have a microsoft-operating system here on my hand,
+but I have mingw32, which appears to produce working <em>commandline</em>
+billware binaries.<br>
+I don't offer binaries for any other platforms.<br>
+If you fear command line and text mode, you better
+change your attitude because that's all there is. ;)
+<p>
+At the bottom of this page, there's ctdump as a sample win32 program,
+but to get the full system and support, you have to contact me with email.
+</blockquote>
+
 ", '1. Program list' => "
 
 ", '1.1. ctdump' => "
@@ -42,12 +65,17 @@ Voit esimerkiksi tähdätä tätä[nl]
 (Dumped from
 <a href=\"http://hallucinat.ionstream.fi/teemu/engine.html?page=13\"
 >inf's Finnish Chrono Trigger translation</a>).
+<p>
+The windows version of this program is downloadable on this page.<br>
+Usage example:
+  <code>ctdump <em>chrono-uncompressed.smc</em> &gt; <em>ctscript.txt</em></code>
 
 ", '1.1. ctinsert' => "
 
 Reinserts the (edited) script and (edited) fonts to a ROM.<br>
-Requires <code>ct.txt</code>,
-<code>ct8fn.tga</code> and <code>ct16fn.tga</code>.<br>
+Requires the files referenced by <code>ct.cfg</code>
+(usually <code>ct.txt</code>, <code>ct8fn.tga</code> and <code>ct16fn.tga</code>
+and optional extra fonts and code files).<br>
 Produces <code>ctpatch-hdr.ips</code>
 and <code>ctpatch-nohdr.ips</code>.<br>
 Curiously, it doesn't require the ROM.
@@ -96,61 +124,32 @@ I.e. \$C2:5D4C -> 0eJI and vice versa.<br>
 This development system uses base62 in the script
 dumps to reduce the amount of code written.
 
-", '1.1. Technical report' => "
-
-My goal is to make a complete Finnish translation of Chrono Trigger.
-<p>
-The project currently depends on solving the following problems.  
-
-", '1.1.1. Item/technique/monster names' => "
-
-<img src=\"http://bisqwit.iki.fi/src/chronotools-vwf8.png\" alt=\"It works!\" align=right>
-Item and technique names are limited to 10 characters
-(restriction is enforced by both the screen layout and the ROM space).<br>
-This is way too little for Finnish, which has long words.<br>   
-Solution A: Leave the item names and technique names untranslated.<br>
-This is not a considerable solution for me.<br>
-Solution B: Move the names to a different location in ROM so that
-there is no space limit. But: They still don't fit on screen.<br>
-Solution C: Add code using <a href=\"/ctfin/ct8f.png\">variable width 8x8 font</a>
-and rewrite the method the item names are looked up.
-This means <em>lots of work</em>. But I attempt to do it anyway :)
-<br clear=all>
-
-", '1.1.1. Name conjugation' => "
-
-<a href=\"/ctfin/ct-code.txt\">
-<img src=\"/kala/snap/ctdevel/ct-taipus2.png\" alt=\"It works!\" align=right>
-</a>  
-Finnish is a language where words are conjugated.
-Just adding a substring like \"'s\" doesn't make
-correct language. The whole word stem changes a bit.<br>
-Solution A: Ignore the problem. But: This is crude. I don't want it.<br>
-Solution B: Add <a href=\"taipus.rb\">code that conjugates the names</a>.
-This means <em>lots of work</em>. 30.6.2003 I did it! It works.
-<br><a href=\"#conj\">See below.</a>
-<br clear=all>
-
 ", '1. Useful features' => "
 
 ", 'conj:1.1. Name conjugation' => "
 
+<a href=\"/ctfin/ct-code.txt\">
+<img src=\"/kala/snap/ctdevel/ct-taipus2.png\" alt=\"It works!\" align=right>
+</a>  
 It currently has support for conjugating names on fly.<br>
 It's very important in Finnish, where you can't just
 add \"'s\" to anything to make a genitive.<br>
 For example, genitive of name Matti is \"Matin\",
 and genitive of name Crono is \"Cronon\".<br>
 The conjugator-engine is a textual script file
-translated to 65c816 assembly on demand.
+translated to 65c816 assembly on demand. It can
+be customized to do conjugation in any language,
+not just Finnish.
+<br clear=all>
 
 ", '1.1. Font/dictionary skew' => "
 
 It's quite complicated to explain, but shortly said:
 <p>
-In normal Chrono Trigger,
+In normal Chrono Trigger, the character set is as follows:
 <ul>
  <li>127 of them are assigned to the dictionary used to compress the script.</li>
- <li><b>96</b> of them are
+ <li><b>96</b> of them are possible
      <a href=\"/src/chronotools-16en.png\">visible symbols</a>.</li>
 </ul>
 <p>
@@ -189,6 +188,17 @@ lengths, so you don't have to risk running into unexpected
 too-long-lines or making too short lines in paranoia.<br>
 You can force line breaks, but you don't have to.
 
+", '1.1. Variable width 8pix font' => "
+
+<img src=\"http://bisqwit.iki.fi/src/chronotools-vwf8.png\" alt=\"It works!\" align=right>
+Item, monster and technique names in Chrono Trigger are limited to 10 characters
+(restriction is enforced by both the screen layout and the ROM space).<br>
+This is way too little for Finnish, which has long words.
+<p>
+For this reason Chronotools creates a vwf8 engine that allows
+the game to draw the names in thinner font that fits on the screen.
+<br clear=all>
+
 ", '1.1. Very configurable' => "
 
 I have tried to put almost everything in text-only config files
@@ -205,21 +215,6 @@ My email-address (sigh) is:
 </p>
 I'm not publishing files on this web page, because it's a well-known fact
 that many people in ROM hacking scene aren't very respectful to copyrights.
-
-", '1. Requirements' => "
-
-A POSIX compatible system (like Linux or FreeBSD)
-with GNU tools (GNU make, GCC etc) is required.<br>
-These programs are archived as C++ source code only.
-<p>
-I don't have a microsoft-operating system here on my hand,
-so if you are an unfortunate user stuck with some Windows,
-you just have to find a development system
-(<a href=\"http://www.google.com/search?q=cygwin\">cygwin</a>?)
-and compile the program on it to use it.
-<p>
-I'll soon try if I can get windows-binaries out with mingw32.
-Currently it has problems with iconv.
 
 ", '1. Changelog' => "
 
@@ -267,6 +262,7 @@ Copypaste from the Makefile:
 # VERSION 1.2.6  using nonstandard hash_map for greatly improved performance
 # VERSION 1.2.7  creating another compiler
 # VERSION 1.2.8  improved dictionary compression
+# VERSION 1.2.9  compiler progress, first windows binaries are working
 </pre>
 
 ", '1. See also' => "
