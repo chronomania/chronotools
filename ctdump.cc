@@ -4,6 +4,8 @@
 #include <iostream>
 #include <set>
 
+/* I am sorry for the spaghettiness of this small program... */
+
 #ifdef linux
 /* We use memory mapping in Linux. It's fast. */
 #include <sys/mman.h>

@@ -23,8 +23,9 @@ CXXFLAGS=-O2
 # VERSION 1.0.16 added taipus.rb, fixed homepage urls and fixed mmap error checking.
 # VERSION 1.0.17 working again; uses space better; little modularized
 # VERSION 1.0.18 more of above
+# VERSION 1.0.19 code organising... improved 'i' in 8x8 font.
 
-VERSION=1.0.18
+VERSION=1.0.19
 ARCHFILES=xray.c xray.h \
           viewer.c \
           ctcset.cc ctcset.hh \
@@ -39,14 +40,14 @@ ARCHFILES=xray.c xray.h \
           taipus.rb progdesc.php \
           spacefind.cc \
           README
-EXTRA_ARCHFILES=ct_eng.txt \
-          dictionary5 \
+EXTRA_ARCHFILES=\
+          ct_eng.txt \
           ct8fnFI.tga ct16fnFI.tga
 
 ARCHNAME=chronotools-$(VERSION)
 ARCHDIR=archives/
 
-PROGS=xray viewer ctdump ctinsert makeips unmakeips
+PROGS=xray viewer ctdump ctinsert makeips unmakeips spacefind
 
 all: $(PROGS)
 
@@ -61,10 +62,11 @@ ctdump: ctdump.o ctcset.o miscfun.o wstring.o
 
 ctinsert: \
 		ctinsert.o ctcset.o miscfun.o wstring.o \
-		tgaimage.o readin.o space.o writeout.o
+		tgaimage.o readin.o space.o writeout.o \
+		organizer.o dictionary.o
 	$(CXX) -o $@ $^ $(LDFLAGS) -lm
 
-spacefind: spacefind.o
+spacefind: spacefind.o organizer.o
 	$(CXX) -o $@ $^ $(LDFLAGS) -lm
 
 makeips: makeips.cc

@@ -1,136 +1,14 @@
-#include <map>
-#include <set>
 #include <vector>
 #include <iostream>
 #include <cstdarg>
+#include <algorithm>
+#include <ctime>
 
 using namespace std;
 
 #define NOWHERE ((unsigned)-1)
 
-// This function organizes items to holes
-// so that the following goals are met:
-//  1) a hole is selected for all items
-//  2) hole may contain multiple items
-//  3) total size of items in one hole
-//     may not exceed the size of hole
-//
-// If possible, this goal is desirable:
-//  4) free space is gathered together instead
-//     of being scattered in different holes
-class Organizer
-{
-public:
-    Organizer
-    (
-       // Input: List of holes. Value = hole size
-       const vector<unsigned> &Holes,
-       // Input: List of items. Value = item size
-       const vector<unsigned> &Items,
-       // Result: Key = item number, value = hole number.
-       map<unsigned, unsigned> &Result
-    ) : holes(Holes.size()),
-        items(Items.size())
-    {
-        for(unsigned a=0; a<Items.size(); ++a)
-        {
-            items[a].index    = a;
-            items[a].size     = Items[a];
-            items[a].location = NOWHERE;
-        }
-        for(unsigned a=0; a<Holes.size(); ++a)
-        {
-            holes[a].size     = Holes[a];
-            holes[a].free     = Holes[a];
-        }
-        Shuffle();
-        
-        Dump();
-        
-        Result.clear();
-        for(unsigned a=0; a<items.size(); ++a)
-            Result[items[a].index] = items[a].location;
-    }
-private:
-    struct hole
-    {
-        int size;
-        int free;
-        set<unsigned> contents;
-    };
-    struct item
-    {
-        unsigned index;
-        int size;
-        unsigned location;
-        
-        bool operator< (const item &b) const { return size > b.size; }
-    };
-    vector<hole> holes;
-    vector<item> items;
-    
-    void MoveItem(unsigned itemno, unsigned holeno)
-    {
-        if(holeno == items[itemno].location) return;
-        unsigned oldhole = items[itemno].location;
-        if(oldhole != NOWHERE)
-        {
-            holes[oldhole].free += items[itemno].size;
-            holes[oldhole].contents.erase(itemno);
-        }
-        items[itemno].location = holeno;
-        if(holeno != NOWHERE)
-        {
-            holes[holeno].free -= items[itemno].size;
-            holes[holeno].contents.insert(itemno);
-        }
-    }
-    int GetFreeSpace(unsigned holeno) const { return holes[holeno].free; }
-    int GetHoleSize(unsigned holeno) const {  return holes[holeno].size; }
-    int GetItemSize(unsigned itemno) const {  return items[itemno].size; }
-    unsigned GetItemLocation(unsigned itemno) const { return items[itemno].location; }
-    
-    void Shuffle()
-    {
-        sort(items.begin(), items.end());
-        
-        for(unsigned a=0; a<items.size(); ++a)
-        {
-            int leastfree=0; unsigned besthole=0; bool first=true;
-            for(unsigned b=0; b<holes.size(); ++b)
-                if(holes[b].free >= items[a].size
-                && (first || holes[b].free < leastfree)
-                  )
-                {
-                    first = false;
-                    besthole = b;
-                    leastfree = holes[b].free;
-                }
-            
-            MoveItem(a, besthole);
-        }
-    }
-    void Dump() const
-    {
-        for(unsigned a=0; a<holes.size(); ++a)
-        {
-            cerr << "Hole " << a << ": ";
-            cerr << "size=" << GetHoleSize(a)
-                 << ", free=" << GetFreeSpace(a)
-                 << "\n   Items:";
-            for(set<unsigned>::const_iterator
-                i = holes[a].contents.begin();
-                i != holes[a].contents.end();
-                ++i)
-            {
-                cerr << ' ' << items[*i].index
-                     << '(' << GetItemSize(*i) << ')';
-            }
-            cerr << endl;
-        }
-    }
-};
-
+#include "organizer.hh"
 
 const vector<unsigned> ArrayToVector(unsigned n, ...)
 {
@@ -140,8 +18,67 @@ const vector<unsigned> ArrayToVector(unsigned n, ...)
     return result;
 }
 
+static bool Tester()
+{
+    vector<unsigned> holes;
+    vector<unsigned> items;
+    unsigned holecount = 1 + rand()%20;
+    for(unsigned a=0; a<holecount; ++a)
+    {
+        unsigned size = 10 + rand()%5000;
+        holes.push_back(size);
+        while(size > 0)
+        {
+            unsigned itemsize = 1 + rand()%size;
+            if(itemsize >= size) itemsize = size;
+            if(!(rand() % 1000))break;
+            items.push_back(itemsize);
+            size -= itemsize;
+        }
+    }
+    random_shuffle(holes.begin(), holes.end());
+    random_shuffle(items.begin(), items.end());
+    
+    map<unsigned, unsigned> result;
+    Organizer(holes, items, result);
+    
+    unsigned errors = 0;
+    
+    for(unsigned a=0; a<items.size(); ++a)
+    {
+        map<unsigned, unsigned>::const_iterator i;
+        i = result.find(a);
+        if(i == result.end())
+        {
+            cerr << "ERROR: Item " << a << " nowhere!\n";
+            ++errors;
+            continue;
+        }
+        unsigned hole = i->second;
+        if(holes[hole] < items[a])
+        {
+            cerr << "ERROR: Hole " << hole << " has no space!\n";
+            ++errors;
+            continue;
+        }
+        holes[hole] -= items[a];
+    }
+    return errors;
+}
+
+static void StressTest()
+{
+    //srand(time(0));
+    while(!Tester())
+    {
+        cout << "\n---------------\n";
+    }
+}
+
 int main(void)
 {
+    //StressTest();
+
     vector<unsigned> Holes = ArrayToVector(2,   200, 190);
     vector<unsigned> Items = ArrayToVector(6,   180, 20, 50, 50, 50, 40);
     

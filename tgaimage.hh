@@ -12,6 +12,8 @@ class TGAimage
     unsigned xbox; // boxes per line
 public:
     TGAimage(const string &filename);
+    TGAimage(unsigned x, unsigned y, unsigned char color);
+    
     void setboxsize(unsigned x, unsigned y) { xsize=x; ysize=y; }
     void setboxperline(unsigned n) { xbox = n; }
     

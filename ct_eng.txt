@@ -2,135 +2,133 @@
 ;http://www.squareinfo.com/fin/pelit/ct/
 
 *d1EFA00:127 ;127 substrings in dictionary
-$0:e ; score: 10313.8
-$1:      ; score: 9612.3
-$2: th; score: 7092.7
-$3:t ; score: 4879.7
-$4:: ; score: 4667.7
-$5:s ; score: 4467.1
-$6:in; score: 3801.7
-$7:ou; score: 3662.4
-$8:er; score: 3013.4
-$9:an; score: 2514.2
-$10:, ; score: 2320.8
-$11:on; score: 2197.5
-$12:en; score: 2075.8
-$13:d ; score: 1962.3
-$14:ha; score: 1790.9
-$15:o ; score: 1717.6
-$16:or; score: 1679.9
-$17:   ; score: 1601.2
-$18:ll; score: 1534.8
-$19:th; score: 1475.0
-$20:ea; score: 1403.9
-$21:y ; score: 1371.4
-$22:you ; score: 1328.9
-$23:ing ; score: 1305.1
-$24: the ; score: 1162.1
-$25:st; score: 1150.6
-$26:CHANCELLOR: ; score: 976.1
-$27:a ; score: 930.4
-$28:es; score: 892.3
-$29:ow; score: 873.2
-$30:ar; score: 839.1
-$31:'s ; score: 813.1
-$32:om; score: 803.4
-$33:Th; score: 773.9
-$34:is ; score: 725.8
-$35:igh; score: 697.4
-$36:it; score: 685.2
-$37:of ; score: 672.2
-$38:ll ; score: 629.6
-$39:to ; score: 620.3
-$40:at; score: 590.4
-$41:is; score: 573.9
-$42:e!; score: 570.1
-$43:ve ; score: 545.3
-$44:I ; score: 533.7
-$45:you; score: 518.2
-$46:ack; score: 510.0
-$47:You ; score: 505.7
-$48:al; score: 497.1
-$49:us; score: 462.8
-$50:MELCHIOR: ; score: 458.3
-$51:e.; score: 452.4
-$52:re; score: 422.2
-$53:ch; score: 413.9
-$54:to; score: 410.1
-$55:Lavo; score: 407.2
-$56:'re ; score: 389.8
-$57:en ; score: 387.2
-$58:el; score: 380.3
-$59:er ; score: 373.7
-$60:ing; score: 367.8
-$61:for; score: 364.3
-$62:im; score: 355.2
-$63:ed; score: 352.2
-$64:ed ; score: 341.3
-$65:with; score: 338.4
-$66:            Got 1 ; score: 332.6
-$67:et; score: 326.9
-$68:wa; score: 317.1
-$69:I'm ; score: 313.4
-$70:OLD MAN: ; score: 305.0
-$71:r ; score: 303.0
-$72:like ; score: 291.0
-$73:oo; score: 286.3
-$74:The ; score: 285.1
-$75:em; score: 281.7
-$76:   No.; score: 278.8
-$77:un; score: 275.0
-$78:'t ; score: 272.2
-$79:DALTON: ; score: 269.6
-$80:an ; score: 267.1
-$81:   Yes.; score: 265.0
-$82:hat ; score: 263.6
-$83:ma; score: 261.3
-$84:ur; score: 259.5
-$85:her; score: 253.0
-$86:: W; score: 249.1
-$87:ow ; score: 237.3
-$88:rea; score: 234.3
-$89: that ; score: 233.3
-$90:ic; score: 227.3
-$91:and ; score: 225.1
-$92:on ; score: 223.4
-$93:ough; score: 221.0
-$94:!!; score: 217.9
-$95:ta; score: 211.2
-$96:ro; score: 208.4
-$97:in ; score: 206.6
-$98:be; score: 203.4
-$99:la; score: 200.2
-$100:it ; score: 199.2
-$101:It's ; score: 192.0
-$102:se; score: 187.9
-$103:OZZIE: ; score: 186.2
-$104:am; score: 185.0
-$105:id; score: 175.9
-$106:of; score: 174.8
-$107:SCHALA: ; score: 172.9
-$108:k ; score: 172.1
-$109:e, ; score: 170.7
-$110:ut; score: 169.7
-$111:the ; score: 167.9
-$112:ir; score: 167.1
-$113:ould ; score: 165.6
-$114:ot ; score: 165.1
-$115:But ; score: 164.1
-$116: the; score: 163.2
-$117:will ; score: 160.8
-$118:es ; score: 159.5
-$119:KNIGHT CAPTAIN; score: 158.9
-$120:from; score: 157.3
-$121:et ; score: 156.2
-$122:wh; score: 155.5
-$123:s.; score: 154.8
-$124:be ; score: 154.0
-$125:ag; score: 153.1
-$126:ev; score: 152.2
-;Original script size: 239011 bytes; new script size: 147662 bytes
-;Saved: 91349 bytes; dictionary size: 465 bytes
+$0:e ; score: 5810.0
+$1: th; score: 4198.0
+$2:      ; score: 3400.0
+$3:t ; score: 2968.0
+$4:: ; score: 2952.0
+$5:s ; score: 2941.0
+$6:in; score: 2599.0
+$7:ou; score: 2486.0
+$8:er; score: 2137.0
+$9:an; score: 1829.0
+$10:, ; score: 1695.0
+$11:on; score: 1660.0
+$12:en; score: 1633.0
+$13:d ; score: 1501.0
+$14:ha; score: 1398.0
+$15:o ; score: 1354.0
+$16:or; score: 1339.0
+$17:ll; score: 1273.0
+$18:   ; score: 1260.0
+$19:th; score: 1223.0
+$20:ea; score: 1184.0
+$21:y ; score: 1162.0
+$22:st; score: 1069.0
+$23:a ; score: 906.0
+$24:es; score: 823.0
+$25:ow; score: 809.0
+$26:ar; score: 801.0
+$27:CHANCELLOR; score: 783.0
+$28:om; score: 767.0
+$29:Th; score: 739.0
+$30:it; score: 716.0
+$31:g ; score: 687.0
+$32:igh; score: 672.0
+$33:of ; score: 664.0
+$34:is; score: 641.0
+$35:at; score: 602.0
+$36:e!; score: 583.0
+$37:al; score: 548.0
+$38:I ; score: 545.0
+$39:ack; score: 536.0
+$40:us; score: 501.0
+$41:e.; score: 491.0
+$42: t; score: 469.0
+$43:Lavo; score: 462.0
+$44:el; score: 462.0
+$45:et; score: 453.0
+$46:ed; score: 450.0
+$47:ch; score: 443.0
+$48:MELCHIOR; score: 427.0
+$49:im; score: 425.0
+$50:oo; score: 410.0
+$51: w; score: 402.0
+$52:ur; score: 394.0
+$53: s; score: 370.0
+$54: y; score: 361.0
+$55:em; score: 351.0
+$56:un; score: 345.0
+$57: m; score: 345.0
+$58:wa; score: 334.0
+$59:OLD MAN; score: 318.0
+$60:ir; score: 318.0
+$61:am; score: 313.0
+$62:to; score: 309.0
+$63:It'; score: 306.0
+$64:ag; score: 305.0
+$65:e'; score: 305.0
+$66:li; score: 304.0
+$67:ic; score: 286.0
+$68:!!; score: 284.0
+$69:I'; score: 281.0
+$70: h; score: 280.0
+$71: b; score: 275.0
+$72: f; score: 272.0
+$73:DALTON; score: 270.0
+$74:ro; score: 270.0
+$75:as; score: 268.0
+$76:wi; score: 266.0
+$77:ec; score: 265.0
+$78:e¶; score: 264.0
+$79:ta; score: 261.0
+$80:ev; score: 254.0
+$81:ut; score: 254.0
+$82: d; score: 244.0
+$83:OZZIE; score: 240.0
+$84: c; score: 240.0
+$85:id; score: 239.0
+$86:of; score: 238.0
+$87:KNIGHT CAPTAIN; score: 234.0
+$88:ee; score: 231.0
+$89:ef; score: 231.0
+$90:pl; score: 228.0
+$91:iv; score: 227.0
+$92:os; score: 227.0
+$93:wh; score: 223.0
+$94:No.; score: 218.0
+$95:ab; score: 216.0
+$96: g; score: 216.0
+$97:s.; score: 213.0
+$98:e?; score: 211.0
+$99:tr; score: 209.0
+$100:SCHALA; score: 205.0
+$101:ac; score: 204.0
+$102:SPEKKIO; score: 198.0
+$103:s!; score: 197.0
+$104:up; score: 194.0
+$105:Que; score: 190.0
+$106:KING; score: 189.0
+$107:il; score: 188.0
+$108:y!; score: 187.0
+$109:gh; score: 186.0
+$110:ad; score: 185.0
+$111:Wh; score: 184.0
+$112: n; score: 183.0
+$113:ak; score: 182.0
+$114: p; score: 181.0
+$115:be; score: 176.0
+$116:ol; score: 176.0
+$117:se; score: 174.0
+$118:SOLDIER; score: 168.0
+$119: r; score: 167.0
+$120:?!; score: 166.0
+$121:'r; score: 162.0
+$122:ay; score: 161.0
+$123:ot; score: 159.0
+$124:av; score: 156.0
+$125: S; score: 149.0
+$126:if; score: 144.0
 
 ;
 ;items
@@ -14599,12 +14597,12 @@ $GhKC:
 Wahhh![nl]
 Where's my cat?!!
 $GhKE:
-You brought back my cat![nl]
-Thank you!
+Sinä palautit kisuni![nl]
+Kiitos tosi paljon!
 $GhKG:
-Guess the winner?[nl]
-      Sure![nl]
-      No thanks.
+Veikkaatko voittajaa?[nl]
+      Toki![nl]
+      Ei kiitos.
 $GhKI:
 [nl]
        Yum![nl]
@@ -14759,18 +14757,17 @@ This is the renowned[nl]
 Spend your [num8] Silver Points here![nl]
 Parental discretion advised.
 $GhLc:
-No time to talk.[nl]
-I'm just sitting down for my lunch.
+En ehdi jutella.[nl]
+   Aloittelen juuri päivällistäni.
 $GhLe:
 Those runners are busy racing, so they[nl]
 won't talk to you.
 $GhLg:
-This Kingdom's been through a lot,[nl]
-like the war against Magus,[nl]
-400 years ago.
+Kuningaskunta on kokenut paljon asioita,[nl]
+   kuten sodan Magusta vastaan 400[nl]
+   vuotta sitten.
 [pause]
-Thank goodness things are so peaceful[nl]
-now.
+   Onneksi kaikki on nyt hyvin.
 $GhLi:
 I heard this guy pays big bucks for[nl]
 charms, weapons, pendants, and other[nl]
@@ -17847,7 +17844,7 @@ $HYDE:On
 $HYDG:E
 $HYDI:K
 $HYDK:
-$HYDM: EI
+$HYDM: Ei
 $HYDO:1
 $HYDQ:2
 $HYDS:3

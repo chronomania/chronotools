@@ -1,5 +1,6 @@
 #include "tgaimage.hh"
 #include "ctinsert.hh"
+#include "rom.hh"
 
 namespace
 {
@@ -170,156 +171,40 @@ namespace
         ROM.Write(spaceptr+string.size(), 0);
         return spaceptr & 0xFFFF;
     }
-
-    struct dictitem
-    {
-        string item;
-        unsigned ind;
-        bool operator< (const dictitem &b) const { return item.size() > b.item.size(); }
-    };
 }
 
 void insertor::WriteDictionary(ROM &ROM)
 {
     unsigned dictpage = dictaddr >> 16;
     
-    freespace.DumpPageMap(dictpage);
     unsigned size = 0;
     for(unsigned a=0; a<dictsize; ++a)size += dict[a].size() + 1;
-    fprintf(stderr, "Writing dictionary (%u bytes)...\n", size);
+    fprintf(stderr, "Writing dictionary (page=%02X, %u bytes)...\n", dictpage, size);
     
-    vector<dictitem> dictionary(dictsize);
+    vector<freespacerec> Organization(dictsize);
+    for(unsigned a=0; a<dictsize; ++a)
+        Organization[a].len = dict[a].size() + 1;
+    
+    freespace.Organize(Organization, dictpage);
     for(unsigned a=0; a<dictsize; ++a)
     {
-        dictionary[a].item = dict[a];
-        dictionary[a].ind = a;
+        unsigned spaceptr = Organization[a].pos;
+        WritePPtr(ROM, dictaddr + a*2, dict[a], spaceptr);
     }
-    sort(dictionary.begin(), dictionary.end());
-    
-    for(unsigned a=0; a<dictionary.size(); ++a)
-    {
-        unsigned ind      = dictionary[a].ind;
-        const string &str = dictionary[a].item;
-
-        unsigned spaceptr = freespace.Find(dictpage, str.size() + 1);
-        WritePPtr(ROM, dictaddr + ind*2, str, spaceptr);
-    }
-    freespace.DumpPageMap(dictaddr >> 16);
 }
 
 namespace
 {
-	struct stringoffsdata
-	{
-		string   str;
-		unsigned offs;
-	};
-	
-    struct todo_sort
-    {
-        const vector<stringoffsdata> &tab;
-        todo_sort(const vector<stringoffsdata> &t) : tab(t) { }
-        bool operator() (unsigned a, unsigned b) const
-        {
-            return tab[a].str.size() > tab[b].str.size();
-        }
-    };
-
     void WritePageZ
         (ROM &ROM,
          unsigned page,
-         vector<stringoffsdata> &pagestrings,
+         stringoffsmap &pagestrings,
          insertor &ins
         )
     {
-    	if(!pagestrings.size()) return;
-    	
-        // parasite -> host
-        typedef map<unsigned, unsigned> neederlist_t;
-        neederlist_t neederlist;
-        
-        for(unsigned parasitenum=0;
-                     parasitenum < pagestrings.size();
-                     ++parasitenum)
-        {
-            const string &parasite = pagestrings[parasitenum].str;
-            for(unsigned hostnum = 0;
-                         hostnum < pagestrings.size();
-                         ++hostnum)
-            {
-                // Can't depend on self
-                if(hostnum == parasitenum) { Continue: continue; }
-                // If the host depends on this "parasite", skip it
-                neederlist_t::iterator i;
-                for(unsigned tmp=hostnum;;)
-                {
-                    i = neederlist.find(tmp);
-                    if(i == neederlist.end()) break;
-                    tmp = i->second;
-                    // Host depends on "parasite", skip this
-                    if(tmp == parasitenum) { goto Continue; }
-                }
-                
-                const string &host = pagestrings[hostnum].str;
-                if(host.size() < parasite.size())
-                    continue;
-                
-                unsigned extralen = host.size()-parasite.size();
-                if(parasite == host.substr(extralen))
-                {
-                    for(;;)
-                    {
-                        i = neederlist.find(hostnum);
-                        if(i == neederlist.end()) break;
-                        // Our "host" depends on someone else.
-                        // Take his host instead.
-                        hostnum = i->second;
-                    }
-                    
-                    neederlist[parasitenum] = hostnum;
-                    
-                    // Now if there are parasites referring to this one
-                    for(i=neederlist.begin(); i!=neederlist.end(); ++i)
-                        if(i->second == parasitenum)
-                        {
-                            // rerefer them to this one's host
-                            i->second = hostnum;
-                        }
+        pagestrings.GenerateNeederList();
 
-                    break;
-                }
-            }
-        }
-        
-        /* Nyt mapissa on listattu, kuka tarvitsee ketäkin. */
-
-    #if 0
-    	typedef map<string, vector<unsigned> > needertmp_t;
-        needertmp_t needertmp;
-        for(neederlist_t::const_iterator j = neederlist.begin(); j != neederlist.end(); ++j)
-        {
-            needertmp[pagestrings[j->first].str].push_back(j->first);
-        }
-        for(needertmp_t::const_iterator j = needertmp.begin(); j != needertmp.end(); ++j)
-        {
-            unsigned hostnum = 0;
-            const vector<unsigned> &tmp = j->second;
-
-            unsigned c=0;
-            fprintf(stderr, "String%s", tmp.size()==1 ? "" : "s");
-            for(unsigned a=0; a<tmp.size(); ++a)
-            {
-                hostnum = neederlist[tmp[a]];
-                if(++c > 15) { fprintf(stderr, "\n   "); c=0; }
-                fprintf(stderr, " %u", tmp[a]);
-            }
-            
-            fprintf(stderr, " (%s) depend%s on string %u(%s)\n",
-                DispString(j->first).c_str(),
-                tmp.size()==1 ? "s" : "", hostnum,
-                DispString(pagestrings[hostnum].str).c_str());
-        }
-    #endif
+        const stringoffsmap::neederlist_t &neederlist = pagestrings.neederlist;
         
         if(true) /* First do hosts */
         {
@@ -334,32 +219,37 @@ namespace
                     ++reusenum;
             }
 
-            fprintf(stderr, "Page %02X: Writing %u strings and reusing %u\n",
-                page,
-                todo.size(), reusenum);
+            unsigned todobytes=0;
+            for(unsigned a=0; a<todo.size(); ++a)
+                todobytes += pagestrings[todo[a]].str.size() + 1;
 
-            sort(todo.begin(), todo.end(), todo_sort(pagestrings));
+            fprintf(stderr, "Page %02X: Writing %u strings (%u bytes) and reusing %u\n",
+                page, todo.size(), todobytes, reusenum);
+
+            vector<freespacerec> Organization(todo.size());
+            for(unsigned a=0; a<todo.size(); ++a)
+                Organization[a].len = pagestrings[todo[a]].str.size() + 1;
             
+            ins.freespace.Organize(Organization, page);
+            unsigned unwritten = 0;
             for(unsigned a=0; a<todo.size(); ++a)
             {
                 unsigned stringnum = todo[a];
                 unsigned ptroffs = pagestrings[stringnum].offs;
                 const string &str = pagestrings[stringnum].str;
 
-                unsigned spaceptr = ins.freespace.Find(page, str.size() + 1);
-                if(spaceptr == NOWHERE)
-                {
-                	fprintf(stderr, "Not written %06X: %s\n",
-                		ptroffs, ins.DispString(str).c_str());
-                }
+                unsigned spaceptr = Organization[a].pos;
+                if(spaceptr == NOWHERE) ++unwritten;
                 pagestrings[stringnum].offs = WriteZPtr(ROM, ptroffs, str, spaceptr);
             }
+            if(unwritten)
+                fprintf(stderr, "%u string%s unwritten\n", unwritten, unwritten==1?"":"s");
         }
         if(true) /* Then do parasites */
         {
             for(unsigned stringnum=0; stringnum<pagestrings.size(); ++stringnum)
             {
-                neederlist_t::const_iterator i = neederlist.find(stringnum);
+                stringoffsmap::neederlist_t::const_iterator i = neederlist.find(stringnum);
                 if(i == neederlist.end()) continue;
                 
                 unsigned parasitenum = i->first;
@@ -391,7 +281,7 @@ namespace
                     }
                     if(hostoffs == NOWHERE)
                     {
-                        fprintf(stderr, "String %u not written!\n", parasitenum);
+                        fprintf(stderr, "String %u wasn't written.\n", parasitenum);
                         continue;
                     }
                     fprintf(stderr, "Substitute %u assigned for %u.\n",
@@ -411,21 +301,12 @@ namespace
 
 void insertor::WriteStrings(ROM &ROM)
 {
-    vector<stringoffsdata> pagestrings;
-    unsigned prevpage = 0xFFFF;
-    
-    for(stringmap::const_iterator i=strings.begin(); ; ++i)
+    for(stringmap::const_iterator i=strings.begin(); i!=strings.end(); ++i)
     {
-        if(i == strings.end())
-        {
-        	WritePageZ(ROM, prevpage, pagestrings, *this);
-        	break;
-        }
-        
         switch(i->second.type)
         {
-        	case stringdata::fixed:
-        	{
+            case stringdata::fixed:
+            {
                 unsigned pos = i->first;
                 const string &s = i->second.str;
                 
@@ -441,22 +322,17 @@ void insertor::WriteStrings(ROM &ROM)
             case stringdata::zptr8:
             case stringdata::zptr16:
             {
-                unsigned page = i->first >> 16;
-                if(page != prevpage)
-                {
-                	WritePageZ(ROM, prevpage, pagestrings, *this);
-
-                    pagestrings.clear();
-                }
-                prevpage = page;
-                
-                stringoffsdata tmp;
-                tmp.str  = i->second.str;
-                tmp.offs = i->first;
-                pagestrings.push_back(tmp);
-                
+                // These are not interesting here, as they're handled below
                 break;
             }
-        }
+            // If we omitted something, compiler should warn
+       }
+   }
+   
+   set<unsigned> zpages = GetZStringPageList();
+   for(set<unsigned>::const_iterator i=zpages.begin(); i!=zpages.end(); ++i)
+   {
+       stringoffsmap pagestrings = GetZStringList(*i);
+       WritePageZ(ROM, *i, pagestrings, *this);
     }
 }

@@ -1,5 +1,6 @@
 #include <cstdio>
 #include "space.hh"
+#include "organizer.hh"
 
 using namespace std;
 
@@ -125,23 +126,121 @@ unsigned freespacemap::Size(unsigned page) const
     {
         freespaceset::const_iterator j;
         for(j=i->second.begin(); j!=i->second.end(); ++j) total += j->len;
-	}
+    }
     return total;
 }
 
 const set<unsigned> freespacemap::GetPageList() const
 {
-	set<unsigned> result;
-	for(const_iterator i = begin(); i != end(); ++i)
-		result.insert(i->first);
-	return result;
+    set<unsigned> result;
+    for(const_iterator i = begin(); i != end(); ++i)
+        result.insert(i->first);
+    return result;
 }
 const freespaceset freespacemap::GetList(unsigned pagenum) const
 {
-	return find(pagenum)->second;
+    return find(pagenum)->second;
 }
 
 void freespacemap::Add(unsigned page, unsigned begin, unsigned length)
 {
-	(*this)[page].insert(freespacerec(begin, length));
+    //fprintf(stderr, "Adding %u bytes of free space at %02X:%04X\n", length, page, begin);
+    (*this)[page].insert(freespacerec(begin, length));
+}
+
+void freespacemap::Del(unsigned page, unsigned begin, unsigned length)
+{
+    iterator i = find(page);
+    if(i == end()) return;
+    
+    freespaceset &list = i->second;
+    
+    unsigned end = begin + length;
+    
+    freespaceset news;
+    for(freespaceset::iterator j = list.begin(), k; j != list.end(); j=k)
+    {
+        k=j; ++k;
+        
+        unsigned jpos = j->pos;
+        unsigned jend = j->len + jpos;
+        
+        // If this block is fully above
+        if(jpos >= end) continue;
+        // If this block is fully below
+        if(jend <= begin) continue;
+        
+        list.erase(j);
+        
+        if(begin > jpos) news.insert(freespacerec(jpos, begin-jpos));
+        if(jend  > end)  news.insert(freespacerec(end, jend-end));
+    }
+    list.insert(news.begin(), news.end());
+    if(!list.size()) erase(i);
+}
+
+void freespacemap::Organize(vector<freespacerec> &blocks, unsigned pagenum)
+{
+    const_iterator i = find(pagenum);
+    if(i == end()) return;
+    
+    const freespaceset &pagemap = i->second;
+    
+    vector<unsigned> items;
+    vector<unsigned> holes;
+    vector<unsigned> holeaddrs;
+    
+    items.reserve(blocks.size());
+    
+    unsigned totalsize = 0;
+    for(unsigned a=0; a<blocks.size(); ++a)
+    {
+        totalsize += blocks[a].len;
+        items.push_back(blocks[a].len);
+    }
+    
+    unsigned totalspace = 0;
+    holes.reserve(pagemap.size());
+    holeaddrs.reserve(pagemap.size());
+    for(freespaceset::const_iterator i = pagemap.begin(); i != pagemap.end(); ++i)
+    {
+        totalspace += i->len;
+        holes.push_back(i->len);
+        holeaddrs.push_back(i->pos);
+    }
+    
+    if(totalspace < totalsize)
+    {
+        fprintf(stderr, "Error: Page %02X doesn't have %u bytes of space (only %u there)!\n",
+            pagenum, totalsize, totalspace);
+    }
+    
+    map<unsigned, unsigned> organization;
+    Organizer tmp(holes, items, organization);
+    
+    bool errors = false;
+    for(unsigned a=0; a<blocks.size(); ++a)
+    {
+        unsigned itemsize = blocks[a].len;
+        unsigned holeid   = organization.find(a)->second;
+        
+        unsigned spaceptr = NOWHERE;
+        if(holes[holeid] >= itemsize)
+        {
+            spaceptr = holeaddrs[holeid];
+            holeaddrs[holeid] += itemsize;
+            holes[holeid]     -= itemsize;
+            Del(pagenum, spaceptr, itemsize);
+        }
+        else
+        {
+        	errors = true;
+        }
+        blocks[a].pos = spaceptr;
+    }
+    if(errors)
+    {
+        fprintf(stderr, "Error: Organization failed\n");
+        tmp.Dump();
+    }
 }

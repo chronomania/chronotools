@@ -271,22 +271,23 @@ void insertor::LoadFile(FILE *fp)
             
             if(header.size() == 3 && header[0] == 's')
             {
+                // Free space record
+                
                 string ascii = WstrToAsc(content);
                 
                 unsigned page=0, begin=0;
                 sscanf(header.c_str(), "s%X", &page);
                 sscanf(ascii.c_str(), "%X", &begin);
                 
-                fprintf(stderr, "Adding %u bytes of free space at %02X:%04X\n", label, page, begin);
-                
                 freespace.Add(page, begin, label);
-                
                 
                 continue;
             }
 
             if(header.size() >= 3 && header[0] == 'd')
             {
+                // Dictionary record
+                
                 string newcontent;
                 for(unsigned a=0; a<content.size(); ++a)
                     newcontent += getchronochar(content[a]);
