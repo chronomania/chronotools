@@ -16,6 +16,10 @@
 
 #define DEBUG_TABLECODE 0
 
+#define CONVERT_RULETREES 1
+
+#undef EIRATEST
+
 namespace
 {
     /* TODO: Tail optimization */
@@ -1183,27 +1187,11 @@ namespace
         void LOAD_LAST_CHAR()
         {
             CheckCodeStart();
-            Emit("inc", Want8bitA, Want16bitXY);
-            Emit("pha");
-             Emit("ldx #0");
-             std::string BeginLabel = GenLabel();
-             std::string EndLabel   = GenLabel();
-             EmitLabel(BeginLabel);
-              EmitBranch("jsr", WstrToAsc(LoopHelperName));
-              EmitBranch("beq", EndLabel);
-              Emit("inx");
-              EmitBranch("bra", BeginLabel);
-              EmitBarrier();
-             EmitLabel(EndLabel);
+            Emit("ora #$8000", Want16bitXY, Want16bitA);
+            Emit("tax");
+            EmitBranch("jsr", WstrToAsc(LoopHelperName));
             Assume(Assume16bitXY, Assume8bitA);
             Assume(CarryUnknown);
-            Emit("lda #0");
-            Emit("xba");
-            Emit("txa", Want8bitXY);
-            Emit("sec");
-            Emit(CreateStackIns("sbc", 1));
-            Emit("plx");
-            LOAD_CHARACTER();
         }
         
         void OUT_CHARACTER()
@@ -1513,8 +1501,16 @@ class TableParser
                         std::cout << ConvStr(wformat(L"%*sIF %ls LastChar[%u]\n", indent,"", com.ref.c_str(), com.lastchpos));
                         std::cout << std::flush;
 #endif
+#ifdef EIRATEST
+                        if(com.lastchpos==0) Asm.LOAD_VAR(L"'a'");
+                        else if(com.lastchpos==1) Asm.LOAD_VAR(L"'r'");
+                        else if(com.lastchpos==2) Asm.LOAD_VAR(L"'i'");
+                        else if(com.lastchpos==3) Asm.LOAD_VAR(L"'E'");
+                        else Asm.LOAD_VAR(L"0");
+#else
                         Asm.LOAD_VAR(wformat(L"%u", com.lastchpos));
                         Asm.CALL_FUNC(L"LastCharN");
+#endif
                         Asm.STORE_VAR(Asm.MagicVarName);
                         Asm.LOAD_VAR(Asm.MagicVarName);
                         Asm.CALL_FUNC(com.ref);
@@ -1528,8 +1524,16 @@ class TableParser
                         std::cout << ConvStr(wformat(L"%*s? LastChar[%u] %ls\n",  indent,"", com.lastchpos, com.GetCSet().c_str()));
                         std::cout << std::flush;
 #endif
+#ifdef EIRATEST
+                        if(com.lastchpos==0) Asm.LOAD_VAR(L"'a'");
+                        else if(com.lastchpos==1) Asm.LOAD_VAR(L"'r'");
+                        else if(com.lastchpos==2) Asm.LOAD_VAR(L"'i'");
+                        else if(com.lastchpos==3) Asm.LOAD_VAR(L"'E'");
+                        else Asm.LOAD_VAR(L"0");
+#else
                         Asm.LOAD_VAR(wformat(L"%u", com.lastchpos));
                         Asm.CALL_FUNC(L"LastCharN");
+#endif
                         Asm.STORE_VAR(Asm.MagicVarName);
                         Asm.LOAD_VAR(Asm.MagicVarName);
                         Asm.SELECT_CASE(com.GetCSet(), indent);
@@ -1541,6 +1545,7 @@ class TableParser
 #if DEBUG_TABLECODE
 #endif
                         //////////// FIXME: not correct yet.
+                        fprintf(stderr, "ERROR: compare_lastch_set2 not usable yet\n");
                         Asm.LOAD_VAR(wformat(L"%u", com.lastchpos));
                         Asm.CALL_FUNC(L"LastCharN");
                         Asm.LOAD_VAR(wformat(L"%u", com.lastchpos2));
@@ -1625,12 +1630,11 @@ class TableParser
                 std::cout << ConvStr(wformat(L"%*sTRUE\n", indent,""));
                 std::cout << std::flush;
 #endif
-                //Asm.BOOLEAN_RETURN(false);
+#if CONVERT_RULETREES
+                Asm.BOOLEAN_RETURN(false); // carry clear=found rule
+#else
                 Asm.VOID_RETURN();
-            }
-            else
-            {
-                //Emit("nop");
+#endif
             }
         }
     };
@@ -1886,15 +1890,6 @@ class TableParser
         void GenerateCode(const RuleTree& rules, Assembler& Asm) const
         {
             rules.GenerateCode(Asm, 2);
-            
-            // last, reset the intenting
-            Asm.INDENT_LEVEL(0);
-            Asm.VOID_RETURN();
-        }
-        
-        void InitAsmVars(Assembler& Asm) const
-        {
-            Asm.DECLARE_REGVAR(Asm.MagicVarName);
         }
         
     public:
@@ -1926,7 +1921,6 @@ class TableParser
         
         void Generate(Assembler& Asm) const
         {
-            InitAsmVars(Asm);
             GenerateCode(rules, Asm);
         }
     };
@@ -2178,14 +2172,6 @@ public:
             i->second.FindCommonActions(map);
         }
         
-        /*
-        for(std::map<std::wstring, Function>::iterator
-            i = functions.begin(); i != functions.end(); ++i)
-        {
-            i->second.ConvertTreeToFunctions(ruletreemap);
-        }
-        */
-        
         unsigned counter = 0;
         for(RuleTree::ActionUsageMap::const_iterator
             i = map.begin(); i != map.end(); ++i)
@@ -2202,6 +2188,14 @@ public:
                 }
             }
         }
+        
+#if CONVERT_RULETREES
+        for(std::map<std::wstring, Function>::iterator
+            i = functions.begin(); i != functions.end(); ++i)
+        {
+            i->second.ConvertTreeToFunctions(ruletreemap);
+        }
+#endif
     }
     
     void Generate(Assembler& Asm) const
@@ -2254,12 +2248,17 @@ public:
             std::wcout << L"FUNCTION " << i->second << std::endl;
 #endif
             Asm.START_FUNCTION(i->second);
+            Asm.DECLARE_REGVAR(Asm.MagicVarName);
             Asm.INDENT_LEVEL(0);
             
             i->first.GenerateCode(Asm, 2);
             
+#if CONVERT_RULETREES
+            Asm.INDENT_LEVEL(2);
+            Emit("sec"); // carry set="no rule found"
+#endif
             Asm.INDENT_LEVEL(0);
-            Asm.BOOLEAN_RETURN(true);
+            Asm.VOID_RETURN();
             Asm.END_FUNCTION();
 #if DEBUG_TABLECODE
             //std::wcout << L"END FUNCTION\n";
@@ -2273,10 +2272,15 @@ public:
             std::wcout << L"FUNCTION " << i->first << std::endl;
 #endif
             Asm.START_FUNCTION(i->first);
+            Asm.DECLARE_REGVAR(Asm.MagicVarName);
             Asm.INDENT_LEVEL(0);
             
             i->second.Generate(Asm);
             
+#if CONVERT_RULETREES
+            Asm.INDENT_LEVEL(2);
+            Emit("sec"); // carry set="no rule found"
+#endif
             Asm.INDENT_LEVEL(0);
             Asm.VOID_RETURN();
             Asm.END_FUNCTION();
@@ -2448,7 +2452,7 @@ void Compile(FILE *fp)
         }
         else if(firstword == "LOAD_LAST_CHAR")
         {
-            Asm.LOAD_VAR(words[2]);
+            Asm.LOAD_VAR(words[2], true);
             Asm.LOAD_LAST_CHAR();
             Asm.STORE_VAR(words[1]);
         }

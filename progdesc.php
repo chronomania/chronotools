@@ -215,6 +215,7 @@ Copypaste from the Makefile:
 # VERSION 1.15.2 now dumps the button names and allows changing them.
 # VERSION 1.15.2.1 conjugator supports now [member].
 # VERSION 1.15.3 conjugator now supports definition by a table.
+# VERSION 1.15.3.1 minor changes in conjugator for severe grammars.
 </pre>
 
 To use the character name changing feature, do a redump with ctdump

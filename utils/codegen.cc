@@ -310,6 +310,13 @@ public:
             code = "";
         }
         next_label = s;
+        /*
+        if(type == t_jump && next_label == jump.target_label)
+        {
+            code = "nop;" + code;
+            type = t_code;
+        }
+        */
     }
     
     void OptimizeWithNextNode(CodeNode* next)
