@@ -284,4 +284,7 @@ void insertor::GenerateConjugatorCode()
     Functions.RequireFunction(ConjFuncName);
     
     LinkAndLocate(Functions);
+
+    // SEP+JSR takes 5 bytes. We overwrote it with 4 bytes.
+    PlaceByte(0xEA, ConjugatePatchAddress + 4); // NOP
 }

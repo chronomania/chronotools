@@ -37,6 +37,7 @@ static ggi_color pal[256];
 
 static byte font[256][8];
 
+#include "compress.hh"
 #include "xray.h"
 
 static void Init(void)
@@ -107,6 +108,20 @@ static void putc(unsigned x,unsigned y, unsigned char ch, unsigned char c)
             ggiPutPixel(vis, x+ax, y+ay, ((b1 >> (7-ax))&1) ? c : 15);
     }
 }
+
+static void UncompressDump(FILE *fp)
+{
+	return;
+	
+	long origpos = ftell(fp);
+	unsigned char Buf[8192];
+	fread(Buf, 1, sizeof Buf, fp);
+	
+	vector<unsigned char> Result;
+	unsigned size = Uncompress(Buf, Result);
+	
+}
+
 static void Disp(const char *s)
 {
     FILE *fp = fopen(s, "rb");
@@ -146,6 +161,8 @@ Redraw:
         unsigned widthharppaus = (bits * ylimit + 7) / 8;
         
         fseek(fp, posi, SEEK_SET);
+        
+        UncompressDump(fp);
         
         for(sy=0; sy<sylimit; sy++)
             for(sx=0; sx<32; sx++)

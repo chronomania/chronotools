@@ -630,8 +630,25 @@ namespace
     }
 }
 
-void insertor::GenerateVWF8code(unsigned widthtab_addr, unsigned tiletab_addr)
+void insertor::GenerateVWF8code()
 {
+    const vector<unsigned char> &widths  = Font8v.GetWidths();
+    const vector<unsigned char> &tiletab = Font8v.GetTiles();
+    
+    fprintf(stderr, "8-pix VWF will be placed:");
+
+    const unsigned WidthTab_Address = freespace.FindFromAnyPage(widths.size());
+    const unsigned TileTab_Address  = freespace.FindFromAnyPage(tiletab.size());
+    
+    fprintf(stderr, " %u bytes at $%06X,"
+                    " %u bytes at $%06X\n",
+        widths.size(),   0xC00000 | WidthTab_Address,
+        tiletab.size(),  0xC00000 | TileTab_Address
+           );
+
+    PlaceData(widths,  WidthTab_Address);
+    PlaceData(tiletab, TileTab_Address);
+
     {
      const string codefile = WstrToAsc(GetConf("vwf8", "file").SField());
      
@@ -649,20 +666,17 @@ void insertor::GenerateVWF8code(unsigned widthtab_addr, unsigned tiletab_addr)
      unsigned code_addr = freespace.FindFromAnyPage(code_size);
      vwf8_code.LocateCode(code_addr);
      
-     vwf8_code.LinkSym("WIDTH_SEG",   (widthtab_addr >> 16) | 0xC0);
-     vwf8_code.LinkSym("WIDTH_OFFS",  (widthtab_addr & 0xFFFF));
-     vwf8_code.LinkSym("TILEDATA_SEG",  (tiletab_addr >> 16) | 0xC0);
-     vwf8_code.LinkSym("TILEDATA_OFFS", (tiletab_addr & 0xFFFF));
+     vwf8_code.LinkSym("WIDTH_SEG",   (WidthTab_Address >> 16) | 0xC0);
+     vwf8_code.LinkSym("WIDTH_OFFS",  (WidthTab_Address & 0xFFFF));
+     vwf8_code.LinkSym("TILEDATA_SEG",  (TileTab_Address >> 16) | 0xC0);
+     vwf8_code.LinkSym("TILEDATA_OFFS", (TileTab_Address & 0xFFFF));
      
      DrawS_2bit = vwf8_code.GetSymAddress(WstrToAsc(GetConf("vwf8", "b2_draws")));
      DrawS_4bit = vwf8_code.GetSymAddress(WstrToAsc(GetConf("vwf8", "b4_draws")));
      
      vwf8_code.Verify();
      
-     SNEScode tmp(vwf8_code.GetCode());
-     
-     tmp.YourAddressIs(code_addr);
-     codes.push_back(tmp);
+     PlaceData(vwf8_code.GetCode(), code_addr);
     }
 
     ucs4string VWF8_I1 = GetConf("vwf8", "i1").SField();
@@ -683,63 +697,31 @@ void insertor::GenerateVWF8code(unsigned widthtab_addr, unsigned tiletab_addr)
     Functions.RequireFunction(VWF8_T1);
     
     LinkAndLocate(Functions);
-}
 
-#include "images.hh"
-#include "compress.hh"
-#include "tgaimage.hh"
+    // Patch equip-left-func
+    PlaceByte(0xEA, 0x02A5AA+4 ); // NOP
+    PlaceByte(0xEA, 0x02A5AA+5 ); // NOP
 
-void insertor::GenerateMogCode()
-{
-    const TGAimage image("FIN/moglogo.tga");
-    
-    vector<unsigned char> uncompressed;
-    LoadImageData(image, uncompressed);
-    
-    imagedata result;
-    result.data = Compress(&uncompressed[0], uncompressed.size(), 0x7F);
-    result.address = freespace.FindFromAnyPage(result.data.size());
-    images.push_back(result);
-    
-    FILE *fp = fopen("ct-moglogo.o65", "rb");
-    O65 code;
-    code.Load(fp);
-    fclose(fp);
+    // Patch item2func
+    PlaceByte(0xEA, 0x02F2DC+4 ); // NOP
+    PlaceByte(0x60, 0x02F2DC+5 ); // RTS
 
-    unsigned code_size = code.GetCodeSize();
-    unsigned code_addr = freespace.FindFromAnyPage(code_size);
-    code.LocateCode(code_addr);
-    
-    code.LinkSym("TILEDATA_SEG",  (result.address >> 16) | 0xC0);
-    code.LinkSym("TILEDATA_OFFS", (result.address & 0xFFFF));
-    
-    code.LinkSym("PAL_0", image.GetPalEntry(0));
-    code.LinkSym("PAL_1", image.GetPalEntry(1));
-    code.LinkSym("PAL_2", image.GetPalEntry(2));
-    code.LinkSym("PAL_3", image.GetPalEntry(3));
-    code.LinkSym("PAL_4", image.GetPalEntry(4));
-    code.LinkSym("PAL_5", image.GetPalEntry(5));
-    code.LinkSym("PAL_6", image.GetPalEntry(6));
-    code.LinkSym("PAL_7", image.GetPalEntry(7));
-    code.LinkSym("PAL_8", image.GetPalEntry(8));
-    code.LinkSym("PAL_9", image.GetPalEntry(9));
-    code.LinkSym("PAL_A", image.GetPalEntry(10));
-    code.LinkSym("PAL_B", image.GetPalEntry(11));
-    code.LinkSym("PAL_C", image.GetPalEntry(12));
-    code.LinkSym("PAL_D", image.GetPalEntry(13));
-    code.LinkSym("PAL_E", image.GetPalEntry(14));
-    code.LinkSym("PAL_F", image.GetPalEntry(15));
-    
-    fprintf(stderr,
-        "MogLogo: code(%u bytes) at $%06X, img(%u bytes (orig %u)) at $%06X\n",
-            code_size, code_addr,
-            result.data.size(), uncompressed.size(), result.address
-            );
-    
-    code.Verify();
+    // Patch for item3func
+    PlaceByte(0xEA, 0x02B053+4 ); // NOP -..and
+    PlaceByte(0xEA, 0x02B053+5 ); // NOP - asl a
+    PlaceByte(0xEA, 0x02B053+6 ); // NOP - tay
+    PlaceByte(0xEA, 0x02B053+7 ); // NOP - lda
+    PlaceByte(0xEA, 0x02B053+8 ); // NOP
+    PlaceByte(0xEA, 0x02B053+9 ); // NOP
+    PlaceByte(0xEA, 0x02B053+10); // NOP - tay
+    PlaceByte(0xEA, 0x02B053+11); // NOP - lda
+    PlaceByte(0xEA, 0x02B053+12); // NOP
+    PlaceByte(0xEA, 0x02B053+13); // NOP
+    PlaceByte(0xEA, 0x02B053+14); // NOP - jsr
+    PlaceByte(0xEA, 0x02B053+15); // NOP
+    PlaceByte(0xEA, 0x02B053+16); // NOP
 
-    SNEScode tmp(code.GetCode());
-    tmp.YourAddressIs(code_addr);
-    tmp.AddCallFrom(0xFDE62F);
-    codes.push_back(tmp);
+    // Patch tech1func
+    PlaceByte(0xEA, 0x02BDE3+4); // NOP
+    PlaceByte(0xEA, 0x02BDE3+5); // NOP
 }

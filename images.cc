@@ -56,14 +56,13 @@ void LoadImageData
 void insertor::LoadImage(const string& fn, unsigned address)
 {
     const TGAimage image(fn);
-    imagedata result;
     
-    LoadImageData(image, result.data);
-    result.address = address;
+    vector<unsigned char> data;
+    LoadImageData(image, data);
+    
+    PlaceData(data, address);
     
     fprintf(stderr, "Loading '%s'... at address $%06X\n", fn.c_str(), address);
-    
-    images.push_back(result);
 }
 
 
@@ -73,16 +72,15 @@ void insertor::LoadAlreadyCompressedImage(const string& fn, unsigned address)
     
     FILE *fp = fopen(fn.c_str(), "rb");
     fseek(fp, 0, SEEK_END);
-    imagedata result;
-    result.data.resize(ftell(fp));
+
+    vector<unsigned char> data(ftell(fp));
     rewind(fp);
-    fread(&result.data[0], 1, result.data.size(), fp);
+    fread(&data[0], 1, data.size(), fp);
     fclose(fp);
-    result.address = address;
+    
+    PlaceData(data, address);
     
     fprintf(stderr, "Loading '%s'... at address $%06X\n", fn.c_str(), address);
-    
-    images.push_back(result);
 }
 
 void insertor::LoadAndCompressImage(const string& fn, unsigned address, unsigned char seg)
@@ -96,13 +94,11 @@ void insertor::LoadAndCompressImage(const string& fn, unsigned address, unsigned
     
     fprintf(stderr, "Loading '%s'... at address $%06X, compressing", fn.c_str(), address);
     
-    imagedata result;
-    result.data = Compress(&uncompressed[0], uncompressed.size(), seg);
-    result.address = address;
+    vector<unsigned char> data = Compress(&uncompressed[0], uncompressed.size(), seg);
     
-    fprintf(stderr, " done (%u bytes)\n", result.data.size());
+    fprintf(stderr, " done (%u bytes)\n", data.size());
     
-    images.push_back(result);
+    PlaceData(data, address);
 }
 
 void insertor::LoadAndCompressImageWithPointer
@@ -129,18 +125,6 @@ void insertor::LoadAndCompressImageWithPointer
     codes.push_back(code);
 }
 
-void insertor::WriteImages(ROM& ROM) const
-{
-    fprintf(stderr, "Writing images...\n");
-    for(imagelist::const_iterator i = images.begin(); i != images.end(); ++i)
-    {
-        const imagedata& image = *i;
-        
-        for(unsigned a=0; a<image.data.size(); ++a)
-            ROM.Write(image.address + a, image.data[a]);
-    }
-}
-
 void insertor::LoadImages()
 {
     if(true) /* Load unpacked images */
@@ -158,19 +142,47 @@ void insertor::LoadImages()
     if(true) /* Load packed images */
     {
         const ConfParser::ElemVec& elems = GetConf("images", "packedimage").Fields();
-        for(unsigned a=0; a<elems.size(); a += 5)
+        for(unsigned a=0; a<elems.size(); a += 6)
         {
-            unsigned ptr_address       = elems[a];
-            unsigned space_address     = elems[a+1];
-            unsigned orig_size         = elems[a+2];
-            unsigned segment           = elems[a+3];
-            const ucs4string& filename = elems[a+4];
+            unsigned ptr_ofs_address   = elems[a];
+            unsigned ptr_seg_address   = elems[a+1];
+            unsigned space_address     = elems[a+2];
+            unsigned orig_size         = elems[a+3];
+            unsigned segment           = elems[a+4];
+            const ucs4string& filename = elems[a+5];
 
+            space_address &= 0x3FFFFF;
+            
+            const string fn = WstrToAsc(filename);
+            
             // Add the freespace from the original location
             freespace.Add(space_address >> 16,
                           space_address & 0xFFFF,
                           orig_size);
-            LoadAndCompressImageWithPointer(WstrToAsc(filename), ptr_address, segment);
+            
+            const TGAimage image(fn);
+            vector<unsigned char> data;
+            LoadImageData(image, data);
+            
+            fprintf(stderr, "Loading '%s'... at address $%06X, compressing",
+                fn.c_str(), space_address);
+
+            data = Compress(&data[0], data.size(), segment);
+            
+            fprintf(stderr, " done (%u bytes)\n", data.size());
+    
+            SNEScode code(data);
+            /* Address given later */
+            
+            if(ptr_seg_address == ptr_ofs_address+2)
+                code.AddLongPtrFrom(ptr_ofs_address);
+            else
+            {
+                code.AddOffsPtrFrom(ptr_ofs_address);
+                code.AddPagePtrFrom(ptr_seg_address);
+            }
+            
+            codes.push_back(code);
         }
     }
 }

@@ -17,6 +17,10 @@ class ROM
     
     // Adds a long pointer to the specific location.
     void AddLongPtr(unsigned codeaddress, unsigned target);
+    // Adds an offset pointer to the specific location.
+    void AddOffsPtr(unsigned codeaddress, unsigned target);
+    // Adds a page pointer to the specific location.
+    void AddPagePtr(unsigned codeaddress, unsigned target);
     
     // Writes a subroutine. Remember to terminate it with LONG-RETURN!
     void AddSubRoutine(unsigned target, const vector<unsigned char> &code);

@@ -89,9 +89,13 @@ namespace
 	}
 }
 
-int main(void)
+int main(int argc, const char *const *argv)
 {
-	fp = fopen("ct-vwf8.o65", "rb");
+	if(!argv[1] || !(fp = fopen(argv[1], "rb")))
+	{
+		perror("param error");
+		return -1;
+	}
 	
 	fseek(fp, 6, SEEK_SET);
 	

@@ -63,6 +63,7 @@ DEPDIRS = utils/
 # VERSION 1.5.3  better graphics compressor
 # VERSION 1.5.4  another archive-only version
 # VERSION 1.6.0  signature support (custom compressed image on startup screen)
+# VERSION 1.6.1  some remodularizing of code
 
 OPTIM=-O3
 #OPTIM=-O0
@@ -71,8 +72,8 @@ OPTIM=-O3
 
 CXXFLAGS += -I.
 
-VERSION=1.6.0
-ARCHFILES=utils/xray.c utils/xray.h \
+VERSION=1.6.1
+ARCHFILES=utils/xray.cc utils/xray.h \
           utils/viewer.c \
           utils/vwftest.cc \
           utils/spacefind.cc \
@@ -106,6 +107,7 @@ ARCHFILES=utils/xray.c utils/xray.h \
           tgaimage.cc tgaimage.hh \
           ctdump.cc ctdump.hh \
           ctinsert.cc ctinsert.hh \
+          signature.cc \
           vwf8.cc \
           ct-vwf8.a65 \
           config.cc config.hh \
@@ -176,7 +178,7 @@ ctinsert: \
 		tgaimage.o space.o writeout.o stringoffs.o \
 		dictionary.o images.o compress.o \
 		fonts.o typefaces.o extras.o \
-		rom.o snescode.o \
+		rom.o snescode.o signature.o \
 		conjugate.o vwf8.o o65.o compiler.o symbols.o \
 		logfiles.o \
 		config.o confparser.o ctcset.o wstring.o
@@ -196,8 +198,6 @@ utils/unmakeips: utils/unmakeips.cc
 utils/spacefind: utils/spacefind.o
 	$(CXX) -o $@ $^ $(LDFLAGS) -lm
 
-utils/xray: utils/xray.o
-	$(CC) -o $@ $^ $(LDFLAGS) -lggi
 
 utils/viewer: utils/viewer.o
 	$(CC) -o $@ $^ $(LDFLAGS) -lslang
@@ -224,6 +224,9 @@ utils/comp2test: utils/compiler2.cc config.o confparser.o ctcset.o wstring.o
 
 utils/comprtest: utils/comprtest.o rommap.o compress.o
 	$(CXX) $(CXXFLAGS) -g -O -Wall -W -pedantic -o $@ $^ $(LDFLAGS)
+
+utils/xray: utils/xray.o compress.o
+	$(CXX) $(CXXFLAGS) -g -O -Wall -W -pedantic -o $@ $^ $(LDFLAGS) -lggi
 
 utils/o65test: utils/o65test.o o65.o wstring.o
 	$(CXX) $(CXXFLAGS) -g -O -Wall -W -pedantic -o $@ $^ $(LDFLAGS)

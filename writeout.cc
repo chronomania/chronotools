@@ -8,6 +8,8 @@
 #include "logfiles.hh"
 #include "stringoffs.hh"
 
+#define INITIALIZE_FREESPACE_ZERO
+
 namespace
 {
     void WritePtr(ROM &ROM, unsigned addr, unsigned short value)
@@ -198,6 +200,7 @@ namespace
 
 void insertor::PatchROM(ROM &ROM)
 {
+#ifdef INITIALIZE_FREESPACE_ZERO
     fprintf(stderr, "Initializing all free space to zero...\n");
 
     set<unsigned> pages = freespace.GetPageList();
@@ -211,48 +214,37 @@ void insertor::PatchROM(ROM &ROM)
             for(unsigned a=0; a < j->len; ++a) ROM.Write(offs+a, 0);
         }
     }
-    
-    // Write images: they already have their places set
-    WriteImages(ROM);
-    images.clear();
+#endif
     
     // Write the strings first because they require certain pages!
     WriteStrings(ROM);
     
-    // Next write 12pix font, because it requires page on same page!
-    Write12pixfont(ROM);
-
-    // Then write 8pix font
-    Write8pixfont(ROM);
-    if(GetConf("font", "use_vwf8"))
-    {
-        // This function will also generate the code to handle the font.
-        Write8vpixfont(ROM);
-    }
-    
-    // Then place the code blobs
+    // Then generate various things to write
     GenerateCode();
+    
+    // Write code.
     WriteCode(ROM);
 
     // Last write the dictionary: It fits almost anywhere.
     WriteDictionary(ROM);
-
-    // Write images again: code generation could have made new images.
-    WriteImages(ROM);
-    images.clear();
 }
 
 void insertor::GenerateCode()
 {
-    GenerateConjugatorCode();
-
-    GenerateMogCode();
-}
-
-void insertor::WriteCode(ROM &ROM)
-{
-    fprintf(stderr, "Writing code...\n");
+    // Do this first, because it requires two blocks on same page.
+    GenerateVWF12code();
     
+    if(GetConf("font", "use_vwf8"))
+    {
+        GenerateVWF8code();
+    }
+    
+    PlaceData(Font8.GetTiles(), Font8_Address);
+    
+    GenerateConjugatorCode();
+    GenerateSignatureCode();
+
+    /* Ensure all code has addresses */
     list<SNEScode>::iterator i;
     
     vector<freespacerec> blocks;
@@ -270,7 +262,30 @@ void insertor::WriteCode(ROM &ROM)
             if(!i->HasAddress())
                 i->YourAddressIs(blocks[a++].pos);
     }
+}
+
+void insertor::WriteCode(ROM &ROM) const
+{
+    fprintf(stderr, "Writing code...\n");
     
+    // Patch the name entry function
+    //  FIXME: Make this read the pointers from "strings" instead
+    
+    ROM.Write(0x02E553, ROM[0x3FC4D3]);
+    ROM.Write(0x02E554, ROM[0x3FC4D4]);
+    ROM.Write(0x02E555, 0xFF);
+
+    ROM.Write(0x02E331, ROM[0x3FC4D5]);
+    ROM.Write(0x02E332, ROM[0x3FC4D6]);
+    ROM.Write(0x02E333, 0xFF);
+
+    // Testataan moottoria
+    // ROM.Write(0x0058DE, 0xA9); //lda A, $08
+    // ROM.Write(0x0058DF, 0x07);
+    // ROM.Write(0x0058E0, 0xEA); //nop
+    // ROM.Write(0x0058E1, 0xEA);
+
+    list<SNEScode>::const_iterator i;
     for(i=codes.begin(); i!=codes.end(); ++i)
     {
         if(!i->HasAddress())
@@ -279,177 +294,6 @@ void insertor::WriteCode(ROM &ROM)
         }
         ROM.AddPatch(*i);
     }
-
-    // SEP+JSR takes 5 bytes. We overwrote it
-    // with 4 bytes (see conjugate.cc).
-    // Patch with NOP.
-    ROM.Write(ConjugatePatchAddress + 4, 0xEA);
-    
-    // Patch the name entry function
-    unsigned namechar_address1 = 0x3F0000 + ROM[0x3FC4D3] + 256*ROM[0x3FC4D4];
-    ROM.Write(0x02E553,  (namechar_address1     ) & 255);
-    ROM.Write(0x02E554,  (namechar_address1 >> 8) & 255);
-    ROM.Write(0x02E555, ((namechar_address1 >>16) & 255) | 0xC0);
-    unsigned namechar_address2 = 0x3F0000 + ROM[0x3FC4D5] + 256*ROM[0x3FC4D6];
-    ROM.Write(0x02E331,  (namechar_address2     ) & 255);
-    ROM.Write(0x02E332,  (namechar_address2 >> 8) & 255);
-    ROM.Write(0x02E333, ((namechar_address2 >>16) & 255) | 0xC0);
-
-
-    // Testataan moottoria
-   // ROM.Write(0x0058DE, 0xA9); //lda A, $08
-   // ROM.Write(0x0058DF, 0x07);
-   // ROM.Write(0x0058E0, 0xEA); //nop
-   // ROM.Write(0x0058E1, 0xEA);
-    
-}
-
-void insertor::Write8pixfont(ROM &ROM) const
-{
-    const vector<unsigned char> &tiletab = Font8.GetTiles();
-    
-    fprintf(stderr, "Writing 8-pix font... (%u bytes)\n", tiletab.size());
-
-    for(unsigned a=0; a<tiletab.size(); ++a)
-        ROM.Write(Font8_Address + a, tiletab[a]);
-}
-
-void insertor::Write8vpixfont(ROM &ROM)
-{
-    const vector<unsigned char> &widths  = Font8v.GetWidths();
-    const vector<unsigned char> &tiletab = Font8v.GetTiles();
-    
-    fprintf(stderr, "Writing 8-pix VWF... ");
-
-    unsigned WidthTab_Address = freespace.FindFromAnyPage(widths.size());
-    unsigned TileTab_Address  = freespace.FindFromAnyPage(tiletab.size());
-    
-    fprintf(stderr, "(%u bytes at $%06X,"
-                    " %u bytes at $%06X)\n",
-        widths.size(),   0xC00000 | WidthTab_Address,
-        tiletab.size(),  0xC00000 | TileTab_Address
-           );
-
-    for(unsigned a=0; a<widths.size(); ++a) ROM.Write(WidthTab_Address + a, widths[a]);
-    for(unsigned a=0; a<tiletab.size(); ++a) ROM.Write(TileTab_Address + a, tiletab[a]);
-
-    GenerateVWF8code(WidthTab_Address, TileTab_Address);
-    
-    // Patch equip-left-func
-    ROM.Write(0x02A5AA+4, 0xEA); // NOP
-    ROM.Write(0x02A5AA+5, 0xEA); // NOP
-
-    // Patch item2func
-    ROM.Write(0x02F2DC+4, 0xEA); // NOP
-    ROM.Write(0x02F2DC+5, 0x60); // RTS
-
-    // Patch for item3func
-    ROM.Write(0x02B053+4, 0xEA); // NOP -..and
-    ROM.Write(0x02B053+5, 0xEA); // NOP - asl a
-    ROM.Write(0x02B053+6, 0xEA); // NOP - tay
-    ROM.Write(0x02B053+7, 0xEA); // NOP - lda
-    ROM.Write(0x02B053+8, 0xEA); // NOP
-    ROM.Write(0x02B053+9, 0xEA); // NOP
-    ROM.Write(0x02B053+10, 0xEA);// NOP - tay
-    ROM.Write(0x02B053+11, 0xEA); // NOP - lda
-    ROM.Write(0x02B053+12, 0xEA); // NOP
-    ROM.Write(0x02B053+13, 0xEA); // NOP
-    ROM.Write(0x02B053+14, 0xEA); // NOP - jsr
-    ROM.Write(0x02B053+15, 0xEA); // NOP
-    ROM.Write(0x02B053+16, 0xEA); // NOP
-
-    // Patch tech1func
-    ROM.Write(0x02BDE3+4, 0xEA); // NOP
-    ROM.Write(0x02BDE3+5, 0xEA); // NOP
-}
-
-void insertor::Write12pixfont(ROM &ROM)
-{
-    const vector<unsigned char> &tiletab1 = Font12.GetTab1();
-    const vector<unsigned char> &tiletab2 = Font12.GetTab2();
-    
-    fprintf(stderr, "Writing 12-pix font... ");
-
-    const unsigned font_begin = get_font_begin();
-    const unsigned tilecount  = Font12.GetCount();
-    
-    vector<freespacerec> Organization(2);
-    Organization[0].len = tiletab1.size();
-    Organization[1].len = tiletab2.size();
-    
-    unsigned page=NOWHERE;
-    freespace.OrganizeToAnySamePage(Organization, page);
-
-    unsigned addr1 = Organization[0].pos + (page<<16);
-    unsigned addr2 = Organization[1].pos + (page<<16);
-
-    unsigned WidthTab_Address = freespace.FindFromAnyPage(tilecount);
-    
-    fprintf(stderr, "(%u bytes at $%06X,"
-                    " %u bytes at $%06X,"
-                    " %u bytes at $%06X)\n",
-        tilecount,        0xC00000 | WidthTab_Address,
-        tiletab1.size(),  0xC00000 | addr1,
-        tiletab2.size(),  0xC00000 | addr2
-           );
-    
-    // patch font engine
-    unsigned tmp = WidthTab_Address - font_begin;
-    ROM.Write(WidthTab_Address_Ofs+0, tmp & 255);
-    ROM.Write(WidthTab_Address_Ofs+1, (tmp >> 8) & 255);
-    ROM.Write(WidthTab_Address_Seg, 0xC0 | ((tmp >> 16) & 255));
-    
-    // patch dialog engine
-    ROM.Write(FirstChar_Address, font_begin);
-    
-    /*
-     C2:5E1E:
-        0  A9 00          - lda a, $00
-        2  EB             - xba
-        3  38             - sec
-        4  A5 35          - lda [$00:D+$35]
-        6  E9 A0          - sbc a, $A0
-        8  AA             - tax
-        9  18             - clc
-       10  BF E6 60 C2    - lda $C2:($60E6+x)
-       14
-       
-       Will be changed to:
-           
-        0  C2 20          - rep $20
-        2  EA             - nop
-        3  EA             - nop
-        4  A5 35          * lda [$00:D+$35]
-        6  E2 20          - sep $20
-        8  AA             * tax
-        9  18             * clc
-       10  BF E6 60 C2    * lda $C2:($60E6+x)
-       14
-       
-       Now widthtab may have more than 256 items.
-    */
-
-    // patch font engine
-    ROM.Write(WidthTab_Offset_Addr-7, 0xC2); // rep $20
-    ROM.Write(WidthTab_Offset_Addr-6, 0x20);
-    ROM.Write(WidthTab_Offset_Addr-5, 0xEA); // nop
-    ROM.Write(WidthTab_Offset_Addr-4, 0xEA); // nop
-    ROM.Write(WidthTab_Offset_Addr-1, 0xE2); // sep $20
-    ROM.Write(WidthTab_Offset_Addr  , 0x20);
-
-    tmp = addr1 - font_begin * 24;
-    // patch font engine
-    ROM.Write(Font12a_Address_Ofs+0, tmp & 255);
-    ROM.Write(Font12a_Address_Ofs+1, (tmp >> 8) & 255);
-    ROM.Write(Font12_Address_Seg, 0xC0 | ((tmp >> 16) & 255));
-    tmp = addr2 - font_begin * 12;
-    ROM.Write(Font12b_Address_Ofs+0, tmp & 255);
-    ROM.Write(Font12b_Address_Ofs+1, (tmp >> 8) & 255);
-    
-    for(unsigned a=0; a<tiletab1.size(); ++a) ROM.Write(addr1+a, tiletab1[a]);
-    for(unsigned a=0; a<tiletab2.size(); ++a) ROM.Write(addr2+a, tiletab2[a]);
-
-    for(unsigned a=0; a<tilecount; ++a) ROM.Write(WidthTab_Address+a, Font12.GetWidth(a));
 }
 
 void insertor::WriteDictionary(ROM &ROM)
@@ -532,4 +376,102 @@ void insertor::WriteStrings(ROM &ROM)
        stringoffsmap pagestrings = GetZStringList(*i);
        WritePageZ(ROM, *i, pagestrings, freespace);
     }
+}
+
+void insertor::GenerateVWF12code()
+{
+    const vector<unsigned char> &tiletab1 = Font12.GetTab1();
+    const vector<unsigned char> &tiletab2 = Font12.GetTab2();
+    
+    fprintf(stderr, "12-pix VWF will be placed:");
+
+    const unsigned font_begin = get_font_begin();
+    const unsigned tilecount  = Font12.GetCount();
+    
+    vector<freespacerec> Organization(2);
+    Organization[0].len = tiletab1.size();
+    Organization[1].len = tiletab2.size();
+    
+    unsigned page=NOWHERE;
+    freespace.OrganizeToAnySamePage(Organization, page);
+
+    unsigned addr1 = Organization[0].pos + (page<<16);
+    unsigned addr2 = Organization[1].pos + (page<<16);
+
+    unsigned WidthTab_Address = freespace.FindFromAnyPage(tilecount);
+    
+    fprintf(stderr, " %u bytes at $%06X,"
+                    " %u bytes at $%06X,"
+                    " %u bytes at $%06X\n",
+        tilecount,        0xC00000 | WidthTab_Address,
+        tiletab1.size(),  0xC00000 | addr1,
+        tiletab2.size(),  0xC00000 | addr2
+           );
+    
+    /* As this pointer doesn't point directly to the data,
+     * it can't be set with AddOffsPtrFrom/AddSegPtrFrom
+     */
+    // patch font engine
+    unsigned tmp = (WidthTab_Address - font_begin) | 0xC00000;
+    
+    PlaceByte(((tmp     )&255), WidthTab_Address_Ofs+0);
+    PlaceByte(((tmp >> 8)&255), WidthTab_Address_Ofs+1);
+    PlaceByte(((tmp >>16)&255), WidthTab_Address_Seg);
+    
+    // patch dialog engine
+    PlaceByte(font_begin,       FirstChar_Address);
+    
+    /*
+     C2:5E1E:
+        0  A9 00          - lda a, $00
+        2  EB             - xba
+        3  38             - sec
+        4  A5 35          - lda [$00:D+$35]
+        6  E9 A0          - sbc a, $A0
+        8  AA             - tax
+        9  18             - clc
+       10  BF E6 60 C2    - lda $C2:($60E6+x)
+       14
+       
+       Will be changed to:
+           
+        0  C2 20          - rep $20
+        2  EA             - nop
+        3  EA             - nop
+        4  A5 35          * lda [$00:D+$35]
+        6  E2 20          - sep $20
+        8  AA             * tax
+        9  18             * clc
+       10  BF E6 60 C2    * lda $C2:($60E6+x)
+       14
+       
+       Now widthtab may have more than 256 items.
+    */
+
+    // patch font engine
+    PlaceByte(0xC2, WidthTab_Offset_Addr-7); // rep $20
+    PlaceByte(0x20, WidthTab_Offset_Addr-6);
+    PlaceByte(0xEA, WidthTab_Offset_Addr-5); // nop
+    PlaceByte(0xEA, WidthTab_Offset_Addr-4); // nop
+    PlaceByte(0xE2, WidthTab_Offset_Addr-1); // sep $20
+    PlaceByte(0x20, WidthTab_Offset_Addr  );
+
+    /* As these pointers don't point directly to the data,
+     * they can't be set with AddOffsPtrFrom/AddSegPtrFrom
+     */
+    tmp = (addr1 - font_begin * 24) | 0xC00000;
+    // patch font engine
+    PlaceByte(((tmp     )&255), Font12a_Address_Ofs+0);
+    PlaceByte(((tmp >> 8)&255), Font12a_Address_Ofs+1);
+    PlaceByte(((tmp >>16)&255), Font12_Address_Seg);
+    tmp = addr2 - font_begin * 12;
+    PlaceByte(((tmp     )&255), Font12b_Address_Ofs+0);
+    PlaceByte(((tmp >> 8)&255), Font12b_Address_Ofs+1);
+    
+    vector<unsigned char> widths(tilecount);
+    for(unsigned a=0; a<tilecount; ++a) widths[a] = Font12.GetWidth(a);
+    
+    PlaceData(tiletab1, addr1);
+    PlaceData(tiletab2, addr2);
+    PlaceData(widths, WidthTab_Address);
 }

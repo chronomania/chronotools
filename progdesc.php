@@ -71,9 +71,9 @@ Last updated:
 <tr><td>Item/tech/monster font handling</td>
     <td>80%</td> <td>useless in its current state</td></tr>
 <tr><td>Graphics handling</td>
-    <td>90%</td> <td>minor details left</td></tr>
+    <td>95%</td> <td>minor details left</td></tr>
 <tr><td>Signature feature</td>
-    <td>5%</td> <td>not what I planned</td></tr>
+    <td>100%</td> <td>everything works</td></tr>
 <tr><td>Error recovery</td>
     <td>10%</td> <td>silent ignore</td></tr>
 <tr><td>Documentation</td>
@@ -138,6 +138,7 @@ Copypaste from the Makefile:
 # VERSION 1.5.3  better graphics compressor
 # VERSION 1.5.4  another archive-only version
 # VERSION 1.6.0  signature support (custom compressed image on startup screen)
+# VERSION 1.6.1  some remodularizing of code
 </pre>
 
 ", '1. Program list' => "

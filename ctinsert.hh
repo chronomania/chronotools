@@ -55,13 +55,6 @@ private:
         unsigned width; // used if type==fixed;
         unsigned address;
     };
-    struct imagedata
-    {
-        unsigned address;
-        vector<unsigned char> data;
-    };
-    typedef vector<imagedata> imagelist;
-    imagelist images;
     
     typedef list<stringdata> stringlist;
     // strings: used in:
@@ -85,15 +78,15 @@ private:
     
     void WriteDictionary(class ROM &ROM);
     void WriteStrings(class ROM &ROM);
-    void Write8pixfont(class ROM &ROM) const;
-    void Write8vpixfont(class ROM &ROM);
-    void Write12pixfont(class ROM &ROM);
-    void WriteCode(class ROM &ROM);
-    void WriteImages(class ROM &ROM) const;
+    void WriteCode(class ROM &ROM) const;
 
     void GenerateConjugatorCode();
-    void GenerateVWF8code(unsigned widthtab_addr, unsigned tiletab_addr);
-    void GenerateMogCode();
+    void GenerateVWF12code();
+    void GenerateVWF8code();
+    void GenerateSignatureCode();
+    
+    void PlaceData(const vector<unsigned char>&, unsigned address);
+    void PlaceByte(unsigned char byte, unsigned address);
     
     void ApplyDictionary();
     void RebuildDictionary();

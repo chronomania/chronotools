@@ -1,6 +1,10 @@
 #include "rom.hh"
 
-#define DEBUG_ADDING_SUB 0
+#define DEBUG_ADDING_SUB     0
+#define DEBUG_ADDING_CALL    1
+#define DEBUG_ADDING_LONGPTR 1
+#define DEBUG_ADDING_OFFSPTR 1
+#define DEBUG_ADDING_PAGEPTR 1
 
 // Far call takes four bytes:
 //     22 63 EA C0 = JSL $C0:$EA63
@@ -17,12 +21,15 @@ void ROM::AddCall(unsigned codeaddress, unsigned target)
     
     target |= 0xC00000; // Ensure we're jumping correctly
     
-    fprintf(stderr, "- Adding subroutine $%06X call at $%06X\n",
+#if DEBUG_ADDING_CALL
+    fprintf(stderr, "- Adding subroutine    $%06X call at $%06X\n",
         target, 0xC00000 | rompos);
+#endif
 
     Write(rompos++, 0x22);
-    
-    AddLongPtr(rompos, target);
+    Write(rompos++, target & 255);
+    Write(rompos++, (target >> 8) & 255);
+    Write(rompos  , target >> 16);
 }
 
 void ROM::AddLongPtr(unsigned codeaddress, unsigned target)
@@ -31,11 +38,41 @@ void ROM::AddLongPtr(unsigned codeaddress, unsigned target)
     
     target |= 0xC00000; // Ensure we're pointing correctly
     
-    fprintf(stderr, "- Writing longptr $%06X at $%06X\n", target, rompos);
+#if DEBUG_ADDING_LONGPTR
+    fprintf(stderr, "-   Writing longptr    $%06X at $%06X\n", target, rompos);
+#endif
     
     Write(rompos++, target & 255);
     Write(rompos++, (target >> 8) & 255);
     Write(rompos  , target >> 16);
+}
+
+void ROM::AddOffsPtr(unsigned codeaddress, unsigned target)
+{
+    unsigned rompos = codeaddress & 0x3FFFFF;
+    
+    target &= 0xFFFF;
+    
+#if DEBUG_ADDING_OFFSPTR
+    fprintf(stderr, "-   Writing offsptr      $%04X at $%06X\n", target, rompos);
+#endif
+    
+    Write(rompos++, target & 255);
+    Write(rompos,   (target >> 8) & 255);
+}
+
+void ROM::AddPagePtr(unsigned codeaddress, unsigned target)
+{
+    unsigned rompos = codeaddress & 0x3FFFFF;
+    
+    target >>= 16;
+    target |= 0xC0;
+    
+#if DEBUG_ADDING_PAGEPTR
+    fprintf(stderr, "-   Writing pageptr    $%02X     at $%06X\n", target, rompos);
+#endif
+    
+    Write(rompos, target & 255);
 }
 
 void ROM::AddSubRoutine(unsigned target, const vector<unsigned char> &code)
@@ -76,6 +113,30 @@ void ROM::AddPatch(const SNEScode &code)
             ++i)
         {
             AddLongPtr(*i, code.GetAddress());
+        }
+    }
+
+    if(true) /* Handle offsptrs */
+    {
+        const set<unsigned>& addrlist = code.GetOffsPtrs();
+        for(set<unsigned>::const_iterator
+            i = addrlist.begin();
+            i != addrlist.end();
+            ++i)
+        {
+            AddOffsPtr(*i, code.GetAddress());
+        }
+    }
+
+    if(true) /* Handle pageptrs */
+    {
+        const set<unsigned>& addrlist = code.GetPagePtrs();
+        for(set<unsigned>::const_iterator
+            i = addrlist.begin();
+            i != addrlist.end();
+            ++i)
+        {
+            AddPagePtr(*i, code.GetAddress());
         }
     }
 }
