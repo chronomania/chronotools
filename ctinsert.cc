@@ -963,7 +963,6 @@ void insertor::LoadFile(FILE *fp)
     cget(c);
     
     stringdata model;
-    unsigned stringaddr;
     const map<string, char> *symbols = NULL;
     
     for(;;)
@@ -986,36 +985,28 @@ void insertor::LoadFile(FILE *fp)
             }
             while(c != (ucs4)EOF && c != '\n') { cget(c); }
             
-            if(header.size() > 9 && header[8] == 'L')
-            {
-                model.type = stringdata::fixed;
-                unsigned seg, ofs;
-                sscanf(header.c_str(), "%X:%X:L%u", &seg, &ofs, &model.width);
-                stringaddr = (seg << 16) + ofs;
-                symbols = &symbols8;
-            }
-            else if(header.size() > 9 && header[8] == 'Z')
+            if(header == "z")
             {
                 model.type = stringdata::zptr16;
-                unsigned seg, ofs, stringcount;
-                sscanf(header.c_str(), "%X:%X:Z%u", &seg, &ofs, &stringcount);
-                stringaddr = (seg << 16) + ofs;
                 symbols = &symbols16;
+                fprintf(stderr, "Loading strings for %s", header.c_str());
             }
-            else if(header.size() > 9 && header[8] == 'R')
+            else if(header == "r")
             {
                 model.type = stringdata::zptr8;
-                unsigned seg, ofs, stringcount;
-                sscanf(header.c_str(), "%X:%X:R%u", &seg, &ofs, &stringcount);
-                stringaddr = (seg << 16) + ofs;
                 symbols = &symbols2;
+                fprintf(stderr, "Loading strings for %s", header.c_str());
             }
-            else if(header.size() > 9 && header[8] == 'D')
+            else if(header.size() > 1 && header[0] == 'l')
             {
-                unsigned seg, ofs, count;
-                sscanf(header.c_str(), "%X:%X:D%u", &seg, &ofs, &count);
-                dictaddr = (seg << 16) + ofs;
-                dictsize = count;
+                model.type = stringdata::fixed;
+                model.width = atoi(header.c_str() + 1);
+                symbols = &symbols8;
+                fprintf(stderr, "Loading strings for %s", header.c_str());
+            }
+            else if(header.size() > 3 && header[0] == 'd')
+            {
+                sscanf(header.c_str()+1, "%X:%u", &dictaddr, &dictsize);
             }
             else
             {
@@ -1031,12 +1022,31 @@ void insertor::LoadFile(FILE *fp)
             for(;;)
             {
                 cget(c);
-                if(c == (ucs4)EOF || c == '\n' || c == ':')break;
-                if(isdigit(c))
-                    label = label * 10 + c - '0';
+                if(c == (ucs4)EOF || c == ':')break;
+                
+                if(header.size() > 0 && (header[0] == 'd' || header[0] == 's'))
+                {
+                    // dictionary labels and free space counts are decimal
+                    if(isdigit(c))
+                        label = label * 10 + c - '0';
+                    else
+                    {
+                        fprintf(stderr, "$%u: Got char '%c', invalid is!\n", label, c);
+                    }
+                }
                 else
                 {
-                    fprintf(stderr, "$%u: Got char '%c', invalid is!\n", label, c);
+                    // other labels are 62-base (10+26+26) numbers
+                    if(isdigit(c))
+                        label = label * 62 + c - '0';
+                    else if(c >= 'A' && c <= 'F')
+                        label = label * 62 + (c - 'A' + 10);
+                    else if(c >= 'a' && c <= 'f')
+                        label = label * 62 + (c - 'a' + 36);
+                    else
+                    {
+                        fprintf(stderr, "$%X: Got char '%c', invalid is!\n", label, c);
+                    }
                 }
             }
             wstring content;
@@ -1061,21 +1071,21 @@ void insertor::LoadFile(FILE *fp)
                 content += c;
             }
             
-            if(header.size() == 4 && header[3] == 'S')
+            if(header.size() == 3 && header[0] == 's')
             {
                 string ascii = WstrToAsc(content);
                 
                 unsigned page=0, begin=0;
-                sscanf(header.c_str(), "%X:S", &page);
+                sscanf(header.c_str(), "s%X", &page);
                 sscanf(ascii.c_str(), "%X", &begin);
                 
-                //fprintf(stderr, "Adding %u bytes of free space at %02X:%04X\n", label, page, begin);
+                fprintf(stderr, "Adding %u bytes of free space at %02X:%04X\n", label, page, begin);
                 freespace[page].insert(pair<unsigned,unsigned> (begin, label));
                 
                 continue;
             }
 
-            if(header.size() >= 9 && header[8] == 'D')
+            if(header.size() >= 3 && header[0] == 'd')
             {
                 string newcontent;
                 for(unsigned a=0; a<content.size(); ++a)
@@ -1145,11 +1155,11 @@ void insertor::LoadFile(FILE *fp)
                     else if(isdigit(code[1]))
                     {
                         newcontent += (char)atoi(code.c_str()+1);
-                        fprintf(stderr, " \nWarning: Raw code: %s\n", code.c_str());
+                        fprintf(stderr, " \nWarning: Raw code: %s", code.c_str());
                     }
                     else
                     {
-                        fprintf(stderr, " \nUnknown code: %s\n", code.c_str());
+                        fprintf(stderr, " \nUnknown code: %s", code.c_str());
                     }
                 }
                 else
@@ -1157,17 +1167,8 @@ void insertor::LoadFile(FILE *fp)
             }
             
             model.str = newcontent;
-            strings[stringaddr] = model;
+            strings[label] = model;
             
-            if(model.type == stringdata::zptr8
-            || model.type == stringdata::zptr16
-              )
-                stringaddr += 2;
-            else if(model.type == stringdata::fixed)
-                stringaddr += model.width;
-            
-            if(!label)
-                fprintf(stderr, "Loading strings for %s", header.c_str());
             static char cursbuf[]="-/|\\",curspos=0;
             fprintf(stderr,"%c\010",cursbuf[++curspos&3]);
             if(c == '*')fputs(" \n", stderr);

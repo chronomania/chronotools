@@ -14,7 +14,8 @@ LDFLAGS=-L/usr/lib/graphics
 # VERSION 1.0.10 had knowledge of character sets
 # VERSION 1.0.11 had a working font insertor
 # VERSION 1.0.12 had better knowledge of special codes
-VERSION=1.0.12
+# VERSION 1.0.13 used 62-base numbers
+VERSION=1.0.13
 ARCHFILES=xray.c xray.h \
           viewer.c \
           ctcset.cc \

@@ -146,13 +146,68 @@ static const vector<string> LoadFStrings(unsigned offset, unsigned len, unsigned
     return result;
 }
 
+static void FindEndSpaces(void)
+{
+    unsigned pagecount = (space.size()+0xFFFF) >> 16;
+    for(unsigned page=0; page<pagecount; ++page)
+    {
+        unsigned pageend = (page+1) << 16;
+        if(pageend >= space.size()) pageend = space.size();
+        unsigned pagebegin = (page << 16);
+        unsigned pagesize = pageend - pagebegin;
+        
+        //const char *beginptr = (const char *)&ROM[pagebegin];
+        //const char *endptr   = (const char *)&ROM[pageend];
+        unsigned size = pagesize;
+        
+        static const char blanks[] = {0x00, (char)0xEF, (char)0xFF};
+        
+        for(unsigned blank=0; blank < sizeof(blanks); ++blank)
+        {
+            unsigned blanklen=0;
+            for(unsigned blapos=pagebegin; blapos<pageend; ++blapos)
+            {
+                if(ROM[blapos] == blanks[blank])
+                {
+                    ++blanklen;
+                    if(blanklen == ExtraSpaceMinLen)
+                    {
+                        for(unsigned a=0; a<ExtraSpaceMinLen; ++a)
+                            space[blapos-(ExtraSpaceMinLen-1)+a] = true;
+                    }
+                    if(blanklen >= ExtraSpaceMinLen)
+                        space[blapos] = true;
+                }
+                else
+                    blanklen=0;
+            }
+            /*
+            vector<char> BlankBuf(64, blanks[blank]);
+            
+            const char *ptr = mempos(beginptr, size, &BlankBuf[0], BlankBuf.size());
+            if(!ptr)continue;
+            
+            for(unsigned blapos = (ptr-beginptr);
+                ROM[pagebegin+blapos] == blanks[blank]
+             && blapos < pageend; ++blapos)
+            {
+                space[pagebegin+blapos] = true;
+            }
+            */
+        }
+    }
+}
+
 static wstring Disp16Char(unsigned char k)
 {
     switch(k)
     {
-        // 0x01 and 0x02 are some doublebyte things.
-        // They eat the next character and output garbage.
-        // Dunno what this means.
+        // 0x01 and 0x02 are doublebyte things.
+        // They eat the next character and use it
+        // as a pointer to somewhere. Seems like
+        // in the English version this has absolutely
+        // no use whatsoever. Very variable width lines
+        // seen using this.
         
         // 0x03 is delay
         
@@ -265,34 +320,6 @@ static wstring DispFChar(unsigned char k)
     }
 }
 
-static void DumpScript(const vector<string> &tab, bool dolf)
-{
-    for(unsigned a=0; a<tab.size(); ++a)
-    {
-        const string &s = tab[a];
-        printf("$%u", a);
-        putchar(dolf ? '\n' : ':');
-        
-        wstringOut conv;
-        conv.SetSet(getcharset());
-
-        string line;
-        for(unsigned b=0; b<s.size(); ++b)
-        {
-            if(s[b] == 3)
-            {
-                char Buf[32];
-                sprintf(Buf, "[delay %02X]", (unsigned char)s[++b]);
-                for(unsigned a=0; Buf[a]; ++a)
-                    line += conv.putc(Buf[a]);
-            }
-            else
-                line += conv.puts(Disp16Char(s[b]));
-        }
-        puts(line.c_str());
-    }
-}
-
 static void DumpTable(const vector<string> &tab, wstring (*Disp)(unsigned char))
 {
     for(unsigned a=0; a<tab.size(); ++a)
@@ -309,100 +336,138 @@ static void DumpTable(const vector<string> &tab, wstring (*Disp)(unsigned char))
     }
 }
 
-static void DumpZStrings(unsigned offs, unsigned len, bool dolf=true)
+static void DumpZStrings(const unsigned offs, unsigned len, bool dolf=true)
 {
     vector<string> strings = LoadZStrings(offs, len);
-    printf("*%02X:%04X:Z16 ;%u 16pix %sstrings, table ends at $%04X\n",
-        offs>>16, offs&0xFFFF, strings.size(),
-        dolf?"dialog ":"single line ",
-        (offs+len*2)&0xFFFF);
-    DumpScript(strings, dolf);
+
+    printf("*z;%u pointerstrings (12pix font)\n", strings.size());
+
+    wstringOut conv;
+    conv.SetSet(getcharset());    
+    for(unsigned a=0; a<strings.size(); ++a)
+    {
+        string line = conv.putc('$');
+        const unsigned noffs = offs + a*2;
+        for(unsigned k=62*62*62; ; k/=62)
+        {
+            unsigned dig = (noffs/k)%62;
+            if(dig < 10) line += conv.putc('0' + dig);
+            else if(dig < 36) line += conv.putc('A' + (dig-10));
+            else line += conv.putc('a' + (dig-36));
+            if(k==1)break;
+        }
+        line += conv.putc(':');
+        if(dolf) line += conv.putc('\n');
+        
+        const string &s = strings[a];
+
+        for(unsigned b=0; b<s.size(); ++b)
+        {
+            if(s[b] == 3)
+            {
+                char Buf[64];
+                sprintf(Buf, "[delay %02X]", (unsigned char)s[++b]);
+                line += conv.puts(AscToWstr(Buf));
+            }
+            else
+                line += conv.puts(Disp16Char(s[b]));
+        }
+        puts(line.c_str());
+    }
     printf("\n\n");
 }
 
-static void DumpStrings(unsigned offs, unsigned len=0)
+static void DumpStrings(const unsigned offs, unsigned len=0)
 {
     vector<string> strings = LoadZStrings(offs, len);
-    printf("*%02X:%04X:R8 ;%u dialog strings, table ends at $%04X\n",
-        offs>>16, offs&0xFFFF, strings.size(),
-        (offs+len*2)&0xFFFF);
-    DumpTable(strings, Disp8Char);
+
+    printf("*r;%u pointerstrings (8pix font)\n", strings.size());
+
+    wstringOut conv;
+    conv.SetSet(getcharset());    
+    for(unsigned a=0; a<strings.size(); ++a)
+    {
+        string line = conv.putc('$');
+        const unsigned noffs = offs + a*2;
+        for(unsigned k=62*62*62; ; k/=62)
+        {
+            unsigned dig = (noffs/k)%62;
+            if(dig < 10) line += conv.putc('0' + dig);
+            else if(dig < 36) line += conv.putc('A' + (dig-10));
+            else line += conv.putc('a' + (dig-36));
+            if(k==1)break;
+        }
+        line += conv.putc(':');
+        
+        const string &s = strings[a];
+
+        for(unsigned b=0; b<s.size(); ++b)
+            line += conv.puts(Disp8Char(s[b]));
+        puts(line.c_str());
+    }
+
     printf("\n\n");
 }
 
 static void DumpFStrings(unsigned offs, unsigned len, unsigned maxcount=0)
 {
     vector<string> strings = LoadFStrings(offs, len, maxcount);
-    printf("*%02X:%04X:L%u ;%u fixed length strings (length: %u bytes)\n",
-        offs>>16, offs&0xFFFF, len, strings.size(), len);
-    DumpTable(strings, DispFChar);
+    printf("*l%u;%u fixed length strings (length: %u bytes)\n",
+        len, strings.size(), len);
+
+    wstringOut conv;
+    conv.SetSet(getcharset());
+
+    for(unsigned a=0; a<strings.size(); ++a)
+    {
+        string line = conv.putc('$');
+        const unsigned noffs = offs + a*len;
+        for(unsigned k=62*62*62; ; k/=62)
+        {
+            unsigned dig = (noffs/k)%62;
+            if(dig < 10) line += conv.putc('0' + dig);
+            else if(dig < 36) line += conv.putc('A' + (dig-10));
+            else line += conv.putc('a' + (dig-36));
+            if(k==1)break;
+        }
+        line += conv.putc(':');
+        
+        const string &s = strings[a];
+
+        for(unsigned b=0; b<s.size(); ++b)
+            line += conv.puts(DispFChar(s[b]));
+        puts(line.c_str());
+    }
     printf("\n\n");
 }
 
 static void LoadDict(unsigned offs, unsigned len)
 {
-    vector<string> hmm = LoadPStrings(offs, len);
-    printf("*%02X:%04X:D%u ;%u substrings in dictionary\n",
-        offs>>16, offs&0xFFFF, hmm.size(), hmm.size());
+    vector<string> strings = LoadPStrings(offs, len);
+    printf("*d%06X:%u ;%u substrings in dictionary\n",
+        offs, strings.size(), strings.size());
+
+    wstringOut conv;
+    conv.SetSet(getcharset());
+
+    for(unsigned a=0; a<strings.size(); ++a)
+    {
+        char Buf[64];
+        sprintf(Buf, "$%u:", a);
+        
+        string line = conv.puts(AscToWstr(Buf));
+        
+        const string &s = strings[a];
+
+        for(unsigned b=0; b<s.size(); ++b)
+            line += conv.puts(Disp8Char(s[b]));
+        puts(line.c_str());
+    }
     
-    DumpTable(hmm, Disp8Char);
-    
-    for(unsigned a=0; a<hmm.size(); ++a)
-        substrings[a + 0x21] = hmm[a];
+    for(unsigned a=0; a<strings.size(); ++a)
+        substrings[a + 0x21] = strings[a];
 
     printf("\n\n");
-}
-
-static void FindEndSpaces(void)
-{
-    unsigned pagecount = (space.size()+0xFFFF) >> 16;
-    for(unsigned page=0; page<pagecount; ++page)
-    {
-        unsigned pageend = (page+1) << 16;
-        if(pageend >= space.size()) pageend = space.size();
-        unsigned pagebegin = (page << 16);
-        unsigned pagesize = pageend - pagebegin;
-        
-        //const char *beginptr = (const char *)&ROM[pagebegin];
-        //const char *endptr   = (const char *)&ROM[pageend];
-        unsigned size = pagesize;
-        
-        static const char blanks[] = {0x00, (char)0xEF, (char)0xFF};
-        
-        for(unsigned blank=0; blank < sizeof(blanks); ++blank)
-        {
-            unsigned blanklen=0;
-            for(unsigned blapos=pagebegin; blapos<pageend; ++blapos)
-            {
-                if(ROM[blapos] == blanks[blank])
-                {
-                    ++blanklen;
-                    if(blanklen == ExtraSpaceMinLen)
-                    {
-                        for(unsigned a=0; a<ExtraSpaceMinLen; ++a)
-                            space[blapos-(ExtraSpaceMinLen-1)+a] = true;
-                    }
-                    if(blanklen >= ExtraSpaceMinLen)
-                        space[blapos] = true;
-                }
-                else
-                    blanklen=0;
-            }
-            /*
-            vector<char> BlankBuf(64, blanks[blank]);
-            
-            const char *ptr = mempos(beginptr, size, &BlankBuf[0], BlankBuf.size());
-            if(!ptr)continue;
-            
-            for(unsigned blapos = (ptr-beginptr);
-                ROM[pagebegin+blapos] == blanks[blank]
-             && blapos < pageend; ++blapos)
-            {
-                space[pagebegin+blapos] = true;
-            }
-            */
-        }
-    }
 }
 
 static void ListSpaces(void)
@@ -426,7 +491,7 @@ static void ListSpaces(void)
             {
                 if(!freehere)
                 {
-                    printf("*%02X:S ;Free space in segment $%02X:\n", page, page);
+                    printf("*s%02X ;Free space in segment $%02X:\n", page, page);
                     freehere = true;
                 }
                 printf("$%u:%04X;%04X\n", p-freebegin, freebegin, p);
