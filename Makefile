@@ -28,10 +28,11 @@ include Makefile.sets
 # VERSION 1.1.5  some bugfixes
 # VERSION 1.1.6  fixed an allocation bug and optimized the code generator a bit
 # VERSION 1.1.7  some translation, more asm changes
+# VERSION 1.1.8  syntax changes in the compiler, optimizations
 
 OPTIM=-O3
 
-VERSION=1.1.7
+VERSION=1.1.8
 ARCHFILES=xray.c xray.h \
           viewer.c \
           ctcset.cc ctcset.hh \
@@ -53,7 +54,7 @@ ARCHFILES=xray.c xray.h \
           progdesc.php \
           spacefind.cc base62.cc sramdump.cc \
           binpacker.tcc binpacker.hh \
-          README transnotes.txt
+          README transnotes.txt Makefile.sets
 
 EXTRA_ARCHFILES=\
           ct_try.txt \

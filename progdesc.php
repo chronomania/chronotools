@@ -158,13 +158,13 @@ These programs are archived as C++ source code only.
 Copypaste from the Makefile:
 
 <pre class=smallerpre
-># VERSION 1.0.3 was the first working! :D
-# VERSION 1.0.4 handled fixed strings too
-# VERSION 1.0.5 found item descriptions
-# VERSION 1.0.6 compressed better
-# VERSION 1.0.7 compressed more carefully
-# VERSION 1.0.8 documented the script
-# VERSION 1.0.9 fixed \"...\" handling and located the font
+># VERSION 1.0.3  was the first working! :D
+# VERSION 1.0.4  handled fixed strings too
+# VERSION 1.0.5  found item descriptions
+# VERSION 1.0.6  compressed better
+# VERSION 1.0.7  compressed more carefully
+# VERSION 1.0.8  documented the script
+# VERSION 1.0.9  fixed \"...\" handling and located the font
 # VERSION 1.0.10 had knowledge of character sets
 # VERSION 1.0.11 had a working font insertor
 # VERSION 1.0.12 had better knowledge of special codes
@@ -182,6 +182,11 @@ Copypaste from the Makefile:
 # VERSION 1.1.1  conjugating conjugating conjugating... work goes on
 # VERSION 1.1.2  and so on
 # VERSION 1.1.3  and so on... almost working! \"case\" still doesn't work.
+# VERSION 1.1.4  conjugating finally works!
+# VERSION 1.1.5  some bugfixes
+# VERSION 1.1.6  fixed an allocation bug and optimized the code generator a bit
+# VERSION 1.1.7  some translation, more asm changes
+# VERSION 1.1.8  syntax changes in the compiler, optimizations
 </pre>
 
 ", '1. See also' => "

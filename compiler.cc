@@ -8,6 +8,8 @@
 
 using namespace std;
 
+#define OPTIMIZE_A
+
 namespace
 {
     const char LoopHelperName[] = "$LoopHelper$";
@@ -18,8 +20,19 @@ namespace
         SubRoutine *cursub;
         string CurSubName;
         
-        // varname -> stack index
-        typedef map<string, unsigned> vars_t;
+        struct variable
+        {
+            unsigned stackpos;
+            bool read,written,loaded;
+            bool is_regvar;
+            
+            variable() : stackpos(0),read(false),written(false),loaded(false)
+            {
+                is_regvar = false;
+            }
+        };
+        
+        typedef map<string, variable> vars_t;
         vars_t vars;
 
         // code begun?
@@ -38,6 +51,40 @@ namespace
         typedef list<pair<unsigned, Branch> > branchlist_t;
         branchlist_t openbranches;
         
+#ifdef OPTIMIZE_A
+        class aConstState
+        {
+            bool known;
+            unsigned value;
+        public:
+            aConstState() : known(false),value(0) {}
+            void Invalidate() { known=false; }
+            bool Known() const { return known; }
+            void Set(unsigned v) { known=true; value=v; }
+            bool Is(unsigned v) const { return known && value==v; }
+            void Inc() { if(known) ++value; }
+            void Dec() { if(known) --value; }
+        } aConstState;
+
+        class aVarState
+        {
+            bool known;
+            string var;
+        public:
+            aVarState() : known(false) {}
+            void Invalidate() { known=false; }
+            bool Known() const { return known; }
+            void Set(const string &v) { known=true; var=v; }
+            bool Is(const string &v) const { return known && var==v; }
+        } aVarState;
+        
+        void Invalidate_A()
+        {
+            aVarState.Invalidate();
+            aConstState.Invalidate();
+        }
+#endif
+        
         void AddBranch(const Branch &b, unsigned ind)
         {
             openbranches.push_back(make_pair(ind, b));
@@ -46,12 +93,15 @@ namespace
         void FRAME_BEGIN()
         {
             unsigned varcount = vars.size();
+            /* Note: All vars will be initialized with A's current value */
+        #if 0
             if(varcount >= 2) CODE.Set16bit_M();
             while(varcount >= 2)
             {
                 CODE.AddCode(0x48); // PHA
                 varcount -= 2;
             }
+        #endif
             if(varcount >= 1) CODE.Set8bit_M();
             while(varcount >= 1)
             {
@@ -59,6 +109,10 @@ namespace
                 varcount -= 1;
             }
             endbranch = new Branch(CODE.PrepareRelativeLongBranch());
+#ifdef OPTIMIZE_A
+            aVarState.Set("c");
+            aConstState.Invalidate();
+#endif
         }
         void FRAME_END()
         {
@@ -78,6 +132,28 @@ namespace
             {
                 CODE.AddCode(0x7A); // PLY
                 varcount -= 1;
+            }
+            
+            for(vars_t::const_iterator
+                i = vars.begin();
+                i != vars.end();
+                ++i)
+            {
+                const char *warning = 0;
+                if(!i->second.read)
+                {
+                    if(i->second.written) warning = "was written but never read";
+                    else warning = "was never written or read";
+                }
+                else if(!i->second.loaded && !i->second.is_regvar)
+                {
+                    warning = "should be defined as REG";
+                }
+                if(warning)
+                {
+                    fprintf(stderr, "  Warning: In function '%s', variable '%s' %s.\n",
+                        CurSubName.c_str(), i->first.c_str(), warning);
+                }
             }
             
             FINISH_BRANCHES();
@@ -110,18 +186,22 @@ namespace
         }
         unsigned char GetStackOffset(const string &varname) const
         {
-            // pino-osoitteet pienenevät pushatessa.
-            //    s = 6E5
-            //   pha - this goes to 6E5
-            //   pha - this goes to 6E4
-            //   pha - this goes to 6E3
-            // tämän jälkeen s = 6E2.
-            
             vars_t::const_iterator i = vars.find(varname);
-            if(i == vars.end()) return 0;
+            if(i == vars.end())
+            {
+                fprintf(stderr, "ERROR: In function '%s': Undefined variable '%s'\n",
+                    CurSubName.c_str(), varname.c_str());
+                return 0;
+            }
+            if(i->second.is_regvar)
+            {
+                fprintf(stderr, "ERROR: In function '%s': "
+                                "'%s defined with REG, but isn't in registers\n",
+                     CurSubName.c_str(), varname.c_str());
+                return 0;
+            }
             
-            // Thus, [s+1] refers to var1, [s+2] to var2, and so on.
-            return i->second+1;
+            return i->second.stackpos;
         }
     public:
         Assembler() : cursub(NULL)
@@ -138,12 +218,15 @@ namespace
             {
                 if(a->first != 999 && indent <= a->first)
                 {
+#ifdef OPTIMIZE_A
+                    Invalidate_A();
+#endif
                     a->second.ToHere();
                     a->first = 999; // prevent being reassigned
                 }
             }
         }
-        void START_FUNCTION(const string &name, bool without_c = false)
+        void START_FUNCTION(const string &name)
         {
             CurSubName = name;
             started = false;
@@ -151,8 +234,9 @@ namespace
 
             cursub = new SubRoutine;
             
-            if(!without_c)
-                DECLARE_VAR("c");
+#ifdef OPTIMIZE_A
+            Invalidate_A();
+#endif
         }
         void END_FUNCTION()
         {
@@ -169,9 +253,23 @@ namespace
         {
             if(vars.find(name) == vars.end())
             {
-                unsigned varnum = vars.size();
-                 vars[name] = varnum;
+                // pino-osoitteet pienenevät pushatessa.
+                //    s = 6E5
+                //   pha - this goes to 6E5
+                //   pha - this goes to 6E4
+                //   pha - this goes to 6E3
+                // tämän jälkeen s = 6E2.
+                // Thus, [s+1] refers to var1, [s+2] to var2, and so on.
+                
+                unsigned stackpos = vars.size() + 1;
+                
+                vars[name].is_regvar = false;
+                vars[name].stackpos = stackpos;
             }
+        }
+        void DECLARE_REGVAR(const string &name)
+        {
+            vars[name].is_regvar = true;
         }
         void VOID_RETURN()
         {
@@ -197,42 +295,90 @@ namespace
             
             if(vars.find(name) != vars.end())
             {
-                CODE.AddCode(0xA3, GetStackOffset(name)); // LDA [00:s+n]
+                vars[name].read = true;
+#ifdef OPTIMIZE_A
+                if(aVarState.Is(name)) return;
+
+                aVarState.Set(name);
+                aConstState.Invalidate();
+#endif
+                unsigned stackpos = GetStackOffset(name);
+                vars[name].loaded = true;
+                if(!vars[name].written)
+                {
+                    fprintf(stderr,
+                        "  Warning: In function '%s', variable '%s' was read before written.\n",
+                            CurSubName.c_str(), name.c_str());
+                }
+                CODE.AddCode(0xA3, stackpos); // LDA [00:s+n]
+                
+                return;
             }
-            else if(name[0] == '\'')
+            
+            unsigned val = 0;
+            
+            if(name[0] == '\'')
+                val = (unsigned char) getchronochar((unsigned char)name[1]);
+            else
+                val = strtol(name.c_str(), NULL, 10);
+            
+            if(val >= 256)
+            {
+                fprintf(stderr,
+                    "  Warning: In function '%s', numeric constant %u too large (>255)\n",
+                    CurSubName.c_str(), val);
+            }
+            
+#ifdef OPTIMIZE_A
+            if(aConstState.Is(val)) return;
+            
+            aConstState.Set(val);
+            aVarState.Invalidate();
+#endif
+            
+            if(val < 256)
             {
                 CODE.Set8bit_M();
-                unsigned char c = getchronochar((unsigned char)name[1]);
-                CODE.AddCode(0xA9, c); // LDA A, imm8
+                CODE.AddCode(0xA9, val); // LDA A, imm8
             }
             else
             {
-                unsigned val = strtol(name.c_str(), NULL, 10);
-                if(val < 256)
-                {
-                    CODE.Set8bit_M();
-                    CODE.AddCode(0xA9, val); // LDA A, imm8
-                }
-                else
-                {
-                    CODE.Set16bit_M();
-                    CODE.AddCode(0xA9, val&255, val>>8); // LDA A, imm16
-                }
+                CODE.Set16bit_M();
+                CODE.AddCode(0xA9, val&255, val>>8); // LDA A, imm16
             }
         }
         void STORE_VAR(const string &name)
         {
-            CheckCodeStart();
-            // store A to var
-            CODE.Set8bit_M();
-            CODE.AddCode(0x83, GetStackOffset(name)); // STA [00:s+n]
+#ifdef OPTIMIZE_A
+            if(aVarState.Is(name)) return;
+#endif
+
+            if(vars.find(name) == vars.end()
+            || !vars.find(name)->second.is_regvar)
+            {
+                CheckCodeStart();
+                // store A to var
+                CODE.Set8bit_M();
+                unsigned stackpos = GetStackOffset(name);
+                CODE.AddCode(0x83, stackpos); // STA [00:s+n]
+            }
+            vars[name].written = true;
+            
+#ifdef OPTIMIZE_A
+            aVarState.Set(name);
+#endif
         }
         void INC_VAR(const string &name)
         {
             CheckCodeStart();
             // inc var
             LOAD_VAR(name);
+            CODE.Set8bit_M();
             CODE.AddCode(0x1A); // INC A
+#ifdef OPTIMIZE_A
+            aVarState.Invalidate();
+            aConstState.Inc();
+#endif
             STORE_VAR(name);
         }
         void DEC_VAR(const string &name)
@@ -240,7 +386,12 @@ namespace
             CheckCodeStart();
             // dec var
             LOAD_VAR(name);
+            CODE.Set8bit_M();
             CODE.AddCode(0x3A); // DEC A
+#ifdef OPTIMIZE_A
+            aVarState.Invalidate();
+            aConstState.Dec();
+#endif
             STORE_VAR(name);
         }
         void CALL_FUNC(const string &name)
@@ -257,6 +408,9 @@ namespace
             
             CODE.Set16bit_X();
             CODE.AddCode(0xFA); // PLX
+#ifdef OPTIMIZE_A
+            Invalidate_A();
+#endif
         }
         void COMPARE_BOOL(unsigned indent)
         {
@@ -274,8 +428,11 @@ namespace
         {
             CheckCodeStart();
             
+            unsigned stackpos = GetStackOffset(name);
+            vars[name].read = vars[name].loaded = true;
+            
             // process subblock if A is equal to given var
-            CODE.AddCode(0xC3, GetStackOffset(name)); // CMP [00:s+n]
+            CODE.AddCode(0xC3, stackpos); // CMP [00:s+n]
 
             Branch b = CODE.PrepareRelativeLongBranch();
             CODE.AddCode(0xF0, 3);   // BEQ- Jump to if eq
@@ -300,8 +457,11 @@ namespace
         {
             CheckCodeStart();
 
+            unsigned stackpos = GetStackOffset(name);
+            vars[name].read = vars[name].loaded = true;
+
             // process subblock if A is greater than given var
-            CODE.AddCode(0xC3, GetStackOffset(name)); // CMP [00:s+n]
+            CODE.AddCode(0xC3, stackpos); // CMP [00:s+n]
             
             Branch b = CODE.PrepareRelativeLongBranch();
             CODE.AddCode(0xB0, 3);   // BCS- Jump to if greater or equal
@@ -337,7 +497,6 @@ namespace
                     CODE.AddCode(0x82, 0,0); // BRL- Jump to "else"
                     b.FromHere();
                 }
-                // FIXME: Tämä ei toimi oikein!
             }
             into.ToHere();
             into.Proceed();
@@ -409,6 +568,9 @@ namespace
             // Hakee merkin hahmon nimestä
             CODE.Set8bit_M();
             CODE.AddCode(0xB7,0x37);  // lda [long[$00:D+$37]+y]
+#ifdef OPTIMIZE_A
+            Invalidate_A();
+#endif
         }
         void OUTBYTE_BIG_CODE()
         {
@@ -426,6 +588,9 @@ namespace
 
             CODE.Set16bit_X();
             CODE.AddCode(0xFA); // PLX
+#ifdef OPTIMIZE_A
+            Invalidate_A();
+#endif
         }
         
         void START_CHARNAME_LOOP()
@@ -441,7 +606,6 @@ namespace
             CODE.AddCode(0xAA);                // TAX
             
             loopbegin->ToHere();
-            
             CODE.AddCode(0x22, 0,0,0);
             cursub->requires[LoopHelperName].insert(CODE.size() - 3);
 
@@ -450,8 +614,13 @@ namespace
             CODE.AddCode(0xD0, 3);    // bne - jatketaan looppia, jos nonzero
             CODE.AddCode(0x82, 0,0);  // brl - jump pois loopista.
             loopend->FromHere();
+#ifdef OPTIMIZE_A
+            Invalidate_A();
+#endif
 
-            STORE_VAR("c"); // talteen c:hen.
+            STORE_VAR("c");        // save in "c".
+            vars["c"].read = true; // mark read, because it indeed has been
+                                   // read (in the loop end condition).
         }
         void END_CHARNAME_LOOP()
         {
@@ -463,6 +632,9 @@ namespace
             
             // loop end is here.        
             loopend->ToHere();
+#ifdef OPTIMIZE_A
+            Invalidate_A();
+#endif
             
             loopbegin->Proceed();
             loopend->Proceed();
@@ -479,6 +651,9 @@ namespace
             cursub->requires[OutcHelperName].insert(CODE.size() - 3);
 
             CODE.BitnessUnknown();
+#ifdef OPTIMIZE_A
+            Invalidate_A();
+#endif
         }
         #undef CODE
         
@@ -572,42 +747,42 @@ const FunctionList Compile(FILE *fp)
         else if(words[0] == "VAR")
         {
             for(unsigned a=1; a<words.size(); ++a)
+            {
                 Asm.DECLARE_VAR(words[a]);
+            }
         }
-        else if(words[0] == "ci")
+        else if(words[0] == "REG")
+        {
+            for(unsigned a=1; a<words.size(); ++a)
+            {
+                Asm.DECLARE_REGVAR(words[a]);
+            }
+        }
+        else if(words[0] == "CALL_GET")
         {
             Asm.CALL_FUNC(words[1]);
             Asm.STORE_VAR(words[2]);
         }
-        else if(words[0] == "cb")
+        else if(words[0] == "IF")
         {
+        	if(words.size() > 2) Asm.LOAD_VAR(words[2]);
             Asm.CALL_FUNC(words[1]);
             Asm.COMPARE_BOOL(indent);
         }
-        else if(words[0] == "cq")
+        else if(words[0] == "CALL")
         {
-            Asm.LOAD_VAR(words[2]);
-            Asm.CALL_FUNC(words[1]);
-            Asm.COMPARE_BOOL(indent);
-        }
-        else if(words[0] == "cv")
-        {
-            Asm.LOAD_VAR(words[2]);
+        	if(words.size() > 2) Asm.LOAD_VAR(words[2]);
             Asm.CALL_FUNC(words[1]);
         }
-        else if(words[0] == "cf")
-        {
-            Asm.CALL_FUNC(words[1]);
-        }
-        else if(words[0] == "+")
+        else if(words[0] == "INC")
         {
             Asm.INC_VAR(words[1]);
         }
-        else if(words[0] == "-")
+        else if(words[0] == "DEC")
         {
             Asm.DEC_VAR(words[1]);
         }
-        else if(words[0] == "s")
+        else if(words[0] == "LET")
         {
             Asm.LOAD_VAR(words[2]);
             Asm.STORE_VAR(words[1]);
@@ -629,8 +804,8 @@ const FunctionList Compile(FILE *fp)
         }
         else if(words[0] == "?")
         {
-            Asm.LOAD_VAR("c");
-            Asm.SELECT_CASE(words[1], indent);
+            Asm.LOAD_VAR(words[1]);
+            Asm.SELECT_CASE(words[2], indent);
         }
         else if(words[0] == "{")
         {
@@ -645,24 +820,23 @@ const FunctionList Compile(FILE *fp)
             Asm.LOAD_VAR(words[1]);
             Asm.OUT_CHARACTER();
         }
-        else if(words[0] == ":B"
-             || words[0] == ":Q"
-             || words[0] == ":I")
+        else if(words[0] == ":func_b"
+             || words[0] == ":func_i")
         {
-            bool no_c = false;
-            if(words.size() == 3 && words[2] == "<no_c>") no_c = true;
             Asm.END_FUNCTION();
-            Asm.START_FUNCTION(words[1], no_c);
+            Asm.START_FUNCTION(words[1]);
         }
+        else
+        	fprintf(stderr, "  ERROR: What's this? '%s'\n", words[0].c_str());
     }
     Asm.END_FUNCTION();
 
-    Asm.START_FUNCTION(LoopHelperName, true);
+    Asm.START_FUNCTION(LoopHelperName);
     Asm.CHARNAME_LOOP_BIG_BLOCK();
     Asm.VOID_RETURN();
     Asm.END_FUNCTION();
     
-    Asm.START_FUNCTION(OutcHelperName, true);
+    Asm.START_FUNCTION(OutcHelperName);
     Asm.OUTBYTE_BIG_CODE();
     Asm.VOID_RETURN();
     Asm.END_FUNCTION();

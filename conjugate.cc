@@ -236,8 +236,8 @@ namespace
                 
                 if(first)
                 {
-                	branchOut.ToHere();
-                	code.BitnessUnknown();
+                    branchOut.ToHere();
+                    code.BitnessUnknown();
                     code.Set16bit_M();
                     
                     // increment the pointer (skip the name printing)

@@ -6,28 +6,29 @@
 #
 #  Syntax
 #
-#  :B name
-#     declare function returning boolean, handles character name
-#  :Q name
-#     declare function returning boolean, parameter is byte (assigned to variable "c")
-#  :I name
+#  :func_b name
+#     declare function returning boolean.
+#     If parameter given, it's assigned to variable "c".
+#  :func_i name
 #     declare function returning byte
 ## OUT name
 #     Outputs character in name
-## VAR name
-#     local variable
-## s name1 value/name2
+## VAR name..
+#     define local variables
+## REG name..
+#     define register variables
+## LET name1 value/name2
 #     assign name1 from value
-## + name
+## INC name
 #     name++
-## - name
+## DEC name
 #     name--
 ## { 
 #     loop over character name, store current character in variable "c"
 ## }
 #     end character name loop
-## ? characters
-#     If c is in set, process subblock
+## ? name characters
+#     If name is in set, process subblock
 ## > name value/name2
 #     if(name > value), process subblock
 ## = name value/name2
@@ -40,46 +41,44 @@
 #     For boolean funcs, just return
 ## RETURN name
 #     For byte funcs, return value of var
-## ci name1 name2
-#     Call integer-func name1, return value to name2.
-## cb name1
+## IF name1 name2
 #     Call bool-func name1
+#     If name2 given, will be passed as param.
 #     Process subblock if true retval
-## cq name1 name2
-#     Call bool-func name1 with param name2
-#     Process subblock if true retval
-## cv name1 name2
-#     Call bool-func name1 with param name2
-#     Ignore return value
-## cf name
-#     Call bool-func name
+## CALL_GET name1 name2
+#     Call integer-func name1, return value to name2.
+## CALL name1 name2
+#     Call bool-func name1
+#     If name2 given, will be passed as param.
 #     Ignore return value
 
-:Q IsVowel
-? aeiouy‰ˆÂÈAEIOUYƒ÷≈…0123456
+:func_b IsVowel
+REG c
+? c aeiouy‰ˆÂÈAEIOUYƒ÷≈…0123456
   TRUE
 FALSE
 
-:Q IsKPT
-? kKpPtT
+:func_b IsKPT
+REG c
+? c kKpPtT
   TRUE
 FALSE
 
-:B IsFront
-VAR VowelType FoundE Finalguess
-s VowelType 0
-s FoundE 0
-s Finalguess 0
+:func_b IsFront
+VAR VowelType FoundE Finalguess c
+LET VowelType 0
+LET FoundE 0
+LET Finalguess 0
 {
-s Finalguess 1
-? aouAOU02368
-  s VowelType 1
-? ‰ˆyƒ÷Y14579
-  s VowelType 2
-? eiÈEI…
-  s FoundE 1
-? hkqÂHKQ≈
-  s Finalguess 0
+  LET Finalguess 1
+  ? c aouAOU02368
+    LET VowelType 1
+  ? c ‰ˆyƒ÷Y14579
+    LET VowelType 2
+  ? c eiÈEI…
+    LET FoundE 1
+  ? c hkqÂHKQ≈
+    LET Finalguess 0
 }
 = VowelType 2
   TRUE
@@ -91,64 +90,65 @@ s Finalguess 1
   TRUE
 FALSE
 
-:I Length
+:func_i Length
 VAR Len
-s Len 0
+REG c
+LET Len 0
 {
-+ Len
+  INC Len
 }
 RETURN Len
 
-:I LastChar3
-VAR Hint1 Hint2 Hint3
-s Hint1 0
-s Hint2 0
-s Hint3 0
+:func_i LastChar3
+VAR c1 c2 c3 c
+LET c1 0
+LET c2 0
+LET c3 0
 {
-  s Hint3 Hint2
-  s Hint2 Hint1
-  s Hint1 c
+  LET c3 c2
+  LET c2 c1
+  LET c1 c
 }
-RETURN Hint3
+RETURN c3
 
-:I LastChar2
-VAR Hint1 Hint2
-s Hint1 0
-s Hint2 0
+:func_i LastChar2
+VAR c1 c2 c
+LET c1 0
+LET c2 0
 {
-  s Hint2 Hint1
-  s Hint1 c
+  LET c2 c1
+  LET c1 c
 }
-RETURN Hint2
+RETURN c2
 
-:I LastChar1
-VAR Hint1
-s Hint1 0
+:func_i LastChar1
+VAR c1
+REG c
+LET c1 0
 {
-  s Hint1 c
+  LET c1 c
 }
-RETURN Hint1
+RETURN c1
 
-:B IsAbbrev
-VAR Len Vowels WasVowel ElseFlag
-s Len 0
-s Vowels 0
-s WasVowel 0
+:func_b IsAbbrev
+VAR Len Vowels WasVowel ElseFlag c
+LET Len 0
+LET Vowels 0
+LET WasVowel 0
 {
-  + Len
-  s ElseFlag 1
-  ? aeiouy‰ˆÂÈAEIOUYƒ÷≈…
-    s Vowels 1
-    s WasVowel 1
-    s ElseFlag 0
-  ? 0123456789
-# Number after a vowel means "no vowels"
+  INC Len
+  LET ElseFlag 1
+  ? c aeiouy‰ˆÂÈAEIOUYƒ÷≈…
+    LET Vowels 1
+    LET WasVowel 1
+    LET ElseFlag 0
+  ? c 0123456789
     = WasVowel 1
-      s Vowels 0
-    s WasVowel 0
-    s ElseFlag 0
+      LET Vowels 0
+    #s WasVowel 0
+    #s ElseFlag 0
   = ElseFlag 1
-    s WasVowel 0
+    LET WasVowel 0
 }
 = Len 1
   TRUE
@@ -156,159 +156,161 @@ s WasVowel 0
   TRUE
 FALSE
 
-:B IsEs
-VAR Hint
-ci LastChar2 Hint
-cq IsVowel Hint
-  ci LastChar1 c
-  ? sS
+:func_b IsEs
+REG c2 c
+CALL_GET LastChar2 c2
+IF IsVowel c2
+  CALL_GET LastChar1 c
+  ? c sS
     TRUE
 FALSE
 
-:B EndWithVowel <no_c>
-VAR Hint
-ci LastChar1 Hint
-cq IsVowel Hint
+:func_b EndWithVowel
+REG c1
+CALL_GET LastChar1 c1
+IF IsVowel c1
   TRUE
 FALSE
 
-:B DoubleHard <no_c>
-VAR Hint2 Hint3
-cb EndWithVowel
-  ci LastChar2 Hint2
-  ci LastChar3 Hint3
-  = Hint2 Hint3
-    cq IsKPT Hint2
+:func_b DoubleHard
+VAR c3
+REG c2
+IF EndWithVowel
+  CALL_GET LastChar3 c3
+  CALL_GET LastChar2 c2
+  = c3 c2
+    IF IsKPT c2
       TRUE
 FALSE
 
-:B AkiEnd
-VAR Hint
-ci LastChar3 c
-? aA‰ƒ
-  ci LastChar2 Hint
-  cq IsKPT Hint
-    ci LastChar1 c
-    ? iI
+:func_b AkiEnd
+REG c3 c2 c1
+CALL_GET LastChar3 c3
+? c3 aA‰ƒ
+  CALL_GET LastChar2 c2
+  IF IsKPT c2
+    CALL_GET LastChar1 c1
+    ? c1 iI
       TRUE
 FALSE
 
-:Q OutWord
-VAR Hint
-s Hint c
+:func_b OutWord
+VAR left c
+LET left c
 {
-  = Hint 0
+  = left 0
     RET
   OUT c
-  - Hint
+  DEC left
 }
 RET
 
-:B HardStem
-VAR Len Hint Hint2
-ci Length Len
-cb IsAbbrev
-  cv OutWord Len
+:func_b HardStem
+VAR Len CaseFound c
+CALL_GET Length Len
+IF IsAbbrev
+  CALL OutWord Len
   OUT ':'
-  ci LastChar1 Hint
-  s Hint2 0
-  ? flmnrswxFLMNRSWX479
+  LET CaseFound 0
+  CALL_GET LastChar1 c
+  ? c flmnrswxFLMNRSWX479
     OUT '‰'
-    s Hint2 1
-  ? zZ
+    LET CaseFound 1
+  ? c zZ
     OUT 'a'
-    s Hint2 1
-  ? 0123568
+    LET CaseFound 1
+  ? c 0123568
     RET
-  = Hint2 0
+  = CaseFound 0
     OUT 't'
   RET
-cb IsEs
-  cv OutWord Len
+IF IsEs
+  CALL OutWord Len
   OUT 't'
   RET
-cb EndWithVowel
-  cb AkiEnd
-    - Len
-    cv OutWord Len
+IF EndWithVowel
+  IF AkiEnd
+    DEC Len
+    CALL OutWord Len
     OUT 'e'
     RET
-  cv OutWord Len
+  CALL OutWord Len
   RET
-cv OutWord Len
+CALL OutWord Len
 OUT 'i'
 RET
 
-:B SoftStem <no_c>
-VAR Len Hint
-ci Length Len
-cb IsAbbrev
-  cv OutWord Len
+:func_b SoftStem
+VAR Len
+REG chr
+CALL_GET Length Len
+IF IsAbbrev
+  CALL OutWord Len
   OUT ':'
   RET
-cb IsEs
-  - Len
-  cv OutWord Len
+IF IsEs
+  DEC Len
+  CALL OutWord Len
   OUT 'k'
   OUT 's'
   OUT 'e'
   RET
-cb EndWithVowel
-  cb DoubleHard
-    - Len
-    - Len
-    cv OutWord Len
-    ci LastChar1 Hint
-    OUT Hint
+IF EndWithVowel
+  IF DoubleHard
+    DEC Len
+    DEC Len
+    CALL OutWord Len
+    CALL_GET LastChar1 chr
+    OUT chr
     RET
-  cb AkiEnd
-    - Len
-    - Len
-    cv OutWord Len
+  IF AkiEnd
+    DEC Len
+    DEC Len
+    CALL OutWord Len
     OUT 'e'
     RET
-  cv OutWord Len
+  CALL OutWord Len
   RET
-cv OutWord Len
+CALL OutWord Len
 OUT 'i'
 RET
 
-:B Out_A <no_c>
-cb IsFront
+:func_b Out_A
+IF IsFront
   OUT '‰'
   RET
 OUT 'a'
 RET
 
-:B Do_N <no_c>
-cf SoftStem
+:func_b Do_N
+CALL SoftStem
 OUT 'n'
 RET
 
-:B Do_A <no_c>
-cf HardStem
-cf Out_A
+:func_b Do_A
+CALL HardStem
+CALL Out_A
 RET
 
-:B Do_LLA <no_c>
-cf SoftStem
+:func_b Do_LLA
+CALL SoftStem
 OUT 'l'
 OUT 'l'
-cf Out_A
+CALL Out_A
 RET
 
-:B Do_LLE <no_c>
-cf SoftStem
+:func_b Do_LLE
+CALL SoftStem
 OUT 'l'
 OUT 'l'
 OUT 'e'
 RET
 
-:B Do_STA <no_c>
-cf SoftStem
+:func_b Do_STA
+CALL SoftStem
 OUT 's'
 OUT 't'
-cf Out_A
+CALL Out_A
 RET
 
 # -- End --
