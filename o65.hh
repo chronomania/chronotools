@@ -5,7 +5,7 @@
  * For loading and linking 65816 object files
  * Copyright (C) 1992,2003 Bisqwit (http://iki.fi/bisqwit/)
  *
- * Version 1.1.0 - Aug 18 2003, Sep 4 2003
+ * Version 1.2.0 - Aug 18 2003, Sep 4 2003
  */
 
 #include <cstdio>
@@ -44,6 +44,10 @@ public:
     O65();
     ~O65();
     
+    // Copy constructor, assignment operator
+    O65(const O65 &);
+    void operator= (const O65 &);
+    
     /* Loads an object file from the specified file */
     void Load(FILE *fp);
     
@@ -62,6 +66,11 @@ public:
     /* Returns the address of a global defined in TEXT segment */
     unsigned GetSymAddress(const string& name) const;
     
+    bool HasSym(const string& name) const;
+    
+    const vector<string> GetSymbolList() const;
+    const vector<string> GetExternList() const;
+    
     /* Verifies that all symbols have been properly defined */
     void Verify() const;
 
@@ -69,10 +78,6 @@ public:
 private:
     // undefined symbols; sym -> defined_flag -> old value
     vector<pair<string, pair<bool, unsigned> > > undefines;
-    
-    // No assigning
-    O65(const O65 &);
-    void operator= (const O65 &);
     
     segment *text, *data;
 };

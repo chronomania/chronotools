@@ -1,7 +1,7 @@
 # This is Bisqwit's generic depfun.mak, included from Makefile.
 # The same file is used in many different projects.
 #
-# depfun.mak version 1.5.0
+# depfun.mak version 1.5.1
 #
 # Required vars:
 #
@@ -43,6 +43,7 @@
 	    cd "$$n"; \
 	 done;\
 	 wait;\
+	 touch $@.dummy; \
 	 cat $@.* >$@ \
 	 && cp -f $@ $@.tmp \
 	 && sed 's/\.o:/.lo:/' <$@.tmp >>$@ \
@@ -51,7 +52,7 @@
 depend dep: .depend
 
 
-include .depend
+-include .depend
 
 
 archpak: ${ARCHFILES}

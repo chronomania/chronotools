@@ -11,6 +11,8 @@
 #include "snescode.hh"
 #include "ctcset.hh"
 
+#include "o65linker.hh"
+
 using namespace std;
 
 const string DispString(const ctstring &s, unsigned symbols_type=16);
@@ -71,6 +73,8 @@ private:
     Font8data Font8;
     Font8vdata Font8v;
     Font12data Font12;
+    
+    O65linker objects;
 
     freespacemap freespace;
     

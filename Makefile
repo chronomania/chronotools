@@ -67,6 +67,7 @@ DEPDIRS = utils/
 # VERSION 1.6.2  fixed the vwf8 scrolling problems and some other bugs
 # VERSION 1.6.3  battle item lister fixed - no vwf8 problems there now
 # VERSION 1.6.4  battle tech lister almost done; dumper: partial jap ROM support
+# VERSION 1.6.5  is working on an assembler
 
 OPTIM=-O3
 #OPTIM=-O0
@@ -75,7 +76,7 @@ OPTIM=-O3
 
 CXXFLAGS += -I.
 
-VERSION=1.6.4
+VERSION=1.6.5
 ARCHFILES=utils/xray.cc utils/xray.h \
           utils/viewer.c \
           utils/vwftest.cc \
@@ -102,6 +103,7 @@ ARCHFILES=utils/xray.cc utils/xray.h \
           images.cc images.hh \
           fonts.cc fonts.hh \
           o65.cc o65.hh \
+          o65linker.cc o65linker.hh \
           logfiles.cc logfiles.hh \
           conjugate.cc conjugate.hh \
           stringoffs.cc stringoffs.hh \
@@ -120,9 +122,11 @@ ARCHFILES=utils/xray.cc utils/xray.h \
           taipus.rb ct.code \
           progdesc.php \
           binpacker.tcc binpacker.hh \
+          tristate.hh \
           \
           utils/compiler2.cc utils/compiler2-parser.inc utils/ct.code2 \
           utils/o65test.cc utils/dumpo65.cc \
+          utils/assemble.cc utils/insgen.cc \
           \
           README transnotes.txt Makefile.sets \
           \

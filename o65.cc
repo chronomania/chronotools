@@ -176,6 +176,20 @@ O65::~O65()
     delete data;
 }
 
+O65::O65(const O65& b): undefines(b.undefines)
+{
+    text = b.text ? new segment(*b.text) : NULL;
+    data = b.data ? new segment(*b.data) : NULL;
+    undefines = b.undefines;
+}
+void O65::operator= (const O65& b)
+{
+    if(&b == this) return;
+    delete text; text = b.text ? new segment(*b.text) : NULL;
+    delete data; data = b.data ? new segment(*b.data) : NULL;
+    undefines = b.undefines;
+}
+
 void O65::Load(FILE *fp)
 {
     rewind(fp);
@@ -434,6 +448,37 @@ unsigned O65::GetCodeSize() const
 unsigned O65::GetSymAddress(const string& name) const
 {
     return text->symbols.find(name)->second;
+}
+
+bool O65::HasSym(const string& name) const
+{
+    return text->symbols.find(name) != text->symbols.end();
+}
+
+const vector<string> O65::GetSymbolList() const
+{
+    vector<string> result;
+    for(map<string, unsigned>::const_iterator
+        i = text->symbols.begin();
+        i != text->symbols.end();
+        ++i)
+    {
+        result.push_back(i->first);
+    }
+    return result;
+}
+
+const vector<string> O65::GetExternList() const
+{
+    vector<string> result;
+    
+    for(unsigned a=0; a<undefines.size(); ++a)
+    {
+        if(undefines[a].second.first) continue;
+        result.push_back(undefines[a].first);
+    }
+    
+    return result;
 }
 
 void O65::Verify() const

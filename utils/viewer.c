@@ -148,7 +148,7 @@ static int Equal(const unsigned char *s, const unsigned char *s2, unsigned step,
 }
 
 static long SlangPos=0;
-static int OpenVCSA()
+static int OpenVCSA(void)
 {
     //return open("/dev/vcsa0", O_WRONLY);
     SLsig_block_signals();
@@ -174,11 +174,11 @@ static long TellVCSA(int fd)
     fd=fd;
     return 4 + SlangPos*2;
 }
-static void SeekVCSA(int fd, long pos)
+static void SeekVCSA(int fd, long newpos)
 {
-    //lseek(fd, pos, SEEK_SET);
+    //lseek(fd, newpos, SEEK_SET);
     fd=fd;
-    SlangPos = (pos-4)/2;
+    SlangPos = (newpos-4)/2;
 }
 static void CloseVCSA(int fd)
 {
@@ -279,6 +279,7 @@ static void display(void)
 	        "Ö«»:-()'.,åäöé¶ "   // E0  EE=musicsymbol
 	        "¶¶%É=&+#!?¶¶¶/¶_";  // F0  F0=heartsymbol, F1=..., F2=infinity
 #endif
+        char attr=0, chr=0;
         
         #define writ(byt, attr) do{\
             WriteVCSA(fd, (byt), (attr)); \
@@ -307,8 +308,8 @@ static void display(void)
             continue;
         }
             
-        char attr = searchtype?14:7;
-        char chr = *s + add;
+        attr = searchtype?14:7;
+        chr = *s + add;
         switch(usecset)
         {
             case normalset:
@@ -358,9 +359,14 @@ static void display(void)
         && (unsigned char)*s >= 0x21
         && (unsigned char)*s <  0xA0)
         {
+        	unsigned dict_start = (
+        	             data[CT_HDR+0x0258DE] + 256*data[CT_HDR+0x0258DF]
+        	           + 65536*data[CT_HDR+0x0258E0]
+        	                      ) & 0x3FFFFF;
+        	
         	unsigned dict_ind = (unsigned char)*s - 0x21;
-        	unsigned dict_ptr  = CT_HDR+0x1EFA00 + dict_ind*2;
-        	unsigned dict_addr = CT_HDR+0x1E0000 + data[dict_ptr] + 256*data[dict_ptr+1];
+        	unsigned dict_ptr  = CT_HDR+dict_start + dict_ind*2;
+        	unsigned dict_addr = CT_HDR+(dict_start&0xFF0000) + data[dict_ptr] + 256*data[dict_ptr+1];
         	unsigned count=data[dict_addr++];
         	
         	if(count > 16) count = 16;
