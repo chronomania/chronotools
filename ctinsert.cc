@@ -232,12 +232,14 @@ int main(void)
     insertor *ins = new insertor;
     
     string font8fn  = WstrToAsc(GetConf("font",   "font8fn"));
+    string font8vfn = WstrToAsc(GetConf("font",   "font8vfn"));
     string font12fn = WstrToAsc(GetConf("font",   "font12fn"));
     string scriptfn = WstrToAsc(GetConf("readin", "scriptfn"));
     
     // Font loading must happen before script loading,
     // or script won't be properly paragraph-wrapped.
     ins->LoadFont8(font8fn);
+    ins->LoadFont8v(font8vfn);
     ins->LoadFont12(font12fn);
     
     FILE *fp = fopen(scriptfn.c_str(), "rt");

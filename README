@@ -400,11 +400,12 @@ $C2:5DE7 A5 34       LDA [$00:D+$34]      ;$00:0234     A:4388 X:0000 Y:0030 D:0
 $C2:5DE9 29 07 00    AND A, $0007                       A:EF00 X:0000 Y:0030 D:0200 DB:7E PB:C2
 // Sijoitetaan $026A:han se.
 $C2:5DEC 85 6A       STA [$00:D+$6A]      ;$00:026A     A:0000 X:0000 Y:0030 D:0200 DB:7E PB:C2
-// $0210 saattaa olla positio ruudulla.
+// $0210 sis‰lt‰‰ pointterin tiletableen.
 $C2:5DEE A5 10       LDA [$00:D+$10]      ;$00:0210     A:0000 X:0000 Y:0030 D:0200 DB:7E PB:C2
 $C2:5DF0 18          CLC                                A:7000 X:0000 Y:0030 D:0200 DB:7E PB:C2
 $C2:5DF1 69 08 00    ADC A, $0008                       A:7000 X:0000 Y:0030 D:0200 DB:7E PB:C2
-// Lis‰ttiin 8, ja sijoitetaan $0273:een se (long).
+// Lis‰ttiin 8.
+// $0273 on seuraavan tilen osoite? (long)
 $C2:5DF4 85 73       STA [$00:D+$73]      ;$00:0273     A:7008 X:0000 Y:0030 D:0200 DB:7E PB:C2
 $C2:5DF6 E2 20       SEP $20                            A:7008 X:0000 Y:0030 D:0200 DB:7E PB:C2
 $C2:5DF8 A5 12       LDA [$00:D+$12]      ;$00:0212     A:7008 X:0000 Y:0030 D:0200 DB:7E PB:C2
@@ -429,9 +430,11 @@ $C2:5E0E 85 62       STA [$00:D+$62]      ;$00:0262     A:70EF X:0000 Y:0030 D:0
 $C2:5E10 A5 14       LDA [$00:D+$14]      ;$00:0214     A:70EF X:0000 Y:0030 D:0200 DB:7E PB:C2
 $C2:5E12 29 0F       AND A, $0F                         A:7080 X:0000 Y:0030 D:0200 DB:7E PB:C2
 $C2:5E14 D0 05       BNE $5E1B                          A:7000 X:0000 Y:0030 D:0200 DB:7E PB:C2
+// Piirret‰‰n!!!
 $C2:5E16 20 36 5E    JSR DB:$5E36         ;$7E:5E36     A:7000 X:0000 Y:0030 D:0200 DB:7E PB:C2
-// ??
+// Nyt piirretty. ??
 $C2:5E19 80 03       BRA $5E1E                          A:0000 X:0000 Y:0000 D:0200 DB:7E PB:C2
+// FIXME: t‰st‰ puuttuu 5E1B
 $C2:5E1E A9 00       LDA A, $00                         A:0000 X:0000 Y:0000 D:0200 DB:7E PB:C2
 $C2:5E20 EB          XBA                                A:0000 X:0000 Y:0000 D:0200 DB:7E PB:C2
 $C2:5E21 38          SEC                                A:0000 X:0000 Y:0000 D:0200 DB:7E PB:C2
@@ -450,28 +453,35 @@ $C2:5E35 60          RTS                                A:0000 X:004F Y:0000 D:0
 
 // Rutiini 5E36: 
 $C2:5E36 8B          PHB                                A:7000 X:0000 Y:0030 D:0200 DB:7E PB:C2
+// DB-rekisterin arvoksi $C2 (syy?)
 $C2:5E37 A9 C2       LDA A, $C2                         A:7000 X:0000 Y:0030 D:0200 DB:7E PB:C2
 $C2:5E39 48          PHA                                A:70C2 X:0000 Y:0030 D:0200 DB:7E PB:C2
 $C2:5E3A AB          PLB                                A:70C2 X:0000 Y:0030 D:0200 DB:7E PB:C2
+
 $C2:5E3B A9 04       LDA A, $04                         A:70C2 X:0000 Y:0030 D:0200 DB:C2 PB:C2
 $C2:5E3D 85 68       STA [$00:D+$68]      ;$00:0268     A:7004 X:0000 Y:0030 D:0200 DB:C2 PB:C2
+// Nollataan tavulaskuri...
 $C2:5E3F 64 60       STZ [$00:D+$60]      ;$00:0260     A:7004 X:0000 Y:0030 D:0200 DB:C2 PB:C2
 $C2:5E41 64 61       STZ [$00:D+$61]      ;$00:0261     A:7004 X:0000 Y:0030 D:0200 DB:C2 PB:C2
+//// FOR TMP0268 = 1 TO 4
+
+// T‰m‰ kahdesti:
 $C2:5E43 20 89 5E    JSR DB:$5E89         ;$C2:5E89     A:7004 X:0000 Y:0030 D:0200 DB:C2 PB:C2
-// ??
 $C2:5E46 C2 20       REP $20                            A:0000 X:0000 Y:0000 D:0200 DB:C2 PB:C2
 $C2:5E48 E6 60       INC [$00:D+$60]      ;$00:0260     A:0000 X:0000 Y:0000 D:0200 DB:C2 PB:C2
 $C2:5E4A E6 73       INC [$00:D+$73]      ;$00:0273     A:0000 X:0000 Y:0000 D:0200 DB:C2 PB:C2
 $C2:5E4C E2 20       SEP $20                            A:0000 X:0000 Y:0000 D:0200 DB:C2 PB:C2
+
 $C2:5E4E 20 89 5E    JSR DB:$5E89         ;$C2:5E89     A:0000 X:0000 Y:0000 D:0200 DB:C2 PB:C2
-// ??
 $C2:5E51 C2 20       REP $20                            A:0000 X:0000 Y:0000 D:0200 DB:C2 PB:C2
 $C2:5E53 E6 60       INC [$00:D+$60]      ;$00:0260     A:0000 X:0000 Y:0000 D:0200 DB:C2 PB:C2
 $C2:5E55 E6 73       INC [$00:D+$73]      ;$00:0273     A:0000 X:0000 Y:0000 D:0200 DB:C2 PB:C2
 $C2:5E57 E2 20       SEP $20                            A:0000 X:0000 Y:0000 D:0200 DB:C2 PB:C2
+
 $C2:5E59 C6 68       DEC [$00:D+$68]      ;$00:0268     A:0000 X:0000 Y:0000 D:0200 DB:C2 PB:C2
 $C2:5E5B D0 E6       BNE $5E43                          A:0000 X:0000 Y:0000 D:0200 DB:C2 PB:C2
-// - loop
+//// NEXT
+
 $C2:5E5D C2 20       REP $20                            A:0000 X:0000 Y:0000 D:0200 DB:C2 PB:C2
 $C2:5E5F A5 73       LDA [$00:D+$73]      ;$00:0273     A:0000 X:0000 Y:0000 D:0200 DB:C2 PB:C2
 $C2:5E61 18          CLC                                A:7010 X:0000 Y:0000 D:0200 DB:C2 PB:C2
@@ -480,26 +490,39 @@ $C2:5E65 85 73       STA [$00:D+$73]      ;$00:0273     A:7100 X:0000 Y:0000 D:0
 $C2:5E67 E2 20       SEP $20                            A:7100 X:0000 Y:0000 D:0200 DB:C2 PB:C2
 $C2:5E69 A9 08       LDA A, $08                         A:7100 X:0000 Y:0000 D:0200 DB:C2 PB:C2
 $C2:5E6B 85 68       STA [$00:D+$68]      ;$00:0268     A:7108 X:0000 Y:0000 D:0200 DB:C2 PB:C2
+//// FOR TMP0268 = 1 TO 8
+
+// T‰m‰ kahdesti t‰‰ll‰kin:
 $C2:5E6D 20 89 5E    JSR DB:$5E89         ;$C2:5E89     A:7108 X:0000 Y:0000 D:0200 DB:C2 PB:C2
-// ??
 $C2:5E70 C2 20       REP $20                            A:0000 X:0000 Y:0000 D:0200 DB:C2 PB:C2
 $C2:5E72 E6 60       INC [$00:D+$60]      ;$00:0260     A:0000 X:0000 Y:0000 D:0200 DB:C2 PB:C2
 $C2:5E74 E6 73       INC [$00:D+$73]      ;$00:0273     A:0000 X:0000 Y:0000 D:0200 DB:C2 PB:C2
 $C2:5E76 E2 20       SEP $20                            A:0000 X:0000 Y:0000 D:0200 DB:C2 PB:C2
+
 $C2:5E78 20 89 5E    JSR DB:$5E89         ;$C2:5E89     A:0000 X:0000 Y:0000 D:0200 DB:C2 PB:C2
-// ??
 $C2:5E7B C2 20       REP $20                            A:0000 X:0000 Y:0000 D:0200 DB:C2 PB:C2
 $C2:5E7D E6 60       INC [$00:D+$60]      ;$00:0260     A:0000 X:0000 Y:0000 D:0200 DB:C2 PB:C2
 $C2:5E7F E6 73       INC [$00:D+$73]      ;$00:0273     A:0000 X:0000 Y:0000 D:0200 DB:C2 PB:C2
 $C2:5E81 E2 20       SEP $20                            A:0000 X:0000 Y:0000 D:0200 DB:C2 PB:C2
+
 $C2:5E83 C6 68       DEC [$00:D+$68]      ;$00:0268     A:0000 X:0000 Y:0000 D:0200 DB:C2 PB:C2
 $C2:5E85 D0 E6       BNE $5E6D                          A:0000 X:0000 Y:0000 D:0200 DB:C2 PB:C2
-// - loop
+//// NEXT
 $C2:5E87 AB          PLB                                A:0000 X:0000 Y:0000 D:0200 DB:C2 PB:C2
 $C2:5E88 60          RTS                                A:0000 X:0000 Y:0000 D:0200 DB:7E PB:C2
 
 
 // Rutiini 5E89:
+//  PARAMETREJƒ:
+//    $0276: (long) pointteri merkkiin fontissa, part 1
+//    $0279: (long) pointteri merkkiin fontissa, part 2
+//    $0260: (word) Tavulaskuri, ett‰ miss‰ menn‰‰n???
+//    $0273: (word) Positio ruudulla
+//  PAIKALLISIA/GLOBAALEJA:
+//    $0263: (word)
+//    $026A: (word)
+//    $026E: (word) 
+//    
 $C2:5E89 A4 60       LDY [$00:D+$60]      ;$00:0260     A:0000 X:0000 Y:0000 D:0200 DB:C2 PB:C2
 // Hakee merkin alkuosan ja yhdist‰‰ siihen edellisen
 $C2:5E8B B7 76       LDA [long[$00:D+$76]+y] ;$FF:36D1  A:0000 X:0000 Y:0009 D:0200 DB:C2 PB:C2
@@ -527,16 +550,63 @@ $C2:5EA9 0A          ASL A                              A:0000 X:0000 Y:0000 D:0
 $C2:5EAA AA          TAX                                A:0000 X:0000 Y:0000 D:0200 DB:C2 PB:C2
 $C2:5EAB 98          TYA                                A:0000 X:0000 Y:0000 D:0200 DB:C2 PB:C2
 $C2:5EAC 7C AF 5E    JMP [PB:word[PB:$5EAF+x]] ;$C2:5EBF A:0000 X:0000 Y:0000 D:0200 DB:C2 PB:C
+// Mik‰ t‰m‰ on?
 $C2:5EBF E2 20       SEP $20                            A:0000 X:0000 Y:0000 D:0200 DB:C2 PB:C2
 $C2:5EC1 A6 6E       LDX [$00:D+$6E]      ;$00:026E     A:0000 X:0000 Y:0000 D:0200 DB:C2 PB:C2
 $C2:5EC3 BC E8 5F    LDY DB:($5FE8+x)     ;$C2:5FE8     A:0000 X:0000 Y:0000 D:0200 DB:C2 PB:C2
-;; 5FE8 n‰ytt‰‰ hakevan luvun (x+2)*8.
+// 5FE8 n‰ytt‰‰ hakevan luvun (x+2)*8.
+// T‰m‰ asettaa n‰yttˆmuistiin tavaraa!
+//   Pointteri tileen on $0273, ja siell‰ lukee esim. $7000
 $C2:5EC6 97 73       STA [long[$00:D+$73]+y] ;$7E:7018  A:0000 X:0000 Y:0010 D:0200 DB:C2 PB:C2
+
+// Tapaus x=00:
 $C2:5EC8 BC E6 5F    LDY DB:($5FE6+x)     ;$C2:5FE6     A:0000 X:0000 Y:0010 D:0200 DB:C2 PB:C2
 ;; 5FE6 n‰ytt‰‰ hakevan luvun x*8.
 $C2:5ECB EB          XBA                                A:0000 X:0000 Y:0000 D:0200 DB:C2 PB:C2
+// T‰m‰ asettaa n‰yttˆmuistiin tavaraa!
 $C2:5ECC 97 73       STA [long[$00:D+$73]+y] ;$7E:7008  A:0000 X:0000 Y:0000 D:0200 DB:C2 PB:C2
 $C2:5ECE 60          RTS                                A:0000 X:0000 Y:0000 D:0200 DB:C2 PB:C2
+
+// Tapaus X=08:
+$C2:5ECF 4A          LSR A                              A:0000 X:0008 Y:0000 D:0200 DB:C2 PB:C2
+// Tapaus X=06:
+$C2:5ED0 4A          LSR A                              A:0000 X:0008 Y:0000 D:0200 DB:C2 PB:C2
+// Tapaus X=04:
+$C2:5ED1 4A          LSR A                              A:0000 X:0008 Y:0000 D:0200 DB:C2 PB:C2
+// Tapaus X=02:
+$C2:5ED2 4A          LSR A                              A:0000 X:0008 Y:0000 D:0200 DB:C2 PB:C2
+$C2:5ED3 E2 20       SEP $20                            A:0000 X:0008 Y:0000 D:0200 DB:C2 PB:C2
+$C2:5ED5 A6 6E       LDX [$00:D+$6E]      ;$00:026E     A:0000 X:0008 Y:0000 D:0200 DB:C2 PB:C2
+$C2:5ED7 BC E8 5F    LDY DB:($5FE8+x)     ;$C2:5FEC     A:0000 X:0004 Y:0000 D:0200 DB:C2 PB:C2
+$C2:5EDA 97 73       STA [long[$00:D+$73]+y] ;$7E:7038  A:0000 X:0004 Y:0030 D:0200 DB:C2 PB:C2
+$C2:5EDC BC E6 5F    LDY DB:($5FE6+x)     ;$C2:5FEA     A:0000 X:0004 Y:0030 D:0200 DB:C2 PB:C2
+$C2:5EDF EB          XBA                                A:0000 X:0004 Y:0020 D:0200 DB:C2 PB:C2
+$C2:5EE0 17 73       ORA [long[$00:D+$73]+y] ;$7E:7028  A:0000 X:0004 Y:0020 D:0200 DB:C2 PB:C2
+$C2:5EE2 97 73       STA [long[$00:D+$73]+y] ;$7E:7028  A:0000 X:0004 Y:0020 D:0200 DB:C2 PB:C2
+$C2:5EE4 60          RTS                                A:0000 X:0004 Y:0020 D:0200 DB:C2 PB:C2
+
+// Tapaus X=0A:
+$C2:5EE5 0A          ASL A                              A:0000 X:000A Y:0000 D:0200 DB:C2 PB:C2
+$C2:5EE6 26 63       ROL [$00:D+$63]      ;$00:0263     A:0000 X:000A Y:0000 D:0200 DB:C2 PB:C2
+// Tapaus x=0C:
+$C2:5EE8 0A          ASL A                              A:0000 X:000C Y:0000 D:0200 DB:C2 PB:C2
+$C2:5EE9 26 63       ROL [$00:D+$63]      ;$00:0263     A:0000 X:000C Y:0000 D:0200 DB:C2 PB:C2
+// Tapaus X=0E:
+$C2:5EEB 0A          ASL A                              A:0000 X:000C Y:0000 D:0200 DB:C2 PB:C2
+$C2:5EEC 26 63       ROL [$00:D+$63]      ;$00:0263     A:0000 X:000C Y:0000 D:0200 DB:C2 PB:C2
+$C2:5EEE E2 20       SEP $20                            A:0000 X:000C Y:0000 D:0200 DB:C2 PB:C2
+$C2:5EF0 A6 6E       LDX [$00:D+$6E]      ;$00:026E     A:0000 X:000C Y:0000 D:0200 DB:C2 PB:C2
+$C2:5EF2 BC EA 5F    LDY DB:($5FEA+x)     ;$C2:5FEA     A:0000 X:0000 Y:0000 D:0200 DB:C2 PB:C2
+$C2:5EF5 97 73       STA [long[$00:D+$73]+y] ;$7E:7028  A:0000 X:0000 Y:0020 D:0200 DB:C2 PB:C2
+$C2:5EF7 BC E8 5F    LDY DB:($5FE8+x)     ;$C2:5FE8     A:0000 X:0000 Y:0020 D:0200 DB:C2 PB:C2
+$C2:5EFA EB          XBA                                A:0000 X:0000 Y:0010 D:0200 DB:C2 PB:C2
+$C2:5EFB 97 73       STA [long[$00:D+$73]+y] ;$7E:7018  A:0000 X:0000 Y:0010 D:0200 DB:C2 PB:C2
+$C2:5EFD BC E6 5F    LDY DB:($5FE6+x)     ;$C2:5FE6     A:0000 X:0000 Y:0010 D:0200 DB:C2 PB:C2
+$C2:5F00 A5 63       LDA [$00:D+$63]      ;$00:0263     A:0000 X:0000 Y:0000 D:0200 DB:C2 PB:C2
+$C2:5F02 17 73       ORA [long[$00:D+$73]+y] ;$7E:7008  A:0000 X:0000 Y:0000 D:0200 DB:C2 PB:C2
+$C2:5F04 97 73       STA [long[$00:D+$73]+y] ;$7E:7008  A:00E0 X:0000 Y:0000 D:0200 DB:C2 PB:C2
+$C2:5F06 60          RTS                                A:00E0 X:0000 Y:0000 D:0200 DB:C2 PB:C2
+
 
 
 Tiedot fontista:
@@ -555,17 +625,426 @@ Tiedot fontista:
    mutta niin ett‰ kaksi per‰kk‰ist‰ merkki‰ jakavat 
    saman puolikkaan.      
 
-   
-[1EFA00]
-4AFB57FB38FCADFB18FC5FFC05FB9DFB0DFCB7FB44FCCBFC40FC07FCBDFC34FC
-2FFC2BFB62FCE2FB90FC0AFCFEFBB0FB76FB15FB2CFC6EFC09FB5BFC58FC41FB
-8BFCE8FBE5FB24FCADFC72FB93FBB0FC87FB6DFBC7FC4EFBD2FCDFFBE7FC31FB
-82FBFEFC1BFCDEFCBAFB45FBD5FC5DFB4BFC79FB04FC5AFB85FC9CFC67FBEBFC
-C0FCA0FBEEFC6BFCEFFBEBFBB3FBB3FC71FCB6FC3CFBA7FC68FC55FCF5FB96FB
-8BFB7CFBBEFB53FB47FCCEFCA3FB28FC1EFB36FB8FFB3BFCA4FCDAFCFAFB11FB
-94FC01FC1BFB65FC7CFCE2FC18FBDCFB2EFB20FC98FCA0FC80FC61FBCEFB24FB
-C1FB21FB0CFB99FB00FB77FCA7FBAAFCC8FBBAFCD1FB4FFCD7FBC3FC11FCFAFC
-T‰m‰ pointteritaulu kertoo tavujen 0x21..0x9F merkityksen.
+
+ASETEKNIIKAT:
+
+;X on t‰ss‰ aina 0.
+$C2:BDD5 86 7E       STX [$00:D+$7E]      ;$00:007E     A:0000 X:0000 Y:0067 D:0000 DB:7E PB:C2
+
+; T‰m‰ $15C4 t‰ss‰ on offset tekniikkalista-tauluun.
+$C2:BDD7 C2 31       REP $31                            A:0000 X:0000 Y:0067 D:0000 DB:7E PB:C2
+$C2:BDD9 A9 C4 15    LDA A, $15C4                       A:0000 X:0000 Y:0067 D:0000 DB:7E PB:C2
+; Lis‰t‰‰n k‰sitelt‰v‰n tekniikan numero kaiketi.
+$C2:BDDC 6F 16 42 00 ADC $00:$4216        ;$00:4216     A:15C4 X:0000 Y:0067 D:0000 DB:7E PB:C2
+$C2:BDE0 A8          TAY                                A:1A31 X:0000 Y:0067 D:0000 DB:7E PB:C2
+$C2:BDE1 A6 61       LDX [$00:D+$61]      ;$00:0061     A:1A31 X:0000 Y:1A31 D:0000 DB:7E PB:C2
+; $0B on pituus, $CC on tekniikkalistan segmentti.
+$C2:BDE3 A9 0B CC    LDA A, $CC0B                       A:1A31 X:3024 Y:1A31 D:0000 DB:7E PB:C2
+$C2:BDE6 20 65 EF    JSR DB:$EF65         ;$7E:EF65     A:CC0B X:3024 Y:1A31 D:0000 DB:7E PB:C2
+; Ks alla
+$C2:BDE9 28          PLP                                A:0BDC X:303A Y:1A3C D:0000 DB:7E PB:C2
+$C2:BDEA 60          RTS                                A:0BDC X:303A Y:1A3C D:0000 DB:7E PB:C2
+
+
+WEAPON HELMET ARMOR ACCESSORY:
+
+; $A3BA on offset
+$C2:A39D 69 BA A3    ADC A, $A3BA                       A:0000 X:0002 Y:0001 D:0000 DB:7E PB:C2
+$C2:A3A0 A8          TAY                                A:A3BA X:0002 Y:0001 D:0000 DB:7E PB:C2
+$C2:A3A1 64 7D       STZ [$00:D+$7D]      ;$00:007D     A:A3BA X:0002 Y:A3BA D:0000 DB:7E PB:C2
+$C2:A3A3 A2 86 30    LDX $3086                          A:A3BA X:0002 Y:A3BA D:0000 DB:7E PB:C2
+; 0A pituus ja C2 segmentti
+$C2:A3A6 A9 0A C2    LDA A, $C20A                       A:A3BA X:3086 Y:A3BA D:0000 DB:7E PB:C2
+$C2:A3A9 20 65 EF    JSR DB:$EF65         ;$7E:EF65     A:C20A X:3086 Y:A3BA D:0000 DB:7E PB:C2
+
+ITEMS - EQUIP-RUUDUN VASEN LISTA:
+
+$C2:A583 F0 01       BEQ $A586                          A:0038 X:4FC6 Y:0000 D:0000 DB:7E PB:C2
+$C2:A585 C8          INY                                A:0038 X:4FC6 Y:0000 D:0000 DB:7E PB:C2
+$C2:A586 C2 30       REP $30                            A:0038 X:4FC6 Y:0001 D:0000 DB:7E PB:C2
+$C2:A588 DA          PHX                                A:0038 X:4FC6 Y:0001 D:0000 DB:7E PB:C2
+$C2:A589 5A          PHY                                A:0038 X:4FC6 Y:0001 D:0000 DB:7E PB:C2
+$C2:A58A 20 9A A5    JSR PB:$A59A         ;$C2:A59A     A:0038 X:4FC6 Y:0001 D:0000 DB:7E PB:C2
+$C2:A59A 08          PHP                                A:0038 X:4FC6 Y:0001 D:0000 DB:7E PB:C2
+$C2:A59B C2 30       REP $30                            A:0038 X:4FC6 Y:0001 D:0000 DB:7E PB:C2
+$C2:A59D A9 00 20    LDA A, $2000                       A:0038 X:4FC6 Y:0001 D:0000 DB:7E PB:C2
+$C2:A5A0 85 7D       STA [$00:D+$7D]      ;$00:007D     A:2000 X:4FC6 Y:0001 D:0000 DB:7E PB:C2
+$C2:A5A2 AD C9 04    LDA DB:$04C9         ;$7E:04C9     A:2000 X:4FC6 Y:0001 D:0000 DB:7E PB:C2
+$C2:A5A5 29 FF 00    AND A, $00FF                       A:0038 X:4FC6 Y:0001 D:0000 DB:7E PB:C2
+$C2:A5A8 F0 0C       BEQ $A5B6                          A:0038 X:4FC6 Y:0001 D:0000 DB:7E PB:C2
+$C2:A5AA 20 E2 F2    JSR DB:$F2E2
+; Skipataan eka merkki!
+$C2:A5AD 3A          DEC A                              A:CC0B X:4FC6 Y:1183 D:0000 DB:7E PB:C2
+$C2:A5AE C8          INY                                A:CC0A X:4FC6 Y:1183 D:0000 DB:7E PB:C2
+$C2:A5AF 20 65 EF    JSR DB:$EF65         ;$7E:EF65     A:CC0A X:4FC6 Y:1184 D:0000 DB:7E PB:C2
+$C2:A5B2 64 7D       STZ [$00:D+$7D]      ;$00:007D     
+$C2:A5B4 28          PLP                                
+$C2:A5B5 60          RTS                                
+
+
+ITEM-HAKUFUNKTIO:
+
+$C2:F2E2 08          PHP                                A:008F X:4FC6 Y:0001 D:0000 DB:7E PB:C2
+$C2:F2E3 C2 30       REP $30                            A:008F X:4FC6 Y:0001 D:0000 DB:7E PB:C2
+;Jos t‰m‰n muuttaa LDA:ksi, se vaikuttaa seuraaviin:
+; Equip: oikeanpuoleinen lista (bg#0)
+; Equip: vasemmanpuoleinen lista (bg#2)
+; Osta/myy -ruudut kaupassa (bg #0)
+; Equip kaupassa: oikeanpuoleinen lista (bg#0)
+; Equip kaupassa: vasemmanpuoleinen lista (bg#2)
+;Se ei vaikuta n‰ihin:
+; Item-selain inventaariossa (bg#0)
+; Item-selain taistelussa (bg#2)
+; "xxx saatu" taistelussa (bg#2, isompi fontti)
+;
+;Kaikki muut paitsi item-selain taistelussa
+;tulkitsevat erikoiskoodeja. Item-selain taistelussa
+;vain piirt‰‰ suoraan sellaisenaan.
+;
+; T‰m‰ funktio asettaa arvoja rekistereihin: A Y
+; Muut rekisterit, myˆs liput, pysyv‰t.
+$C2:F2E5 29 FF 00    AND A, $00FF                       A:008F X:4FC6 Y:0001 D:0000 DB:7E PB:C2
+$C2:F2E8 0A          ASL A                              A:008F X:4FC6 Y:0001 D:0000 DB:7E PB:C2
+$C2:F2E9 A8          TAY                                A:011E X:4FC6 Y:0001 D:0000 DB:7E PB:C2
+; Mist‰ t‰m‰ pointteri oikein tulee?
+$C2:F2EA B9 00 7D    LDA DB:($7D00+y)     ;$7E:7E1E     A:011E X:4FC6 Y:011E D:0000 DB:7E PB:C2
+$C2:F2ED A8          TAY                                A:1183 X:4FC6 Y:011E D:0000 DB:7E PB:C2
+; T‰m‰ on joka tapauksessa segmentti ja pituus.
+$C2:F2EE A9 0B CC    LDA A, $CC0B                       A:1183 X:4FC6 Y:1183 D:0000 DB:7E PB:C2
+$C2:F2F1 28          PLP                                A:CC0B X:4FC6 Y:1183 D:0000 DB:7E PB:C2
+; Paluuarvot:
+;  Y  = offset
+;  Ah = segment
+;  Al = length
+$C2:F2F2 60          RTS                                A:CC0B X:4FC6 Y:1183 D:0000 DB:7E PB:C2
+
+
+ITEMS:
+
+; T‰h‰n p‰‰dyt‰‰n tilanteissa:
+;  - equip-lista (oikea puoli)
+;  - kauppa
+;  - equip-lista kaupassa (oikea puoli)
+; T‰t‰ ei k‰yt‰:
+;  - equip-lista (vasen puoli)
+;  - equip-lista kaupassa (vasen puoli)
+;  - items-selain inventaariossa
+; A:ssa on itemin numero
+; 
+$C2:F2DC 20 E2 F2    JSR DB:$F2E2         ;$7E:F2E2     A:0005 X:2F5C Y:000A D:0000 DB:7E PB:C2
+;Ks yll‰
+$C2:F2DF 4C 65 EF    JMP DB:$EF65         ;$7E:EF65     A:CC0B X:2F5C Y:0B95 D:0000 DB:7E PB:C2
+
+
+; T‰m‰ lienee geneerinen tekstintulostusrutiini 8x8-fontille.
+; T‰t‰ k‰ytt‰‰:
+; - kaikki item-ruudut, paitsi ks alla
+; T‰t‰ *ei* k‰yt‰:
+; - item-selain taistelussa
+;
+; Sis‰‰n tullessa:
+;    Ah:Y = osoite tekstidataan
+;    Al   = pituus
+;    DB:X = kohde (?)
+$C2:EF65 8B          PHB                                A:CC0B X:3024 Y:1A31 D:0000 DB:7E PB:C2
+$C2:EF66 08          PHP                                A:CC0B X:3024 Y:1A31 D:0000 DB:7E PB:C2
+$C2:EF67 E2 20       SEP $20                            A:CC0B X:3024 Y:1A31 D:0000 DB:7E PB:C2
+; Pituus talteen
+$C2:EF69 85 88       STA [$00:D+$88]      ;$00:0088     A:CC0B X:3024 Y:1A31 D:0000 DB:7E PB:C2
+; Pituus & 127  talteen myˆs.. (?)
+$C2:EF6B 29 7F       AND A, $7F                         A:CC0B X:3024 Y:1A31 D:0000 DB:7E PB:C2
+$C2:EF6D 85 87       STA [$00:D+$87]      ;$00:0087     A:CC0B X:3024 Y:1A31 D:0000 DB:7E PB:C2
+$C2:EF6F 86 65       STX [$00:D+$65]      ;$00:0065     A:CC0B X:3024 Y:1A31 D:0000 DB:7E PB:C2
+$C2:EF71 EB          XBA                                A:CC0B X:3024 Y:1A31 D:0000 DB:7E PB:C2
+$C2:EF72 48          PHA                                A:0BCC X:3024 Y:1A31 D:0000 DB:7E PB:C2
+$C2:EF73 AB          PLB                                A:0BCC X:3024 Y:1A31 D:0000 DB:7E PB:C2
+;Segmentti DB-rekisteriksi.
+;K‰yd‰‰n tulostamassa merkkijono.
+$C2:EF74 20 7E EF    JSR DB:$EF7E         ;$CC:EF7E     A:0BCC X:3024 Y:1A31 D:0000 DB:CC PB:C2
+;Ks alla
+$C2:EF77 A9 DC       LDA A, $DC                         A:0B00 X:303A Y:1A3C D:0000 DB:CC PB:C2
+$C2:EF79 14 7E       TRB [$00:D+$7E]      ;$00:007E     A:0BDC X:303A Y:1A3C D:0000 DB:CC PB:C2
+$C2:EF7B 28          PLP                                A:0BDC X:303A Y:1A3C D:0000 DB:CC PB:C2
+$C2:EF7C AB          PLB                                A:0BDC X:303A Y:1A3C D:0000 DB:CC PB:C2
+$C2:EF7D 60          RTS                                A:0BDC X:303A Y:1A3C D:0000 DB:7E PB:C2
+
+;K‰sittelee yhden merkin kerrallaan 8x8-komentosarjasta.
+;Haetaan merkki.
+$C2:EF7E E2 20       SEP $20                            A:0BCC X:3024 Y:1A31 D:0000 DB:CC PB:C2
+$C2:EF80 B9 00 00    LDA DB:($0000+y)     ;$CC:1A31     A:0BCC X:3024 Y:1A31 D:0000 DB:CC PB:C2
+;Loppu?
+$C2:EF83 F0 11       BEQ $EF96                          A:0BAB X:3024 Y:1A31 D:0000 DB:CC PB:C2
+$C2:EF85 C8          INY                                A:0BAB X:3024 Y:1A31 D:0000 DB:CC PB:C2
+;Jos merkki on alle $10, se on joku ohjauskoodi.
+$C2:EF86 C9 10       CMP A, $10                         A:0BAB X:3024 Y:1A32 D:0000 DB:CC PB:C2
+$C2:EF88 B0 05       BCS $EF8F                          A:0BAB X:3024 Y:1A32 D:0000 DB:CC PB:C2
+$C2:EF8A 20 BE EF    JSR DB:$EFBE         ;$FF:EFBE     A:0005 X:2ECA Y:C82C D:0000 DB:FF PB:C2
+;Ohjauskoodin k‰sittely suoritettu, tehd‰‰n mit‰?
+$C2:EF8F 20 97 EF    JSR DB:$EF97         ;$CC:EF97     A:0BAB X:3024 Y:1A32 D:0000 DB:CC PB:C2
+;Pienennet‰‰n laskuria.
+$C2:EF92 C6 87       DEC [$00:D+$87]      ;$00:0087     A:0B00 X:3026 Y:1A32 D:0000 DB:CC PB:C2
+$C2:EF94 D0 E8       BNE $EF7E                          A:0B00 X:3026 Y:1A32 D:0000 DB:CC PB:C2
+;Loopin loppu
+$C2:EF96 60          RTS                                A:0B00 X:303A Y:1A3C D:0000 DB:CC PB:C2
+
+;YHDEN 8x8-MERKIN *PIIRTO*
+$C2:EF97 08          PHP                                A:0BAB X:3024 Y:1A32 D:0000 DB:CC PB:C2
+$C2:EF98 E2 20       SEP $20                            A:0BAB X:3024 Y:1A32 D:0000 DB:CC PB:C2
+$C2:EF9A 24 88       BIT [$00:D+$88]      ;$00:0088     A:0BAB X:3024 Y:1A32 D:0000 DB:CC PB:C2
+$C2:EF9C 30 12       BMI $EFB0                          A:0BAB X:3024 Y:1A32 D:0000 DB:CC PB:C2
+$C2:EF9E C9 FF       CMP A, $FF                         A:0BAB X:3024 Y:1A32 D:0000 DB:CC PB:C2
+$C2:EFA0 D0 0E       BNE $EFB0                          A:0BAB X:3024 Y:1A32 D:0000 DB:CC PB:C2
+
+;Merkki oli $FF. Asetetaan tyhj‰ ja v‰ri... jonnekin?
+$C2:EFA2 EB          XBA                                A:00FF X:32A8 Y:0002 D:0000 DB:FF PB:C2
+$C2:EFA3 A9 FF       LDA A, $FF                         A:FF00 X:32A8 Y:0002 D:0000 DB:FF PB:C2
+$C2:EFA5 9F C0 FF 7D STA $7D:($FFC0+x)    ;$7D:3268     A:FFFF X:32A8 Y:0002 D:0000 DB:FF PB:C2
+$C2:EFA9 A5 7E       LDA [$00:D+$7E]      ;$00:007E     A:FFFF X:32A8 Y:0002 D:0000 DB:FF PB:C2
+$C2:EFAB 9F C1 FF 7D STA $7D:($FFC1+x)    ;$7D:3269     A:FF00 X:32A8 Y:0002 D:0000 DB:FF PB:C2
+$C2:EFAF EB          XBA                                A:FF00 X:32A8 Y:0002 D:0000 DB:FF PB:C2
+
+;Asetetaan merkki ja v‰ri .. jonnekin?
+$C2:EFB0 9F 00 00 7E STA $7E:($0000+x)    ;$7E:3024     A:0BAB X:3024 Y:1A32 D:0000 DB:CC PB:C2
+; T‰m‰ on joku attribuuttitavu.
+;   $80: Yflip
+;   $40: Xflip
+;   $20: priority changes
+;   $10: palette changes
+;   $08: palette changes
+;   $04: palette changes
+;   $02, $01: character changes
+$C2:EFB4 A5 7E       LDA [$00:D+$7E]      ;$00:007E     A:0BAB X:3024 Y:1A32 D:0000 DB:CC PB:C2
+$C2:EFB6 9F 01 00 7E STA $7E:($0001+x)    ;$7E:3025     A:0B00 X:3024 Y:1A32 D:0000 DB:CC PB:C2
+$C2:EFBA E8          INX                                A:0B00 X:3024 Y:1A32 D:0000 DB:CC PB:C2
+$C2:EFBB E8          INX                                A:0B00 X:3025 Y:1A32 D:0000 DB:CC PB:C2
+$C2:EFBC 28          PLP                                A:0B00 X:3026 Y:1A32 D:0000 DB:CC PB:C2
+$C2:EFBD 60          RTS                                A:0B00 X:3026 Y:1A32 D:0000 DB:CC PB:C2
+
+;8x8-OHJAUSKOODIEN KƒSITTELIJƒ
+;K‰sittelee merkit <$10.
+$C2:EFBE DA          PHX                                A:0005 X:2ECA Y:C82C D:0000 DB:FF PB:C2
+$C2:EFBF C2 20       REP $20                            A:0005 X:2ECA Y:C82C D:0000 DB:FF PB:C2
+$C2:EFC1 29 FF 00    AND A, $00FF                       A:0005 X:2ECA Y:C82C D:0000 DB:FF PB:C2
+$C2:EFC4 0A          ASL A                              A:0005 X:2ECA Y:C82C D:0000 DB:FF PB:C2
+$C2:EFC5 AA          TAX                                A:000A X:2ECA Y:C82C D:0000 DB:FF PB:C2
+; EFD4: hyppyosoitetaulu
+$C2:EFC6 BF D4 EF C2 LDA $C2:($EFD4+x)    ;$C2:EFDE     A:000A X:000A Y:C82C D:0000 DB:FF PB:C2
+; Taulun sis‰ltˆ:
+;   EFD3 EFF4 F005 F011  F022 F036 F0A2 F071
+;   F08D F0B8 F068 F0C1  F0D1 EFD3 EFD3 EFD3
+; EFD3=ret
+; EFF4=?
+; F005=?
+; F011=?
+; F022=?
+; F036=? (alla)
+; F0A2=?
+; F071=?
+; F08D=?
+; F0B8=?
+; F068=?
+; F0C1=?
+; F0D1=?
+$C2:EFCA 85 8A       STA [$00:D+$8A]      ;$00:008A     A:F036 X:000A Y:C82C D:0000 DB:FF PB:C2
+$C2:EFCC FA          PLX                                A:F036 X:000A Y:C82C D:0000 DB:FF PB:C2
+;K‰yt‰nnˆss‰ CALL
+$C2:EFCD 62 02 00    PER $EFD2                          A:F036 X:2ECA Y:C82C D:0000 DB:FF PB:C2
+$C2:EFD0 6C 8A 00    JMP [PB:word[$008A]] ;$C2:F036     A:F036 X:2ECA Y:C82C D:0000 DB:FF PB:C2
+$C2:EFD3 60          RTS                                A:8000 X:2ED4 Y:C82E D:0000 DB:FF PB:C2
+
+; K‰sittelee merkin $05 ([ptr xxxx])
+$C2:F036 D4 87       PEI [$00:$87]                      A:F036 X:2ECA Y:C82C D:0000 DB:FF PB:C2
+$C2:F038 5A          PHY                                A:F036 X:2ECA Y:C82C D:0000 DB:FF PB:C2
+$C2:F039 8B          PHB                                A:F036 X:2ECA Y:C82C D:0000 DB:FF PB:C2
+$C2:F03A 08          PHP                                A:F036 X:2ECA Y:C82C D:0000 DB:FF PB:C2
+$C2:F03B 8A          TXA                                A:F036 X:2ECA Y:C82C D:0000 DB:FF PB:C2
+$C2:F03C 18          CLC                                A:2ECA X:2ECA Y:C82C D:0000 DB:FF PB:C2
+$C2:F03D 69 0A 00    ADC A, $000A                       A:2ECA X:2ECA Y:C82C D:0000 DB:FF PB:C2
+$C2:F040 48          PHA                                A:2ED4 X:2ECA Y:C82C D:0000 DB:FF PB:C2
+$C2:F041 A9 05 80    LDA A, $8005                       A:2ED4 X:2ECA Y:C82C D:0000 DB:FF PB:C2
+$C2:F044 85 87       STA [$00:D+$87]      ;$00:0087     A:8005 X:2ECA Y:C82C D:0000 DB:FF PB:C2
+$C2:F046 B9 00 00    LDA DB:($0000+y)     ;$FF:C82C     A:8005 X:2ECA Y:C82C D:0000 DB:FF PB:C2
+$C2:F049 A8          TAY                                A:9AE0 X:2ECA Y:C82C D:0000 DB:FF PB:C2
+$C2:F04A F4 7E 7E    PEA DB:$7E7E         ;$FF:7E7E     A:9AE0 X:2ECA Y:9AE0 D:0000 DB:FF PB:C2
+$C2:F04D AB          PLB                                A:9AE0 X:2ECA Y:9AE0 D:0000 DB:FF PB:C2
+$C2:F04E AB          PLB                                A:9AE0 X:2ECA Y:9AE0 D:0000 DB:7E PB:C2
+$C2:F04F 20 7E EF    JSR DB:$EF7E         ;$7E:EF7E     A:9AE0 X:2ECA Y:9AE0 D:0000 DB:7E PB:C2
+;Huh, rekursio?
+$C2:F052 A5 87       LDA [$00:D+$87]      ;$00:0087     A:9A00 X:2ED2 Y:9AE4 D:0000 DB:7E PB:C2
+$C2:F054 F0 09       BEQ $F05F                          A:9A01 X:2ED2 Y:9AE4 D:0000 DB:7E PB:C2
+$C2:F056 A9 FF       LDA A, $FF                         A:9A01 X:2ED2 Y:9AE4 D:0000 DB:7E PB:C2
+$C2:F058 20 97 EF    JSR DB:$EF97         ;$7E:EF97     A:9AFF X:2ED2 Y:9AE4 D:0000 DB:7E PB:C2
+;Ks yll‰
+$C2:F05B C6 87       DEC [$00:D+$87]      ;$00:0087     A:9A00 X:2ED4 Y:9AE4 D:0000 DB:7E PB:C2
+$C2:F05D D0 F7       BNE $F056                          A:9A00 X:2ED4 Y:9AE4 D:0000 DB:7E PB:C2
+$C2:F05F FA          PLX                                A:9A00 X:2ED4 Y:9AE4 D:0000 DB:7E PB:C2
+$C2:F060 28          PLP                                A:9A00 X:2ED4 Y:9AE4 D:0000 DB:7E PB:C2
+$C2:F061 AB          PLB                                A:9A00 X:2ED4 Y:9AE4 D:0000 DB:7E PB:C2
+$C2:F062 7A          PLY                                A:9A00 X:2ED4 Y:9AE4 D:0000 DB:FF PB:C2
+$C2:F063 68          PLA                                A:9A00 X:2ED4 Y:C82C D:0000 DB:FF PB:C2
+$C2:F064 85 87       STA [$00:D+$87]      ;$00:0087     A:8000 X:2ED4 Y:C82C D:0000 DB:FF PB:C2
+$C2:F066 80 A6       BRA $F00E                          A:8000 X:2ED4 Y:C82C D:0000 DB:FF PB:C2
+$C2:F00E C8          INY                                A:8000 X:2ED4 Y:C82C D:0000 DB:FF PB:C2
+$C2:F00F C8          INY                                A:8000 X:2ED4 Y:C82D D:0000 DB:FF PB:C2
+$C2:F010 60          RTS                                A:8000 X:2ED4 Y:C82E D:0000 DB:FF PB:C2
+
+
+
+$C1:09C1 85 84       STA [$00:D+$84]      ;$00:0084     A:00C0 X:000F Y:0180 D:0000 DB:7E PB:C1
+$C1:09C3 0A          ASL A                              A:00C0 X:000F Y:0180 D:0000 DB:7E PB:C1
+$C1:09C4 0A          ASL A                              A:0180 X:000F Y:0180 D:0000 DB:7E PB:C1
+$C1:09C5 85 8E       STA [$00:D+$8E]      ;$00:008E     A:0300 X:000F Y:0180 D:0000 DB:7E PB:C1
+$C1:09C7 0A          ASL A                              A:0300 X:000F Y:0180 D:0000 DB:7E PB:C1
+$C1:09C8 18          CLC                                A:0600 X:000F Y:0180 D:0000 DB:7E PB:C1
+$C1:09C9 65 8E       ADC [$00:D+$8E]      ;$00:008E     A:0600 X:000F Y:0180 D:0000 DB:7E PB:C1
+$C1:09CB 38          SEC                                A:0900 X:000F Y:0180 D:0000 DB:7E PB:C1
+$C1:09CC E5 84       SBC [$00:D+$84]      ;$00:0084     A:0900 X:000F Y:0180 D:0000 DB:7E PB:C1
+;0B5E = item-taulun osoite
+$C1:09CE 69 5E 0B    ADC A, $0B5E                       A:0840 X:000F Y:0180 D:0000 DB:7E PB:C1
+$C1:09D1 AA          TAX                                A:139F X:000F Y:0180 D:0000 DB:7E PB:C1
+$C1:09D2 7B          TDC                                A:139F X:139F Y:0180 D:0000 DB:7E PB:C1
+$C1:09D3 A0 A0 94    LDY $94A0                          A:0000 X:139F Y:0180 D:0000 DB:7E PB:C1
+$C1:09D6 A9 0A 00    LDA A, $000A                       A:0000 X:139F Y:94A0 D:0000 DB:7E PB:C1
+; Kopioidaan 11 tavua osoitteesta CC:139F osoitteeseen 7E:94A0
+$C1:09D9 54          MVN 7E CC                          A:000A X:139F Y:94A0 D:0000 DB:7E PB:C1
+;TDC kopioi D:n A:ksi
+$C1:09DC 7B          TDC                                A:FFFF X:13AA Y:94AB D:0000 DB:7E PB:C1
+$C1:09DD E2 20       SEP $20                            A:0000 X:13AA Y:94AB D:0000 DB:7E PB:C1
+; Per‰‰n nullterminator.
+$C1:09DF 99 00 00    STA DB:($0000+y)     ;$7E:94AB     A:0000 X:13AA Y:94AB D:0000 DB:7E PB:C1
+$C1:09E2 20 A9 01    JSR DB:$01A9         ;$7E:01A9     A:0000 X:13AA Y:94AB D:0000 DB:7E PB:C1
+;Ks alla
+$C1:09E5 A6 80       LDX [$00:D+$80]      ;$00:0080     A:0000 X:000B Y:94D0 D:0000 DB:7E PB:C1
+$C1:09E7 BD 82 15    LDA DB:($1582+x)     ;$7E:1591     A:0000 X:000F Y:94D0 D:0000 DB:7E PB:C1
+$C1:09EA 10 0F       BPL $09FB                          A:0002 X:000F Y:94D0 D:0000 DB:7E PB:C1
+;
+$C1:09FB A9 29       LDA A, $29                         A:0002 X:000F Y:94D0 D:0000 DB:7E PB:C1
+$C1:09FD 85 98       STA [$00:D+$98]      ;$00:0098     A:0029 X:000F Y:94D0 D:0000 DB:7E PB:C1
+$C1:09FF 7B          TDC                                A:0029 X:000F Y:94D0 D:0000 DB:7E PB:C1
+$C1:0A00 A8          TAY                                A:0000 X:000F Y:94D0 D:0000 DB:7E PB:C1
+$C1:0A01 A6 82       LDX [$00:D+$82]      ;$00:0082     A:0000 X:000F Y:0000 D:0000 DB:7E PB:C1
+;
+$C1:0A03 B9 A0 94    LDA DB:($94A0+y)     ;$7E:94A0     A:0000 X:0000 Y:0000 D:0000 DB:7E PB:C1
+$C1:0A06 9D C6 0E    STA DB:($0EC6+x)     ;$7E:0EC6     A:00A4 X:0000 Y:0000 D:0000 DB:7E PB:C1
+$C1:0A09 E8          INX                                A:00A4 X:0000 Y:0000 D:0000 DB:7E PB:C1
+$C1:0A0A A5 98       LDA [$00:D+$98]      ;$00:0098     A:00A4 X:0001 Y:0000 D:0000 DB:7E PB:C1
+$C1:0A0C 9D C6 0E    STA DB:($0EC6+x)     ;$7E:0EC7     A:0029 X:0001 Y:0000 D:0000 DB:7E PB:C1
+$C1:0A0F E8          INX                                A:0029 X:0001 Y:0000 D:0000 DB:7E PB:C1
+$C1:0A10 C8          INY                                A:0029 X:0002 Y:0000 D:0000 DB:7E PB:C1
+$C1:0A11 C0 0A 00    CPY $000A                          A:0029 X:0002 Y:0001 D:0000 DB:7E PB:C1
+$C1:0A14 D0 ED       BNE $0A03                          A:0029 X:0002 Y:0001 D:0000 DB:7E PB:C1
+;
+$C1:0A16 A9 5F       LDA A, $5F                         A:0029 X:0014 Y:000A D:0000 DB:7E PB:C1
+$C1:0A18 9D C8 0E    STA DB:($0EC8+x)     ;$7E:0EDC     A:005F X:0014 Y:000A D:0000 DB:7E PB:C1
+$C1:0A1B A5 98       LDA [$00:D+$98]      ;$00:0098     A:005F X:0014 Y:000A D:0000 DB:7E PB:C1
+$C1:0A1D 9D C9 0E    STA DB:($0EC9+x)     ;$7E:0EDD     A:0029 X:0014 Y:000A D:0000 DB:7E PB:C1
+$C1:0A20 7B          TDC                                A:0029 X:0014 Y:000A D:0000 DB:7E PB:C1
+$C1:0A21 A8          TAY                                A:0000 X:0014 Y:000A D:0000 DB:7E PB:C1
+$C1:0A22 A6 82       LDX [$00:D+$82]      ;$00:0082     A:0000 X:0014 Y:0000 D:0000 DB:7E PB:C1
+;
+$C1:0A24 B9 B0 94    LDA DB:($94B0+y)     ;$7E:94B0     A:0000 X:0000 Y:0000 D:0000 DB:7E PB:C1
+$C1:0A27 9D 86 0E    STA DB:($0E86+x)     ;$7E:0E86     A:00FF X:0000 Y:0000 D:0000 DB:7E PB:C1
+$C1:0A2A E8          INX                                A:00FF X:0000 Y:0000 D:0000 DB:7E PB:C1
+$C1:0A2B A5 98       LDA [$00:D+$98]      ;$00:0098     A:00FF X:0001 Y:0000 D:0000 DB:7E PB:C1
+$C1:0A2D 9D 86 0E    STA DB:($0E86+x)     ;$7E:0E87     A:0029 X:0001 Y:0000 D:0000 DB:7E PB:C1
+$C1:0A30 E8          INX                                A:0029 X:0001 Y:0000 D:0000 DB:7E PB:C1
+$C1:0A31 C8          INY                                A:0029 X:0002 Y:0000 D:0000 DB:7E PB:C1
+$C1:0A32 C0 0B 00    CPY $000B                          A:0029 X:0002 Y:0001 D:0000 DB:7E PB:C1
+$C1:0A35 D0 ED       BNE $0A24                          A:0029 X:0002 Y:0001 D:0000 DB:7E PB:C1
+$C1:0A37 A6 80       LDX [$00:D+$80]      ;$00:0080     A:0029 X:0016 Y:000B D:0000 DB:7E PB:C1
+$C1:0A39 BD 83 15    LDA DB:($1583+x)     ;$7E:1592     A:0029 X:000F Y:000B D:0000 DB:7E PB:C1
+$C1:0A3C C2 20       REP $20                            A:0054 X:000F Y:000B D:0000 DB:7E PB:C1
+$C1:0A3E 8D 99 94    STA DB:$9499         ;$7E:9499     A:0054 X:000F Y:000B D:0000 DB:7E PB:C1
+$C1:0A41 20 74 01    JSR DB:$0174         ;$7E:0174     A:0054 X:000F Y:000B D:0000 DB:7E PB:C1
+
+
+$C1:0174 DA          PHX                                A:0054 X:000F Y:000B D:0000 DB:7E PB:C1
+$C1:0175 7B          TDC                                A:0054 X:000F Y:000B D:0000 DB:7E PB:C1
+$C1:0176 AA          TAX                                A:0000 X:000F Y:000B D:0000 DB:7E PB:C1
+;
+$C1:0177 38          SEC                                A:0000 X:0000 Y:000B D:0000 DB:7E PB:C1
+$C1:0178 AD 99 94    LDA DB:$9499         ;$7E:9499     A:0000 X:0000 Y:000B D:0000 DB:7E PB:C1
+$C1:017B E9 0A 00    SBC A, $000A                       A:0054 X:0000 Y:000B D:0000 DB:7E PB:C1
+$C1:017E 8D 99 94    STA DB:$9499         ;$7E:9499     A:004A X:0000 Y:000B D:0000 DB:7E PB:C1
+$C1:0181 E8          INX                                A:004A X:0000 Y:000B D:0000 DB:7E PB:C1
+$C1:0182 B0 F3       BCS $0177                          A:004A X:0001 Y:000B D:0000 DB:7E PB:C1
+;
+$C1:0184 18          CLC                                A:FFFA X:0009 Y:000B D:0000 DB:7E PB:C1
+$C1:0185 AD 99 94    LDA DB:$9499         ;$7E:9499     A:FFFA X:0009 Y:000B D:0000 DB:7E PB:C1
+$C1:0188 69 0A 00    ADC A, $000A                       A:FFFA X:0009 Y:000B D:0000 DB:7E PB:C1
+$C1:018B CA          DEX                                A:0004 X:0009 Y:000B D:0000 DB:7E PB:C1
+$C1:018C DA          PHX                                A:0004 X:0008 Y:000B D:0000 DB:7E PB:C1
+$C1:018D E2 20       SEP $20                            A:0004 X:0008 Y:000B D:0000 DB:7E PB:C1
+$C1:018F AA          TAX                                A:0004 X:0008 Y:000B D:0000 DB:7E PB:C1
+$C1:0190 BF 03 F9 CC LDA $CC:($F903+x)    ;$CC:F907     A:0004 X:0004 Y:000B D:0000 DB:7E PB:C1
+$C1:0194 8D 9F 94    STA DB:$949F         ;$7E:949F     A:0077 X:0004 Y:000B D:0000 DB:7E PB:C1
+$C1:0197 FA          PLX                                A:0077 X:0004 Y:000B D:0000 DB:7E PB:C1
+$C1:0198 BF 03 F9 CC LDA $CC:($F903+x)    ;$CC:F90B     A:0077 X:0008 Y:000B D:0000 DB:7E PB:C1
+$C1:019C 8D 9E 94    STA DB:$949E         ;$7E:949E     A:007B X:0008 Y:000B D:0000 DB:7E PB:C1
+$C1:019F A9 FF       LDA A, $FF                         A:007B X:0008 Y:000B D:0000 DB:7E PB:C1
+$C1:01A1 8D 9D 94    STA DB:$949D         ;$7E:949D     A:00FF X:0008 Y:000B D:0000 DB:7E PB:C1
+$C1:01A4 8D 9C 94    STA DB:$949C         ;$7E:949C     A:00FF X:0008 Y:000B D:0000 DB:7E PB:C1
+$C1:01A7 FA          PLX                                A:00FF X:0008 Y:000B D:0000 DB:7E PB:C1
+$C1:01A8 60          RTS                                A:00FF X:000F Y:000B D:0000 DB:7E PB:C1
+
+
+; T‰m‰ rutiini piirt‰‰ 7E:94A0 - osoitteessa olevan
+; max. 16 merkki‰ pitk‰n merkkijonon osoitteeseen
+; 7E:94A0 (merkit) ja 7E:94B0 (v‰rit).
+$C1:01A9 C2 20       REP $20                            A:0000 X:13AA Y:94AB D:0000 DB:7E PB:C1
+$C1:01AB A2 A0 94    LDX $94A0                          A:0000 X:13AA Y:94AB D:0000 DB:7E PB:C1
+$C1:01AE A0 C0 94    LDY $94C0                          A:0000 X:94A0 Y:94AB D:0000 DB:7E PB:C1
+$C1:01B1 A9 0F 00    LDA A, $000F                       A:0000 X:94A0 Y:94C0 D:0000 DB:7E PB:C1
+;Kopioidaan 16 tavua osoitteesta 7E:94A0 osoitteeseen 7E:94C0
+$C1:01B4 54          MVN 7E 7E                          A:000F X:94A0 Y:94C0 D:0000 DB:7E PB:C1
+$C1:01B7 A2 1E 00    LDX $001E                          A:FFFF X:94B0 Y:94D0 D:0000 DB:7E PB:C1
+$C1:01BA 9D A0 94    STA DB:($94A0+x)     ;$7E:94BE     A:FFFF X:001E Y:94D0 D:0000 DB:7E PB:C1
+$C1:01BD CA          DEX                                A:FFFF X:001E Y:94D0 D:0000 DB:7E PB:C1
+$C1:01BE CA          DEX                                A:FFFF X:001D Y:94D0 D:0000 DB:7E PB:C1
+$C1:01BF 10 F9       BPL $01BA                          A:FFFF X:001C Y:94D0 D:0000 DB:7E PB:C1
+$C1:01C1 7B          TDC                                A:FFFF X:FFFE Y:94D0 D:0000 DB:7E PB:C1
+$C1:01C2 AA          TAX                                A:0000 X:FFFE Y:94D0 D:0000 DB:7E PB:C1
+$C1:01C3 E2 20       SEP $20                            A:0000 X:0000 Y:94D0 D:0000 DB:7E PB:C1
+;Ladataan merkki tavarasta.
+$C1:01C5 BD C0 94    LDA DB:($94C0+x)     ;$7E:94C0     A:0000 X:0000 Y:94D0 D:0000 DB:7E PB:C1
+;Jos tuli null-terminator vastaan, pois loopista
+$C1:01C8 F0 2E       BEQ $01F8                          A:00A4 X:0000 Y:94D0 D:0000 DB:7E PB:C1
+;$73 on kalpeampi "0" 8x8-fontissa
+$C1:01CA C9 73       CMP A, $73                         
+$C1:01CC B0 1C       BCS $01EA          -- jos arvo on >= $73
+;$69 on .. hpmetrin pala ???
+$C1:01CE C9 69       CMP A, $69                         
+$C1:01D0 B0 0E       BCS $01E0          -- jos arvo on >= $69
+;$40 on .. tyhj‰‰
+$C1:01D2 C9 40       CMP A, $40                         
+$C1:01D4 90 14       BCC $01EA          -- jos arvo on < $40
+$C1:01D6 18          CLC                -- arvo on < $40 (ERIVƒRINEN KIRJAIN)
+$C1:01D7 69 40       ADC A, $40                         
+$C1:01D9 9D A0 94    STA DB:($94A0+x)     ;$7E:94A0     
+$C1:01DC A9 71       LDA A, $71         -- v‰ri (?) $71
+$C1:01DE 80 0F       BRA $01EF                          
+$C1:01E0 18          CLC                -- arvo on $69..$72 (ERIVƒRINEN NUMERO)
+$C1:01E1 69 17       ADC A, $17                         
+$C1:01E3 9D A0 94    STA DB:($94A0+x)     ;$7E:94A0     
+$C1:01E6 A9 72       LDA A, $72         -- v‰ri (?) $72
+$C1:01E8 80 05       BRA $01EF                          
+
+; Kopioidaan symboli tuonne jonnekin
+; 7E:9000:sta kasa n‰ytt‰isi olevan mapattu n‰ytˆlle. H-DMA kopioi sit‰ VRAMiin.
+$C1:01EA 9D A0 94    STA DB:($94A0+x)     ;$7E:94A0     A:00A4 X:0000 Y:94D0 D:0000 DB:7E PB:C1
+$C1:01ED A9 FF       LDA A, $FF           -- v‰ri (?) $FF
+$C1:01EF 9D B0 94    STA DB:($94B0+x)     ;$7E:94B0     A:00FF X:0000 Y:94D0 D:0000 DB:7E PB:C1
+$C1:01F2 E8          INX                                A:00FF X:0000 Y:94D0 D:0000 DB:7E PB:C1
+;Joka tapauksessa k‰sitell‰‰n enint‰‰n 16 merkki‰
+$C1:01F3 E0 10 00    CPX $0010                          A:00FF X:0001 Y:94D0 D:0000 DB:7E PB:C1
+;Takaisin looppiin
+$C1:01F6 D0 CD       BNE $01C5                          A:00FF X:0001 Y:94D0 D:0000 DB:7E PB:C1
+;Loopin loppu!
+$C1:01F8 60          RTS                                A:0000 X:000B Y:94D0 D:0000 DB:7E PB:C1
+
+
+
+
 
 [1B0000]
 0000: D200 1001 2000 F102 D0B8 00BA 00FC 4AA1 027E 004A 1020 0100 014A 1105 0000 1600
@@ -576,32 +1055,8 @@ T‰m‰ pointteritaulu kertoo tavujen 0x21..0x9F merkityksen.
 
 Miten t‰m‰ taulu toimii, on t‰ysin mysteeri.
 
-[0C0B69]
-20WoodFFSword20IronFFBlade20SteelSaber20LodeFFSword20RedFFKatana20FlintFFEdge20DarkFFSaber20AeonFFBlade20DemonFFEdge2
-0AlloyBlade20StarFFSword20VedicBlade20KaliFFBlade20ShivaFFEdge20BoltFFSword20Slasher   21BronzeFFBow21IronFFBow  21Lo
-deFFBow  21RobinFFBow 21SageFFBow  21DreamFFBow 21CometArrow21SonicArrow21Valkerye  21Siren     21          21
-   21          21          22AirFFGun   22DartFFGun  22AutoFFGun  22PicoMagnum22PlasmaFFGun22RubyFFGun  22DreamFFGun
-22Megablast 22ShockFFWave22WonderShot22Graedus   22          22          22          22          23TinFFArm   23Hamme
-rFFArm23MirageHand23StoneFFArm 23DoomFinger23MagmaFFHand23MegatonArm23BigFFHand  23KaiserFFArm23GigaFFArm  23TerraFFA
-rm 23CrisisFFArm23          24BronzeEdge24IronFFSword24Masamune  24FlashBlade24PearlFFEdge24RuneFFBlade24BraveSword24
-jne jne.
-Item listing selv‰sti. Selvit‰, miss‰ on pointterit.
 
-[0C3A00]
-T‰ss‰ on taulu hyˆkk‰ysten selityksist‰.
-Ensin on t‰llainen: 02F9BB1233ED01DA00
-Sitten on pointer-table (alkaa 3A09:st‰),
-ja itse stringit. Stringit alkavat 0C3B0D:st‰,
-eli taulun koko on 130 stringi‰.
 
-[0C6500]
-Nu         Reptite    Terrasaur  Kilwala    Krawlie    Hench      Omicrone   Martello   Bellbird   Panel      
-Mammon M.             Blue Imp   Green Imp  Stone Imp  Mud Imp    Roly       Poly       Rolypoly   Roly Rider 
-           Blue EagletGold EagletRed Eaglet            Avian ChaosImp Ace    Bantam Imp Gnasher    Gnawer     
-Naga&ette             Ruminator             Octopod    Octoblush  Octobino   Zeal       Fly Trap   Meat Eater!
-jne.
-Tyystin pakkaamaton lista monster-nimist‰. 11-merkkisi‰ merkkijonoja,
-spacepadded.
 
 [0CCD00]
 T‰ss‰ n‰kyy ruutu, jossa on repliikkej‰.
@@ -613,5 +1068,7 @@ Alkaa pointterilistalla!
 18D09C:st‰ alkaa itse repliikit.
 Pointtereita on siis 78 kpl.
 D09C, D0B4, D106, D146, jne.
+
+
 http://www.uct2.net/epoch/Zeal-Mouser_X-1024x768.gif
 http://www.uct2.net/epoch/MagusCT%20-%20CT%20Cast.gif

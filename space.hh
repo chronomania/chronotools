@@ -30,7 +30,10 @@ typedef set<freespacerec> freespaceset;
 /* page->list */
 class freespacemap : public map<unsigned, freespaceset>
 {
+    bool quiet;
 public:
+    freespacemap();
+    
     void Report() const;
     void DumpPageMap(unsigned pagenum) const;
     
@@ -50,10 +53,16 @@ public:
     void Del(unsigned page, unsigned begin, unsigned length);
     
     // Uses segment-relative addresses (16-bit)
-    void Organize(vector<freespacerec> &blocks, unsigned pagenum);
+    bool Organize(vector<freespacerec> &blocks, unsigned pagenum);
+    // Return value: errors-flag
 
-    // Uses abbsolute addresses (24-bit)
-    void OrganizeToAnyPage(vector<freespacerec> &blocks);
+    // Uses absolute addresses (24-bit)
+    bool OrganizeToAnyPage(vector<freespacerec> &blocks);
+    // Return value: errors-flag
+
+    // Uses segment-relative addresses (16-bit), sets page
+    bool OrganizeToAnySamePage(vector<freespacerec> &blocks, unsigned &page);
+    // Return value: errors-flag
 };
 
 #endif

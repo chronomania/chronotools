@@ -241,6 +241,9 @@ Copypaste from the Makefile:
 # VERSION 1.1.7  some translation, more asm changes
 # VERSION 1.1.8  syntax changes in the compiler, optimizations
 # VERSION 1.1.9  support for font/dictionary size skew
+# VERSION 1.1.10 new configuration system. Time to squash bugs.
+# VERSION 1.1.11 configuration works, font-enhancement works.
+# VERSION 1.2.0  variable-width 8pix font has stepped in, but has many many bugs.
 </pre>
 
 ", '1. See also' => "

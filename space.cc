@@ -8,11 +8,16 @@ using namespace std;
 /* 0 = begin, 1 = end */
 #define EAT_MODE 1
 
+freespacemap::freespacemap() : quiet(false)
+{
+}
+
 unsigned freespacemap::Find(unsigned page, unsigned length)
 {
     iterator mapi = find(page);
     if(mapi == end())
     {
+        if(!quiet)
         fprintf(stderr,
             "Page %02X is FULL! No %u bytes of free space there!\n",
             page, length);
@@ -53,6 +58,7 @@ unsigned freespacemap::Find(unsigned page, unsigned length)
     }
     if(!bestscore)
     {
+        if(!quiet)
         fprintf(stderr,
             "Can't find %u bytes of free space in page %02X! (Total left: %u)\n",
             length, page, Size(page));
@@ -188,10 +194,15 @@ void freespacemap::Del(unsigned page, unsigned begin, unsigned length)
     if(!list.size()) erase(i);
 }
 
-void freespacemap::Organize(vector<freespacerec> &blocks, unsigned pagenum)
+bool freespacemap::Organize(vector<freespacerec> &blocks, unsigned pagenum)
 {
     const_iterator i = find(pagenum);
-    if(i == end()) return;
+    if(i == end())
+    {
+        if(!quiet)
+            fprintf(stderr, "ERROR: Page %02X is totally empty.\n", pagenum);
+        return true;
+    }
     
     const freespaceset &pagemap = i->second;
     
@@ -220,6 +231,7 @@ void freespacemap::Organize(vector<freespacerec> &blocks, unsigned pagenum)
     
     if(totalspace < totalsize)
     {
+        if(!quiet)
         fprintf(stderr, "ERROR: Page %02X doesn't have %u bytes of space (only %u there)!\n",
             pagenum, totalsize, totalspace);
     }
@@ -247,10 +259,12 @@ void freespacemap::Organize(vector<freespacerec> &blocks, unsigned pagenum)
         blocks[a].pos = spaceptr;
     }
     if(Errors)
+        if(!quiet)
         fprintf(stderr, "ERROR: Organization failed\n");
+    return Errors;
 }
 
-void freespacemap::OrganizeToAnyPage(vector<freespacerec> &blocks)
+bool freespacemap::OrganizeToAnyPage(vector<freespacerec> &blocks)
 {
     vector<unsigned> items;
     vector<unsigned> holes;
@@ -269,19 +283,21 @@ void freespacemap::OrganizeToAnyPage(vector<freespacerec> &blocks)
     unsigned totalspace = 0;
     for(const_iterator i=begin(); i!=end(); ++i)
     {
+        unsigned pagenum = i->first;
         const freespaceset &pagemap = i->second;
         freespaceset::const_iterator j;
         for(j=pagemap.begin(); j!=pagemap.end(); ++j)
         {
             totalspace += j->len;
             holes.push_back(j->len);
-            holepages.push_back(i->first);
+            holepages.push_back(pagenum);
             holeaddrs.push_back(j->pos);
         }
     }
     
     if(totalspace < totalsize)
     {
+        if(!quiet)
         fprintf(stderr, "ERROR: No %u bytes of space available (only %u there)!\n",
             totalsize, totalspace);
     }
@@ -310,7 +326,53 @@ void freespacemap::OrganizeToAnyPage(vector<freespacerec> &blocks)
         blocks[a].pos = spaceptr;
     }
     if(Errors)
+        if(!quiet)
         fprintf(stderr, "ERROR: Organization failed\n");
+    return Errors;
+}
+
+bool freespacemap::OrganizeToAnySamePage(vector<freespacerec> &blocks, unsigned &page)
+{
+    // To do:
+    //   1. Pick a page where they all fit the best
+    //   2. Organize there.
+    
+    freespacemap saved_this = *this;
+    quiet = true;
+    
+    unsigned bestpagenum = 0;
+    unsigned bestpagesize = 0;
+    bool first = true;
+    for(const_iterator i=begin(); i!=end(); ++i)
+    {
+        unsigned pagenum = i->first;
+        const freespaceset &pagemap = i->second;
+        
+        vector<freespacerec> tmpblocks = blocks;
+        
+        if(!Organize(tmpblocks, pagenum))
+        {
+            // candidate!
+            
+            const freespaceset &pagemap = find(pagenum)->second;
+            unsigned freesize = 0;
+            freespaceset::const_iterator j;
+            for(j=pagemap.begin(); j!=pagemap.end(); ++j) freesize += j->len;
+
+            if(first || freesize < bestpagesize)
+            {
+                bestpagenum  = pagenum;
+                bestpagesize = freesize;
+                first = false;
+            }
+        }
+    }
+    
+    *this = saved_this;
+
+    page = bestpagenum;
+    
+    return Organize(blocks, bestpagenum);
 }
 
 unsigned freespacemap::FindFromAnyPage(unsigned length)

@@ -1,12 +1,9 @@
-#include <string>
 #include <set>
 #include <map>
 
-/*
-  FIXME: Aja syöte characterset-muutimen läpi!
-*/
 #include "snescode.hh"
 #include "compiler.hh"
+#include "wstring.hh"
 #include "config.hh"
 #include "ctcset.hh"
 
@@ -14,12 +11,19 @@ using namespace std;
 
 #define OPTIMIZE_A
 
+void SubRoutine::CallSub(const wstring &name)
+{
+    code.EmitCode(0x22, 0,0,0);
+    requires[name].insert(code.size()-3);
+    code.BitnessUnknown();
+}
+
 namespace
 {
     class Assembler
     {
         SubRoutine *cursub;
-        string CurSubName;
+        wstring CurSubName;
         
         struct variable
         {
@@ -33,7 +37,7 @@ namespace
             }
         };
         
-        typedef map<string, variable> vars_t;
+        typedef map<wstring, variable> vars_t;
         vars_t vars;
 
         // code begun?
@@ -70,13 +74,13 @@ namespace
         class aVarState
         {
             bool known;
-            string var;
+            wstring var;
         public:
             aVarState() : known(false) {}
             void Invalidate() { known=false; }
             bool Known() const { return known; }
-            void Set(const string &v) { known=true; var=v; }
-            bool Is(const string &v) const { return known && var==v; }
+            void Set(const wstring &v) { known=true; var=v; }
+            bool Is(const wstring &v) const { return known && var==v; }
         } aVarState;
         
         void Invalidate_A()
@@ -111,7 +115,7 @@ namespace
             }
             endbranch = new Branch(CODE.PrepareRelativeLongBranch());
 #ifdef OPTIMIZE_A
-            aVarState.Set("c");
+            aVarState.Set(MagicVarName);
             aConstState.Invalidate();
 #endif
         }
@@ -153,14 +157,16 @@ namespace
                 if(warning)
                 {
                     fprintf(stderr, "  Warning: In function '%s', variable '%s' %s.\n",
-                        CurSubName.c_str(), i->first.c_str(), warning);
+                        WstrToAsc(CurSubName).c_str(),
+                        WstrToAsc(i->first).c_str(),
+                        warning);
                 }
             }
             
             FINISH_BRANCHES();
             CODE.EmitCode(0x6B);     // RTL
 #if 0
-            fprintf(stderr, "Function %s done:\n", CurSubName.c_str());
+            fprintf(stderr, "Function %s done:\n", WstrToAsc(CurSubName).c_str());
             fprintf(stderr, "Code:");
             for(unsigned a=0; a<CODE.size(); ++a)
                 fprintf(stderr, " %02X", CODE[a]);
@@ -185,20 +191,20 @@ namespace
             FRAME_BEGIN();
             started = true;
         }
-        unsigned char GetStackOffset(const string &varname) const
+        unsigned char GetStackOffset(const wstring &varname) const
         {
             vars_t::const_iterator i = vars.find(varname);
             if(i == vars.end())
             {
                 fprintf(stderr, "ERROR: In function '%s': Undefined variable '%s'\n",
-                    CurSubName.c_str(), varname.c_str());
+                    WstrToAsc(CurSubName).c_str(), WstrToAsc(varname).c_str());
                 return 0;
             }
             if(i->second.is_regvar)
             {
                 fprintf(stderr, "ERROR: In function '%s': "
                                 "'%s defined with REG, but isn't in registers\n",
-                     CurSubName.c_str(), varname.c_str());
+                     WstrToAsc(CurSubName).c_str(), WstrToAsc(varname).c_str());
                 return 0;
             }
             
@@ -206,13 +212,15 @@ namespace
         }
 
     public:
-        const string LoopHelperName;
-        const string OutcHelperName;
+        const wstring LoopHelperName;
+        const wstring OutcHelperName;
+        const wstring MagicVarName;
         
         Assembler()
         : cursub(NULL),
-          LoopHelperName(WstrToAsc(GetConf("compiler", "loophelpername"))),
-          OutcHelperName(WstrToAsc(GetConf("compiler", "outchelpername")))
+          LoopHelperName(GetConf("compiler", "loophelpername")),
+          OutcHelperName(GetConf("compiler", "outchelpername")),
+          MagicVarName(GetConf("compiler", "magicvarname"))
         {
         }
         
@@ -234,7 +242,7 @@ namespace
                 }
             }
         }
-        void START_FUNCTION(const string &name)
+        void START_FUNCTION(const wstring &name)
         {
             CurSubName = name;
             started = false;
@@ -257,7 +265,7 @@ namespace
             delete cursub;
             cursub = NULL;
         }
-        void DECLARE_VAR(const string &name)
+        void DECLARE_VAR(const wstring &name)
         {
             if(vars.find(name) == vars.end())
             {
@@ -275,7 +283,7 @@ namespace
                 vars[name].stackpos = stackpos;
             }
         }
-        void DECLARE_REGVAR(const string &name)
+        void DECLARE_REGVAR(const wstring &name)
         {
             vars[name].is_regvar = true;
         }
@@ -296,7 +304,7 @@ namespace
                 CODE.EmitCode(0x38); // SEC - carry set = false
             VOID_RETURN();
         }
-        void LOAD_VAR(const string &name)
+        void LOAD_VAR(const wstring &name)
         {
             CheckCodeStart();
             // load var to A
@@ -316,7 +324,7 @@ namespace
                 {
                     fprintf(stderr,
                         "  Warning: In function '%s', variable '%s' was read before written.\n",
-                            CurSubName.c_str(), name.c_str());
+                        WstrToAsc(CurSubName).c_str(), WstrToAsc(name).c_str());
                 }
                 CODE.EmitCode(0xA3, stackpos); // LDA [00:s+n]
                 
@@ -326,15 +334,15 @@ namespace
             unsigned val = 0;
             
             if(name[0] == '\'')
-                val = (unsigned char) getchronochar((unsigned char)name[1]);
+                val = (unsigned char) getchronochar((ucs4)name[1]);
             else
-                val = strtol(name.c_str(), NULL, 10);
+                val = strtol(WstrToAsc(name).c_str(), NULL, 10);
             
             if(val >= 256)
             {
                 fprintf(stderr,
                     "  Warning: In function '%s', numeric constant %u too large (>255)\n",
-                    CurSubName.c_str(), val);
+                    WstrToAsc(CurSubName).c_str(), val);
             }
             
 #ifdef OPTIMIZE_A
@@ -355,7 +363,7 @@ namespace
                 CODE.EmitCode(0xA9, val&255, val>>8); // LDA A, imm16
             }
         }
-        void STORE_VAR(const string &name)
+        void STORE_VAR(const wstring &name)
         {
 #ifdef OPTIMIZE_A
             if(aVarState.Is(name)) return;
@@ -376,7 +384,7 @@ namespace
             aVarState.Set(name);
 #endif
         }
-        void INC_VAR(const string &name)
+        void INC_VAR(const wstring &name)
         {
             CheckCodeStart();
             // inc var
@@ -389,7 +397,7 @@ namespace
 #endif
             STORE_VAR(name);
         }
-        void DEC_VAR(const string &name)
+        void DEC_VAR(const wstring &name)
         {
             CheckCodeStart();
             // dec var
@@ -402,7 +410,7 @@ namespace
 #endif
             STORE_VAR(name);
         }
-        void CALL_FUNC(const string &name)
+        void CALL_FUNC(const wstring &name)
         {
             CheckCodeStart();
             
@@ -410,9 +418,7 @@ namespace
             CODE.EmitCode(0xDA); // PHX
             
             // leave A unmodified and issue call to function
-            CODE.EmitCode(0x22, 0,0,0);
-            cursub->requires[name].insert(CODE.size() - 3);
-            CODE.BitnessUnknown();
+            cursub->CallSub(name);
             
             CODE.Set16bit_X();
             CODE.EmitCode(0xFA); // PLX
@@ -432,7 +438,7 @@ namespace
             b.FromHere();
             AddBranch(b, indent);
         }
-        void COMPARE_EQUAL(const string &name, unsigned indent)
+        void COMPARE_EQUAL(const wstring &name, unsigned indent)
         {
             CheckCodeStart();
             
@@ -448,7 +454,7 @@ namespace
             b.FromHere();
             AddBranch(b, indent);
         }
-        void COMPARE_ZERO(const string &name, unsigned indent)
+        void COMPARE_ZERO(const wstring &name, unsigned indent)
         {
             CheckCodeStart();
             
@@ -461,7 +467,7 @@ namespace
             b.FromHere();
             AddBranch(b, indent);
         }
-        void COMPARE_GREATER(const string &name, unsigned indent)
+        void COMPARE_GREATER(const wstring &name, unsigned indent)
         {
             CheckCodeStart();
 
@@ -481,7 +487,7 @@ namespace
             
             AddBranch(b, indent);
         }
-        void SELECT_CASE(const string &cset, unsigned indent)
+        void SELECT_CASE(const wstring &cset, unsigned indent)
         {
             if(!cset.size()) return;
             
@@ -614,10 +620,8 @@ namespace
             CODE.EmitCode(0xAA);                // TAX
             
             loopbegin->ToHere();
-            CODE.EmitCode(0x22, 0,0,0);
-            cursub->requires[LoopHelperName].insert(CODE.size() - 3);
-
-            CODE.BitnessUnknown();
+            
+            cursub->CallSub(LoopHelperName);
             
             CODE.EmitCode(0xD0, 3);    // bne - jatketaan looppia, jos nonzero
             CODE.EmitCode(0x82, 0,0);  // brl - jump pois loopista.
@@ -626,9 +630,10 @@ namespace
             Invalidate_A();
 #endif
 
-            STORE_VAR("c");        // save in "c".
-            vars["c"].read = true; // mark read, because it indeed has been
-                                   // read (in the loop end condition).
+            STORE_VAR(MagicVarName);// save in "c".
+            // mark read, because it indeed has been
+            // read (in the loop end condition).
+            vars[MagicVarName].read = true;
         }
         void END_CHARNAME_LOOP()
         {
@@ -655,10 +660,8 @@ namespace
             CheckCodeStart();
             // outputs character in A
             
-            CODE.EmitCode(0x22, 0,0,0);
-            cursub->requires[OutcHelperName].insert(CODE.size() - 3);
+            cursub->CallSub(OutcHelperName);
 
-            CODE.BitnessUnknown();
 #ifdef OPTIMIZE_A
             Invalidate_A();
 #endif
@@ -669,17 +672,18 @@ namespace
     };
 }
 
-void FunctionList::Define(const string &name, const SubRoutine &sub)
+void FunctionList::Define(const wstring &name, const SubRoutine &sub)
 {
     functions[name] = make_pair(sub, false);
 }
 
-void FunctionList::RequireFunction(const string &name)
+void FunctionList::RequireFunction(const wstring &name)
 {
     functions_t::iterator i = functions.find(name);
     if(i == functions.end())
     {
-        fprintf(stderr, "Error: Function '%s' not defined!\n", name.c_str());
+        fprintf(stderr, "Error: Function '%s' not defined!\n",
+            WstrToAsc(name).c_str());
         return;
     }
     bool &required         = i->second.second;
@@ -688,7 +692,8 @@ void FunctionList::RequireFunction(const string &name)
     if(required) return;
 #if 0
     fprintf(stderr, "Requiring function '%s' (%u bytes)...\n",
-        name.c_str(), func.code.size());
+        WstrToAsc(name).c_str(),
+        func.code.size());
 #endif
     required = true;
     
@@ -705,95 +710,125 @@ const FunctionList Compile(FILE *fp)
 {
     Assembler Asm;
     
-    char Buf[256];
-    while((fgets(Buf, sizeof Buf, fp)))
+    wstring file;
+    
+    if(1) // Read file to wstring
     {
+        wstringIn conv;
+        conv.SetSet(getcharset());
+        
+        for(;;)
+        {
+            char Buf[2048];
+            if(!fgets(Buf, sizeof Buf, fp))break;
+            file += conv.puts(Buf);
+        }
+    }
+    
+    for(unsigned a=0; a<file.size(); )
+    {
+        wstring Buf;
+        if(1)
+        {
+            // Get line
+            unsigned b=a;
+            while(b<file.size() && file[b]!='\n') ++b;
+            Buf = file.substr(a, b-a); a = b+1;
+        }
+        if(!Buf.size()) continue;
+        
         unsigned indent=0;
-        vector<string> words;
+        vector<wstring> words;
         
         if(1) // Initialize indent, words
         {
-            char *s;
-            for(s=Buf; *s; ++s){if(*s=='\n'||*s=='\r'){*s=0;break;}}
-            for(s=Buf; *s==' '; ++s) ++indent;
+            const ucs4 *s = Buf.data();
+            while(*s == ' ') { ++s; ++indent; }
 
-            string rest = s;
+            wstring rest = s;
             for(;;)
             {
                 unsigned spacepos = rest.find(' ');
                 if(spacepos == rest.npos)break;
                 words.push_back(rest.substr(0, spacepos));
-                if(spacepos+1 >= rest.size()) { rest = ""; break; }
+                if(spacepos+1 >= rest.size()) { CLEARSTR(rest); break; }
                 rest = rest.substr(spacepos+1);
             }
-            if(rest.size()) { words.push_back(rest); rest = ""; }
+            if(rest.size()) { words.push_back(rest); CLEARSTR(rest); }
         }
         
-        if(!words.size()) continue;
+        if(!words.size())
+        {
+            fprintf(stderr, "Weird, '%s' is empty line?\n",
+                WstrToAsc(Buf).c_str());
+            continue;
+        }
         
         if(words[0][0] == '#') continue;
         
         Asm.BRANCH_LEVEL(indent);
         
-        if(words[0] == "TRUE")
+        const string firstword = WstrToAsc(words[0]);
+        
+        if(firstword == "TRUE")
         {
             Asm.BOOLEAN_RETURN(true);
         }
-        else if(words[0] == "FALSE")
+        else if(firstword == "FALSE")
         {
             Asm.BOOLEAN_RETURN(false);
         }
-        else if(words[0] == "RETURN")
+        else if(firstword == "RETURN")
         {
             if(words.size() > 1) Asm.LOAD_VAR(words[1]);
             Asm.VOID_RETURN();
         }
-        else if(words[0] == "VAR")
+        else if(firstword == "VAR")
         {
             for(unsigned a=1; a<words.size(); ++a)
             {
                 Asm.DECLARE_VAR(words[a]);
             }
         }
-        else if(words[0] == "REG")
+        else if(firstword == "REG")
         {
             for(unsigned a=1; a<words.size(); ++a)
             {
                 Asm.DECLARE_REGVAR(words[a]);
             }
         }
-        else if(words[0] == "CALL_GET")
+        else if(firstword == "CALL_GET")
         {
             Asm.CALL_FUNC(words[1]);
             Asm.STORE_VAR(words[2]);
         }
-        else if(words[0] == "IF")
+        else if(firstword == "IF")
         {
             if(words.size() > 2) Asm.LOAD_VAR(words[2]);
             Asm.CALL_FUNC(words[1]);
             Asm.COMPARE_BOOL(indent);
         }
-        else if(words[0] == "CALL")
+        else if(firstword == "CALL")
         {
             if(words.size() > 2) Asm.LOAD_VAR(words[2]);
             Asm.CALL_FUNC(words[1]);
         }
-        else if(words[0] == "INC")
+        else if(firstword == "INC")
         {
             Asm.INC_VAR(words[1]);
         }
-        else if(words[0] == "DEC")
+        else if(firstword == "DEC")
         {
             Asm.DEC_VAR(words[1]);
         }
-        else if(words[0] == "LET")
+        else if(firstword == "LET")
         {
             Asm.LOAD_VAR(words[2]);
             Asm.STORE_VAR(words[1]);
         }
-        else if(words[0] == "=")
+        else if(firstword == "=")
         {
-            if(words[2] == "0")
+            if(WstrToAsc(words[2]) == "0")
                 Asm.COMPARE_ZERO(words[1], indent);
             else
             {
@@ -801,36 +836,36 @@ const FunctionList Compile(FILE *fp)
                 Asm.COMPARE_EQUAL(words[1], indent);
             }
         }
-        else if(words[0] == ">")
+        else if(firstword == ">")
         {
             Asm.LOAD_VAR(words[2]);
             Asm.COMPARE_GREATER(words[1], indent);
         }
-        else if(words[0] == "?")
+        else if(firstword == "?")
         {
             Asm.LOAD_VAR(words[1]);
             Asm.SELECT_CASE(words[2], indent);
         }
-        else if(words[0] == "{")
+        else if(firstword == "{")
         {
             Asm.START_CHARNAME_LOOP();
         }
-        else if(words[0] == "}")
+        else if(firstword == "}")
         {
             Asm.END_CHARNAME_LOOP();
         }
-        else if(words[0] == "OUT")
+        else if(firstword == "OUT")
         {
             Asm.LOAD_VAR(words[1]);
             Asm.OUT_CHARACTER();
         }
-        else if(words[0] == "FUNCTION")
+        else if(firstword == "FUNCTION")
         {
             Asm.END_FUNCTION();
             Asm.START_FUNCTION(words[1]);
         }
         else
-            fprintf(stderr, "  ERROR: What's this? '%s'\n", words[0].c_str());
+            fprintf(stderr, "  ERROR: What's this? '%s'\n", firstword.c_str());
     }
     Asm.END_FUNCTION();
 

@@ -27,7 +27,7 @@ void Font12data::Load(const string &filename)
         vector<char> box = font12.getbox(a + boxstart);
 
         unsigned width=0;
-        while(box[width] != 5 && width<12)++width;
+        while(box[width] != 5 && width < 12)++width;
         
         for(unsigned p=0; p<box.size(); ++p)
             if((unsigned char)box[p] < sizeof(palette))
@@ -75,14 +75,19 @@ void Font8data::Load(const string &filename)
     font8.setboxsize(8, 8);
     font8.setboxperline(32);
     
-    static const char palette[] = {0,0,1,2,3};
+    static const char palette[] = {0,0,1,2,3,0};
     
     tiletable.resize(256 * 16);
+    widths.resize(256);
     
     unsigned to=0;
     for(unsigned a=0; a<256; ++a)
     {
         vector<char> box = font8.getbox(a);
+
+        unsigned width=0;
+        while(box[width] != 1 && width < 8)++width;
+
         for(unsigned p=0; p<box.size(); ++p)
             if((unsigned char)box[p] < sizeof(palette))
                 box[p] = palette[box[p]];
@@ -102,6 +107,8 @@ void Font8data::Load(const string &filename)
             tiletable[to++] = byte1;
             tiletable[to++] = byte2;
         }
+        
+        widths[a] = width;
     }
 }
 

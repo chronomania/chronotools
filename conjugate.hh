@@ -1,10 +1,10 @@
 #include <map>
-#include <string>
 #include <list>
 
 using std::map;
-using std::string;
 using std::list;
+
+#include "wstring.hh"
 
 class Conjugatemap
 {
@@ -18,7 +18,7 @@ public:
     struct form
     {
         datamap_t     data;
-        string        func;
+        wstring       func;
         bool          used;
         unsigned char prefix;
     };

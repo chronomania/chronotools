@@ -45,6 +45,7 @@ class insertor
     unsigned dictsize;
     
     Font8data Font8;
+    Font8data Font8v;
     Font12data Font12;
 
 public:
@@ -52,6 +53,7 @@ public:
     
     void LoadFile(FILE *fp);
     void LoadFont8(const string &fn) { Font8.Load(fn); }
+    void LoadFont8v(const string &fn) { Font8v.Load(fn); }
     void LoadFont12(const string &fn) { Font12.Load(fn); }
     
     void GenerateCode();
@@ -66,8 +68,12 @@ private:
     void WriteDictionary(class ROM &ROM);
     void WriteStrings(class ROM &ROM);
     void Write8pixfont(class ROM &ROM) const;
+    void Write8vpixfont(class ROM &ROM);
     void Write12pixfont(class ROM &ROM);
     void WriteCode(class ROM &ROM) const;
+
+    void GenerateConjugatorCode();
+    void GenerateVWF8code(unsigned widthtab_addr, unsigned tiletab_addr);
     
     void ApplyDictionary();
     void RebuildDictionary();

@@ -184,12 +184,18 @@ void insertor::PatchROM(ROM &ROM)
     }
 
     WriteStrings(ROM);
-    Write8pixfont(ROM); //works
-    Write12pixfont(ROM); //works
-    WriteDictionary(ROM); //?
+    Write8pixfont(ROM);
+    Write8vpixfont(ROM);
+    Write12pixfont(ROM);
+    WriteDictionary(ROM);
     
     GenerateCode(); 
     WriteCode(ROM);
+}
+
+void insertor::GenerateCode()
+{
+    GenerateConjugatorCode();
 }
 
 void insertor::WriteCode(ROM &ROM) const
@@ -204,6 +210,10 @@ void insertor::WriteCode(ROM &ROM) const
     // with 4 bytes (see conjugate.cc).
     // Patch with NOP.
     ROM.Write(ConjugatePatchAddress + 4, 0xEA);
+    
+    // Testataan item-listaa
+    //ROM.Write(0x02EFB4, 0xA9);
+    //ROM.Write(0x02EFB5, 0x10);
 }
 
 void insertor::Write8pixfont(ROM &ROM) const
@@ -216,23 +226,53 @@ void insertor::Write8pixfont(ROM &ROM) const
         ROM.Write(Font8_Address + a, tiletab[a]);
 }
 
+void insertor::Write8vpixfont(ROM &ROM)
+{
+    const vector<unsigned char> &widths  = Font8v.GetWidths();
+    const vector<unsigned char> &tiletab = Font8v.GetTiles();
+    
+    unsigned WidthTab_Address = freespace.FindFromAnyPage(widths.size());
+    unsigned TileTab_Address  = freespace.FindFromAnyPage(tiletab.size());
+    
+    fprintf(stderr, "Writing 8-pix VWF... "
+                    "(%u bytes at %02X:%04X,"
+                    " %u bytes at %02X:%04X)\n",
+        widths.size(),   0xC0 | (WidthTab_Address >> 16), WidthTab_Address & 0xFFFF,
+        tiletab.size(),  0xC0 | (TileTab_Address >> 16), TileTab_Address  & 0xFFFF
+           );
+
+    for(unsigned a=0; a<widths.size(); ++a) ROM.Write(WidthTab_Address + a, widths[a]);
+    for(unsigned a=0; a<tiletab.size(); ++a) ROM.Write(TileTab_Address + a, tiletab[a]);
+
+    GenerateVWF8code(WidthTab_Address, TileTab_Address);
+    
+    // Patch equip-left-func
+    ROM.Write(0x02A5AA+4, 0xEA); // NOP
+    ROM.Write(0x02A5AA+5, 0xEA); // NOP
+
+	// Patch item2func
+    ROM.Write(0x02F2DC+4, 0xEA); // NOP
+    ROM.Write(0x02F2DC+5, 0x60); // RTS
+}
+
 void insertor::Write12pixfont(ROM &ROM)
 {
     const vector<unsigned char> &tiletab1 = Font12.GetTab1();
     const vector<unsigned char> &tiletab2 = Font12.GetTab2();
     
     unsigned tilecount   = get_num_chronochars();
-    unsigned tiletabsize = tiletab1.size() + tiletab2.size();
+    
+    vector<freespacerec> Organization(2);
+    Organization[0].len = tiletab1.size();
+    Organization[1].len = tiletab2.size();
+    
+    unsigned tmp=NOWHERE;
+    freespace.OrganizeToAnySamePage(Organization, tmp);
+
+    unsigned addr1 = Organization[0].pos + (tmp<<16);
+    unsigned addr2 = Organization[1].pos + (tmp<<16);
 
     unsigned WidthTab_Address = freespace.FindFromAnyPage(tilecount);
-    unsigned Font12_Address = freespace.FindFromAnyPage(tiletabsize);
-    
-    // Actually addr1 and addr2 could as well be far apart,
-    // but they must be on the same page. Allocating them
-    // together is an easy way to ensure this.
-    
-    unsigned addr1 = Font12_Address;
-    unsigned addr2 = Font12_Address + tiletab1.size();
     
     fprintf(stderr, "Writing 12-pix font... "
                     "(%u bytes at %02X:%04X,"
@@ -244,7 +284,7 @@ void insertor::Write12pixfont(ROM &ROM)
            );
     
     // patch font engine
-    unsigned tmp = WidthTab_Address - (0x100-tilecount);
+    tmp = WidthTab_Address - (0x100-tilecount);
     ROM.Write(WidthTab_Address_Ofs+0, tmp & 255);
     ROM.Write(WidthTab_Address_Ofs+1, (tmp >> 8) & 255);
     ROM.Write(WidthTab_Address_Seg, 0xC0 | ((tmp >> 16) & 255));
@@ -272,29 +312,22 @@ void insertor::Write12pixfont(ROM &ROM)
 
 void insertor::WriteDictionary(ROM &ROM)
 {
-#if 0
-    // Dictionary can be placed anywhere,
-    // but this tends to put dictionary to
-    // a page that has no space for it.
-    unsigned dictaddr = freespace.FindFromAnyPage(dictsize * 2);
-    unsigned dictpage = dictaddr >> 16;
-#else
-    // The last page is big, so select it freely.
-    unsigned dictpage = 0x3F;
-    unsigned dictaddr = freespace.Find(dictpage, dictsize*2);
-    dictaddr |= (dictpage << 16);
-#endif
-    
     unsigned size = 0;
     for(unsigned a=0; a<dictsize; ++a)size += dict[a].size() + 1;
-    fprintf(stderr, "Writing dictionary (%u pointers at %02X:%04X, %u bytes)...\n",
-        dictsize, dictpage|0xC0, dictaddr&0xFFFF, size);
-    
-    vector<freespacerec> Organization(dictsize);
+
+    vector<freespacerec> Organization(dictsize + 1);
     for(unsigned a=0; a<dictsize; ++a)
         Organization[a].len = dict[a].size() + 1;
     
-    freespace.Organize(Organization, dictpage);
+    Organization[dictsize] = dictsize*2;
+
+    unsigned dictpage = NOWHERE;
+    freespace.OrganizeToAnySamePage(Organization, dictpage);
+    unsigned dictaddr = Organization[dictsize].pos + (dictpage << 16);
+
+    fprintf(stderr, "Writing dictionary (%u pointers at %02X:%04X, %u bytes)...\n",
+        dictsize, dictpage|0xC0, dictaddr&0xFFFF, size);
+    
     for(unsigned a=0; a<dictsize; ++a)
     {
         unsigned spaceptr = Organization[a].pos;

@@ -17,7 +17,7 @@ void Conjugatemap::Load()
     for(unsigned a=0; a<elems.size(); a += 2)
     {
         form tmp;
-        const string func = WstrToAsc(elems[a]);
+        const wstring func = elems[a];
         
         const string data = WstrToAsc(elems[a+1]);
         
@@ -165,7 +165,7 @@ namespace
             
             if(true)
             {
-                const string &funcname = i->func;
+                const wstring &funcname = i->func;
 
                 code.EmitCode(0x22, 0,0,0);
                 result.requires[funcname].insert(code.size() - 3);
@@ -195,7 +195,7 @@ namespace
         }
         
         SNEScode::FarToNearCall call = code.PrepareFarToNearCall();
-        call.Proceed(0xC25DC4);   /* call */
+        call.Proceed(DialogDrawFunctionAddr | 0xC00000);   /* call */
         
         branchEnd.ToHere();
         code.BitnessUnknown();
@@ -214,9 +214,10 @@ namespace
     }
 }
 
-void insertor::GenerateCode()
+void insertor::GenerateConjugatorCode()
 {
     string functionfn = WstrToAsc(GetConf("conjugator", "codefn"));
+    wstring ConjFuncName  = GetConf("conjugator", "funcname");
     
     FILE *fp = fopen(functionfn.c_str(), "rt");
     if(!fp) return;
@@ -226,12 +227,12 @@ void insertor::GenerateCode()
     fclose(fp);
     
     SubRoutine conjugator = GetConjugateCode();
-    Functions.Define("conjugator", conjugator);
-    
-    Functions.RequireFunction("conjugator");
+    Functions.Define(ConjFuncName, conjugator);
+
+    Functions.RequireFunction(ConjFuncName);
     
     vector<SNEScode> codeblobs;
-    vector<string>   funcnames;
+    vector<wstring>  funcnames;
     
     for(FunctionList::functions_t::const_iterator
         i = Functions.functions.begin();
@@ -256,7 +257,7 @@ void insertor::GenerateCode()
         unsigned addr = blocks[a].pos;
         codeblobs[a].YourAddressIs(addr);
         fprintf(stderr, "  Function %s (%u bytes) will be placed at %02X:%04X\n",
-            funcnames[a].c_str(),
+            WstrToAsc(funcnames[a]).c_str(),
             codeblobs[a].size(),
             0xC0 | (addr>>16),
             addr & 0xFFFF);

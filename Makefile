@@ -36,11 +36,12 @@ include Makefile.sets
 # VERSION 1.1.9  support for font/dictionary size skew
 # VERSION 1.1.10 new configuration system. Time to squash bugs.
 # VERSION 1.1.11 configuration works, font-enhancement works.
+# VERSION 1.2.0  variable-width 8pix font has stepped in, but has many many bugs.
 
 #OPTIM=-O3
 OPTIM=-O0
 
-VERSION=1.1.11
+VERSION=1.2.0
 ARCHFILES=xray.c xray.h \
           viewer.c \
           ctcset.cc ctcset.hh \
@@ -58,6 +59,7 @@ ARCHFILES=xray.c xray.h \
           ctdump.cc ctinsert.cc \
           ctinsert.hh writeout.cc \
           makeips.cc unmakeips.cc \
+          vwf8.cc vwftest.cc \
           config.cc config.hh \
           confparser.cc confparser.hh \
           taipus.rb ct.code \
@@ -68,7 +70,7 @@ ARCHFILES=xray.c xray.h \
 
 EXTRA_ARCHFILES=\
           ct_try.txt \
-          ct8fnFI.tga ct16fnFI.tga
+          ct8fnFI.tga ct16fnFI.tga ct8fnFIv.tga
 
 ARCHNAME=chronotools-$(VERSION)
 ARCHDIR=archives/
@@ -91,11 +93,8 @@ ctinsert: \
 		ctinsert.o miscfun.o readin.o \
 		tgaimage.o space.o writeout.o \
 		dictionary.o fonts.o rom.o snescode.o \
-		conjugate.o compiler.o symbols.o \
+		conjugate.o vwf8.o compiler.o symbols.o \
 		config.o confparser.o ctcset.o wstring.o
-	$(CXX) -o $@ $^ $(LDFLAGS) -lm
-
-spacefind: spacefind.o
 	$(CXX) -o $@ $^ $(LDFLAGS) -lm
 
 makeips: makeips.cc
@@ -103,9 +102,16 @@ makeips: makeips.cc
 unmakeips: unmakeips.cc
 	$(CXX) -g -O -Wall -W -pedantic -o $@ $^
 
+spacefind: spacefind.o
+	$(CXX) -o $@ $^ $(LDFLAGS) -lm
+
 sramdump: sramdump.cc config.o confparser.o wstring.o
 	$(CXX) -g -O -Wall -W -pedantic -o $@ $^
 base62: base62.cc
+	$(CXX) -g -O -Wall -W -pedantic -o $@ $^
+vwftest: \
+		vwftest.cc tgaimage.o fonts.o config.o \
+		confparser.o ctcset.o wstring.o
 	$(CXX) -g -O -Wall -W -pedantic -o $@ $^
 
 #ct.txt: ctdump chrono-dumpee.smc
@@ -114,18 +120,19 @@ base62: base62.cc
 
 ctpatch-hdr.ips ctpatch-nohdr.ips: \
 		ctinsert \
-		ct.txt ct.code ct16fn.tga ct8fn.tga ct.cfg
+		ct.txt ct.code ct.cfg \
+		ct16fn.tga ct8fn.tga ct8fnFIv.tga
 	./ctinsert
 
 chrono-patched.smc: unmakeips ctpatch-hdr.ips chrono-dumpee.smc
-	./unmakeips ctpatch-hdr.ips <chrono-dumpee.smc >chrono-patched.smc
+	./unmakeips ctpatch-hdr.ips <chrono-dumpee.smc >chrono-patched.smc 2>/dev/null
 
 snes9xtest: chrono-patched.smc FORCE
 	#~/src/snes9x/bisq-1.39/Gsnes9x -stereo -alt -m 256x256[C32/32] -r 7 chrono-patched.smc
-	~/snes9x -stereo -alt -y 3 -r 7 chrono-patched.smc
+	./snes9x-debug -stereo -alt -y 2 -r 7 chrono-patched.smc
 
 snes9xtest2: chrono-patched.smc FORCE
-	~/snes9x -r 0 chrono-patched.smc
+	./snes9x-debug -r 0 chrono-patched.smc
 
 clean: FORCE
 	rm -f *.o $(PROGS)

@@ -1,10 +1,10 @@
 #include <cstdio>
-#include <string>
 #include <utility>
 #include <map>
 #include <set>
 
 #include "snescode.hh"
+#include "wstring.hh"
 
 using namespace std;
 
@@ -14,18 +14,20 @@ struct SubRoutine
     SNEScode code;
     
     // funcname -> positions where called
-    typedef map<string, set<unsigned> > requires_t;
+    typedef map<wstring, set<unsigned> > requires_t;
     requires_t requires;
+    
+    void CallSub(const wstring &name);
 };
 
 struct FunctionList
 {
     // funcname -> pair<function, requiredflag>
-    typedef map<string, pair<SubRoutine, bool> > functions_t;
+    typedef map<wstring, pair<SubRoutine, bool> > functions_t;
     functions_t functions;
 
-    void Define(const string &name, const SubRoutine &sub);
-    void RequireFunction(const string &name);
+    void Define(const wstring &name, const SubRoutine &sub);
+    void RequireFunction(const wstring &name);
 };
 
 const FunctionList Compile(FILE *fp);
