@@ -3,7 +3,7 @@ CXX=g++
 #CXX=/usr/gcc3/bin/i586-pc-linux-gnu-g++
 CC=$(CXX)
 CPPFLAGS=-Wall -W -pedantic -g -DVERSION=\"$(VERSION)\"
-LDFLAGS=-L/usr/lib/graphics
+LDFLAGS=
 
 CXXFLAGS=-O2
 
@@ -22,20 +22,21 @@ CXXFLAGS=-O2
 # VERSION 1.0.15 updated FIN/README and ct_fin.txt, but neither are archived
 # VERSION 1.0.16 added taipus.rb, fixed homepage urls and fixed mmap error checking.
 # VERSION 1.0.17 working again; uses space better; little modularized
+# VERSION 1.0.18 more of above
 
-VERSION=1.0.17
+VERSION=1.0.18
 ARCHFILES=xray.c xray.h \
           viewer.c \
           ctcset.cc ctcset.hh \
           miscfun.cc miscfun.hh \
           space.cc space.hh \
           wstring.cc wstring.hh \
-          loadin.cc \
+          readin.cc rom.hh \
           tgaimage.cc tgaimage.hh \
           ctdump.cc ctinsert.cc \
-          ctinsert.hh \
+          ctinsert.hh writeout.cc \
           makeips.cc unmakeips.cc \
-          taipus.cc taipus.rb \
+          taipus.rb progdesc.php \
           spacefind.cc \
           README
 EXTRA_ARCHFILES=ct_eng.txt \
@@ -58,7 +59,9 @@ viewer: viewer.o
 ctdump: ctdump.o ctcset.o miscfun.o wstring.o
 	$(CXX) -o $@ $^
 
-ctinsert: ctinsert.o ctcset.o miscfun.o wstring.o tgaimage.o loadin.o space.o
+ctinsert: \
+		ctinsert.o ctcset.o miscfun.o wstring.o \
+		tgaimage.o readin.o space.o writeout.o
 	$(CXX) -o $@ $^ $(LDFLAGS) -lm
 
 spacefind: spacefind.o

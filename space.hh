@@ -5,9 +5,20 @@ using namespace std;
 
 #define NOWHERE 0x10000
 
-
-/* pos->len */
-typedef pair<unsigned, unsigned> freespacerec;
+struct freespacerec
+{
+	unsigned pos;
+	unsigned len;
+	
+	freespacerec() : pos(0), len(0) {}
+	freespacerec(unsigned p,unsigned l) : pos(p), len(l) {}
+	
+	bool operator< (const freespacerec &b) const
+	{
+		if(pos != b.pos) return pos < b.pos;
+		return len < b.len;
+	}
+};
 
 typedef set<freespacerec> freespaceset;
 
@@ -22,4 +33,9 @@ public:
     
     unsigned Size() const;
     unsigned Size(unsigned page) const;
+    
+    const set<unsigned> GetPageList() const;
+    const freespaceset GetList(unsigned pagenum) const;
+    
+    void Add(unsigned page, unsigned begin, unsigned length);
 };

@@ -17732,31 +17732,31 @@ $HW8A:ESINE
 
 ;Status screen string
 *r;2 pointerstrings (8pix font)
-$HX9n:TIME[nl][nl]__[3][150][157][99][126]G
+$HX9n:AIKA[nl][nl]__[3][150][157][99][126]G
 $HX9p:PWR.[skip 3]SPD.[nl]HIT[skip 4]EV.[nl]MAG.[skip 3]STAM.[nl]M DEF.[9][128][nl]EXP[nl]NEXT
 
 
 *r;1 pointerstrings (8pix font)
-$HX9x:Weapon
+$HX9x:Ase
 
 
 *r;2 pointerstrings (8pix font)
-$HXA5:Who'll you [nl]replace?
-$HXA7:Use/Move____Organize
+$HXA5:Kenet vaihdat?
+$HXA7:Ota/Siirrä__Järjestä
 
 
 *r;6 pointerstrings (8pix font)
-$HXAF:Confirm[nl]Cancel[nl]Menu[nl]Dash[nl]Map[nl]Warp
-$HXAH:[10][32]Erase[nl]old[nl]save?[nl]__Yes[nl]__No[10]
-$HXAJ:[10][32]New Game +
-$HXAL:[10][32]New Game +
-$HXAN:[10][32]New Game +
-$HXAP:[10][32]New Game
+$HXAF:Hyväksy[nl]Peru[nl]Menu[nl]Isku[nl]Kartta[nl]Warp
+$HXAH:[10][32]Tämän[nl]pääl-[nl]le?[nl]__Ok[nl]__Ei[10]
+$HXAJ:[10][32]Uusi peli+
+$HXAL:[10][32]Uusi peli+
+$HXAN:[10][32]Uusi peli+
+$HXAP:[10][32]  Uusi
 
 
 *r;2 pointerstrings (8pix font)
-$HXAX:Can't[nl]do that!
-$HXAZ:Can't[nl]do that!
+$HXAX:Ei   [nl]onnistu!
+$HXAZ:Ei   [nl]onnistu!
 
 
 *r;2 pointerstrings (8pix font)
@@ -17765,24 +17765,24 @@ $HXAp:Can be used [nl]by[45][2][136][nl][ptr 9890]_[ptr 9896][nl][ptr 989C]_[ptr
 
 
 *r;18 pointerstrings (8pix font)
-$HXAv:Erase[nl]old[nl]save?[nl]__Yes[nl]__No
-$HXAx:[10][32]New Game +
-$HXAz:_Equip___
-$HXB1:_Equip___
-$HXB3:_Equip___
-$HXB5:_Equip___
-$HXB7:_Equip___
-$HXB9:_Equip___
-$HXBB:_Equip___
-$HXBD:_Equip___
-$HXBF:_Equip___
-$HXBH:_Equip___
-$HXBJ:_Equip___
-$HXBL:_Equip___
-$HXBN:_Equip___
-$HXBP:__Buy____
-$HXBR:__Sell___
-$HXBT:Buy__Sell
+$HXAv:Tämän[nl]pääl-[nl]le?[nl]__Ok[nl]__Ei
+$HXAx:[10][32]Uusi peli+
+$HXAz:_Pue_____
+$HXB1:_Pue_____
+$HXB3:_Pue_____
+$HXB5:_Pue_____
+$HXB7:_Pue_____
+$HXB9:_Pue_____
+$HXBB:_Pue_____
+$HXBD:_Pue_____
+$HXBF:_Pue_____
+$HXBH:_Pue_____
+$HXBJ:_Pue_____
+$HXBL:_Pue_____
+$HXBN:_Pue_____
+$HXBP:__Osta___
+$HXBR:__Myy____
+$HXBT:Osta_Myy_
 
 
 *r;2 pointerstrings (8pix font)
@@ -17793,43 +17793,43 @@ $HXBb:Defense[45]
 ;Misc prompts
 *z;7 pointerstrings (12pix font)
 $HXsh:
-Enter a name, then push the[nl]
-Start Button.
+Syötä nimi ja paina sen[nl]
+jälkeen Start.
 $HXsj:
-Enemies will attack even[nl]
-if you're not ready!
+Viholliset hyökkäävät,[nl]
+vaikka et olisi valmis!     
 $HXsl:
-Take your time to choose[nl]
-items and fight strategically.
+Sinulla on aikaa miettiä,[nl]
+ja voit taistella strategisesti.
 $HXsn:
-Start using[nl]
-which data?
+Valitse ladattava[nl]
+tallenne.
 $HXsp:
-Who'll you [nl]
-replace?
+Kenet[nl]
+vaihdat?
 $HXsr:
-Can't[nl]
-do that!
+Ei[nl]
+onnistu.
 $HXst:
-Can be used by
+Voi käyttää
 
 
 ;Configuration
-*r;98 pointerstrings (8pix font)
+*z;98 pointerstrings (8pix font)
 $HYCM:Stereo
-$HYCO:Battle Mode
-$HYCQ:Save Menu Cursor?
-$HYCS:Save Battle Cursor?
-$HYCU:Save Skill/Item Cursor?
-$HYCW:Battle Speed
-$HYCY:Window Color
+$HYCO:Taistelutila
+$HYCQ:Tallenna menukursori?
+$HYCS:Tallenna taistelukursori?
+$HYCU:Tallenna kyky/esinekursori?
+$HYCW:Taistelunopeus
+$HYCY:Ikkunan väri
 $HYCa:Battle Gauge
-$HYCc:Control Pad
-$HYCe:Skill/Item Info.
+$HYCc:Ohjain
+$HYCe:Kyky-/esineinfo
 $HYCg:Battle Gauge Speed
 $HYCi:Battle Mes. Speed
-$HYCk:N
-$HYCm:Y
+$HYCk:E
+$HYCm:K
 $HYCo:1
 $HYCq:2
 $HYCs:3
@@ -17838,16 +17838,16 @@ $HYCw:5
 $HYCy:6
 $HYD0:7
 $HYD2:8
-$HYD4:Standard
-$HYD6:Custom
-$HYD8:Wait
-$HYDA:Active
-$HYDC:Off
+$HYD4:Normaali
+$HYD6:Muokattu
+$HYD8:Stop
+$HYDA:Aktiivi
+$HYDC: Ei
 $HYDE:On
-$HYDG:N
-$HYDI:Y
+$HYDG:E
+$HYDI:K
 $HYDK:
-$HYDM:Off
+$HYDM: EI
 $HYDO:1
 $HYDQ:2
 $HYDS:3
@@ -17857,7 +17857,7 @@ $HYDY:6
 $HYDa:7
 $HYDc:8
 $HYDe:On
-$HYDg:Off
+$HYDg: Ei
 $HYDi:1
 $HYDk:2
 $HYDm:3
@@ -17930,7 +17930,7 @@ $HYAu: Ajan loppu
 
 ;Episode list
 *r;27 pointerstrings (8pix font)
-$HXws:   The Millennial Fair
+$HXws:    Vuosituhatjuhla
 $HXwu:  Kuningatar palaa
 $HXww:  Kuningatar poissa
 $HXwy:       We're Back!
@@ -17941,7 +17941,7 @@ $HXx6:        Ajan loppu
 $HXx8:     Taikuuden kylä
 $HXxA:    Sankari ilmestyy
 $HXxC:    Tata ja Sammakko
-$HXxE:   The Rare Red Rock
+$HXxE:   Outo punainen kivi
 $HXxG:  Jalanjälkiä! Seuraa!
 $HXxI:         Masamune!
 $HXxK:    Maguksen linna
@@ -17950,7 +17950,7 @@ $HXxO:   Luonnoton valinta?
 $HXxQ: Taikuuden valtakunta
 $HXxS:     Riko sinetti!
 $HXxU:Valituksen Vuoren Guru
-$HXxW:  What Lies Beyond?
+$HXxW:    Tuolla takana
 $HXxY:     Lavos kutsuu
 $HXxa:    Uusi kuningas
 $HXxc:      The Time Egg

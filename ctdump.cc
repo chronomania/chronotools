@@ -401,30 +401,30 @@ static void DumpStrings(const unsigned offs, unsigned len=0)
 
         for(unsigned b=0; b<s.size(); ++b)
         {
-        	switch(s[b])
-        	{
-        		case 1:
-        			line += conv.puts(AscToWstr("[nl]"));
-        			break;
-        		case 5:
-        		{
-        			char Buf[64];
-	                unsigned c = (unsigned char)s[++b];
-    	            c += 256 * (unsigned char)s[++b];
-        	        sprintf(Buf, "[ptr %04X]", c);
-            	    line += conv.puts(AscToWstr(Buf));
-            	    break;
-        		}
-        		case 8:
-        		{
-	                char Buf[64];
-    	            sprintf(Buf, "[skip %u]", (unsigned char)s[++b]);
-        	        line += conv.puts(AscToWstr(Buf));
-        	        break;
-            	}
-            	default:
-	                line += conv.puts(Disp8Char(s[b]));
-	        }
+            switch(s[b])
+            {
+                case 1:
+                    line += conv.puts(AscToWstr("[nl]"));
+                    break;
+                case 5:
+                {
+                    char Buf[64];
+                    unsigned c = (unsigned char)s[++b];
+                    c += 256 * (unsigned char)s[++b];
+                    sprintf(Buf, "[ptr %04X]", c);
+                    line += conv.puts(AscToWstr(Buf));
+                    break;
+                }
+                case 8:
+                {
+                    char Buf[64];
+                    sprintf(Buf, "[skip %u]", (unsigned char)s[++b]);
+                    line += conv.puts(AscToWstr(Buf));
+                    break;
+                }
+                default:
+                    line += conv.puts(Disp8Char(s[b]));
+            }
         }
         puts(line.c_str());
     }
@@ -866,7 +866,7 @@ int main(void)
     DumpZStrings(0x3FCF3B, 7);
     
     puts(";Configuration");
-    DumpStrings(0x3FD3FE, 98);
+    DumpZStrings(0x3FD3FE, 98);
     
     puts(";Era list");
     DumpStrings(0x3FD396, 8);
