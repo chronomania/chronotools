@@ -186,13 +186,8 @@ struct AutoRefererLink: public CodeNodePtr
 {
     CodeNodePtr   owner;
     
-    AutoRefererLink(): owner(NULL)
-    {
-    }
-    ~AutoRefererLink()
-    {
-        Unlink();
-    }
+    AutoRefererLink();
+    ~AutoRefererLink();
     AutoRefererLink& operator= (CodeNode *value)
     {
         Unlink();
@@ -200,7 +195,7 @@ struct AutoRefererLink: public CodeNodePtr
         Link();
         return *this;
     }
-    void SetOwner(CodeNode *p) { owner = p; }
+    void SetOwner(CodeNode *p);
 private:
     void Link();
     void Unlink();
@@ -753,6 +748,17 @@ private:
     void operator= (const CodeNode &b);
 };
 
+AutoRefererLink::AutoRefererLink()
+{
+}
+AutoRefererLink::~AutoRefererLink()
+{
+    Unlink();
+}
+void AutoRefererLink::SetOwner(CodeNode* p)
+{
+    owner = p;
+}
 void AutoRefererLink::Unlink()
 {
     CodeNode *link = *this;
