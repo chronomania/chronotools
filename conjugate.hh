@@ -6,15 +6,6 @@ using std::map;
 using std::string;
 using std::list;
 
-enum CnjType
-{
-    Cnj_N,
-    Cnj_A,
-    Cnj_LLA,
-    Cnj_LLE,
-    Cnj_STA
-};
-
 class Conjugatemap
 {
 public:
@@ -22,27 +13,25 @@ public:
 
     void Work(string &s, const string &plaintext);
 
-private:
     typedef map<string, unsigned char> datamap_t;
+
     struct form
     {
-        datamap_t   data;
-        CnjType     type;
+        datamap_t     data;
+        string        func;
+        bool          used;
+        unsigned char prefix;
     };
     
-    map<CnjType, unsigned char> prefixes;
-    
-    list<form> forms;
+    typedef list<form> formlist;
+
+private:
+    formlist forms;
     void AddForm(const form &form) { forms.push_back(form); }
-    void AddData(datamap_t &target, const string &s) const;
-    datamap_t CreateMap(const char *word, ...) const;
-    void Work(string &s, const form &form);
+    void Work(string &s, form &form);
     void Load();
-    
 public:
-    bool IsUsed(CnjType c) const { return prefixes.find(c)!=prefixes.end(); }
-    unsigned char GetByte(CnjType c) const { return prefixes.find(c)->second; }
-    const map<CnjType, unsigned char> &GetPref() const { return prefixes; }
+	const formlist &GetForms() const { return forms; }
 };
 
 extern Conjugatemap Conjugatemap;

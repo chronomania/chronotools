@@ -1,5 +1,9 @@
 include Makefile.sets
 
+#CXX=i586-mingw32msvc-g++
+#CC=i586-mingw32msvc-gcc
+#CPP=i586-mingw32msvc-gcc
+
 # VERSION 1.0.3  was the first working! :D
 # VERSION 1.0.4  handled fixed strings too
 # VERSION 1.0.5  found item descriptions
@@ -30,10 +34,11 @@ include Makefile.sets
 # VERSION 1.1.7  some translation, more asm changes
 # VERSION 1.1.8  syntax changes in the compiler, optimizations
 # VERSION 1.1.9  support for font/dictionary size skew
+# VERSION 1.1.10 new configuration system. Time to squash bugs.
 
 OPTIM=-O3
 
-VERSION=1.1.9
+VERSION=1.1.10
 ARCHFILES=xray.c xray.h \
           viewer.c \
           ctcset.cc ctcset.hh \
@@ -51,6 +56,8 @@ ARCHFILES=xray.c xray.h \
           ctdump.cc ctinsert.cc \
           ctinsert.hh writeout.cc \
           makeips.cc unmakeips.cc \
+          config.cc config.hh \
+          confparser.cc confparser.hh \
           taipus.rb ct.code \
           progdesc.php \
           spacefind.cc base62.cc sramdump.cc \
@@ -75,14 +82,15 @@ xray: xray.o
 viewer: viewer.o
 	$(CC) -o $@ $^ $(LDFLAGS) -lslang
 
-ctdump: ctdump.o ctcset.o miscfun.o wstring.o
+ctdump: ctdump.o miscfun.o config.o confparser.o ctcset.o wstring.o
 	$(CXX) -o $@ $^
 
 ctinsert: \
 		ctinsert.o miscfun.o readin.o \
 		tgaimage.o space.o writeout.o \
 		dictionary.o fonts.o rom.o snescode.o \
-		conjugate.o compiler.o symbols.o ctcset.o wstring.o
+		conjugate.o compiler.o symbols.o \
+		config.o confparser.o ctcset.o wstring.o
 	$(CXX) -o $@ $^ $(LDFLAGS) -lm
 
 spacefind: spacefind.o

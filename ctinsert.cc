@@ -4,36 +4,37 @@ using namespace std;
 
 #include "ctinsert.hh"
 #include "ctcset.hh"
+#include "config.hh"
 #include "rom.hh"
-
-#include "settings.hh"
 
 namespace
 {
-    void GeneratePatches(ROM &ROM)
+    void GeneratePatch(ROM &ROM, unsigned offset, const char *fn)
     {
+        unsigned MaxHunkSize = GetConf("patch", "maxhunksize");
+
         /*
         {FILE *fp = fopen("chrono-uncompressed.smc", "rb");
         if(fp){fseek(fp,512,SEEK_SET);fread(&ROM[0], 1, ROM.size(), fp);fclose(fp);}}
         */
         
-        /* Now write the patches */
-        FILE *fp = fopen(patchfile_nohdr, "wb");
-        FILE *fp2 = fopen(patchfile_hdr, "wb");
+        /* Now write the patch */
+        FILE *fp = fopen(fn, "wb");
+        if(!fp)
+        {
+        	perror(fn);
+        	return;
+        }
         fwrite("PATCH", 1, 5, fp);
-        fwrite("PATCH", 1, 5, fp2);
+
         /* Format:   24bit offset, 16-bit size, then data; repeat */
         for(unsigned a=0; a<ROM.size(); ++a)
         {
             if(!ROM.touched(a))continue;
             
-            // Offset is "a" in fp, "a+512" in fp2
-            putc((a>>16)&255, fp);
-            putc((a>> 8)&255, fp);
-            putc((a    )&255, fp);
-            putc(((a+512)>>16)&255, fp2);
-            putc(((a+512)>> 8)&255, fp2);
-            putc(((a+512)    )&255, fp2);
+            putc(((a+offset)>>16)&255, fp);
+            putc(((a+offset)>> 8)&255, fp);
+            putc(((a+offset)    )&255, fp);
             
             unsigned offs=a, c=0;
             while(a < ROM.size() && ROM.touched(a) && c < MaxHunkSize)
@@ -42,15 +43,16 @@ namespace
             // Size is "c" in both.
             putc((c>> 8)&255, fp);
             putc((c    )&255, fp);
-            putc((c>> 8)&255, fp2);
-            putc((c    )&255, fp2);
             fwrite(&ROM[offs], 1, c, fp);
-            fwrite(&ROM[offs], 1, c, fp2);
         }
         fwrite("EOF",   1, 3, fp);
-        fwrite("EOF",   1, 3, fp2);
-        fclose(fp); fprintf(stderr, "Created %s\n", patchfile_nohdr);
-        fclose(fp2); fprintf(stderr, "Created %s\n", patchfile_hdr);
+        fclose(fp);
+        fprintf(stderr, "Created %s\n", fn);
+    }
+    void GeneratePatches(ROM &ROM)
+    {
+        GeneratePatch(ROM, 0,   WstrToAsc(GetConf("patch", "patchfn_nohdr")).c_str());
+        GeneratePatch(ROM, 512, WstrToAsc(GetConf("patch", "patchfn_hdr")).c_str());
     }
 }
 
@@ -229,12 +231,16 @@ int main(void)
     
     insertor *ins = new insertor;
     
+    string font8fn  = WstrToAsc(GetConf("font",   "font8fn"));
+    string font12fn = WstrToAsc(GetConf("font",   "font12fn"));
+    string scriptfn = WstrToAsc(GetConf("readin", "scriptfn"));
+    
     // Font loading must happen before script loading,
     // or script won't be properly paragraph-wrapped.
     ins->LoadFont8(font8fn);
     ins->LoadFont12(font12fn);
     
-    FILE *fp = fopen(scriptfn, "rt");
+    FILE *fp = fopen(scriptfn.c_str(), "rt");
     ins->LoadFile(fp);
     fclose(fp);
     

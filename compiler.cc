@@ -2,13 +2,15 @@
 #include <set>
 #include <map>
 
+/*
+  FIXME: Aja syöte characterset-muutimen läpi!
+*/
 #include "snescode.hh"
 #include "compiler.hh"
+#include "config.hh"
 #include "ctcset.hh"
 
 using namespace std;
-
-#include "settings.hh"
 
 #define OPTIMIZE_A
 
@@ -97,14 +99,14 @@ namespace
             if(varcount >= 2) CODE.Set16bit_M();
             while(varcount >= 2)
             {
-                CODE.AddCode(0x48); // PHA
+                CODE.EmitCode(0x48); // PHA
                 varcount -= 2;
             }
         #endif
             if(varcount >= 1) CODE.Set8bit_M();
             while(varcount >= 1)
             {
-                CODE.AddCode(0x48); // PHA
+                CODE.EmitCode(0x48); // PHA
                 varcount -= 1;
             }
             endbranch = new Branch(CODE.PrepareRelativeLongBranch());
@@ -123,13 +125,13 @@ namespace
             if(varcount >= 2) CODE.Set16bit_X();
             while(varcount >= 2)
             {
-                CODE.AddCode(0x7A); // PLY
+                CODE.EmitCode(0x7A); // PLY
                 varcount -= 2;
             }
             if(varcount >= 1) CODE.Set8bit_X();
             while(varcount >= 1)
             {
-                CODE.AddCode(0x7A); // PLY
+                CODE.EmitCode(0x7A); // PLY
                 varcount -= 1;
             }
             
@@ -156,7 +158,7 @@ namespace
             }
             
             FINISH_BRANCHES();
-            CODE.AddCode(0x6B);     // RTL
+            CODE.EmitCode(0x6B);     // RTL
 #if 0
             fprintf(stderr, "Function %s done:\n", CurSubName.c_str());
             fprintf(stderr, "Code:");
@@ -202,8 +204,15 @@ namespace
             
             return i->second.stackpos;
         }
+
     public:
-        Assembler() : cursub(NULL)
+        const string LoopHelperName;
+        const string OutcHelperName;
+        
+        Assembler()
+        : cursub(NULL),
+          LoopHelperName(WstrToAsc(GetConf("compiler", "loophelpername"))),
+          OutcHelperName(WstrToAsc(GetConf("compiler", "outchelpername")))
         {
         }
         
@@ -274,7 +283,7 @@ namespace
         {
             CheckCodeStart();
 
-            CODE.AddCode(0x82, 0,0); // BRL- Jump to end
+            CODE.EmitCode(0x82, 0,0); // BRL- Jump to end
             endbranch->FromHere();
         }
         void BOOLEAN_RETURN(bool value)
@@ -282,9 +291,9 @@ namespace
             CheckCodeStart();
             // emit flag, then return
             if(value)
-                CODE.AddCode(0x18); // CLC - carry nonset = true
+                CODE.EmitCode(0x18); // CLC - carry nonset = true
             else
-                CODE.AddCode(0x38); // SEC - carry set = false
+                CODE.EmitCode(0x38); // SEC - carry set = false
             VOID_RETURN();
         }
         void LOAD_VAR(const string &name)
@@ -309,7 +318,7 @@ namespace
                         "  Warning: In function '%s', variable '%s' was read before written.\n",
                             CurSubName.c_str(), name.c_str());
                 }
-                CODE.AddCode(0xA3, stackpos); // LDA [00:s+n]
+                CODE.EmitCode(0xA3, stackpos); // LDA [00:s+n]
                 
                 return;
             }
@@ -338,12 +347,12 @@ namespace
             if(val < 256)
             {
                 CODE.Set8bit_M();
-                CODE.AddCode(0xA9, val); // LDA A, imm8
+                CODE.EmitCode(0xA9, val); // LDA A, imm8
             }
             else
             {
                 CODE.Set16bit_M();
-                CODE.AddCode(0xA9, val&255, val>>8); // LDA A, imm16
+                CODE.EmitCode(0xA9, val&255, val>>8); // LDA A, imm16
             }
         }
         void STORE_VAR(const string &name)
@@ -359,7 +368,7 @@ namespace
                 // store A to var
                 CODE.Set8bit_M();
                 unsigned stackpos = GetStackOffset(name);
-                CODE.AddCode(0x83, stackpos); // STA [00:s+n]
+                CODE.EmitCode(0x83, stackpos); // STA [00:s+n]
             }
             vars[name].written = true;
             
@@ -373,7 +382,7 @@ namespace
             // inc var
             LOAD_VAR(name);
             CODE.Set8bit_M();
-            CODE.AddCode(0x1A); // INC A
+            CODE.EmitCode(0x1A); // INC A
 #ifdef OPTIMIZE_A
             aVarState.Invalidate();
             aConstState.Inc();
@@ -386,7 +395,7 @@ namespace
             // dec var
             LOAD_VAR(name);
             CODE.Set8bit_M();
-            CODE.AddCode(0x3A); // DEC A
+            CODE.EmitCode(0x3A); // DEC A
 #ifdef OPTIMIZE_A
             aVarState.Invalidate();
             aConstState.Dec();
@@ -398,15 +407,15 @@ namespace
             CheckCodeStart();
             
             CODE.Set16bit_X();
-            CODE.AddCode(0xDA); // PHX
+            CODE.EmitCode(0xDA); // PHX
             
             // leave A unmodified and issue call to function
-            CODE.AddCode(0x22, 0,0,0);
+            CODE.EmitCode(0x22, 0,0,0);
             cursub->requires[name].insert(CODE.size() - 3);
             CODE.BitnessUnknown();
             
             CODE.Set16bit_X();
-            CODE.AddCode(0xFA); // PLX
+            CODE.EmitCode(0xFA); // PLX
 #ifdef OPTIMIZE_A
             Invalidate_A();
 #endif
@@ -418,8 +427,8 @@ namespace
             // process subblock if boolean set
             
             Branch b = CODE.PrepareRelativeLongBranch();
-            CODE.AddCode(0x90, 3);   // BCC- Jump to if true
-            CODE.AddCode(0x82, 0,0); // BRL- Jump to "else"
+            CODE.EmitCode(0x90, 3);   // BCC- Jump to if true
+            CODE.EmitCode(0x82, 0,0); // BRL- Jump to "else"
             b.FromHere();
             AddBranch(b, indent);
         }
@@ -431,11 +440,11 @@ namespace
             vars[name].read = vars[name].loaded = true;
             
             // process subblock if A is equal to given var
-            CODE.AddCode(0xC3, stackpos); // CMP [00:s+n]
+            CODE.EmitCode(0xC3, stackpos); // CMP [00:s+n]
 
             Branch b = CODE.PrepareRelativeLongBranch();
-            CODE.AddCode(0xF0, 3);   // BEQ- Jump to if eq
-            CODE.AddCode(0x82, 0,0); // BRL- Jump to "else"
+            CODE.EmitCode(0xF0, 3);   // BEQ- Jump to if eq
+            CODE.EmitCode(0x82, 0,0); // BRL- Jump to "else"
             b.FromHere();
             AddBranch(b, indent);
         }
@@ -447,8 +456,8 @@ namespace
             LOAD_VAR(name);
 
             Branch b = CODE.PrepareRelativeLongBranch();
-            CODE.AddCode(0xF0, 3);   // BEQ- Jump to if zero
-            CODE.AddCode(0x82, 0,0); // BRL- Jump to "else"
+            CODE.EmitCode(0xF0, 3);   // BEQ- Jump to if zero
+            CODE.EmitCode(0x82, 0,0); // BRL- Jump to "else"
             b.FromHere();
             AddBranch(b, indent);
         }
@@ -460,14 +469,14 @@ namespace
             vars[name].read = vars[name].loaded = true;
 
             // process subblock if A is greater than given var
-            CODE.AddCode(0xC3, stackpos); // CMP [00:s+n]
+            CODE.EmitCode(0xC3, stackpos); // CMP [00:s+n]
             
             Branch b = CODE.PrepareRelativeLongBranch();
-            CODE.AddCode(0xB0, 3);   // BCS- Jump to if greater or equal
-            CODE.AddCode(0x82, 0,0); // BRL- Jump to "else"
+            CODE.EmitCode(0xB0, 3);   // BCS- Jump to if greater or equal
+            CODE.EmitCode(0x82, 0,0); // BRL- Jump to "else"
             b.FromHere();
-            CODE.AddCode(0xD0, 3);   // BCS- Jump to n-eq too (leaving only "greater")
-            CODE.AddCode(0x82, 0,0); // BRL- Jump to "else"
+            CODE.EmitCode(0xD0, 3);   // BCS- Jump to n-eq too (leaving only "greater")
+            CODE.EmitCode(0x82, 0,0); // BRL- Jump to "else"
             b.FromHere();
             
             AddBranch(b, indent);
@@ -486,14 +495,14 @@ namespace
             {
                 unsigned char c = getchronochar((unsigned char)cset[a]);
                 CODE.Set8bit_M();
-                CODE.AddCode(0xC9, c);   // CMP A, imm8            
-                CODE.AddCode(0xF0, 0);   // BEQ - Jump to if equal
+                CODE.EmitCode(0xC9, c);   // CMP A, imm8            
+                CODE.EmitCode(0xF0, 0);   // BEQ - Jump to if equal
                 into.FromHere();
                 
                 if(a+1 == cset.size())
                 {
                     // If this was the last comparison, do the "else" here.
-                    CODE.AddCode(0x82, 0,0); // BRL- Jump to "else"
+                    CODE.EmitCode(0x82, 0,0); // BRL- Jump to "else"
                     b.FromHere();
                 }
             }
@@ -507,66 +516,66 @@ namespace
             // X talteen tämän touhun ajaksi:
             CODE.Set16bit_X();
             CODE.Set16bit_M();
-            CODE.AddCode(0xDA); // PHX
+            CODE.EmitCode(0xDA); // PHX
              // Huom. Tässä välissä eivät muuttujaviittaukset toimi.
              SNEScode::RelativeBranch branchNonEpoch = CODE.PrepareRelativeBranch();
              SNEScode::RelativeBranch branchEpoch    = CODE.PrepareRelativeBranch();
              SNEScode::RelativeBranch branchNonMember= CODE.PrepareRelativeBranch();
              SNEScode::RelativeBranch branchMemberSkip=CODE.PrepareRelativeBranch();
-             CODE.AddCode(0xA9,0x00,0x00);  // lda $0000
-             CODE.AddCode(0xA8);            // tay
+             CODE.EmitCode(0xA9,0x00,0x00);  // lda $0000
+             CODE.EmitCode(0xA8);            // tay
              CODE.Set8bit_M();
-             CODE.AddCode(0xA7, 0x31); // Id of the name
-             CODE.AddCode(0xC9, 0x20); // CMP A,$20 - If it's Epoch
-             CODE.AddCode(0xD0, 0);    // BNE - jump over if not
+             CODE.EmitCode(0xA7, 0x31); // Id of the name
+             CODE.EmitCode(0xC9, 0x20); // CMP A,$20 - If it's Epoch
+             CODE.EmitCode(0xD0, 0);    // BNE - jump over if not
              branchNonEpoch.FromHere();
              // Yes, Epoch.
              CODE.Set16bit_M();
-             CODE.AddCode(0xA9, 0x4D, 0x2C);    // Load Epoch address $2C4D
-             CODE.AddCode(0x80, 0);             // BRA - jump to character name handling
+             CODE.EmitCode(0xA9, 0x4D, 0x2C);    // Load Epoch address $2C4D
+             CODE.EmitCode(0x80, 0);             // BRA - jump to character name handling
              branchEpoch.FromHere();
 
              branchNonEpoch.ToHere();
              // No Epoch
              CODE.Set8bit_M();
-             CODE.AddCode(0xC9, 0x1E); // CMP A,$1B - if it's < [member1]
-             CODE.AddCode(0x90, 0);    // BCS - jump over if is <
+             CODE.EmitCode(0xC9, 0x1E); // CMP A,$1B - if it's < [member1]
+             CODE.EmitCode(0x90, 0);    // BCS - jump over if is <
              branchNonMember.FromHere();
              // Yes, it's [member1](1B) or [member2](1C) or [member3](1D).
              CODE.Set8bit_M();
-             CODE.AddCode(0x38,0xE9,0x1B);      // vähennetään $1B (sec; sbc A,$1B)
-             CODE.AddCode(0xAA);                // TAX
-             CODE.AddCode(0xBF,0x80,0x29,0x7E); // haetaan memberin numero
-             CODE.AddCode(0x80, 0);    // BRA - skip to mul2
+             CODE.EmitCode(0x38,0xE9,0x1B);      // vähennetään $1B (sec; sbc A,$1B)
+             CODE.EmitCode(0xAA);                // TAX
+             CODE.EmitCode(0xBF,0x80,0x29,0x7E); // haetaan memberin numero
+             CODE.EmitCode(0x80, 0);    // BRA - skip to mul2
              branchMemberSkip.FromHere();
              
              branchNonMember.ToHere();
              // No member
              CODE.Set8bit_M();
-             CODE.AddCode(0x38, 0xE9, 0x13); // vähennetään $13 (sec; sbc A,$13)
+             CODE.EmitCode(0x38, 0xE9, 0x13); // vähennetään $13 (sec; sbc A,$13)
              branchMemberSkip.ToHere();
              CODE.Set8bit_M();
-             CODE.AddCode(0x0A, 0xAA);       // ASL A; TAX
+             CODE.EmitCode(0x0A, 0xAA);       // ASL A; TAX
              CODE.Set16bit_M();
-             CODE.AddCode(0xBF,0xD8,0x5F,0xC2); // haetaan pointteri nimeen
+             CODE.EmitCode(0xBF,0xD8,0x5F,0xC2); // haetaan pointteri nimeen
              branchEpoch.ToHere();
              CODE.Set16bit_M();
-             CODE.AddCode(0x8D,0x37,0x02);      // tallennetaan offset ($0237)
+             CODE.EmitCode(0x8D,0x37,0x02);      // tallennetaan offset ($0237)
              CODE.Set8bit_M();
-             CODE.AddCode(0xA9,0x7E);           // tallennetaan segment ($0239)
-             CODE.AddCode(0x8D,0x39,0x02);
+             CODE.EmitCode(0xA9,0x7E);           // tallennetaan segment ($0239)
+             CODE.EmitCode(0x8D,0x39,0x02);
              branchEpoch.Proceed();
              branchNonEpoch.Proceed();
              branchMemberSkip.Proceed();
              branchNonMember.Proceed();
             CODE.Set16bit_X();
             CODE.Set16bit_M();
-            CODE.AddCode(0xFA); // PLX
-            CODE.AddCode(0x9B); // TXY
+            CODE.EmitCode(0xFA); // PLX
+            CODE.EmitCode(0x9B); // TXY
             
             // Hakee merkin hahmon nimestä
             CODE.Set8bit_M();
-            CODE.AddCode(0xB7,0x37);  // lda [long[$00:D+$37]+y]
+            CODE.EmitCode(0xB7,0x37);  // lda [long[$00:D+$37]+y]
 #ifdef OPTIMIZE_A
             Invalidate_A();
 #endif
@@ -575,10 +584,10 @@ namespace
         {
             CODE.Set16bit_X();
             CODE.Set8bit_M();
-            CODE.AddCode(0xDA); // PHX
+            CODE.EmitCode(0xDA); // PHX
             
              // Tässä välissä eivät muuttujaviittaukset toimi.
-             CODE.AddCode(0x85, 0x35); //sta [$00:D+$35]
+             CODE.EmitCode(0x85, 0x35); //sta [$00:D+$35]
              SNEScode::FarToNearCall call = CODE.PrepareFarToNearCall();
              
              // call back the routine
@@ -586,7 +595,7 @@ namespace
              CODE.BitnessUnknown();
 
             CODE.Set16bit_X();
-            CODE.AddCode(0xFA); // PLX
+            CODE.EmitCode(0xFA); // PLX
 #ifdef OPTIMIZE_A
             Invalidate_A();
 #endif
@@ -601,17 +610,17 @@ namespace
             
             // Alkuarvo loopille
             CODE.Set16bit_M();
-            CODE.AddCode(0xA9,0x00,0x00);      // LDA $0000
-            CODE.AddCode(0xAA);                // TAX
+            CODE.EmitCode(0xA9,0x00,0x00);      // LDA $0000
+            CODE.EmitCode(0xAA);                // TAX
             
             loopbegin->ToHere();
-            CODE.AddCode(0x22, 0,0,0);
+            CODE.EmitCode(0x22, 0,0,0);
             cursub->requires[LoopHelperName].insert(CODE.size() - 3);
 
             CODE.BitnessUnknown();
             
-            CODE.AddCode(0xD0, 3);    // bne - jatketaan looppia, jos nonzero
-            CODE.AddCode(0x82, 0,0);  // brl - jump pois loopista.
+            CODE.EmitCode(0xD0, 3);    // bne - jatketaan looppia, jos nonzero
+            CODE.EmitCode(0x82, 0,0);  // brl - jump pois loopista.
             loopend->FromHere();
 #ifdef OPTIMIZE_A
             Invalidate_A();
@@ -625,8 +634,8 @@ namespace
         {
             CheckCodeStart();
             
-            CODE.AddCode(0xE8);      // inx
-            CODE.AddCode(0x82, 0,0); // brl - jump back to loop
+            CODE.EmitCode(0xE8);      // inx
+            CODE.EmitCode(0x82, 0,0); // brl - jump back to loop
             loopbegin->FromHere();
             
             // loop end is here.        
@@ -646,7 +655,7 @@ namespace
             CheckCodeStart();
             // outputs character in A
             
-            CODE.AddCode(0x22, 0,0,0);
+            CODE.EmitCode(0x22, 0,0,0);
             cursub->requires[OutcHelperName].insert(CODE.size() - 3);
 
             CODE.BitnessUnknown();
@@ -825,12 +834,12 @@ const FunctionList Compile(FILE *fp)
     }
     Asm.END_FUNCTION();
 
-    Asm.START_FUNCTION(LoopHelperName);
+    Asm.START_FUNCTION(Asm.LoopHelperName);
     Asm.CHARNAME_LOOP_BIG_BLOCK();
     Asm.VOID_RETURN();
     Asm.END_FUNCTION();
     
-    Asm.START_FUNCTION(OutcHelperName);
+    Asm.START_FUNCTION(Asm.OutcHelperName);
     Asm.OUTBYTE_BIG_CODE();
     Asm.VOID_RETURN();
     Asm.END_FUNCTION();

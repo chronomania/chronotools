@@ -1,12 +1,7 @@
 #include "ctinsert.hh"
 #include "rom.hh"
-
+#include "ctcset.hh"
 #include "settings.hh"
-
-namespace
-{
-    const unsigned Font8_Address  = 0x3F8C60;
-}
 
 namespace
 {
@@ -195,11 +190,6 @@ void insertor::PatchROM(ROM &ROM)
     
     GenerateCode(); 
     
-    // SEP+JSR takes 5 bytes. We overwrote it
-    // with 4 bytes (see conjugate.cc).
-    // Patch with NOP.
-    ROM.Write(0x258C6, 0xEA);
-    
     WriteCode(ROM);
 }
 
@@ -210,6 +200,11 @@ void insertor::WriteCode(ROM &ROM) const
     list<SNEScode>::const_iterator i;
     for(i=codes.begin(); i!=codes.end(); ++i)
         ROM.AddPatch(*i);
+
+    // SEP+JSR takes 5 bytes. We overwrote it
+    // with 4 bytes (see conjugate.cc).
+    // Patch with NOP.
+    ROM.Write(ConjugatePatchAddress + 4, 0xEA);
 }
 
 void insertor::Write8pixfont(ROM &ROM) const
@@ -227,7 +222,7 @@ void insertor::Write12pixfont(ROM &ROM)
     const vector<unsigned char> &tiletab1 = Font12.GetTab1();
     const vector<unsigned char> &tiletab2 = Font12.GetTab2();
     
-    unsigned tilecount   = Num_Characters;
+    unsigned tilecount   = get_num_chronochars();
     unsigned tiletabsize = tiletab1.size() + tiletab2.size();
 
     unsigned WidthTab_Address = freespace.FindFromAnyPage(tilecount);
@@ -251,23 +246,23 @@ void insertor::Write12pixfont(ROM &ROM)
     
     // patch font engine
     unsigned tmp = WidthTab_Address - (0x100-tilecount);
-    ROM.Write(0x025E29, tmp & 255);
-    ROM.Write(0x025E2A, (tmp >> 8) & 255);
-    ROM.Write(0x025E2B, 0xC0 | ((tmp >> 16) & 255));
+    ROM.Write(WidthTab_Address_Ofs+0, tmp & 255);
+    ROM.Write(WidthTab_Address_Ofs+1, (tmp >> 8) & 255);
+    ROM.Write(WidthTab_Address_Seg, 0xC0 | ((tmp >> 16) & 255));
     
     // patch font engine
-    ROM.Write(0x025E25, 0);
+    ROM.Write(WidthTab_Offset_Addr, 0);
     // patch dialog engine
-    ROM.Write(0x0258BB, 0x100-tilecount);
+    ROM.Write(FirstChar_Address, 0x100-tilecount);
     
     tmp = addr1 - (0x100-tilecount)*24;
     // patch font engine
-    ROM.Write(0x025DD2, tmp & 255);
-    ROM.Write(0x025DD3, (tmp >> 8) & 255);
-    ROM.Write(0x025DFD, 0xC0 | ((tmp >> 16) & 255));
+    ROM.Write(Font12a_Address_Ofs+0, tmp & 255);
+    ROM.Write(Font12a_Address_Ofs+1, (tmp >> 8) & 255);
+    ROM.Write(Font12_Address_Seg, 0xC0 | ((tmp >> 16) & 255));
     tmp = addr2 - (0x100-tilecount)*12;
-    ROM.Write(0x025DE3, tmp & 255);
-    ROM.Write(0x025DE4, (tmp >> 8) & 255);
+    ROM.Write(Font12b_Address_Ofs+0, tmp & 255);
+    ROM.Write(Font12b_Address_Ofs+1, (tmp >> 8) & 255);
     
     for(unsigned a=0; a<tilecount; ++a)
         ROM.Write(WidthTab_Address+a, Font12.GetWidth(a));
@@ -278,11 +273,15 @@ void insertor::Write12pixfont(ROM &ROM)
 
 void insertor::WriteDictionary(ROM &ROM)
 {
-#if 1
+#if 0
+    // Dictionary can be placed anywhere,
+    // but this tends to put dictionary to
+    // a page that has no space for it.
     unsigned dictaddr = freespace.FindFromAnyPage(dictsize * 2);
     unsigned dictpage = dictaddr >> 16;
 #else
-    unsigned dictpage = 0x1E;
+    // The last page is big, so select it freely.
+    unsigned dictpage = 0x3F;
     unsigned dictaddr = freespace.Find(dictpage, dictsize*2);
     dictaddr |= (dictpage << 16);
 #endif
@@ -302,10 +301,10 @@ void insertor::WriteDictionary(ROM &ROM)
         unsigned spaceptr = Organization[a].pos;
         WritePPtr(ROM, dictaddr + a*2, dict[a], spaceptr);
     }
-    ROM.Write(0x0258DE, dictaddr & 255);
-    ROM.Write(0x0258DF, (dictaddr >> 8) & 255);
-    ROM.Write(0x0258E0, 0xC0 | dictpage);
-    ROM.Write(0x0258E9, 0xC0 | dictpage);
+    ROM.Write(DictAddr_Ofs+0, dictaddr & 255);
+    ROM.Write(DictAddr_Ofs+1, (dictaddr >> 8) & 255);
+    ROM.Write(DictAddr_Seg_1, 0xC0 | dictpage);
+    ROM.Write(DictAddr_Seg_1, 0xC0 | dictpage);
 }
 
 void insertor::WriteStrings(ROM &ROM)

@@ -1,8 +1,7 @@
 #include "tgaimage.hh"
 #include "ctinsert.hh"
+#include "ctcset.hh"
 #include "fonts.hh"
-
-#include "settings.hh"
 
 void Font12data::Load(const string &filename)
 {
@@ -15,15 +14,15 @@ void Font12data::Load(const string &filename)
     
     unsigned boxcount = font12.getboxcount();
     unsigned boxstart = 0;
-    if(boxcount > Num_Characters) boxstart = boxcount - Num_Characters;
+    if(boxcount > get_num_chronochars()) boxstart = boxcount - get_num_chronochars();
     
-    tiletab1.resize(Num_Characters * 24);
-    tiletab2.resize(Num_Characters * 12);
+    tiletab1.resize(get_num_chronochars() * 24);
+    tiletab2.resize(get_num_chronochars() * 12);
     
-    widths.resize(Num_Characters);
+    widths.resize(get_num_chronochars());
     
     unsigned to=0;
-    for(unsigned a=0; a<Num_Characters; ++a)
+    for(unsigned a=0; a<get_num_chronochars(); ++a)
     {
         vector<char> box = font12.getbox(a + boxstart);
 
@@ -108,5 +107,5 @@ void Font8data::Load(const string &filename)
 
 unsigned insertor::GetFont12width(unsigned char chronoch) const
 {
-    return Font12.GetWidth(chronoch - (0x100-Num_Characters));
+    return Font12.GetWidth(chronoch - (0x100-get_num_chronochars()));
 }

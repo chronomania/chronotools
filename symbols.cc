@@ -1,5 +1,7 @@
 #include <cstdio>
+
 #include "symbols.hh"
+#include "config.hh"
 
 void Symbols::AddSym(const char *sym, char c, int targets)
 {
@@ -65,28 +67,21 @@ void Symbols::Load()
     
     // 21..9F are used by dictionary
     // A0..FF are used by font
-    // (or actually the point depends on Num_Characters)
-    
-    targets=8;
-    defbsym(bladesymbol, 0x20)
-    defbsym(bowsymbol,   0x21)
-    defbsym(gunsymbol,   0x22)
-    defbsym(armsymbol,   0x23)
-    defbsym(swordsymbol, 0x24)
-    defbsym(fistsymbol,  0x25)
-    defbsym(scythesymbol,0x26)
-    defbsym(armorsymbol, 0x28)
-    defbsym(helmsymbol,  0x27)
-    defbsym(ringsymbol,  0x29)
-    defbsym(shieldsymbol,0x2E)
-    defbsym(starsymbol,  0x2F)
-    targets=16;
-    defbsym(musicsymbol, 0xEE)
-    defbsym(heartsymbol, 0xF0)
-    defsym(...,          0xF1)
+    // (or actually the point depends on get_num_chronochars())
     
     #undef defsym
     #undef defbsym
+    
+    /* Load user-definable some symbols */
+    { const ConfParser::ElemVec& elems = GetConf("font", "def8sym").Fields();
+    for(unsigned a=0; a<elems.size(); a+=2)
+        AddSym(WstrToAsc(elems[a+1].SField).c_str(), (char)elems[a].IField, 8);
+    }
+    
+    { const ConfParser::ElemVec& elems = GetConf("font", "def16sym").Fields();
+    for(unsigned a=0; a<elems.size(); a+=2)
+        AddSym(WstrToAsc(elems[a+1].SField).c_str(), (char)elems[a].IField, 16);
+    }
 
     //fprintf(stderr, "%u 8pix symbols loaded\n", symbols8.size());
     //fprintf(stderr, "%u 16pix symbols loaded\n", symbols16.size());

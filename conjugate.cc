@@ -2,163 +2,110 @@
 #include <cstdarg>
 
 #include "conjugate.hh"
+#include "settings.hh"
 #include "symbols.hh"
 #include "miscfun.hh"
 #include "ctcset.hh"
+#include "config.hh"
 #include "space.hh"
 
 using namespace std;
 
-#include "settings.hh"
-
 void Conjugatemap::Load()
 {
-    form tmp;
-    tmp.data = CreateMap
-        ( "Cronon", "Marlen", "Luccan", "Lucan",
-          "Robon", "Frogn", "Frogin", "Aylan", "Maguksen",
-          "Magusin", "Epochin",
-          "[member1]:n", "[member2]:n", "[member3]:n",
-          0 );
-    tmp.type = Cnj_N;
-    AddForm(tmp);
-    
-    tmp.data = CreateMap
-        ( "Cronoa", "Marlea", "Luccaa",
-          "Roboa", "Frogia", "Froggia",
-          "Aylaa", "Magusta", "Maguksea", "Magusia", "Epochia",
-          "[member1]:a", "[member2]:a", "[member3]:a",
-          "[member1]:ä", "[member2]:ä", "[member3]:ä",
-          0 );
-    tmp.type = Cnj_A;
-    AddForm(tmp);
-    
-    tmp.data = CreateMap
-        ( "Cronolla", "Marlella", "Luccalla", "Lucalla",
-          "Robolla", "Frogilla", "Aylalla", "Maguksella",
-          "Magusilla", "Epochilla", 
-          "[member1]:lla", "[member2]:lla", "[member3]:lla",
-          "[member1]:llä", "[member2]:llä", "[member3]:llä",
-          0 );
-    tmp.type = Cnj_LLA;
-    AddForm(tmp);
-    
-    tmp.data = CreateMap
-        ( "Cronolle", "Marlelle", "Luccalle", "Lucalle",
-          "Robolle", "Frogille", "Aylalle", "Magukselle",
-          "Magusille", "Epochille", 
-          "[member1]:lle", "[member2]:lle", "[member3]:lle",
-          0 );
-    tmp.type = Cnj_LLE;
-    AddForm(tmp);
-    
-    tmp.data = CreateMap
-        ( "Cronosta", "Marlesta", "Luccasta", "Lucasta",
-          "Robosta", "Frogista", "Aylasta", "Maguksesta",
-          "Magusista", "Epochista", 
-          "[member1]:sta", "[member2]:sta", "[member3]:sta",
-          "[member1]:stä", "[member2]:stä", "[member3]:stä",
-          0 );
-    tmp.type = Cnj_STA;
-    AddForm(tmp);
-}
-
-void Conjugatemap::AddData(datamap_t &target, const string &s) const
-{
-    const map<string, char> &symbols16 = Symbols[16];
-    const char *name = "...";
-    /* Simple method to see which character are we talking about.      */
-    /* Modify it if the first character isn't enough in your language. */
-    switch(s[0])
+    const ConfParser::ElemVec& elems = GetConf("conjugator", "setup").Fields();
+    for(unsigned a=0; a<elems.size(); a += 2)
     {
-        case 'C': name = "Crono"; break;
-        case 'L': name = "Lucca"; break;
-        case 'M':
-            switch(s[2])
-            {
-                case 'g': name = "Magus"; break;
-                case 'r': name = "Marle"; break;
-            }
-            break;
-        case '[':
-            switch(s[7])
-            {
-                case '1': name = "[member1]"; break;
-                case '2': name = "[member2]"; break;
-                case '3': name = "[member3]"; break;
-            }
-            break;
-        case 'R': name = "Robo"; break;
-        case 'F': name = "Frog"; break;
-        case 'A': name = "Ayla"; break;
-        case 'E': name = "Epoch"; break;
+        form tmp;
+        const string func = WstrToAsc(elems[a]);
         
-        // Nadia can't be renamed, so it
-        // does not need to be taken care of.
-    }
-    unsigned char person = symbols16.find(name)->second;
-    string key = str_replace(name, person, s);
-    for(unsigned a=0; a<key.size(); ++a)
-        if((key[a] >= 'a' && key[a] <= 'z')
-        || (key[a] >= 'A' && key[a] <= 'Z')
-        || (key[a] == ':' || key[a] == 'ä'))
-            key[a] = getchronochar(key[a]);
+        const string data = WstrToAsc(elems[a+1]);
+        
+        tmp.func   = func;
+        tmp.used   = false;
+        tmp.prefix = 0;
+        
+        for(unsigned b=0; b<data.size(); ++b)
+        {
+            if(data[b] == ' ' || data[b] == '\n'
+            || data[b] == '\r' || data[b] == '\n') continue;
+            
+            const char *name = "...";
+            switch(data[b])
+            {
+                case 'c': name="Crono"; break;
+                case 'm': name="Marle"; break;
+                case 'l': name="Lucca"; break;
+                case 'r': name="Robo"; break;
+                case 'f': name="Frog"; break;
+                case 'a': name="Ayla"; break;
+                case 'u': name="Magus"; break;
+                case 'e': name="Epoch"; break;
+                case '1': name="[member1]"; break;
+                case '2': name="[member2]"; break;
+                case '3': name="[member3]"; break;
+                default:
+                    fprintf(stderr, "In configuration: Unknown person '%c'\n", data[b]);
+            }
+            unsigned c = ++b;
+            while(b < data.size() && data[b] != ',') ++b;
+            
+            string s = data.substr(c, b-c);
+
+            unsigned char person = Symbols[16].find(name)->second;
+            string key = str_replace(name, person, s);
+            for(unsigned a=0; a<key.size(); ++a)
+                if(key[a] != person)
+                    key[a] = getchronochar(key[a]);
+
 #if 0
-    fprintf(stderr, "Key '%s'(from '%s') = '%s' (%02X)\n",
-        key.c_str(), s.c_str(), name, person);
+            fprintf(stderr, "Key '%s'(%s) = '%s' (%02X)\n",
+                key.c_str(), s.c_str(), name, person);
 #endif
-    target[key] = person;
-}
-
-Conjugatemap::datamap_t Conjugatemap::CreateMap(const char *word, ...) const
-{
-    datamap_t result;
-    va_list ap;
-    va_start(ap, word);
-    while(word)
-    {
-        AddData(result, word);
-        word = va_arg(ap, const char *);
+            tmp.data[key] = person;
+        }
+        
+        AddForm(tmp);
     }
-    va_end(ap);
-    return result;
 }
 
-void Conjugatemap::Work(string &s, const form &form)
+void Conjugatemap::Work(string &s, form &form)
 {
+    vector<unsigned> AllowedBytes;
+    
+    { const ConfParser::ElemVec& elems = GetConf("conjugator", "bytes").Fields();
+    for(unsigned a=0; a<elems.size(); ++a)
+        AllowedBytes.push_back(elems[a]); }
+    
     datamap_t::const_iterator i;
     for(i=form.data.begin(); i!=form.data.end(); ++i)
-    {
         for(unsigned a=0; a < s.size(); )
         {
             unsigned b = s.find(i->first, a);
             if(b == s.npos) break;
             
-            unsigned char prefix;
-            
-            map<CnjType, unsigned char>::const_iterator k;
-            k = prefixes.find(form.type);
-            if(k != prefixes.end())
-                prefix = k->second;
-            else
+            if(!form.used)
             {
-                unsigned ind = prefixes.size();
+                unsigned ind = 0;
+                for(formlist::const_iterator j=forms.begin(); j!=forms.end(); ++j)
+                    if(j->used) ++ind;
                 
-                if(ind >= sizeof(AllowedBytes))
+                if(ind >= AllowedBytes.size())
                 {
                     fprintf(stderr,
                         "\n"
                         "Error: Too many different conjugations used.\n"
-                        "Only %u bytes fit!\n",
-                            sizeof(AllowedBytes)
+                        "Only %u bytes defined in configuration!\n",
+                            AllowedBytes.size()
                            );
                 }
                 
-                prefixes[form.type] = prefix = AllowedBytes[ind];
+                form.used   = true;
+                form.prefix = AllowedBytes[ind];
             }
             
             string tmp;
-            tmp += (char)prefix;
+            tmp += (char)form.prefix;
             tmp += (char)i->second;
             
             // a = b + i->first.size();
@@ -167,7 +114,6 @@ void Conjugatemap::Work(string &s, const form &form)
             s.insert(b, tmp);
             a = b + tmp.size();
         }
-    }
 }
 
 Conjugatemap::Conjugatemap()
@@ -178,7 +124,7 @@ Conjugatemap::Conjugatemap()
 
 void Conjugatemap::Work(string &s, const string &plaintext)
 {
-    for(list<form>::const_iterator
+    for(formlist::iterator
         i = forms.begin();
         i != forms.end();
         ++i)
@@ -198,36 +144,30 @@ namespace
     {
         SubRoutine result;
         SNEScode &code = result.code;
-        
+
         SNEScode::RelativeBranch branchEnd = code.PrepareRelativeBranch();
         SNEScode::RelativeBranch branchOut = code.PrepareRelativeBranch();
         
-        const map<CnjType, unsigned char> &prefixes = Conjugatemap.GetPref();
+        const Conjugatemap::formlist &forms = Conjugatemap.GetForms();
         
         bool first=true;
         
-        map<CnjType, unsigned char>::const_iterator i;
-        for(i=prefixes.begin(); i!=prefixes.end(); ++i)
+        Conjugatemap::formlist::const_iterator i;
+        for(i=forms.begin(); i!=forms.end(); ++i)
         {
+        	if(!i->used) continue;
+        	
             SNEScode::RelativeBranch branchSkip = code.PrepareRelativeBranch();
             code.Set8bit_M();
-            code.AddCode(0xC9, i->second); //cmp a, *
-            code.AddCode(0xD0, 0);         //bne
+            code.EmitCode(0xC9, i->prefix); //cmp a, *
+            code.EmitCode(0xD0, 0);         //bne
             branchSkip.FromHere();
             
             if(true)
             {
-                const char *funcname = "?";
-                switch(i->first)
-                {
-                    case Cnj_N:   funcname = "Do_N"; break;
-                    case Cnj_A:   funcname = "Do_A"; break;
-                    case Cnj_LLA: funcname = "Do_LLA"; break;
-                    case Cnj_LLE: funcname = "Do_LLE"; break;
-                    case Cnj_STA: funcname = "Do_STA"; break;
-                }
-                
-                code.AddCode(0x22, 0,0,0);
+                const string &funcname = i->func;
+
+                code.EmitCode(0x22, 0,0,0);
                 result.requires[funcname].insert(code.size() - 3);
                 
                 if(first)
@@ -237,16 +177,16 @@ namespace
                     code.Set16bit_M();
                     
                     // increment the pointer (skip the name printing)
-                    code.AddCode(0xE6, 0x31);
+                    code.EmitCode(0xE6, 0x31);
 
-                    code.AddCode(0x80, 0); // bra - jump out
+                    code.EmitCode(0x80, 0); // bra - jump out
                     branchEnd.FromHere();
                     
                     first = false;
                 }
                 else
                 {
-                    code.AddCode(0x80, 0); // bra - jump out
+                    code.EmitCode(0x80, 0); // bra - jump out
                     branchOut.FromHere();
                 }
             }
@@ -262,13 +202,13 @@ namespace
         
         // Ready to return
         code.Set8bit_M();
-        code.AddCode(0x6B);       //rtl
+        code.EmitCode(0x6B);       //rtl
         
         branchEnd.Proceed();
         branchOut.Proceed();
 
         // This function will be called from.
-        code.AddCallFrom(0xC258C2);
+        code.AddCallFrom(ConjugatePatchAddress | 0xC00000);
         
         return result;
     }
@@ -276,10 +216,12 @@ namespace
 
 void insertor::GenerateCode()
 {
-    FILE *fp = fopen(functionfn, "rt");
+    string functionfn = WstrToAsc(GetConf("conjugator", "codefn"));
+    
+    FILE *fp = fopen(functionfn.c_str(), "rt");
     if(!fp) return;
     
-    fprintf(stderr, "Compiling %s...\n", functionfn);
+    fprintf(stderr, "Compiling %s...\n", functionfn.c_str());
     FunctionList Functions = Compile(fp);
     fclose(fp);
     

@@ -21,6 +21,7 @@ using namespace std;
 
 #include "ctcset.hh"
 #include "miscfun.hh"
+#include "settings.hh"
 
 static unsigned char *ROM;
 static vector<bool> protect;
@@ -766,19 +767,19 @@ static void PatchSubStrings()
 
 static void Dump12Font()
 {
-    unsigned char A0 = ROM[0x0258BB];
+    unsigned char A0 = ROM[FirstChar_Address];
     
-    unsigned WidthPtr = ROM[0x025E29]
-                     + (ROM[0x025E2A]<<8)
-                     + ((ROM[0x025E2B] & 0x3F) << 16)
-                     - ROM[0x025E25];
+    unsigned WidthPtr = ROM[WidthTab_Address_Ofs+0]
+                     + (ROM[WidthTab_Address_Ofs+1]<<8)
+                     + ((ROM[WidthTab_Address_Seg] & 0x3F) << 16)
+                     - ROM[WidthTab_Offset_Addr];
     
-    unsigned FontSeg = ROM[0x025DFD] & 0x3F;
-    unsigned FontPtr1 = ROM[0x025DD2]
-                     + (ROM[0x025DD3]<<8)
+    unsigned FontSeg = ROM[Font12_Address_Seg] & 0x3F;
+    unsigned FontPtr1 = ROM[Font12a_Address_Ofs+0]
+                     + (ROM[Font12a_Address_Ofs+1] << 8)
                      + (FontSeg << 16);
-    unsigned FontPtr2 = ROM[0x025DE3]
-                     + (ROM[0x025DE4]<<8)
+    unsigned FontPtr2 = ROM[Font12b_Address_Ofs+0]
+                     + (ROM[Font12b_Address_Ofs+1] << 8)
                      + (FontSeg << 16);
     
     if(FontPtr2 != FontPtr1 + 0x1800)
@@ -797,11 +798,11 @@ static void Dump12Font()
 
 static void DoLoadDict()
 {
-    unsigned DictPtr = ROM[0x0258DE]
-                    + (ROM[0x0258DF]<<8)
-                   + ((ROM[0x0258E0] & 0x3F) << 16);
+    unsigned DictPtr = ROM[DictAddr_Ofs+0]
+                    + (ROM[DictAddr_Ofs+1] << 8)
+                   + ((ROM[DictAddr_Seg_1] & 0x3F) << 16);
 
-    unsigned char A0 = ROM[0x025E25];
+    unsigned char A0 = ROM[WidthTab_Offset_Addr];
     
     unsigned n = A0-0x21;  // For A0, that is 127.
     
@@ -833,10 +834,6 @@ int main(void)
     DoLoadDict();
     
     PatchSubStrings();
-    
-    Dump8x8sprites(0x3F8C60, 256);
-    
-    Dump12Font();
     
     // 
     puts(";items");
@@ -971,6 +968,10 @@ int main(void)
     
     puts(";Episode list");
     DumpStrings(0x3FD03E, 27);
+    
+    Dump8x8sprites(Font8_Address, 256);
+    
+    Dump12Font();
     
     if(TryFindExtraSpace)
         FindEndSpaces();

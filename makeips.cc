@@ -29,6 +29,8 @@ int main(int argc, const char *const *argv)
     
     printf("PATCH");
     
+    const unsigned thres = 5;
+    
     unsigned size = ftell(f1);
     for(unsigned a=0; a<size; )
     {
@@ -47,16 +49,21 @@ int main(int argc, const char *const *argv)
     redo:
         while(a < size && d1[a] != d2[a] && c < 20000)
             ++c, ++a;
-        if(a+5 < size && c < 20000 && memcmp(d1+a, d2+a, 5) != 0)
+        if(a+thres < size && c < 20000 && memcmp(d1+a, d2+a, thres) != 0)
         {
-            a += 5;
-            c += 5;
+            a += thres;
+            c += thres;
             goto redo;
         }
         
         if(c)
         {
             a -= c;
+            
+            if(a == 0x454F46) /* "EOF" */
+            {
+                --a; ++c;
+            }
             
             putchar( (a >> 16) & 255 );
             putchar( (a >> 8) & 255 );

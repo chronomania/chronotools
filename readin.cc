@@ -8,22 +8,12 @@
 #include "miscfun.hh"
 #include "symbols.hh"
 #include "conjugate.hh"
+#include "config.hh"
 
 using namespace std;
 
-#include "settings.hh"
-
 namespace
 {
-    // How many pixels at max
-    const unsigned MaxTextWidth =
-      // 256 is the width of the screen
-      256
-      // The left border is 8 pixels
-      - 8
-      // Right border is... 16 pixels?
-      - 8;
-
     #undef getc
     class ScriptCharGet
     {
@@ -47,8 +37,10 @@ namespace
                 {
                     int c = fgetc(fp);
                     if(c == EOF)break;
+                    // conv.putc may generate any amount of wchars, including 0
                     cache = conv.putc(c);
                 }
+                // So now cache may be of arbitrary size.
                 if(!cache.size()) return (ucs4)EOF;
             }
         }
@@ -78,6 +70,11 @@ namespace
 
     const string Rivita(const string &dialog, const insertor &ins)
     {
+        // Standard defines that this'll be initialized upon the first call.
+        static const bool warn_wraps   = GetConf("readin", "warn_wraps");
+        static const bool verify_wraps = GetConf("readin", "verify_wraps");
+        static unsigned MaxTextWidth   = GetConf("readin", "maxtextwidth");
+        
         unsigned row=0, col=0;
         
         string result;
@@ -165,7 +162,7 @@ namespace
                     break;
                 }
                 default:
-                    if(c >= (0x100-Num_Characters))
+                    if(c >= (0x100-get_num_chronochars()))
                     {
                         unsigned width = ins.GetFont12width(c);
                         col += width;

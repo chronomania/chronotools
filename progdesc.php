@@ -9,6 +9,10 @@ $text = array(
 
 Tools aiding in
 <a href=\"http://bisqwit.iki.fi/ctfin/\">Bisqwit's Finnish Chrono Trigger translation</a>.
+<p>
+Meant to be useful for anyone who wants to become
+a translator for Chrono Trigger and translate the
+game to their own language.
 
 ", '1. Program list' => "
 
@@ -49,11 +53,13 @@ Curiously, it doesn't require the ROM.
 
 ", '1.1.1. makeips' => "
 
-Compares two ROMs and produces a patch file in IPS format.
+<a href=\"/src/makeips.cc\">makeips</a>
+compares two ROMs and produces a patch file in IPS format.
 
 ", '1.1.1. unmakeips' => "
 
-Reads a ROM and an IPS file and produces a patched ROM file.
+<a href=\"/src/unmakeips.cc\">unmakeips</a>
+reads a ROM and an IPS file and produces a patched ROM file.
 
 ", '1.1.1. xray' => "
 
@@ -72,8 +78,9 @@ A <a href=\"/source/jaa3.html\">bin-packing</a> algorithm test.
 ", '1.1.1. taipus.rb' => "
 
 This one is <a href=\"/ctfin/taipus.rb\">publicly available</a>.
-It conjugates names in Finnish. It's supposed to get translated
-to SNES assembler by somebody.
+It conjugates names in Finnish.<br>It has now been
+<a href=\"/ctfin/ct-code.txt\">translated</a> to
+SNES assembly (or sort of).<br>It works. :)
 
 ", '1.1.1. sramdump' => "
 
@@ -82,13 +89,53 @@ Views a sram dump file in a readable format.
 ", '1.1.1. base62' => "
 
 Converts addresses between hex and base62 formats.
-I.e. \$C2:5D4C -> rRhU and vice versa.<br>
+I.e. \$C2:5D4C -> 0eJI and vice versa.<br>
 This development system uses base62 in the script
 dumps to reduce the amount of code written.
 
+", '1.1. Technical report' => "
+
+My goal is to make a complete Finnish translation of Chrono Trigger.
+<p>
+The project currently depends on solving the following problems.  
+<p>
+These problems are simply waiting for somebody to study the
+skills needed to solve them (SNES assembly for starters).<br>
+There is no lack of translators (or material to be translated).
+<p>
+If you are a proficient SNES hacker and want to help me with these
+problems, please contact me.<br>My email-address (sigh) is:
+<em>bisqwit a<b style=\"font-weight:lighter\">t i</b>ki <small>dot</small> fi</em>
+
+", '1.1.1. Item/technique/monster names' => "
+
+Item and technique names are limited to 10 characters
+(restriction is enforced by both the screen layout and the ROM space).<br>
+This is way too little for Finnish, which has long words.<br>   
+Solution A: Leave the item names and technique names untranslated.<br>
+This is not a considerable solution for me.<br>
+Solution B: Move the names to a different location in ROM so that
+there is no space limit. But: They still don't fit on screen.<br>
+Solution C: Add code using <a href=\"ct8f.png\">variable width 8x8 font</a>
+and rewrite the method the item names are looked up.
+This means <em>lots of work</em>.
+
+", '1.1.1. Name conjugation' => "
+
+<a href=\"ct-code.txt\">
+<img src=\"/kala/snap/ctdevel/ct-taipus2.png\" alt=\"It works!\" align=right>
+</a>  
+Finnish is a language where words are conjugated.
+Just adding a substring like \"'s\" doesn't make
+correct language. The whole word stem changes a bit.<br>
+Solution A: Ignore the problem. But: This is crude. I don't want it.<br>
+Solution B: Add <a href=\"taipus.rb\">code that conjugates the names</a>.
+This means <em>lots of work</em>. 30.6.2003 I did it! It works.
+<br><a href=\"#conj\">See below.</a>
+
 ", '1. Useful features' => "
 
-", '1.1. Name conjugation' => "
+", 'conj:1.1. Name conjugation' => "
 
 It currently has support for conjugating names on fly.<br>
 It's very important in Finnish, where you can't just
@@ -104,11 +151,12 @@ In the script code, there are different 223 bytes available for the script.
 <p>
 In normal Chrono Trigger,
 <ul>
- <li>127 of the are assigned to the dictionary</li>
- <li>96 of them are visible symbols.</li>
+ <li>127 of them are assigned to the dictionary used to compress the script.</li>
+ <li>96 of them are
+     <a href=\"/src/chronotools-16en.png\">visible symbols</a>.</li>
 </ul>
 Which means that you can only have 96 different characters.
-take A-Z, a-z, 0-9 and punctuation symbols and count how
+Take A-Z, a-z, 0-9 and punctuation symbols and count how
 many you have left for umlauts and accents.
 <p>
 My insertor however allows to skew that ratio so
@@ -140,9 +188,8 @@ But <em>read the <a href=\"/ctfin/\">translation project page</a> first</em>!
 My email-address (sigh) is:
 <em>bisqwit a<b style=\"font-weight:lighter\">t i</b>ki <small>dot</small> fi</em>
 </p>
-I'm not publishing files, because it's a well-known
-fact that many people in ROM hacking scene aren't
-very respectful to copyrights.
+I'm not publishing files on this web page, because it's a well-known fact
+that many people in ROM hacking scene aren't very respectful to copyrights.
 
 ", '1. Requirements' => "
 
@@ -155,6 +202,9 @@ so if you are an unfortunate user stuck with some Windows,
 you just have to find a development system
 (<a href=\"http://www.google.com/search?q=cygwin\">cygwin</a>?)
 and compile the program on it to use it.
+<p>
+I'll soon try if I can get windows-binaries out with mingw32.
+Currently it has problems with iconv.
 
 ", '1. Changelog' => "
 
