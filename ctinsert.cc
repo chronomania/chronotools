@@ -485,7 +485,7 @@ void insertor::WriteROM()
         putc(((a+512)>> 8)&255, fp2);
         putc(((a+512)    )&255, fp2);
         unsigned offs=a, c=0;
-        while(a < Touched.size() && Touched[a])
+        while(a < Touched.size() && Touched[a] && c < 20000)
             ++c, ++a;
         putc((c>> 8)&255, fp);
         putc((c    )&255, fp);
@@ -537,13 +537,21 @@ string insertor::DispString(const string &s) const
             result += conv.putc(u);
             continue;
         }
-        if(c == 5) result += conv.puts(AscToWstr("[nl]"));
-        else if(c == 6) result += conv.puts(AscToWstr("[nl3]"));
-        else if(c == 11) result += conv.puts(AscToWstr("[pause]"));
-        else if(c == 12) result += conv.puts(AscToWstr("[pause3]"));
-        else if(c == 0) result += conv.puts(AscToWstr("[end]")); // Uuh?
-        else if(c == 0xF1) result += conv.puts(AscToWstr("..."));
-        else { char Buf[8]; sprintf(Buf, "[%02X]", c); result += conv.puts(AscToWstr(Buf)); }
+        switch(c)
+        {
+            case 0x05: result += conv.puts(AscToWstr("[nl]")); break;
+            case 0x06: result += conv.puts(AscToWstr("[nl3]")); break;
+            case 0x0B: result += conv.puts(AscToWstr("[pause]")); break;
+            case 0x0C: result += conv.puts(AscToWstr("[pause3]")); break;
+            case 0x00: result += conv.puts(AscToWstr("[end]")); break; // Uuh?
+            case 0xF1: result += conv.puts(AscToWstr("...")); break;
+            default:
+            {
+                char Buf[8];
+                sprintf(Buf, "[%02X]", c);
+                result += conv.puts(AscToWstr(Buf));
+            }
+        }
     }
     return result;
 }
@@ -845,15 +853,22 @@ void insertor::LoadSymbols()
     targets=2+8+16;
     defbsym(end,         0x00)
     targets=16;
+    // 0x01 seems to be garbage
+    // 0x02 seems to be garbage too
+    // 0x03 is delay, handled elseway
+    // 0x04 seems to do nothing
     defbsym(nl,          0x05)
     defbsym(nl3,         0x06)
-    defbsym(cls1,        0x09)
-    defbsym(cls2,        0x0A)
+    defbsym(pausenl,     0x07)
+    defbsym(pausenl3,    0x08)
+    defbsym(cls,         0x09)
+    defbsym(cls3,        0x0A)
     defbsym(pause,       0x0B)
     defbsym(pause3,      0x0C)
     defbsym(num8,        0x0D)
     defbsym(num16,       0x0E)
     defbsym(num32,       0x0F)
+    // 0x10 seems to do nothing
     defbsym(member,      0x11)
     defbsym(tech,        0x12)
     defsym(Crono,        0x13)
@@ -1079,6 +1094,18 @@ void insertor::LoadFile(FILE *fp)
             (
               AscToWstr("[pause]   "),
               AscToWstr("[pause3]"),
+              content
+            );
+            content = str_replace
+            (
+              AscToWstr("[pausenl]   "),
+              AscToWstr("[pausenl3]"),
+              content
+            );
+            content = str_replace
+            (
+              AscToWstr("[cls]   "),
+              AscToWstr("[cls3]"),
               content
             );
             

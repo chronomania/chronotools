@@ -10,9 +10,9 @@ static const char Font16[] =
     "ghijklmnopqrstuv"   // C0
     "wxyz0123456789!?"   // D0
     "/«»:&()'.,=-+%¶ "   // E0  EE=musicsymbol
-    "¶¶¶#äöéå¶ÄÖÉÅ¶¶_";  // F0  F0=heartsymbol, F1=..., F2=infinity
+    "¶¶å#äöéÉÅ¶¶¶¶ÖÄ_";  // F0  F0=heartsymbol, F1=..., F2=infinity
 
-    // Note: There is space for only 10 extra symbols!
+    // Note: There is no more space for extra symbols in 8x8 font!
 
 const char *getcharset() { return CharSet; }
 

@@ -150,21 +150,29 @@ static wstring Disp16Char(unsigned char k)
 {
     switch(k)
     {
+        // 0x01 and 0x02 are some doublebyte things.
+        // They eat the next character and output garbage.
+        // Dunno what this means.
+        
+        // 0x03 is delay
+        
+        // 0x04 seems to do nothing
+        
         case 0x05: return AscToWstr("[nl]\n");
         case 0x06: return AscToWstr("[nl]\n   ");
-    
-        // Pausing cls (used by Magus in his ending)
-        case 0x09: return AscToWstr("\n[cls1]\n");
-
-        // Nonpause cls (used by gaspar in blah blah etc etc)
-        case 0x0A: return AscToWstr("\n[cls2]\n");
-    
+        case 0x07: return AscToWstr("[pausenl]\n");
+        case 0x08: return AscToWstr("[pausenl]\n   ");
+        case 0x09: return AscToWstr("\n[cls]\n");
+        case 0x0A: return AscToWstr("\n[cls]\n   ");
         case 0x0B: return AscToWstr("\n[pause]\n");
         case 0x0C: return AscToWstr("\n[pause]\n   ");
     
         case 0x0D: return AscToWstr("[num8]");
         case 0x0E: return AscToWstr("[num16]");
         case 0x0F: return AscToWstr("[num32]");
+        
+        // 0x10 seems to do nothing
+        
         case 0x11: return AscToWstr("[member]");
         case 0x12: return AscToWstr("[tech]");
     
@@ -172,7 +180,6 @@ static wstring Disp16Char(unsigned char k)
 
         // 1A is the name Ayla calls Crono?
         case 0x1A: return AscToWstr("[crononick]");
-    
     
         case 0x1B: return AscToWstr("[member1]");
         case 0x1C: return AscToWstr("[member2]");
@@ -447,100 +454,100 @@ static void OutImage(const string &fntemplate,
                      unsigned xdim, unsigned ydim,
                      const vector<char> &pixels)
 {
-	string filename = fntemplate + ".tga";
-	
-	FILE *fp = fopen(filename.c_str(), "wb");
-	if(!fp) { perror(filename.c_str()); return; }
-	
-	TgaPutB(fp, 0); // id field len
-	TgaPutB(fp, 1); // color map type
-	TgaPutB(fp, 1); // image type code
-	TgaPutW(fp, 0); // palette start
-	TgaPutW(fp, 6); // palette size
-	TgaPutB(fp, 24);// palette bitness
-	TgaPutW(fp, 0);    TgaPutW(fp, 0);
-	TgaPutW(fp, xdim); TgaPutW(fp, ydim);
-	TgaPutB(fp, 8); // pixel bitness
-	TgaPutB(fp, 0); //misc
-	
-	// border color:
-	TgaPutP(fp, 192,0,0);
-	// colours 0..3
-	TgaPutP(fp, 255,255,255);
-	TgaPutP(fp, 192,128, 32);
-	TgaPutP(fp, 255,255,128);
-	TgaPutP(fp, 0,0,0);
-	// filler
-	TgaPutP(fp, 160,160,160);
-	
-	for(unsigned y=ydim; y-->0; )
-		fwrite(&pixels[y*xdim], 1, xdim, fp);
-	
-	fclose(fp);
+    string filename = fntemplate + ".tga";
+    
+    FILE *fp = fopen(filename.c_str(), "wb");
+    if(!fp) { perror(filename.c_str()); return; }
+    
+    TgaPutB(fp, 0); // id field len
+    TgaPutB(fp, 1); // color map type
+    TgaPutB(fp, 1); // image type code
+    TgaPutW(fp, 0); // palette start
+    TgaPutW(fp, 6); // palette size
+    TgaPutB(fp, 24);// palette bitness
+    TgaPutW(fp, 0);    TgaPutW(fp, 0);
+    TgaPutW(fp, xdim); TgaPutW(fp, ydim);
+    TgaPutB(fp, 8); // pixel bitness
+    TgaPutB(fp, 0); //misc
+    
+    // border color:
+    TgaPutP(fp, 192,0,0);
+    // colours 0..3
+    TgaPutP(fp, 255,255,255);
+    TgaPutP(fp, 192,128, 32);
+    TgaPutP(fp, 255,255,128);
+    TgaPutP(fp, 0,0,0);
+    // filler
+    TgaPutP(fp, 160,160,160);
+    
+    for(unsigned y=ydim; y-->0; )
+        fwrite(&pixels[y*xdim], 1, xdim, fp);
+    
+    fclose(fp);
 }
 
 static void Dump8x8sprites(unsigned spriteoffs, unsigned count)
 {
-	const unsigned xdim = 32;
-	const unsigned ydim = (count+xdim-1)/xdim;
-	
-	const unsigned xpixdim = xdim*8 + (xdim+1);
-	const unsigned ypixdim = ydim*8 + (ydim+1);
-	
-	const char palette[] = {4,2,3,1};
-	const char bordercolor=0;
-	
-	vector<char> pixels (xpixdim * ypixdim, bordercolor);
-	
+    const unsigned xdim = 32;
+    const unsigned ydim = (count+xdim-1)/xdim;
+    
+    const unsigned xpixdim = xdim*8 + (xdim+1);
+    const unsigned ypixdim = ydim*8 + (ydim+1);
+    
+    const char palette[] = {4,2,3,1};
+    const char bordercolor=0;
+    
+    vector<char> pixels (xpixdim * ypixdim, bordercolor);
+    
     unsigned offs = spriteoffs;
     for(unsigned a=0; a<count; ++a)
     {
         for(unsigned y=0; y<8; ++y)
         {
-        	unsigned xpos = (a%xdim) * (8+1) + 1;
-        	unsigned ypos = (a/xdim) * (8+1) + 1+y;
-        	
+            unsigned xpos = (a%xdim) * (8+1) + 1;
+            unsigned ypos = (a/xdim) * (8+1) + 1+y;
+            
             unsigned char byte1 = ROM[offs];
             unsigned char byte2 = ROM[offs+1];
             offs += 2;
             for(unsigned x=0; x<8; ++x)
-            	pixels[(xpos + x) + xpixdim * ypos] = 
-            	   palette
+                pixels[(xpos + x) + xpixdim * ypos] = 
+                   palette
                     [((byte1 >> (7-x))&1)
                   | (((byte2 >> (7-x))&1) << 1)];
         }
     }
 
-	OutImage("ct8fn", xpixdim, ypixdim, pixels);
+    OutImage("ct8fn", xpixdim, ypixdim, pixels);
 }
 
 static void DumpFont(unsigned spriteoffs, unsigned sizeoffs)
 {
-	const unsigned count = 0x100 - 0xA0;
-	
-	const unsigned xdim = 32;
-	const unsigned ydim = (count+xdim-1)/xdim;
-	
-	const unsigned xpixdim = xdim*12 + (xdim+1);
-	const unsigned ypixdim = ydim*12 + (ydim+1);
-	
-	const char palette[] = {1,2,3,4};
-	const char bordercolor=0;
-	const char fillercolor=5;
-	
-	vector<char> pixels (xpixdim * ypixdim, bordercolor);
-	
+    const unsigned count = 0x100 - 0xA0;
+    
+    const unsigned xdim = 32;
+    const unsigned ydim = (count+xdim-1)/xdim;
+    
+    const unsigned xpixdim = xdim*12 + (xdim+1);
+    const unsigned ypixdim = ydim*12 + (ydim+1);
+    
+    const char palette[] = {1,2,3,4};
+    const char bordercolor=0;
+    const char fillercolor=5;
+    
+    vector<char> pixels (xpixdim * ypixdim, bordercolor);
+    
     for(unsigned a=0xA0; a<0x100; ++a)
     {
-	    unsigned hioffs = spriteoffs + 24 * a;
-	    unsigned looffs = spriteoffs + 24 * 0x100 + (a>>1)*24;
-    	
+        unsigned hioffs = spriteoffs + 24 * a;
+        unsigned looffs = spriteoffs + 24 * 0x100 + (a>>1)*24;
+        
         unsigned width = ROM[sizeoffs + a];
         for(unsigned y=0; y<12; ++y)
         {
-        	unsigned xpos = ((a-0xA0)%xdim) * (12+1) + 1;
-        	unsigned ypos = ((a-0xA0)/xdim) * (12+1) + 1+y;
-        	
+            unsigned xpos = ((a-0xA0)%xdim) * (12+1) + 1;
+            unsigned ypos = ((a-0xA0)/xdim) * (12+1) + 1+y;
+            
             unsigned char byte1 = ROM[hioffs];
             unsigned char byte2 = ROM[hioffs+1];
             unsigned char byte3 = ROM[looffs];
@@ -560,7 +567,7 @@ static void DumpFont(unsigned spriteoffs, unsigned sizeoffs)
                 }
                 
                 pixels[(xpos + x) + xpixdim * ypos] = 
-                	palette
+                    palette
                      [((byte1 >> (7-(x&7)))&1)
                    | (((byte2 >> (7-(x&7)))&1) << 1)];
             }
@@ -568,8 +575,8 @@ static void DumpFont(unsigned spriteoffs, unsigned sizeoffs)
                 pixels[(xpos + x) + xpixdim * ypos] = fillercolor;
         }
     }
-	
-	OutImage("ct16fn", xpixdim, ypixdim, pixels);
+    
+    OutImage("ct16fn", xpixdim, ypixdim, pixels);
 }
 
 int main(void)

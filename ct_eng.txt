@@ -1879,7 +1879,7 @@ DALTON: This is your lucky day!
 $76
 If history is to change, let it change! If[nl]
 the world is to be destroyed, so be it![delay 12]
-[cls1]
+[cls]
 If my fate is to be destroyed...[nl]
 I must simply laugh!![delay 14][delay 00]
 $77
@@ -4874,11 +4874,11 @@ GASPAR: You forgot the «Time Egg!»[nl]
 [pause]
    blah, blah, blah...[nl]
    etc, etc, etc...
-[cls2]
-etc, etc, etc...[nl]
+[cls]
+   etc, etc, etc...[nl]
    etc, etc, etc...
-[cls2]
-...[delay 06] You got that?
+[cls]
+   ...[delay 06] You got that?
 $115
 Marle: You mean we can get[nl]
    Crono back?
@@ -4965,7 +4965,7 @@ $139
 TABAN: Phew![nl]
    Made it just in time![nl]
    Shall I fire one off?[delay 0A]
-[cls1]
+[cls]
 KING: Uh, no Taban.[nl]
    Actually, I could really use your help...[delay 06][delay 00]
 $140
@@ -5037,9 +5037,9 @@ KING: Marle...where did you go?[nl]
 *37:0000:Z16 ;456 16pix dialog strings, table ends at $0390
 $0
 Crono......[delay 0F]
-[cls1]
+[cls]
 Crono![delay 0F]
-[cls1]
+[cls]
 Wake up, Crono![delay 09][delay 00]
 $1
 MOM: It's time to rise and shine![nl]
@@ -5797,7 +5797,7 @@ My dream has come true.[nl]
 Peace is ours!
 $198
 [crononick]!![delay 0A]
-[cls1]
+[cls]
 [crononick]!  [crononick]![nl]
 [crononick]!  [crononick]![nl]
 [crononick]!  [crononick]![nl]
@@ -5862,9 +5862,9 @@ $213
        Sealed by a mysterious force...
 $214
 Crono...[delay 0A]
-[cls1]
+[cls]
 Crono![delay 0A]
-[cls1]
+[cls]
 Crono!!![delay 09][delay 00]
 $215
 SOLDIER: It's time to rise and shine![nl]
@@ -8084,13 +8084,13 @@ Frog: I have something for you!
 $330
 Magus: Ah...![nl]
    The Masamune!!![delay 06]
-[cls2]
-I bet you're just dying to use it![delay 08][delay 00]
+[cls]
+   I bet you're just dying to use it![delay 08][delay 00]
 $331
 Magus: The black wind begins to[nl]
    blow...[delay 06]
-[cls2]
- Okay...give me your best shot...[delay 06][delay 00]
+[cls]
+    Okay...give me your best shot...[delay 06][delay 00]
 $332
 Magus: If you're prepared for the[nl]
    void![delay 06][delay 00]
@@ -8159,16 +8159,16 @@ Frog: Whoa...!!
 $355
 Lucca: Phew...[nl]
    You're pretty stubborn.[delay 0C]
-[cls1]
+[cls]
 Robo: My apologies, Lucca...[delay 06]
-[cls1]
+[cls]
 Lucca: It's not your fault.[nl]
    We're the one's who created[nl]
    weapons...[delay 0F][delay 00]
 $356
 Lucca: Man, that fool sleeps a lot.[nl]
    We should make him help us![delay 0F]
-[cls1]
+[cls]
  No![delay 04][delay 00]
 $357
 Marle: Let him sleep[nl]
@@ -8206,14 +8206,14 @@ Magus: So, you came...[delay 06][delay 00]
 $371
 Magus: We Wizards and humans[nl]
    have brought about our own ruin...[delay 0C]
-[cls2]
-Except for you and I, this world is[nl]
+[cls]
+   Except for you and I, this world is[nl]
    populated by cretins...[delay 0C]
-[cls2]
-The one who wins this battle...[nl]
+[cls]
+   The one who wins this battle...[nl]
     ...will rule the world...[delay 0C]
-[cls2]
-No, make that RULE THE FUTURE...[delay 06][delay 00]
+[cls]
+   No, make that RULE THE FUTURE...[delay 06][delay 00]
 $372
 Frog: So that's the story...[nl]
    But who cares.[delay 0C][delay 00]
@@ -8224,8 +8224,8 @@ Frog: But there is some merit to[nl]
 $374
 Magus: Hmmmm...[nl]
    You have the Masamune...[delay 0C]
-[cls2]
-Let's see if you know how to use it...[delay 06][delay 00]
+[cls]
+   Let's see if you know how to use it...[delay 06][delay 00]
 $375
    What're you lookin' at?
 [pause]
@@ -18243,11 +18243,11 @@ $0
 Enter a name, then push the[nl]
 Start Button.
 $1
-ÄÄÖÖéå åäöé ÅÄÖÉ[nl]
-Ääkköset tosiaan toimii.
+Enemies will attack even[nl]
+if you're not ready!
 $2
-Take your time to choose[nl]
-items and fight strategically.
+Yksi[1]yksi[1]hmm[nl]
+Kaksi[2]kaksi[2]hmm
 $3
 Start using[nl]
 which data?

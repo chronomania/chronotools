@@ -13,7 +13,8 @@ LDFLAGS=-L/usr/lib/graphics
 # VERSION 1.0.9 fixed "..." handling and located the font
 # VERSION 1.0.10 had knowledge of character sets
 # VERSION 1.0.11 had a working font insertor
-VERSION=1.0.11
+# VERSION 1.0.12 had better knowledge of special codes
+VERSION=1.0.12
 ARCHFILES=xray.c xray.h \
           viewer.c \
           ctcset.cc \
