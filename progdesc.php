@@ -114,6 +114,7 @@ Copypaste from the Makefile:
 # VERSION 1.2.8  improved dictionary compression
 # VERSION 1.2.9  compiler progress, first windows binaries are working
 # VERSION 1.2.10 cursive font support
+# VERSION 1.2.11 some translation, compression optimizations
 </pre>
 
 ", '1. Program list' => "

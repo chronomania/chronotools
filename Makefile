@@ -51,13 +51,14 @@ include Makefile.sets
 # VERSION 1.2.8  improved dictionary compression
 # VERSION 1.2.9  compiler progress, first windows binaries are working
 # VERSION 1.2.10 cursive font support
+# VERSION 1.2.11 some translation, compression optimizations
 
 OPTIM=-O3
 #OPTIM=-O0
 #OPTIM=-O0 -pg -fprofile-arcs
 #LDFLAGS += -pg -fprofile-arcs
 
-VERSION=1.2.10
+VERSION=1.2.11
 ARCHFILES=xray.c xray.h \
           viewer.c \
           ctcset.cc ctcset.hh \
