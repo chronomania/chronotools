@@ -586,8 +586,8 @@ Trans:
         rts
       + ;Special
         ; itemchars were placed at the beginning
-        ;no clc - carry is clear.
-        adc #-$0020
+        sec
+        sbc #$0020
         rts
 
 GetItemName:
@@ -919,7 +919,7 @@ DisplayFuncCommonEnd:
         SET_16_BIT_A()
         UNALLOCATE()
         
-        ; $C2EF65 does this. Resets the attributes (bits $24).
+        ; $C2EF65 does this. Resets the attributes (leaves only bits $24).
         lda #$00DC
         trb $7E
         

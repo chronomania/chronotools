@@ -3,32 +3,58 @@
 
 #include <string>
 
-// Note: address of ilseq must be available
-// Thus don't make this #define
-static const wchar_t ilseq = 0xFFFD;
-static const wchar_t ucsig = 0xFEFF;
+#define USE_ICONV 1
 
-#define CLEARSTR(x) x.clear()
-
-
+#if USE_ICONV
 #include <iconv.h>
+#endif
 
 #undef putc
 #undef puts
 
-/* An output class */
+/* Converting a bytestream to wstring */
+class wstringIn
+{
+#if USE_ICONV
+    iconv_t converter;
+    std::string charset;
+#endif
+public:
+    wstringIn();
+    ~wstringIn();
+    
+#if USE_ICONV
+    wstringIn(const char *setname);
+    void SetSet(const char *setname);
+#else
+    inline void SetSet() {}
+#endif
+
+    const std::wstring putc(char p) const;
+    const std::wstring puts(const std::string &s) const;
+private:
+    wstringIn(const wstringIn&);
+    const wstringIn& operator=(const wstringIn&);
+};
+
+/* Converting a wstring to bytestream */
 class wstringOut
 {
+#if USE_ICONV
     mutable iconv_t converter;
     mutable iconv_t tester;
-public:
     std::string charset;
-    
+#endif
+public:
     wstringOut();
-    wstringOut(const char *setname);
     ~wstringOut();
     
+#if USE_ICONV
+    wstringOut(const char *setname);
     void SetSet(const char *setname);
+#else
+    inline void SetSet() {}
+#endif
     
     const std::string putc(wchar_t p) const;
     const std::string puts(const std::wstring &s) const;
@@ -38,36 +64,32 @@ private:
     const wstringOut& operator=(const wstringOut&);
 };
 
-/* An input class */
-class wstringIn
-{
-    iconv_t converter;
-public:
-    std::string charset;
-    
-    wstringIn();
-    wstringIn(const char *setname);
-    ~wstringIn();
-    
-    void SetSet(const char *setname);
-
-    const std::wstring putc(char p) const;
-    const std::wstring puts(const std::string &s) const;
-private:
-    wstringIn(const wstringIn&);
-    const wstringIn& operator=(const wstringIn&);
-};
-
-extern const std::wstring AscToWstr(const std::string &s);
-extern const std::string WstrToAsc(const std::wstring &s);
-extern char WcharToAsc(wchar_t c);
+/* char to wchar_t conversions - ASCII to UNICODE conversion */
 inline wchar_t AscToWchar(char c)
 { return static_cast<wchar_t> (static_cast<unsigned char> (c)); }
+extern const std::wstring AscToWstr(const std::string &s);
+
+/* wchar_t to char conversions - UNICODE to ASCII conversion */
+extern const std::string WstrToAsc(const std::wstring &s);
+extern char WcharToAsc(wchar_t c);
+
+/* atoi() for wchar_t pointers */
 extern long atoi(const wchar_t *p, int base=10);
+
+/* Converts the given hex digit, to integer */
 extern int Whex(wchar_t p);
 
-const std::wstring wformat(const wchar_t* fmt, ...);
+/* sprintf() */
 const std::string   format(const char* fmt, ...);
 
-#endif
+/* swprintf() */
+const std::wstring wformat(const wchar_t* fmt, ...);
 
+
+/* UNICODE illegal character */
+static const wchar_t ilseq = 0xFFFD;
+
+/* UNICODE signature character */
+static const wchar_t ucsig = 0xFEFF;
+
+#endif

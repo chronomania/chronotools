@@ -34,7 +34,7 @@ namespace
                 if(cacheptr < cache.size())
                     return cache[cacheptr++];
                 
-                CLEARSTR(cache);
+                cache.clear();
                 cacheptr = 0;
                 while(cache.empty())
                 {
@@ -390,13 +390,13 @@ void insertor::LoadFile(FILE *fp)
 
     rawcodes.clear();
     
-    wstring unexpected;
+    std::wstring unexpected;
     #define UNEXPECTED(c) unexpected += (c)
     #define EXPECTED() \
         if(!unexpected.empty()) \
         { \
             MessageUnexpected(unexpected); \
-            CLEARSTR(unexpected); \
+            unexpected.clear(); \
         }
 
     MessageLoadingDialog();

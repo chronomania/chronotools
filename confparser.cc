@@ -1,5 +1,7 @@
 #include "confparser.hh"
-#include "ctcset.hh"
+#if USE_ICONV
+ #include "ctcset.hh"
+#endif
 
 //=======================================================================
 // Abstract input stream
@@ -44,7 +46,11 @@ class ConfParser::CharIStream
 };
 
 ConfParser::CharIStream::CharIStream(FILE *f):
+#if USE_ICONV
     conv(getcharset()),
+#else
+    conv(),
+#endif
     fp(f),
     cache(), cacheptr(0),
     nextChar(getC()), line(1)
@@ -58,7 +64,7 @@ wchar_t ConfParser::CharIStream::getC()
         if(cacheptr < cache.size())  
             return cache[cacheptr++];
         
-        CLEARSTR(cache);
+        cache.clear();
         cacheptr = 0;
         while(cache.empty())
         {

@@ -6,7 +6,7 @@
 #
 # docmaker.php version 1.1.0
 
-# Copyright (C) 2000,2003 Bisqwit (http://iki.fi/bisqwit/)
+# Copyright (C) 2000,2004 Bisqwit (http://iki.fi/bisqwit/)
 
 # Syntax:
 

@@ -171,7 +171,8 @@ const std::string DispString(const ctstring &s, unsigned symbols_type)
             default: result += wformat(L"[%02X]", c); break;
         }
     }
-    wstringOut conv(getcharset());
+    wstringOut conv;
+    conv.SetSet(getcharset());
     return conv.puts(result);
 }
 

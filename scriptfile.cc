@@ -4,6 +4,7 @@
 
 using namespace std;
 
+#include "wstring.hh"
 #include "scriptfile.hh"
 
 static FILE *scriptout;
@@ -24,7 +25,8 @@ void CloseScriptFile()
 
 void PutAscii(const std::wstring& comment)
 {
-    static wstringOut conv(getcharset());
+    static wstringOut conv;
+    conv.SetSet(getcharset());
     fprintf(scriptout, "%s", conv.puts(comment).c_str());
 }
 

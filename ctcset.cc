@@ -10,7 +10,9 @@ using std::string;
 /* Language-specific settings end here. */
 namespace
 {
+#if USE_ICONV
     string CharSet = "iso-8859-1";
+#endif
 
     class CharacterSet
     {
@@ -197,6 +199,7 @@ namespace
     } cset8;
 }
 
+#if USE_ICONV
 const char *getcharset()
 {
 #if 0
@@ -209,6 +212,7 @@ void setcharset(const char *newcset)
 {
     CharSet = newcset;
 }
+#endif
 
 // Note: Only values 0xA0..0xFF are worth using.
 wchar_t getwchar_t(ctchar chronochar, cset_class cl)

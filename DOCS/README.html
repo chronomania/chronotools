@@ -21,7 +21,7 @@ SMALL    {font-size:70%}
   <h1>Chrono Trigger translation development system</h1>
   <h2 class=level2> 0. Contents </h2>
   
-  This is the documentation of chronotools-1.13.8.
+  This is the documentation of chronotools-1.13.9.
 <div class=toc><table cellspacing=0 cellpadding=0 class=toc><tr><td width="33%" valign=middle align=left nowrap class=toc>&nbsp;&nbsp;&nbsp;1. <a href="#what">Purpose</a><br>&nbsp;&nbsp;&nbsp;2. <a href="#how">How to begin?</a><br>&nbsp;&nbsp;&nbsp;3. <a href="#status">Current status</a><br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;3.1. <a href="#changes">Version history</a><br>&nbsp;&nbsp;&nbsp;4. <a href="#h0">Program list</a><br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;4.1. <a href="#ctdump">ctdump</a><br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;4.2. <a href="#ctinsert">ctinsert</a><br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;4.3. <a href="#h1">other</a><br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;4.3.1. <a href="#h2">makeips</a><br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;4.3.2. <a href="#h3">unmakeips</a><br></td>
 <td width="33%" valign=middle align=left nowrap class=toc>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;4.3.3. <a href="#h4">xray</a><br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;4.3.4. <a href="#h5">viewer</a><br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;4.3.5. <a href="#h6">spacefind</a><br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;4.3.6. <a href="#h7">sramdump</a><br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;4.3.7. <a href="#h8">base62</a><br>&nbsp;&nbsp;&nbsp;5. <a href="#h9">Useful features</a><br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;5.1. <a href="#conj">Name conjugation</a><br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;5.2. <a href="#skew">Font/dictionary skew</a><br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;5.3. <a href="#wrap">Automatic paragraph wrapping</a><br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;5.4. <a href="#vwf8">Variable width 8pix font</a><br></td>
 <td width="34%" valign=middle align=left nowrap class=toc>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;5.5. <a href="#expand">Expansion to 48 Mbit or 64 Mbit</a><br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;5.6. <a href="#h10">Very configurable</a><br>&nbsp;&nbsp;&nbsp;6. <a href="#h11">Summary of extra features</a><br>&nbsp;&nbsp;&nbsp;7. <a href="#req">Requirements</a><br>&nbsp;&nbsp;&nbsp;8. <a href="#copying">Copying</a><br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;8.1. <a href="#parts">If you only are interested in some features/parts</a><br>&nbsp;&nbsp;&nbsp;9. <a href="#docs">Documentation</a><br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;9.1. <a href="#undocs">Undocumented things</a><br>&nbsp;&nbsp;&nbsp;10. <a href="#h12">See also</a><br>&nbsp;&nbsp;&nbsp;11. <a href="#download">Downloading</a><br></td>
@@ -83,7 +83,7 @@ you might have about translating/hacking Chrono Trigger.<br>
 Chronotools is under active development.
 Here's the current situation.<br>
 Last updated:
-2004-06-06
+2004-06-10
 
 <p>
 <table>
@@ -218,6 +218,7 @@ Copypaste from the Makefile:
 # VERSION 1.13.6 is yet another fix, but also finishes the monster name code
 # VERSION 1.13.7 brings an improvement to the sluggish VWF8 screens problem
 # VERSION 1.13.8 C++ standard compliance upgrade... also a new eq-related feature
+# VERSION 1.13.9 is a vwf8 bugfix, but seems to have other problems!
 </pre>
 
 Users of previous versions are advised to do the following:
@@ -502,16 +503,9 @@ and is distributed under the terms of the
 If you have questions or just want to talk about
 Chrono Trigger hacking, throw me email.
 <p>
-<table cellspacing=0 cellpadding=0>
-           <tr><td class=email>My email address:</td>
-           <td class=email>Joel Y</td>
-<td class=email>lilu</td>
-<td class=email>oma &lt;</td>
-<td class=email>bisq</td>
-<td class=email>wit@</td>
-<td class=email>iki.</td>
-<td class=email>fi&gt;</td>
-</tr></table>
+My email address:<span id=eml20><b id=eml6 class=nonmail>u@e</b><span id=eml7 class=ismail>Joel</span><span id=eml8 class=nonmail><b>ef.iy1e9</b></span><span id=eml9 class=ismail> Yli</span><b id=eml10 class=nonmail>e1</b><span id=eml11 class=ismail>luom</span><span id=eml12 class=nonmail><b>@e</b></span><span id=eml13 class=ismail>a &lt;bi</span><b id=eml14 class=nonmail>7@0eiq7e</b><span id=eml15 class=ismail>sqwi</span><span id=eml16 class=nonmail><b>sq132ee</b></span><span id=eml17 class=ismail>t@ik</span><b id=eml18 class=nonmail>ro@@</b><span id=eml19 class=ismail>i.fi&gt;</span></span><script type="text/javascript"><!--
+s='';for(i=6;i<20;){document.getElementById('eml'+i++).innerHTML='';s+=document.getElementById('eml'+i++).innerHTML;}document.getElementById('eml'+i).innerHTML='<'+'a href="mailto:'+s+'">'+s+'<'+'/a>';
+--></script>
 </p>
 I've previously stated here that I'm not publishing files because it's
 a well-known fact that many people in ROM hacking scene aren't very
@@ -569,9 +563,9 @@ Things that should be documented some day but currently are not:
    is at <a href="http://iki.fi/bisqwit/source/chronotools.html">http://iki.fi/bisqwit/source/chronotools.html</a>.<br>
    Check there for new versions.
 </div> <p align=right><small>Generated from
-       <tt>../progdesc.php</tt> (last updated: Thu, 10 Jun 2004 23:45:17 +0300)<br>
-  with <tt>docmaker.php</tt> (last updated: Sun,  9 May 2004 04:55:44 +0300)<br>
-  at Thu, 10 Jun 2004 23:45:55 +0300</small>
+       <tt>../progdesc.php</tt> (last updated: Tue, 21 Sep 2004 16:48:50 +0300)<br>
+  with <tt>docmaker.php</tt> (last updated: Fri, 20 Aug 2004 12:10:17 +0300)<br>
+  at Tue, 21 Sep 2004 16:49:20 +0300</small>
  </p>
 </body>
 </html>

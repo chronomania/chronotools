@@ -17,6 +17,15 @@ using namespace __gnu_cxx;
 
 using std::basic_string;
 
+struct BitSwapHashFon
+{
+  size_t operator() (unsigned n) const
+  {
+    unsigned rot = n&31;
+    return (n << rot) | (n >> (32-rot));
+  }
+};
+
 namespace __gnu_cxx
 {
   template<typename T>
@@ -52,18 +61,18 @@ namespace __gnu_cxx
   {
     size_t operator() (wchar_t n) const
     {
-        return hash<unsigned long>() ((unsigned long)n);
+        /* Since values of n<128 are the most common,
+         * values of n<256 the second common
+         * and big values of n are rare, we rotate some
+         * bits to make the distribution more even.
+         * Multiplying n by 33818641 (a prime near 2^32/127) scales
+         * the numbers nicely to fit the whole range and keeps the
+         * distribution about even.
+         */
+        return (n * 33818641UL);
     }
   };
 }
-struct BitSwapHashFon
-{
-  size_t operator() (unsigned n) const
-  {
-    unsigned rot = n&31;
-    return (n << rot) | (n >> (32-rot));
-  }
-};
 
 #else
 

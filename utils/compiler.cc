@@ -322,7 +322,7 @@ namespace
                 Emit("plx", Want16bitXY);
             }
             
-            CLEARSTR(PendingCall);
+            PendingCall.clear();
         }
         void CheckCodeStart()
         {
@@ -540,7 +540,7 @@ namespace
             if(!PendingCall.empty())
             {
                 std::string Target = WstrToAsc(PendingCall);
-                CLEARSTR(PendingCall);
+                PendingCall.clear();
                 CheckCodeStart();
                 DeallocateVars();
                 
@@ -1170,7 +1170,8 @@ void Compile(FILE *fp)
     
     if(1) // Read file to wstring
     {
-        wstringIn conv(getcharset());
+        wstringIn conv;
+        conv.SetSet(getcharset());
         
         for(;;)
         {
@@ -1206,10 +1207,10 @@ void Compile(FILE *fp)
                 unsigned spacepos = rest.find(' ');
                 if(spacepos == rest.npos)break;
                 words.push_back(rest.substr(0, spacepos));
-                if(spacepos+1 >= rest.size()) { CLEARSTR(rest); break; }
+                if(spacepos+1 >= rest.size()) { rest.clear(); break; }
                 rest = rest.substr(spacepos+1);
             }
-            if(!rest.empty()) { words.push_back(rest); CLEARSTR(rest); }
+            if(!rest.empty()) { words.push_back(rest); rest.clear(); }
         }
         
         if(words.empty())

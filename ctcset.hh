@@ -8,8 +8,13 @@ typedef unsigned short ctchar;
 
 typedef basic_string<ctchar> ctstring;
 
+#if USE_ICONV
 extern const char *getcharset();
 extern void setcharset(const char *newcsetname);
+#else
+#define getcharset()
+#define setcharset(x)
+#endif
 
 enum cset_class { cset_8pix, cset_12pix };
 

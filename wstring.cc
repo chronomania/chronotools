@@ -3,40 +3,54 @@
 #include <cstdio>
 #include <cstdlib>
 #include <cstdarg>
+#include <cwchar>
 
 #include "wstring.hh"
 
-#ifdef WIN32
-# define ICONV_INPUTTYPE const char **
-#else
-# define ICONV_INPUTTYPE char **
-#endif
+#if USE_ICONV
+# ifdef WIN32
+#  define ICONV_INPUTTYPE const char **
+# else
+#  define ICONV_INPUTTYPE char **
+# endif
 
 namespace
 {
     const char *const midset
       = (*(const short *)"\1\0\0\0\0\0\0\0" == 1) ? "UCS-4LE" : "UCS-4BE";
 }
-
-wstringOut::wstringOut() : converter(), tester(), charset(midset)
+#else
+/* not iconv */
+#include <clocale>
+#include <cstdlib>
+static class EnsureLocale
 {
+public:
+    EnsureLocale() { setlocale(LC_CTYPE, "");
+                     setlocale(LC_MESSAGES, "");
+                   }
+} EnsureLocale;
+
+#endif
+
+wstringOut::wstringOut()
+#if USE_ICONV
+ : converter(), tester(), charset(midset)
+#endif
+{
+#if USE_ICONV
     converter = iconv_open(charset.c_str(), midset);
     tester = iconv_open(charset.c_str(), midset);
+#endif
 }
 
+#if USE_ICONV
 wstringOut::wstringOut(const char *setname) : converter(), tester(), charset(midset)
 {
     converter = iconv_open(charset.c_str(), midset);
     tester = iconv_open(charset.c_str(), midset);
     SetSet(setname);
 }
-
-wstringOut::~wstringOut()
-{
-    iconv_close(converter);
-    iconv_close(tester);
-}
-    
 void wstringOut::SetSet(const char *setname)
 {
     iconv_close(converter);
@@ -50,16 +64,33 @@ void wstringOut::SetSet(const char *setname)
     }
     tester = iconv_open(setname, midset);
 }
+#endif
 
+wstringOut::~wstringOut()
+{
+#if USE_ICONV
+    iconv_close(converter);
+    iconv_close(tester);
+#endif
+}
+    
 const std::string wstringOut::putc(wchar_t p) const
 {
+#if USE_ICONV
     std::wstring tmp;
     tmp += p;
     return puts(tmp);
+#else
+    char* Buf = (char*)alloca(MB_CUR_MAX);
+    int n = wctomb(Buf, p);
+    if(n < 0) return "";
+    return std::string(Buf, Buf+n);
+#endif
 }
 
 const std::string wstringOut::puts(const std::wstring &s) const
 {
+#if USE_ICONV
     const char *input = (const char *)(s.data());
     size_t left = s.size() * sizeof(wchar_t);
     std::string result;
@@ -95,10 +126,34 @@ const std::string wstringOut::puts(const std::wstring &s) const
         }
     }
     return result;
+#else
+    const wchar_t *ptr = s.data(), *end = ptr + s.size();
+    std::string result;
+    while(ptr < end)
+    {
+        char Buf[4096];
+        const wchar_t *begin = ptr;
+        size_t n = std::wcsrtombs(Buf, &ptr, (sizeof Buf) / sizeof(Buf[0]), NULL);
+        bool error = n == (size_t)-1;
+        if(!error)
+        {
+            result.insert(result.end(), Buf, Buf+n);
+            continue;
+        }
+        for(unsigned n2 = ptr - begin; n2 > 0; --n2)
+        {
+            n = std::wctomb(Buf, *ptr++);
+            result.insert(result.end(), Buf, Buf + n);
+        }
+        if(*ptr) { result += '?'; ++ptr; }
+    }
+    return result;
+#endif
 }
 
 bool wstringOut::isok(wchar_t p) const
 {
+#if USE_ICONV
     char OutBuf[256], *outptr = OutBuf;
     const char *tmp = (const char *)(&p);
     unsigned outsize = sizeof OutBuf;
@@ -110,24 +165,28 @@ bool wstringOut::isok(wchar_t p) const
                           &outsize);
     if(retval == (size_t)-1)return false;
     return true;
+#else
+    char* Buf = (char*)alloca(MB_CUR_MAX);
+    return wctomb(Buf, p) >= 0;
+#endif
 }
 
 wstringIn::wstringIn()
+#if USE_ICONV
    : converter(iconv_open(midset, midset)), charset(midset)
+#endif
 {
+#if !USE_ICONV
+    std::mbtowc(NULL, NULL, 0);
+#endif
 }
 
+#if USE_ICONV
 wstringIn::wstringIn(const char *setname)
    : converter(iconv_open(midset, midset)), charset(midset)
 {
     SetSet(setname);
 }
-
-wstringIn::~wstringIn()
-{
-    iconv_close(converter);
-}
-
 void wstringIn::SetSet(const char *setname)
 {
     iconv_close(converter);
@@ -139,6 +198,14 @@ void wstringIn::SetSet(const char *setname)
         exit(1);
     }
 }
+#endif
+
+wstringIn::~wstringIn()
+{
+#if USE_ICONV
+    iconv_close(converter);
+#endif
+}
 
 const std::wstring wstringIn::putc(char p) const
 {
@@ -149,6 +216,7 @@ const std::wstring wstringIn::putc(char p) const
 
 const std::wstring wstringIn::puts(const std::string &s) const
 {
+#if USE_ICONV
     const char *input = (const char *)(s.data());
     size_t left = s.size();
     std::wstring result;
@@ -186,6 +254,25 @@ const std::wstring wstringIn::puts(const std::string &s) const
         }
     }
     return result;
+#else
+    std::wstring result;
+    for(unsigned offs=0, left = s.size(); left > 0; )
+    {
+        wchar_t c;
+        int n = std::mbtowc(&c, s.data()+offs, left);
+        if(n < 0)
+        {
+            unsigned char byte = s.data()[offs];
+            fprintf(stderr, "Ignoring %02X (%c)\n", byte, byte);
+            ++offs; --left;
+            result += ilseq;
+            continue;
+        }
+        result += c;
+        offs += n; left -= n;
+    }
+    return result;
+#endif
 }
 
 const std::wstring AscToWstr(const std::string &s)
@@ -218,6 +305,12 @@ char WcharToAsc(wchar_t c)
 
 long atoi(const wchar_t *p, int base)
 {
+#ifdef WIN32
+    return wcstol(p, 0, base);
+#else
+    return std::wcstol(p, 0, base);
+#endif
+#if 0
     long ret=0, sign=1;
     while(*p == '-') { sign=-sign; ++p; }
     for(; *p; ++p)
@@ -229,6 +322,7 @@ long atoi(const wchar_t *p, int base)
         ret = ret*base + p;
     }
     return ret * sign;
+#endif
 }
 
 int Whex(wchar_t p)
@@ -245,7 +339,11 @@ const std::wstring wformat(const wchar_t* fmt, ...)
     wchar_t Buf[4096];
     va_list ap;
     va_start(ap, fmt);
-    vswprintf(Buf, 4096, fmt, ap);
+#ifdef WIN32
+    vswprintf(Buf, fmt, ap);
+#else
+    std::vswprintf(Buf, 4096, fmt, ap);
+#endif
     va_end(ap);
     return Buf;
 }
@@ -255,8 +353,7 @@ const std::string format(const char* fmt, ...)
     char Buf[4096];
     va_list ap;
     va_start(ap, fmt);
-    vsnprintf(Buf, 4096, fmt, ap);
+    std::vsnprintf(Buf, 4096, fmt, ap);
     va_end(ap);
     return Buf;
 }
-

@@ -200,6 +200,7 @@ Copypaste from the Makefile:
 # VERSION 1.13.6 is yet another fix, but also finishes the monster name code
 # VERSION 1.13.7 brings an improvement to the sluggish VWF8 screens problem
 # VERSION 1.13.8 C++ standard compliance upgrade... also a new eq-related feature
+# VERSION 1.13.9 is a vwf8 bugfix, but seems to have other problems!
 </pre>
 
 Users of previous versions are advised to do the following:
