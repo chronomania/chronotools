@@ -328,19 +328,9 @@ void insertor::LoadFile(FILE *fp)
                 cget(c);
                 if(c == (ucs4)EOF || c == ':')break;
                 
-                if(header.size() > 0 && header[0] == 'd')
+                if(header.size() > 0 && (header[0] == 'd' || header[0] == 's'))
                 {
-                    // dictionary labels are decimal
-                    if(isdigit(c))
-                        label = label * 10 + c - '0';
-                    else
-                    {
-                        fprintf(stderr, "$%u: Got char '%c', invalid is (in label)!\n", label, c);
-                    }
-                }
-                else if(header.size() > 0 && header[0] == 's')
-                {
-                    // freespace labels are hex
+                    // freespace and dict labels are hex
                     if(isdigit(c))
                         label = label * 16 + c - '0';
                     else if(c >= 'A' && c <= 'z')
@@ -445,9 +435,59 @@ void insertor::LoadFile(FILE *fp)
             {
                 // Dictionary record
                 
+                const Symbols::type &symbols = Symbols.GetMap(16);
+
                 ctstring dictword;
                 for(unsigned a=0; a<content.size(); ++a)
-                    dictword += getchronochar(content[a]);
+                {
+                    // First test for defined symbols.
+                    if(true)
+                    {
+                        bool foundsym = false;
+                        
+                        ucs4string bs; bs += content[a];
+                        ucs4string us = content.substr(a);
+                        
+                        Symbols::type::const_iterator
+                            i,
+                            b = symbols.upper_bound(bs),
+                            e = symbols.upper_bound(us);
+                        
+                        for(i=b; i!=e; ++i)
+                        {
+                            if(content.compare(a, i->first.size(), i->first) == 0)
+                            {
+                                unsigned testlen = i->first.size();
+                                a += testlen-1;
+                                dictword += i->second;
+                                foundsym = true;
+                                break;
+                            }
+                        }
+                        if(foundsym) continue;
+                    }
+                    
+                    // Next test for [codes].
+                    ucs4 c = content[a];
+                    if(c != AscToWchar('['))
+                    {
+                        // No code, translate byte.
+                        ctchar chronoc = getchronochar(c);
+                        dictword += chronoc;
+                        continue;
+                    }
+                    
+                    ucs4string code;
+                    for(code += c; ++a < content.size(); )
+                    {
+                        c = content[a];
+                        code += c;
+                        if(WcharToAsc(c) == ']')break;
+                    }
+                    
+                    dictword += atoi(code.c_str()+1, 16);
+                }
+
                 dict.push_back(dictword);
                 continue;
             }

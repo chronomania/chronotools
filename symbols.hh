@@ -10,7 +10,7 @@ class Symbols
 public:
     // upper_bound, lower_bound needed; thus hash_map doesn't qualify
     typedef map<ucs4string, ctchar> type;
-    // no benefit using hash_map here
+    // no visible benefit using hash_map here
     typedef map<ctchar, ucs4string> revtype;
 private:
     type symbols2, symbols8, symbols16;

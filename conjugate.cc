@@ -109,7 +109,7 @@ void Conjugatemap::Work(ctstring &s, formit fit)
                 form.used   = true;
                 form.prefix = AllowedBytes[ind];
                 
-                fprintf(stderr, "  Assigned 0x%04X for %s\n",
+                fprintf(stderr, " \n  Assigned 0x%04X for %s ",
                     form.prefix,
                     WstrToAsc(form.func).c_str());
                 

@@ -13,7 +13,7 @@
 
 using namespace std;
 
-const string DispString(const ctstring &s);
+const string DispString(const ctstring &s, unsigned symbols_type=16);
 
 class insertor
 {

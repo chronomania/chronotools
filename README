@@ -380,6 +380,15 @@ $C2:5BFF F0 04       BEQ $5C05                          A:00C8 X:0038 Y:001F D:0
 // Tapaus c==0x02
 $C2:5C01 C9 02       CMP A, $02                         A:00C8 X:0038 Y:001F D:0200 DB:00 PB:C2
 $C2:5C03 D0 07       BNE $5C0C                          A:00C8 X:0038 Y:001F D:0200 DB:00 PB:C2
+
+;Oli $01
+$C2:5C05 EB          XBA                                A:0001 X:0002 Y:001F D:0200 DB:00 S:06F2 P:envMxdi
+;Hakee lowbyten
+$C2:5C06 A7 37       LDA [long[D+$37]]                  A:0100 X:0002 Y:001F D:0200 DB:00 S:06F2 P:envMxdi
+$C2:5C08 C2 20       REP #$20                           A:0102 X:0002 Y:001F D:0200 DB:00 S:06F2 P:envMxdi
+;Kasvattaa pointteria
+$C2:5C0A E6 37       INC [$00:D+$37]                    A:0102 X:0002 Y:001F D:0200 DB:00 S:06F2 P:envmxdi
+
 // Ei ollut 1 tai 2. Merkki talteen.
 $C2:5C0C C2 20       REP $20                            A:00C8 X:0038 Y:001F D:0200 DB:00 PB:C2
 $C2:5C0E 85 35       STA [$00:D+$35]      ;$00:0235     A:00C8 X:0038 Y:001F D:0200 DB:00 PB:C2

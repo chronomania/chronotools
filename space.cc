@@ -161,6 +161,13 @@ unsigned freespacemap::Size(unsigned page) const
     return total;
 }
 
+unsigned freespacemap::Count(unsigned page) const
+{
+    const_iterator i = find(page);
+    if(i != end()) return i->second.size();
+    return 0;
+}
+
 const set<unsigned> freespacemap::GetPageList() const
 {
     set<unsigned> result;

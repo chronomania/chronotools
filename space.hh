@@ -44,6 +44,7 @@ public:
     
     unsigned Size() const;
     unsigned Size(unsigned page) const;
+    unsigned Count(unsigned page) const;
     
     const set<unsigned> GetPageList() const;
     const freespaceset GetList(unsigned pagenum) const;

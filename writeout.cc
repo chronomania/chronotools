@@ -30,15 +30,25 @@ namespace
         
         WritePtr(ROM, pointeraddr, spaceptr);
         
+        spaceptr += page<<16;
+        
         const string data = GetString(str);
         
+        // Note: Written "length" must be number of _characters_, NOT number of bytes!
+        const unsigned length = str.size();
+        
 #if 0
-        fprintf(stderr, "Wrote %u bytes at %06X->%04X\n",
-            data.size()+1, pointeraddr, spaceptr);
+        fprintf(stderr, "Wrote %u bytes at %06X->%04X; (%02X)",
+            data.size()+1,
+            pointeraddr,
+            spaceptr,
+            length);
+        for(unsigned a=0; a<data.size(); ++a)
+            fprintf(stderr, " %02X", (unsigned char)data[a]);
+        fprintf(stderr, "\n");
 #endif
         
-        spaceptr += page<<16;
-        ROM.Write(spaceptr, data.size());
+        ROM.Write(spaceptr, length);
         for(unsigned a=0; a<data.size(); ++a)
             ROM.Write(spaceptr+a+1, data[a]);
         

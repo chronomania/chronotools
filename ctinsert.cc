@@ -6,6 +6,7 @@ using namespace std;
 #include "ctinsert.hh"
 #include "ctcset.hh"
 #include "config.hh"
+#include "symbols.hh"
 #include "rom.hh"
 
 namespace
@@ -63,36 +64,34 @@ namespace
     }
 }
 
-const string DispString(const ctstring &s)
+const string DispString(const ctstring &s, unsigned symbols_type)
 {
+    const Symbols::revtype &symbols = Symbols.GetRev(symbols_type);
+    
     static wstringOut conv(getcharset());
 
     string result;
     for(unsigned a=0; a<s.size(); ++a)
     {
         ctchar c = s[a];
+
+        Symbols::revtype::const_iterator i = symbols.find(c);
+        if(i != symbols.end())
+        {
+            result += conv.puts(i->second);
+            continue;
+        }
+
         ucs4 u = getucs4(c);
         if(u != ilseq)
         {
             result += conv.putc(u);
             continue;
         }
-        switch(c)
-        {
-            case 0x05: result += conv.puts(AscToWstr("[nl]")); break;
-            case 0x06: result += conv.puts(AscToWstr("[nl3]")); break;
-            case 0x0B: result += conv.puts(AscToWstr("[pause]")); break;
-            case 0x0C: result += conv.puts(AscToWstr("[pause3]")); break;
-            case 0x00: result += conv.puts(AscToWstr("[end]")); break; // Uuh?
-            case 0xEE: result += conv.puts(AscToWstr("[musicsymbol]")); break;
-            case 0xF1: result += conv.puts(AscToWstr("...")); break;
-            default:
-            {
-                char Buf[8];
-                sprintf(Buf, "[%02X]", c);
-                result += conv.puts(AscToWstr(Buf));
-            }
-        }
+
+        char Buf[8];
+        sprintf(Buf, "[%02X]", c);
+        result += conv.puts(AscToWstr(Buf));
     }
     return result;
 }

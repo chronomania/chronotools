@@ -44,13 +44,14 @@ include Makefile.sets
 # VERSION 1.2.5  characterset enlarged by 512, only vwf8 bugs still
 # VERSION 1.2.6  using nonstandard hash_map for greatly improved performance
 # VERSION 1.2.7  creating another compiler
+# VERSION 1.2.8  improved dictionary compression
 
 OPTIM=-O3
 #OPTIM=-O0
 #OPTIM=-O0 -pg -fprofile-arcs
 #LDFLAGS += -pg -fprofile-arcs
 
-VERSION=1.2.7
+VERSION=1.2.8
 ARCHFILES=xray.c xray.h \
           viewer.c \
           ctcset.cc ctcset.hh \
