@@ -2,6 +2,7 @@
 #include <vector>
 
 #include "rommap.hh"
+#include "ctdump.hh"
 
 using namespace std;
 
@@ -221,14 +222,15 @@ void ListSpaces(void)
             {
                 if(!freehere)
                 {
-                    printf("*s%02X ;Free space in segment $%02X:\n", page, page);
+                    fprintf(scriptout, "*s%02X ;Free space in segment $%02X:\n", page, page);
                     freehere = true;
                 }
-                printf("$%04X:%04X ; %u\n", freebegin, p, p-freebegin);
+                fprintf(scriptout,
+                    "$%04X:%04X ; %u\n", freebegin, p, p-freebegin);
             }
         }
         if(freehere)
-            printf("\n\n");
+            fprintf(scriptout, "\n\n");
     }
     fprintf(stderr, " done\n");
 }

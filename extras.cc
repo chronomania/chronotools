@@ -31,10 +31,10 @@ namespace
     class Loader
     {
     public:
-    	Loader()
-    	{
-    		Load_8();
-    		Load_12();
-    	}
+        Loader()
+        {
+            Load_8();
+            Load_12();
+        }
     } Loader;
 }

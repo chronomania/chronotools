@@ -6,8 +6,8 @@
 
 using namespace std;
 
-#define LOADP_DEBUG      1
-#define LOADZ_DEBUG      1
+#define LOADP_DEBUG      0
+                         #define LOADZ_DEBUG      0
 #define LOADZ_EXTRASPACE 0
 #define LOADP_EXTRASPACE 0
 
@@ -74,8 +74,8 @@ const ctstring LoadZString(unsigned offset, const extrasizemap_t& extrasizes)
         /* FIXME: Invent a better way to see this */
         if(extrasizes.size() == 1)
         {
-        	if(byte == 1 || byte == 2)
-        		byte = byte*256 + ROM[++p];
+            if(byte == 1 || byte == 2)
+                byte = byte*256 + ROM[++p];
         }
         
         foundstring += (ctchar)byte;

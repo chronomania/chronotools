@@ -364,6 +364,8 @@ static void display(void)
         	unsigned dict_addr = CT_HDR+0x1E0000 + data[dict_ptr] + 256*data[dict_ptr+1];
         	unsigned count=data[dict_addr++];
         	
+        	if(count > 16) count = 16;
+        	
         	/*
         	attr = 12;
         	writ("0123456789ABCDEF"[(dict_addr>>20)&15], attr);

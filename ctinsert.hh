@@ -23,6 +23,8 @@ public:
     void LoadFont8v(const string &fn) { Font8v.Load(fn); }
     void LoadFont12(const string &fn) { Font12.Load(fn); }
     
+    void LoadImage(const string &fn, unsigned address);
+    
     void GenerateCode();
 
     void DictionaryCompress();
@@ -46,6 +48,13 @@ private:
         unsigned width; // used if type==fixed;
         unsigned address;
     };
+    struct imagedata
+    {
+        unsigned address;
+        vector<unsigned char> data;
+    };
+    typedef vector<imagedata> imagelist;
+    imagelist images;
     
     typedef list<stringdata> stringlist;
     // strings: used in:
@@ -73,6 +82,7 @@ private:
     void Write8vpixfont(class ROM &ROM);
     void Write12pixfont(class ROM &ROM);
     void WriteCode(class ROM &ROM) const;
+    void WriteImages(class ROM &ROM) const;
 
     void GenerateConjugatorCode();
     void GenerateVWF8code(unsigned widthtab_addr, unsigned tiletab_addr);

@@ -22,13 +22,15 @@ TGAimage::TGAimage(const string &filename)
     fgetc(fp); // color map type, should be 1
     fgetc(fp); // image type code, should be 1
     fgetc(fp); fgetc(fp); // palette start
-    int palsize = fgetc(fp); palsize += fgetc(fp)*256; 
+    
+    this->palsize = fgetc(fp); palsize += fgetc(fp)*256; 
+    
     int palbitness = fgetc(fp); // palette bitness, should be 24
     fgetc(fp); fgetc(fp);
     fgetc(fp); fgetc(fp);
 
-    xdim=fgetc(fp); xdim += fgetc(fp)*256;
-    ydim=fgetc(fp); ydim += fgetc(fp)*256;
+    this->xdim=fgetc(fp); this->xdim += fgetc(fp)*256;
+    this->ydim=fgetc(fp); this->ydim += fgetc(fp)*256;
     
     fgetc(fp); // pixel bitness, should be 8
     fgetc(fp); // misc, should be 0
@@ -49,28 +51,56 @@ TGAimage::TGAimage(unsigned x, unsigned y, unsigned char color)
 {
 }
 
-void TGAimage::Save(const string &fn)
+void TGAimage::Save(const string &fn, palettetype paltype, const unsigned *palette)
 {
     FILE *fp = fopen(fn.c_str(), "wb");
     if(!fp) { perror(fn.c_str()); return; }
     
+    vector<unsigned> FilePalette;
+    
+    switch(paltype)
+    {
+        case pal_6color:
+            FilePalette.push_back(0x0000FF); //border
+            FilePalette.push_back(0x204050); //background
+            FilePalette.push_back(0x000000); //shadow
+            FilePalette.push_back(0x5A5A5A); //semishadow
+            FilePalette.push_back(0xFFFFFF); //paint
+            FilePalette.push_back(0x0A6480); //filler
+            break;
+        case pal_4color:
+            FilePalette.push_back(0x000000); //black
+            FilePalette.push_back(0x606060);
+            FilePalette.push_back(0xC0C0C0);
+            FilePalette.push_back(0xFFFFFF); //white
+            break;
+        case pal_16color:
+            for(unsigned a=0; a<16; ++a)
+            {
+                if(palette) { FilePalette.push_back(palette[a]); continue; }
+                unsigned c = a*255/15;
+                FilePalette.push_back(c + 256*c + 65536*c);
+            }
+            break;
+    }
+    
     TgaPutB(fp, 0); // id field len
     TgaPutB(fp, 1); // color map type
     TgaPutB(fp, 1); // image type code
-    TgaPutW(fp, 0); // palette start
-    TgaPutW(fp, 6); // palette size
-    TgaPutB(fp, 24);// palette bitness
+    TgaPutW(fp, 0); // FilePalette start
+    TgaPutW(fp, FilePalette.size());
+    TgaPutB(fp, 24);// FilePalette bitness
     TgaPutW(fp, 0);    TgaPutW(fp, 0);
     TgaPutW(fp, xdim); TgaPutW(fp, ydim);
     TgaPutB(fp, 8); // pixel bitness
     TgaPutB(fp, 0); //misc
     
-    TgaPutP(fp, 255,  0,  0); // border
-    TgaPutP(fp,  80, 64, 32); // background
-    TgaPutP(fp,   0,  0,  0); // edge
-    TgaPutP(fp,  90, 90, 90); // semiedge
-    TgaPutP(fp, 255,255,255); // paint
-    TgaPutP(fp, 128,100, 10); // filler
+    for(unsigned a=0; a<FilePalette.size(); ++a)
+    {
+        TgaPutB(fp, FilePalette[a] & 255);
+        TgaPutB(fp, (FilePalette[a] >> 8) & 255);
+        TgaPutB(fp, (FilePalette[a] >> 16) & 255);
+    }
     
     for(unsigned y=ydim; y-->0; )
         fwrite(&data[y*xdim], 1, xdim, fp);
@@ -108,4 +138,9 @@ unsigned TGAimage::getboxcount() const
 void TGAimage::PSet(unsigned x,unsigned y, unsigned char value)
 {
     data[y*xdim + x] = value;
+}
+
+unsigned char TGAimage::Point(unsigned x,unsigned y) const
+{
+    return data[y*xdim + x];
 }

@@ -43,7 +43,7 @@ static void Init(void)
 {
     ggiInit();
     vis = ggiOpen(NULL);
-    if(!vis || ggiSetGraphMode(vis, 320,200, 0,0, GT_16BIT))
+    if(!vis || ggiSetGraphMode(vis, 400,240, 0,0, GT_16BIT))
         exit(-1);
     memcpy(font, VGAFont, sizeof(font));
 }
@@ -122,26 +122,19 @@ static void Disp(const char *s)
 Redraw:    
     memset(merk, ' ', sizeof(merk));
     ggiSetGCBackground(vis, 15);
-    ggiSetGCForeground(vis, 15); ggiDrawBox(vis, 0,0, 320,200);
+    ggiSetGCForeground(vis, 15); ggiDrawBox(vis, 0,0, 400,240);
 
     ggiSetGCForeground(vis, 255); ggiDrawVLine(vis, 32*8, 0, 16*8);
     ggiSetGCForeground(vis, 253); ggiDrawVLine(vis, 32*8+1, 0, 16*8);
     
     ggiSetGCForeground(vis, 255);
-    ggiPuts(vis,256+6,16, "a,d =");
-    ggiPuts(vis,256+6,24, "  shift");
-    ggiPuts(vis,256+6,32, "arrows=");
-    ggiPuts(vis,256+3,40, " move");
-    ggiPuts(vis,256+6,48, "y =");
-    ggiPuts(vis,256+6,56, "   pkmn");
-    ggiPuts(vis,256+3,64, "p=toggle");
-    ggiPuts(vis,256+6,72, "   swap");
-    ggiPuts(vis,256+3,80, "b=toggle");
-    ggiPuts(vis,256+6,88, "   bits");
-    ggiPuts(vis,256+3,96, "n=toggle");
-    ggiPuts(vis,256+6,104," nes/gb");
-    ggiPuts(vis,256+6,112,"esc=");
-    ggiPuts(vis,256+6,120,"   quit");
+    ggiPuts(vis,256+6,16+0*10, "a,d = shift");
+    ggiPuts(vis,256+6,16+1*10, "arrows=move");
+    ggiPuts(vis,256+6,16+2*10, "y =pkmn");
+    ggiPuts(vis,256+6,16+3*10, "p=toggle swap");
+    ggiPuts(vis,256+6,16+4*10, "b=toggle bits");
+    ggiPuts(vis,256+6,16+5*10, "n=toggle nes/gb");
+    ggiPuts(vis,256+6,16+6*10,"esc=quit");
     
     for(;;)
     {
@@ -199,39 +192,27 @@ Redraw:
                         ggiSetGCForeground(vis, 253);
                         for(x=0; x<bits; x++)
                         {
-                            ggiPutc(vis,(x%8)*18,     185+(x&8), "0123456789ABCDEF"[Buf[x]>>4]);
-                            ggiPutc(vis,(x%8)*18 + 8, 185+(x&8), "0123456789ABCDEF"[Buf[x]&15]);
+                            ggiPutc(vis,
+                              (x%8)*18, 
+                              193+2*(x&8),
+                              "0123456789ABCDEF"[Buf[x]>>4]);
+                            ggiPutc(vis,
+                              (x%8)*18 + 8,
+                              193+2*(x&8),
+                              "0123456789ABCDEF"[Buf[x]&15]);
                         }
                     }
                     if(cy < (200-16*8-16)/8)
                     {
-                        #if 0
-                        static const char set1[] =
-                           "\r                               "  // 0x00
-                            "                                "  // 0x20
-                          "'\"gÚÄ¿³³Ã ´Ã´ \t &              ."  // 0x40
-                            "$  ID                          -"  // 0x60
-                            "ABCDEFGHIJKLMNOPQRSTUVWXYZ();:[]"  // 0x80
-                            "abcdefghijklmnopqrstuvwxyz‚dlstv"  // 0xA0
-                            "                                "  // 0xC0
-                            "'PM-''?!.      -$*./,+0123456789"; // 0xE0
-                        ggiSetGCForeground(vis, 252);
-                        for(y=0; y<bits; y++)
-                        {
-                            byte c = set1[Buf[y]];
-                            if(c != merk[cy][cx])
-                                ggiPutc(vis, cx*8, 16*8 + (cy)*7, merk[cy][cx]=c);
-                            if(++cx>=320/8){cx=0;cy++;}
-                        }
-                        #else
                         for(y=0; y<bits; y++)
                         {
                             byte c = Buf[y];
                             if(c != merk[cy][cx])
+                            {
                                 putc(cx*8, 16*8 + (cy)*8, merk[cy][cx]=c, 252);
+                            }
                             if(++cx>=320/8){cx=0;cy++;}
                         }
-                        #endif
                     }
                     for(y=0; y<ylimit; y++)
                     {
@@ -262,12 +243,17 @@ Redraw:
                             case 32:
                                 for(x=0; x<8; x++)
                                 {
-                                    ggiPutPixel(vis, bx+x, by+y, PIXC[
-                                        ((b1 >> (7-x))&1)
+                                	unsigned value = 
+                                	    ((b1 >> (7-x))&1)
                                       | (((b2 >> (7-x))&1)<<1)
                                       | (((b3 >> (7-x))&1)<<2)
-                                      | (((b4 >> (7-x))&1)<<3)]
-                                    );
+                                      | (((b4 >> (7-x))&1)<<3);
+                                    
+                                    ggiPutPixel(vis, bx+x, by+y,
+                                           value*31/15
+                                     + 32*(value*63/15)
+                                     + 2048*(value*31/15)
+                                              );
                                 }
                                 break;
                             case 8:
@@ -288,12 +274,14 @@ Redraw:
         
         ggiSetGCForeground(vis, 254);
         {char Buf[8];
-         unsigned rom = posi/0x4000;
+         unsigned rom = posi | 0xC00000;
          
-         sprintf(Buf, "%07X", posi); ggiPuts(vis,256+2,185, Buf);
-         
-         sprintf(Buf, "%02X:%04X", rom, (posi&0x3FFF) + (rom?0x4000:0));
-         ggiPuts(vis,256+2,193, Buf);
+         sprintf(Buf, "%07X", posi);
+
+          ggiPuts(vis,256+2, 193, Buf);
+          
+         sprintf(Buf, "%02X:%04X", rom>>16, rom&0xFFFF);
+         ggiPuts(vis, 256+2, 193+16, Buf);
         }
         
         do {
@@ -327,6 +315,9 @@ Redraw:
                 case '': goto Redraw;
                 case '-': if(ylimit>1)--ylimit; break;
                 case '+': if(ylimit<128)++ylimit; break;
+                
+                case '>': posi = (posi+0x3FFF)&~0x3FFF; break;
+                case '<': posi=(posi > 0x3FFF)?(posi-0x3FFF)&~0x3FFF:0; break;
             }
         } while(ggiKbhit(vis));
     }

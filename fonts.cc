@@ -33,6 +33,8 @@ namespace
 
 void Font12data::LoadBoxAs(unsigned boxno, unsigned tileno, class TGAimage &image)
 {
+    //fprintf(stderr, "%03X -> %03X\t", boxno, tileno + get_font_begin());
+    
     static const char palette[] = {0,0,1,2,3,0};
     
     vector<char> box = image.getbox(boxno);
@@ -42,20 +44,18 @@ void Font12data::LoadBoxAs(unsigned boxno, unsigned tileno, class TGAimage &imag
     unsigned width=0;
     while(box[width] != 5 && width < 12)++width;
     
-    ctchar chronochar = boxno;
-    
     // Typefaces refer to original characters.
     for(unsigned t=0; t<Typefaces.size(); ++t)
     {
-        unsigned begin   = Typefaces[t].get_begin();
-        unsigned end     = Typefaces[t].get_end();
-        unsigned condense= Typefaces[t].get_condense();
+        const ctchar chronochar = boxno;
+        const unsigned begin   = Typefaces[t].get_begin();
+        const unsigned end     = Typefaces[t].get_end();
+        const unsigned condense= Typefaces[t].get_condense();
         
-        if(condense > 10) condense = 0;
-        
-        if(!condense) continue;
-        
-        if(chronochar >= begin && chronochar < end
+        if(chronochar >= begin
+        && chronochar < end
+        && condense > 0
+        && condense < 10
         && width >= condense)
         {
             width -= condense;
@@ -184,6 +184,8 @@ void Font12data::Reload(const Rearrangemap_t& arrange)
         
         LoadBoxAs(b, newno, image);
     }
+    
+    //fprintf(stderr, "\n");
 }
 
 void Font12data::Load(const string &filename)
@@ -509,7 +511,7 @@ namespace
             if(a->first == a->second) result.erase(a);
         }
 
-#if 0
+#if 1
         for(Rearrangemap_t::const_iterator i=result.begin(); i!=result.end(); ++i)
         {
             unsigned usetimes = 0;
@@ -660,8 +662,8 @@ void insertor::ReorganizeFonts()
         if(getucs4(c, cset_12pix) == ilseq
         || UsagesByChar_12.find(c) == UsagesByChar_12.end())
         {
-        	// Can be redefined.
-        	
+            // Can be redefined.
+            
             Free_12.insert(c);
         }
     }

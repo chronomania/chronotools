@@ -16,8 +16,13 @@ using namespace std;
 #include "symbols.hh"
 #include "config.hh"
 #include "extras.hh"
+#include "ctdump.hh"
 
 static ucs4string dict[256];
+
+static const char scriptoutfile[] = "ctdump.out";
+
+FILE *scriptout;
 
 static const ucs4string Disp8Char(ctchar k)
 {
@@ -93,7 +98,7 @@ static void DumpZStrings(const unsigned offs, unsigned len, bool dolf=true)
     
     vector<ctstring> strings = LoadZStrings(offs, len, Extras_12);
 
-    printf("*z;%u pointerstrings (12pix font)\n", strings.size());
+    fprintf(scriptout, "*z;%u pointerstrings (12pix font)\n", strings.size());
 
     wstringOut conv(getcharset());    
     for(unsigned a=0; a<strings.size(); ++a)
@@ -143,9 +148,9 @@ static void DumpZStrings(const unsigned offs, unsigned len, bool dolf=true)
                 }
             }
         }
-        puts(line.c_str());
+        fprintf(scriptout, "%s\n", line.c_str());
     }
-    printf("\n\n");
+    fprintf(scriptout, "\n\n");
     fprintf(stderr, " done\n");
 }
 
@@ -154,7 +159,7 @@ static void Dump8Strings(const unsigned offs, unsigned len=0)
     fprintf(stderr, "Dumping strings at %06X...", offs);
     vector<ctstring> strings = LoadZStrings(offs, len, Extras_8);
 
-    printf("*r;%u pointerstrings (8pix font)\n", strings.size());
+    fprintf(scriptout, "*r;%u pointerstrings (8pix font)\n", strings.size());
 
     wstringOut conv(getcharset());    
     for(unsigned a=0; a<strings.size(); ++a)
@@ -321,10 +326,10 @@ Retry:
                     }
             }
         }
-        puts(line.c_str());
+        fprintf(scriptout, "%s\n", line.c_str());
     }
 
-    printf("\n\n");
+    fprintf(scriptout, "\n\n");
     fprintf(stderr, " done\n");
 }
 
@@ -332,7 +337,8 @@ static void DumpFStrings(unsigned offs, unsigned len, unsigned maxcount=0)
 {
     fprintf(stderr, "Dumping strings at %06X...", offs);
     vector<ctstring> strings = LoadFStrings(offs, len, maxcount);
-    printf("*l%u;%u fixed length strings (length: %u bytes)\n",
+    fprintf(scriptout,
+        "*l%u;%u fixed length strings (length: %u bytes)\n",
         len, strings.size(), len);
 
     wstringOut conv(getcharset());
@@ -355,16 +361,18 @@ static void DumpFStrings(unsigned offs, unsigned len, unsigned maxcount=0)
 
         for(unsigned b=0; b<s.size(); ++b)
             line += conv.puts(Disp8Char(s[b]));
-        puts(line.c_str());
+
+        fprintf(scriptout, "%s\n", line.c_str());
     }
-    printf("\n\n");
+    fprintf(scriptout, "\n\n");
     fprintf(stderr, " done\n");
 }
 
 static void LoadDict(unsigned offs, unsigned len)
 {
     vector<ctstring> strings = LoadPStrings(offs, len);
-    printf("*d;dictionary (%u substrings)\n",
+    fprintf(scriptout,
+        "*d;dictionary (%u substrings)\n",
         strings.size());
 
     wstringOut conv(getcharset());
@@ -380,7 +388,8 @@ static void LoadDict(unsigned offs, unsigned len)
 
         for(unsigned b=0; b<s.size(); ++b)
             line += conv.puts(Disp8Char(s[b]));
-        puts(line.c_str());
+
+        fprintf(scriptout, "%s\n", line.c_str());
     }
     
     for(unsigned a=0; a<strings.size(); ++a)
@@ -391,7 +400,7 @@ static void LoadDict(unsigned offs, unsigned len)
         dict[a + 0x21] = tmp;
     }
 
-    printf("\n\n");
+    fprintf(scriptout, "\n\n");
 }
 
 static void Dump8x8sprites(unsigned spriteoffs, unsigned count)
@@ -428,7 +437,7 @@ static void Dump8x8sprites(unsigned spriteoffs, unsigned count)
         }
     }
 
-    image.Save(WstrToAsc(GetConf("dumper", "font8fn")));
+    image.Save(WstrToAsc(GetConf("dumper", "font8fn")), TGAimage::pal_6color);
 
     fprintf(stderr, " done\n");
 }
@@ -493,7 +502,7 @@ static void DumpFont(unsigned begin,unsigned end, unsigned offs1, unsigned offs2
         }
     }
     
-    image.Save(WstrToAsc(GetConf("dumper", "font12fn")));
+    image.Save(WstrToAsc(GetConf("dumper", "font12fn")), TGAimage::pal_6color);
 
     fprintf(stderr, " done\n");
 }
@@ -523,7 +532,7 @@ static void Dump12Font()
         fprintf(stderr,
             "Warning: This isn't the original ROM.\n"
             "The high part of 12pix font isn't immediately after the low part:\n"
-            "    %06X != %06X+1800\n", FontPtr2, FontPtr1);
+            "%06X != %06X+1800\n", FontPtr2, FontPtr1);
     }
     
     DumpFont(0,0x2FF, FontPtr1, FontPtr2, WidthPtr);
@@ -566,6 +575,180 @@ static void LoadROM(const char *fn)
     fclose(fp);
 }
 
+static void DumpGFX_2bit(unsigned addr, unsigned xtile, unsigned ytile, const string &fn)
+{
+    TGAimage result(xtile * 8, ytile * 8, 0);
+    
+    for(unsigned ty=0; ty<ytile; ++ty)
+        for(unsigned tx=0; tx<xtile; ++tx)
+        {
+            for(unsigned ypos=ty*8, y=0; y<8; ++y, ++ypos)
+            {
+                unsigned char byte1 = ROM[addr+0];
+                unsigned char byte2 = ROM[addr+1];
+                
+                addr += 2;
+                
+                for(unsigned xpos=tx*8, x=0; x<8; ++x, ++xpos)
+                {
+                    result.PSet(xpos, ypos,
+                         ((byte1 >> (7-(x&7)))&1)
+                      | (((byte2 >> (7-(x&7)))&1) << 1)
+                               );
+                }
+            }
+        }
+    result.Save(fn, TGAimage::pal_4color);
+}
+
+static void DumpGFX_4bit(unsigned addr, unsigned xtile, unsigned ytile, const string &fn,
+                         const unsigned *palette = NULL)
+{
+    TGAimage result(xtile * 8, ytile * 8, 0);
+    
+    for(unsigned ty=0; ty<ytile; ++ty)
+    {
+        for(unsigned tx=0; tx<xtile; ++tx)
+        {
+            for(unsigned ypos=ty*8, y=0; y<8; ++y, ++ypos)
+            {
+                unsigned char byte1 = ROM[addr + 0];
+                unsigned char byte2 = ROM[addr + 1];
+                unsigned char byte3 = ROM[addr + 0 + 16];
+                unsigned char byte4 = ROM[addr + 1 + 16];
+                
+                addr += 2;
+
+                for(unsigned xpos=tx*8, x=0; x<8; ++x, ++xpos)
+                {
+                    result.PSet(xpos, ypos,
+                         ((byte1 >> (7-(x&7)))&1)
+                      | (((byte2 >> (7-(x&7)))&1) << 1)
+                      | (((byte3 >> (7-(x&7)))&1) << 2)
+                      | (((byte4 >> (7-(x&7)))&1) << 3)
+                               );
+                }
+            }
+            addr += 16;
+        }
+    }
+    result.Save(fn, TGAimage::pal_16color, palette);
+}
+
+static void DumpGFX()
+{
+    DumpGFX_2bit(0x3FF488,  6, 2, "active2.tga"); // "Active Time Battle ver. 2"
+
+{   static const unsigned pal[16] = {
+0x000010,0x000010,0x101818,0x202031,
+0x29314A,0x41415A,0x525262,0x5A5A73,
+0x5A6283,0x737394,0x838B9C,0x8B94AC,
+0xA4A4B4,0xB4B4CD,0xCDCDDE,0xF6F6FF };
+    DumpGFX_4bit(0x3FF008, 12, 3, "active1.tga", pal); // "Battle Mode"
+}
+
+    DumpGFX_2bit(0x114C80,12, 1, "misc1.tga");
+    DumpGFX_2bit(0x3FC9FC,13, 2, "misc2.tga");
+    DumpGFX_4bit(0x3FE4CC, 2,32, "misc3.tga");
+
+{   static const unsigned pal[16] = {
+0x000000,0x392010,0x394139,0x6A5A41,
+0x837B62,0x623108,0xA44100,0xC5B47B,
+0xCD8B39,0xCDAC52,0xDE9410,0xF6CD41,
+0xFFFF6A,0xFFFFC5,0xFFFFFF,0x291018 };
+    DumpGFX_4bit(0x3FD5E4,  6, 2, "elem1.tga", pal); //lightning
+}
+
+{   static const unsigned pal[16] = {
+0x000000,0x000010,0x000031,0x100052,
+0x20086A,0x202031,0x313152,0x39208B,
+0x4A4162,0x524183,0x524A94,0x5A41B4,
+0x6A629C,0x7B62CD,0x8B7BD5,0x000000 };
+    DumpGFX_4bit(0x3FD764,  6, 2, "elem2.tga", pal); //shadow
+}
+
+{   static const unsigned pal[16] = {
+0x000000,0x0029CD,0x0041FF,0x005AFF,
+0x007BFF,0x00A4FF,0x00C5FF,0x1073FF,
+0x20BDFF,0x5A73FF,0x6AA4FF,0x6AD5FF,
+0xB4C5FF,0xB4EEFF,0x00299C,0xFFFFFF };
+    DumpGFX_4bit(0x3FD8E4,  6, 2, "elem3.tga", pal); //water
+}
+    
+{   static const unsigned pal[16] =
+{
+0x000000,0x080000,0x180808,0x181010,
+0x291810,0x312020,0x413129,0x4A2918,
+0x521808,0x523129,0x5A4141,0x6A3110,
+0x942900,0xA44100,0xB42900,0xBD4A00 };
+    DumpGFX_4bit(0x3FDA64,  6, 2, "elem4.tga", pal); //fire
+}
+
+{   static const unsigned pal[16] =
+{
+0x8B8B8B,0xD5D5D5,0xB4BDC5,
+0xFFC5AC,0xF69C7B,0xC5735A,0x9C5A41,
+0x734A29,0xDE9410,0xC56A00,0x41B483,
+0x204131,0xA44110,0x6A1000,0x391008 };
+    DumpGFX_4bit(0x3F0000+0*6*6*32,  6, 6, "face1.tga", pal);
+};
+
+{   static const unsigned pal[16] =
+{
+0xA429D5,0xFFEEE6,0xEEBDA4,
+0xE6A48B,0xC59473,0xB48352,0x946A4A,
+0x734139,0x41C55A,0xD5A462,0xD58331,
+0xC56210,0xC53900,0x318341,0x412008, 0x000000 };
+    DumpGFX_4bit(0x3F0000+1*6*6*32,  6, 6, "face2.tga", pal);
+};
+
+{   static const unsigned pal[16] =
+{
+0x8B8B8B,0xF6F6EE,0xF6D5CD,
+0xF6B4B4,0xD5948B,0xB47329,0xB46A4A,
+0x7B5A20,0x5A3908,0x392008,0x8B3900,
+0xE65241,0x107B8B,0xC55200,0x7B4A18, 0x000000 };
+    DumpGFX_4bit(0x3F0000+2*6*6*32,  6, 6, "face3.tga", pal);
+};
+
+{   static const unsigned pal[16] =
+{
+0x949494,0xF6E6E6,0xE6D5A4,
+0xDEB49C,0xDE9C62,0xAC7B52,0x834A10,
+0x5A3100,0x412010,0x9C949C,0x7B737B,
+0x62FFB4,0x299C73,0x7B5A39,0x5A4129, 0x000000 };
+    DumpGFX_4bit(0x3F0000+3*6*6*32,  6, 6, "face4.tga", pal);
+};
+
+{   static const unsigned pal[16] =
+{
+0x949494,0x000000,0xFFFFF6,
+0xEEEEBD,0xD5949C,0xD5DE83,0x9CBD31,
+0xE6A420,0xBD5A41,0x837373,0x9C6A31,
+0x629400,0x622918,0x414120,0x313110, 0x000000 };
+    DumpGFX_4bit(0x3F0000+4*6*6*32,  6, 6, "face5.tga", pal);
+};
+
+{   static const unsigned pal[16] =
+{
+0x8B8B8B,0xFFF6E6,0xFFD5C5,
+0xE6DE7B,0xC5B462,0xFFB494,0xEE947B,
+0xA49462,0xB48352,0x946241,0x735231,
+0x734141,0x5A2920,0x627B94,0xEE5A7B, 0x000000 };
+    DumpGFX_4bit(0x3F0000+5*6*6*32,  6, 6, "face6.tga", pal);
+};
+
+{   static const unsigned pal[16] =
+{
+0x207362,0x390810,0xE6E6E6,
+0xD5C5B4,0xB4A494,0x8B7B6A,0x625A41,
+0xB494C5,0x6283A4,0x7373C5,0x525294,
+0x203194,0xB4296A,0x5A1020,0x4A3929, 0x000000 };
+    DumpGFX_4bit(0x3F0000+6*6*6*32,  6, 6, "face7.tga", pal);
+};
+
+    DumpGFX_4bit(0x3FEB88,  6, 6, "face8.tga");
+}
 
 int main(int argc, const char* const* argv)
 {
@@ -575,144 +758,148 @@ int main(int argc, const char* const* argv)
     
     if(argc != 2)
     {
-        fprintf(stderr, "Usage: ctdump romfilename > scriptfilename\n");
+        fprintf(stderr,
+            "Usage: ctdump romfilename > scriptfilename\n");
         return -1;
     }
     
     LoadROM(argv[1]);
-
-    printf("; Note: There is a one byte sequence for [nl] and three spaces.\n"
-           ";       Don't attempt to save space by removing those spaces,\n"
-           ";       you will only make things worse...\n"
-           ";       Similar for [pause]s, [pausenl]s and [cls]s.\n"
-           ";\n"
+    
+    DumpGFX();
+    
+    scriptout = fopen(scriptoutfile, "wt");
+    
+    fprintf(scriptout,
+        "; Note: There is a one byte sequence for [nl] and three spaces.\n"
+        ";       Don't attempt to save space by removing those spaces,\n"
+        ";       you will only make things worse...\n"
+        ";       Similar for [pause]s, [pausenl]s and [cls]s.\n"
+        ";\n"
           );
     
     DoLoadDict();
     
     // 
-    puts(";items");
+    fprintf(scriptout, ";items\n");
     DumpFStrings(0x0C0B5E, 11, 242);
-    puts(";item descriptions");
+    fprintf(scriptout, ";item descriptions\n");
     DumpZStrings(0x0C2EB1, 242, false);
     
-    puts(";techs");
+    fprintf(scriptout, ";techs\n");
     DumpFStrings(0x0C15C4, 11);
-    puts(";tech descs");
+    fprintf(scriptout, ";tech descs\n");
     DumpZStrings(0x0C3A09, 117, false);
     
-    puts(";tech related");
+    fprintf(scriptout, ";tech related\n");
     DumpZStrings(0x0C3AF3, 4, false);
     
-    puts(";monsters");
+    fprintf(scriptout, ";monsters\n");
     DumpFStrings(0x0C6500, 11); // monsters
 
-    puts(";Weapon Helmet Armor Accessory");
+    fprintf(scriptout, ";Weapon Helmet Armor Accessory\n");
     DumpFStrings(0x02A3BA, 10, 4);
 
-    puts(";Location titles");
+    fprintf(scriptout, ";Location titles\n");
     DumpZStrings(0x06F400, 112, false);
     
-    puts(";Battle announcements");
+    fprintf(scriptout, ";Battle announcements\n");
     DumpZStrings(0x0EEF11, 14, false);
     
-    puts(";Battle messages");
+    fprintf(scriptout, ";Battle messages\n");
     DumpZStrings(0x0CCBC9, 227, false);
     
-    puts(";600ad (castle, masa+mune, naga-ette)");
-    puts(";12kbc daltonstuff");
+    fprintf(scriptout, ";600ad (castle, masa+mune, naga-ette)\n");
+    fprintf(scriptout, ";12kbc daltonstuff\n");
     DumpZStrings(0x18D000, 78);
     
-    puts(";65Mbc");
+    fprintf(scriptout, ";65Mbc\n");
     DumpZStrings(0x18DD80, 254);
     
-    puts(";2300ad (factory, sewer, belthasar)");
-    puts(";65Mbc azalastuff");
-    puts(";slideshow-ending");
+    fprintf(scriptout, ";2300ad (factory, sewer, belthasar)\n");
+    fprintf(scriptout, ";65Mbc azalastuff\n");
+    fprintf(scriptout, ";slideshow-ending\n");
     DumpZStrings(0x1EC000, 187);
     
-    puts(";1000ad (towns, castle)");
-    puts(";600ad (towns)");
-    puts(";2300ad (factory)");
+    fprintf(scriptout, ";1000ad (towns, castle)\n");
+    fprintf(scriptout, ";600ad (towns)\n");
+    fprintf(scriptout, ";2300ad (factory)\n");
     DumpZStrings(0x1EE300, 145);
     
-    puts(";Treasure box messages");
+    fprintf(scriptout, ";Treasure box messages\n");
     DumpZStrings(0x1EFF00, 3, false);
 
-    puts(";1000ad (Lucca's home)");
-    puts(";2300ad (factory)");
-    puts(";1000ad (rainbow shell trial)    ");
+    fprintf(scriptout, ";1000ad (Lucca's home)\n");
+    fprintf(scriptout, ";2300ad (factory)\n");
+    fprintf(scriptout, ";1000ad (rainbow shell trial)    \n");
     DumpZStrings(0x36A000, 106);
 
-    puts(";no Crono -ending");
-    puts(";happy ending (castle)");
+    fprintf(scriptout, ";no Crono -ending\n");
+    fprintf(scriptout, ";happy ending (castle)\n");
     DumpZStrings(0x36B230, 144);
 
-    puts(";1000ad (various indoors)");
-    puts(";600ad (various indoors)");
-    puts(";2300ad (various indoors)");
+    fprintf(scriptout, ";1000ad (various indoors)\n");
+    fprintf(scriptout, ";600ad (various indoors)\n");
+    fprintf(scriptout, ";2300ad (various indoors)\n");
     DumpZStrings(0x370000, 456);
 
-    puts(";2300ad (various indoors)");
-    puts(";end of time (gaspar's stories, Spekkio etc)");
-    puts(";600ad (Ozzie's scenes, Magus battle, castle)");
-    puts(";1999ad Lavos scenes");
-    puts(";12kbc various scenes");
-    puts(";1000ad castle scenes");
+    fprintf(scriptout, ";2300ad (various indoors)\n");
+    fprintf(scriptout, ";end of time (gaspar's stories, Spekkio etc)\n");
+    fprintf(scriptout, ";600ad (Ozzie's scenes, Magus battle, castle)\n");
+    fprintf(scriptout, ";1999ad Lavos scenes\n");
+    fprintf(scriptout, ";12kbc various scenes\n");
+    fprintf(scriptout, ";1000ad castle scenes\n");
     DumpZStrings(0x374900, 1203);
 
-    puts(";1000ad jail scenes");
-    puts(";600ad bridge battle stuff");
-    puts(";1000ad (melchior, medina village)");
-    puts(";65Mbc");
-    puts(";12kbc");
-    puts(";600ad (Toma stuff, Marco&Fiona stuff)");
-    puts(";1000ad (Cyrus stuff)");
-    puts(";Black Omen");
+    fprintf(scriptout, ";1000ad jail scenes\n");
+    fprintf(scriptout, ";600ad bridge battle stuff\n");
+    fprintf(scriptout, ";1000ad (melchior, medina village)\n");
+    fprintf(scriptout, ";65Mbc\n");
+    fprintf(scriptout, ";12kbc\n");
+    fprintf(scriptout, ";600ad (Toma stuff, Marco&Fiona stuff)\n");
+    fprintf(scriptout, ";1000ad (Cyrus stuff)\n");
+    fprintf(scriptout, ";Black Omen\n");
     DumpZStrings(0x384650, 678);
 
-    puts(";600ad (Cathedral, other indoors)");
-    puts(";12kbc (out- and indoors)");
+    fprintf(scriptout, ";600ad (Cathedral, other indoors)\n");
+    fprintf(scriptout, ";12kbc (out- and indoors)\n");
     DumpZStrings(0x39B000, 444);
 
-    puts(";1000ad (fair, the trial, castle)");
-    puts(";600ad (Frog scenes)");
-    puts(";12kbc");
-    puts(";2300ad (death's peak)");
+    fprintf(scriptout, ";1000ad (fair, the trial, castle)\n");
+    fprintf(scriptout, ";600ad (Frog scenes)\n");
+    fprintf(scriptout, ";12kbc\n");
+    fprintf(scriptout, ";2300ad (death's peak)\n");
     DumpZStrings(0x3CBA00, 399);
 
-    puts(";Dreamteam etc");
-    puts(";Forest scene");
+    fprintf(scriptout, ";Dreamteam etc\n");
+    fprintf(scriptout, ";Forest scene\n");
     DumpZStrings(0x3F4460, 81);
     
-    puts(";12kbc cities");
+    fprintf(scriptout, ";12kbc cities\n");
     DumpZStrings(0x3F5860, 85);
 
-    puts(";?");
+    fprintf(scriptout, ";?\n");
     DumpZStrings(0x3F6B00, 186);
 
-    puts(";Battle tutorials, Zeal stuff, party stuff");
+    fprintf(scriptout, ";Battle tutorials, Zeal stuff, party stuff\n");
     DumpZStrings(0x3F8400, 39);
     
-    puts(";Item types");
+    fprintf(scriptout, ";Item types\n");
     Dump8Strings(0x3FB310, 242);
 
-    puts(";Status screen strings");
+    fprintf(scriptout, ";Status screen strings\n");
     
-    Dump8Strings(0x3FC457, 61);
+    Dump8Strings(0x3FC457, 64);
     
-    Dump8Strings(0x3FC4D3, 2);
-    
-    puts(";Misc prompts");
+    fprintf(scriptout, ";Misc prompts\n");
     DumpZStrings(0x3FCF3B, 7);
     
-    puts(";Configuration");
+    fprintf(scriptout, ";Configuration\n");
     DumpZStrings(0x3FD3FE, 50, false);
     
-    puts(";Era list");
+    fprintf(scriptout, ";Era list\n");
     Dump8Strings(0x3FD396, 8);
     
-    puts(";Episode list");
+    fprintf(scriptout, ";Episode list\n");
     DumpZStrings(0x3FD03E, 27, false);
     
     Dump8x8sprites(Font8_Address, 256);
@@ -723,7 +910,21 @@ int main(int argc, const char* const* argv)
 
     ListSpaces();
     
+    fclose(scriptout);
+    
     ShowProtMap();
     
     fprintf(stderr, "Done\n");
+    
+    scriptout = fopen(scriptoutfile, "rt");
+    for(;;)
+    {
+        char Buf[4096];
+        if(!fgets(Buf, sizeof Buf, scriptout)) break;
+        printf("%s", Buf);
+    }
+    fclose(scriptout);
+    remove(scriptoutfile);
+    
+    return 0;
 }

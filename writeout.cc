@@ -212,6 +212,9 @@ void insertor::PatchROM(ROM &ROM)
         }
     }
     
+    // Write images: they already have their places set
+    WriteImages(ROM);
+    
     // Write the strings first because they require certain pages!
     WriteStrings(ROM);
     
@@ -255,6 +258,16 @@ void insertor::WriteCode(ROM &ROM) const
     // Testataan item-listaa
     //ROM.Write(0x02EFB4, 0xA9);
     //ROM.Write(0x02EFB5, 0x10);
+    
+    // Patch the name entry function
+    unsigned namechar_address1 = 0x3F0000 + ROM[0x3FC4D3] + 256*ROM[0x3FC4D4];
+    ROM.Write(0x02E553,  (namechar_address1     ) & 255);
+    ROM.Write(0x02E554,  (namechar_address1 >> 8) & 255);
+    ROM.Write(0x02E555, ((namechar_address1 >>16) & 255) | 0xC0);
+    unsigned namechar_address2 = 0x3F0000 + ROM[0x3FC4D5] + 256*ROM[0x3FC4D6];
+    ROM.Write(0x02E331,  (namechar_address2     ) & 255);
+    ROM.Write(0x02E332,  (namechar_address2 >> 8) & 255);
+    ROM.Write(0x02E333, ((namechar_address2 >>16) & 255) | 0xC0);
 }
 
 void insertor::Write8pixfont(ROM &ROM) const
@@ -314,7 +327,6 @@ void insertor::Write8vpixfont(ROM &ROM)
     // Patch tech1func
     ROM.Write(0x02BDE3+4, 0xEA); // NOP
     ROM.Write(0x02BDE3+5, 0xEA); // NOP
-
 }
 
 void insertor::Write12pixfont(ROM &ROM)

@@ -59,9 +59,9 @@ you have to <a href=\"#copying\">contact me with email</a>.
 <tr><td>Item/tech/monster font handling</td>
     <td>80%</td> <td>useless in its current state</td></tr>
 <tr><td>Graphics handling</td>
-    <td>0%</td> <td>nonexistant</td></tr>
+    <td>90%</td> <td>minor details left</td></tr>
 <tr><td>Signature feature</td>
-    <td>0%</td> <td>nonexistant</td></tr>
+    <td>5%</td> <td>not what I planned</td></tr>
 <tr><td>Error recovery</td>
     <td>10%</td> <td>silent ignore</td></tr>
 </table>
@@ -115,14 +115,16 @@ Copypaste from the Makefile:
 # VERSION 1.2.9  compiler progress, first windows binaries are working
 # VERSION 1.2.10 cursive font support
 # VERSION 1.2.11 some translation, compression optimizations
+# VERSION 1.3.0  new compression options, font reorganizer, generic typeface engine
+# VERSION 1.4.0  image patching support, more font reorganizing support
 </pre>
 
 ", '1. Program list' => "
 
 ", 'ctdump:1.1. ctdump' => "
 
-<img src=\"/src/chronotools-bat.png\"
-     align=right alt=\"sample\" style=\"padding-right:10px\" >
+<table cellspacing=0 cellpadding=0 width=\"100%\">
+<tr><td valign=top>
 
 Dumps the script and fonts from a given ROM.<br>
 Requires <code>chrono-dumpee.smc</code>.<br>
@@ -130,26 +132,36 @@ Produces <code>ct_eng.txt</code>,
 <code>ct8fn.tga</code> and <code>ct16fn.tga</code>.
 <p>
 Sample of produced script:<pre class=smallerpre
->;Battle tutorials, Zeal stuff, party stuff
-*z;39 pointerstrings (12pix font)
-\$HSs4:
-Taistelun aikana jokaisen iskun[nl]
-   teho vaihtelee iskun mukaan.
-\$HSs6:
-Ensinnäkin, voit iskeä myös[nl]
-   useampaa, kuin yhtä vihollista[nl]
-   kerralla.
-\$HSs8:
-Voit esimerkiksi tähdätä tätä[nl]
-   hirviötä...</pre>
-(Dumped from
-<a href=\"http://hallucinat.ionstream.fi/teemu/engine.html?page=13\"
->inf's Finnish Chrono Trigger translation</a>).
+>;1000ad (Lucca's home)
+*z;106 pointerstrings (12pix font)
+\$F1IO:
+[nl]
+            You got 1 [item]!
+\$F1IQ:
+LARA: Oh, hi Crono.[nl]
+   Lucca's off at Leene Square with[nl]
+   her father, Taban, unveiling her new[nl] 
+   invention.
+\$F1IS:
+LARA: Lucca and Taban only care[nl]
+   about their silly toys!</pre>
+(Dumped from the English ROM)
 <p>
 The windows version of this program is
 <a href=\"#download\">downloadable</a> on this page.<br>
 Usage example:
   <code>ctdump chrono-uncompressed.smc &gt; ct_eng.txt</code>
+
+</td><td valign=top align=right>
+
+<table><tr><td align=center>
+<img src=\"/src/chronotools-esp.png\"
+     alt=\"sample\" style=\"padding-right:10px\" >
+<br>
+<small> Example screenshot in Spanish </small>
+</td></tr></table>
+
+</td></tr></table>
 
 ", 'ctinsert:1.1. ctinsert' => "
 
@@ -271,7 +283,7 @@ You can force line breaks, but you don't have to.
 
 ", 'vwf8:1.1. Variable width 8pix font' => "
 
-<img src=\"/src/chronotools-vwf8.png\" alt=\"It works!\" align=right>
+<img src=\"/src/chronotools-vwf8.jpg\" alt=\"It works!\" align=right>
 Item, monster and technique names in Chrono Trigger are limited to 10 characters
 (restriction is enforced by both the screen layout and the ROM space).<br>
 This is way too little for Finnish, which has long words.

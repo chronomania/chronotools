@@ -52,14 +52,15 @@ include Makefile.sets
 # VERSION 1.2.9  compiler progress, first windows binaries are working
 # VERSION 1.2.10 cursive font support
 # VERSION 1.2.11 some translation, compression optimizations
-# VERSION 1.3.0  new compression options, font reorganizer
+# VERSION 1.3.0  new compression options, font reorganizer, generic typeface engine
+# VERSION 1.4.0  image patching support, more font reorganizing support
 
 OPTIM=-O3
 #OPTIM=-O0
 #OPTIM=-O0 -pg -fprofile-arcs
 #LDFLAGS += -pg -fprofile-arcs
 
-VERSION=1.3.0
+VERSION=1.4.0
 ARCHFILES=xray.c xray.h \
           viewer.c \
           ctcset.cc ctcset.hh \
@@ -72,6 +73,7 @@ ARCHFILES=xray.c xray.h \
           rom.cc rom.hh \
           rommap.cc rommap.hh \
           strload.cc strload.hh \
+          images.cc \
           fonts.cc fonts.hh \
           logfiles.cc logfiles.hh \
           conjugate.cc conjugate.hh \
@@ -79,7 +81,7 @@ ARCHFILES=xray.c xray.h \
           compiler.cc compiler.hh \
           symbols.cc symbols.hh \
           tgaimage.cc tgaimage.hh \
-          ctdump.cc \
+          ctdump.cc ctdump.hh \
           ctinsert.cc ctinsert.hh \
           makeips.cc unmakeips.cc \
           vwf8.cc vwftest.cc \
@@ -99,7 +101,15 @@ ARCHFILES=xray.c xray.h \
 
 EXTRA_ARCHFILES=\
           ct.cfg ct_try.txt ct8fnFI.tga ct16fn.tga ct8fnV.tga \
-          FIN/ct.txt FIN/ct16fn.tga FIN/ct8fn.tga FIN/ct8fnV.tga FIN/README
+          FIN/ct.txt \
+          FIN/ct16fn.tga \
+          FIN/ct8fn.tga \
+          FIN/ct8fnV.tga \
+          FIN/README \
+          FIN/face1.tga FIN/face2.tga FIN/face3.tga FIN/face4.tga \
+          FIN/face5.tga FIN/face6.tga FIN/face7.tga FIN/face8.tga \
+          FIN/elem1.tga FIN/elem2.tga FIN/elem3.tga FIN/elem4.tga \
+          FIN/active1.tga FIN/active2.tga
 
 ARCHNAME=chronotools-$(VERSION)
 ARCHDIR=archives/
@@ -129,7 +139,7 @@ ctdump: \
 ctinsert: \
 		ctinsert.o miscfun.o readin.o wrap.o \
 		tgaimage.o space.o writeout.o stringoffs.o \
-		dictionary.o \
+		dictionary.o images.o \
 		fonts.o typefaces.o extras.o \
 		rom.o snescode.o \
 		conjugate.o vwf8.o compiler.o symbols.o \

@@ -1458,6 +1458,13 @@ Alkaa pointterilistalla!
 Pointtereita on siis 78 kpl.
 D09C, D0B4, D106, D146, jne.
 
+Kuvia:
+
+[3FF488]
+Tässä on nelivärinen "Active Time Battle ver. 2" -logo.
+Pituus: 6 tileä (eka rivi) + 6 tileä (toka rivi).
+[3FF008]
+Tässä on jotain; onko battle logo?
 
 http://www.uct2.net/epoch/Zeal-Mouser_X-1024x768.gif
 http://www.uct2.net/epoch/MagusCT%20-%20CT%20Cast.gif

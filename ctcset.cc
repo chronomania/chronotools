@@ -16,7 +16,7 @@ namespace
         hash_map<ucs4, ctchar> revmap;
         vector<ctchar> revmapfirst;
 
-	protected:
+    protected:
         ucs4string cset;
         virtual void GetCSet() = 0;
         
@@ -174,13 +174,13 @@ void setcharset(const char *newcset)
 // Note: Only values 0xA0..0xFF are worth using.
 ucs4 getucs4(ctchar chronochar, cset_class cl)
 {
-	switch(cl)
-	{
-		case cset_8pix: return cset8[chronochar];
-		case cset_12pix: return cset12[chronochar];
-	}
-	/* Should be unreached */
-	return cset12[chronochar];
+    switch(cl)
+    {
+        case cset_8pix: return cset8[chronochar];
+        case cset_12pix: return cset12[chronochar];
+    }
+    /* Should be unreached */
+    return cset12[chronochar];
 }
 
 // Note: Returns 0 for nonpresentible chars.
@@ -189,8 +189,8 @@ ctchar getchronochar(ucs4 ch, cset_class cl)
     ctchar result = 0;
     switch(cl)
     {
-    	case cset_8pix: result = cset8.find(ch); break;
-    	case cset_12pix: result = cset12.find(ch); break;
+        case cset_8pix: result = cset8.find(ch); break;
+        case cset_12pix: result = cset12.find(ch); break;
     }
     if(result < get_font_begin())
     {
