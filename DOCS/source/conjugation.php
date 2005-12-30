@@ -28,27 +28,24 @@ You need to be a expert in the grammar of your language to do it properly.<br>
 For Finnish, they were the following:
 
 <pre>
-                                    Example names
-Form               Function name   ZGX     R66     Pekka   Magus      Crono  
------------------------------------------------------------------------------
-genitive/accusative  Do_N          ZGX:n   R66:n   Pekan   Maguksen   Cronon
-partitive            Do_A          ZGX:‰‰  R66:a   Pekkaa  Magusta    Cronoa
-inessive             Do_SSA        ZGX:ss‰ R66:ssa Pekassa Maguksessa Cronossa
-adessive             Do_LLA        ZGX:ll‰ R66:lla Pekalla Maguksella Cronolla
-ablative             Do_LTA        ZGX:lt‰ R66:lta Pekalta Magukselta Cronolta
-allative             Do_LLE        ZGX:lle R66:lle Pekalle Magukselle Cronolle
-elative              Do_STA        ZGX:st‰ R66:sta Pekasta Maguksesta Cronosta
-abessive             Do_TTA        ZGX:tt‰ R66:tta Pekatta Maguksetta Cronotta
-translative          Do_KSI        ZGX:ksi R66:ksi Pekaksi Magukseksi Cronoksi
-essive               Do_NA         ZGX:n‰  R66:na  Pekkana Maguksena  Cronona
-illative             Do_HUN        ZGX:‰‰n R66:een Pekkaan Magukseen  Cronoon
+                        Example names
+Form                   ZGX     R66     Pekka   Magus      Crono  
+-----------------------------------------------------------------
+genitive/accusative    ZGX:n   R66:n   Pekan   Maguksen   Cronon
+partitive              ZGX:‰‰  R66:a   Pekkaa  Magusta    Cronoa
+inessive               ZGX:ss‰ R66:ssa Pekassa Maguksessa Cronossa
+adessive               ZGX:ll‰ R66:lla Pekalla Maguksella Cronolla
+ablative               ZGX:lt‰ R66:lta Pekalta Magukselta Cronolta
+allative               ZGX:lle R66:lle Pekalle Magukselle Cronolle
+elative                ZGX:st‰ R66:sta Pekasta Maguksesta Cronosta
+abessive               ZGX:tt‰ R66:tta Pekatta Maguksetta Cronotta
+translative            ZGX:ksi R66:ksi Pekaksi Magukseksi Cronoksi
+essive                 ZGX:n‰  R66:na  Pekkana Maguksena  Cronona
+illative               ZGX:‰‰n R66:een Pekkaan Magukseen  Cronoon
 </pre>
 
-The \"Form\" here refers to the linguistic name of the conjugation.
-Chronotools doesn't use it.<br>
-\"Function name\" is the name of the function used in
-your <a href=\"#code\">code file</a>. The rest of this table
-are examples of how different names are conjugated in the given forms.
+The \"Form\" here refers to the linguistic name of the conjugation.<br>
+The other columns are examples of how different names are conjugated in that form.
 
 ", 'cfg:1. Configuration' => "
 

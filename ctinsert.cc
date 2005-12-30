@@ -41,12 +41,125 @@ namespace
         //for(unsigned a=0; a<n; ++a) PutC(s[a], fp);
     }
 
+    struct RLE { unsigned addr, len; };
+
+    static RLE FindRLE(const char* source, const unsigned len, unsigned addr)
+    {
+    /*
+        In IPS format:
+        Not-RLE: 3+2+N   (5+N)
+        RLE:     3+2+2+1 (8)
+        
+        RLE will only be used, if:
+          The length of preceding chunk > A
+          The length of successor chunk > B
+          The length of the RLE         > 8
+        Where
+          A = 0
+          B = 0
+    */
+
+        RLE result;
+        result.len=0;
+        for(unsigned a=0; a<len; )
+        {
+            unsigned rle_len = 1;
+            
+            if(addr+a != IPS_EOF_MARKER
+            && addr+a != IPS_ADDRESS_EXTERN
+            && addr+a != IPS_ADDRESS_GLOBAL)
+            {
+                while(a+rle_len < len && source[a+rle_len] == source[a]
+                   && rle_len < 0xFFFF) ++rle_len;
+            }
+            
+            //unsigned size_before = a;
+            //unsigned size_after  = len-(a+rle_len);
+            
+            if((addr+a+rle_len == IPS_EOF_MARKER
+             || addr+a+rle_len == IPS_ADDRESS_EXTERN
+             || addr+a+rle_len == IPS_ADDRESS_GLOBAL)
+            && rle_len > 1) { --rle_len; }
+            
+            if(rle_len <= 8) { a += rle_len; continue; }
+            
+            result.len  = rle_len;
+            result.addr = a;
+            break;
+        }
+        return result;
+    }
+
+    static void PutChunk(FILE*fp, unsigned addr, unsigned nbytes, const char* source)
+    {
+        const unsigned MaxHunkSize = GetConf("patch",   "maxhunksize");
+        const bool UseRLE          = GetConf("patch",   "use_rle");
+
+        while(nbytes > 0)
+        {
+            if(UseRLE)
+            {
+                RLE rle = FindRLE(source, nbytes, addr);
+                if(rle.len)
+                {
+                    if(rle.addr > 0)
+                    {
+                        PutChunk(fp, addr, rle.addr, source);
+                        addr   += rle.addr;
+                        source += rle.addr;
+                        nbytes -= rle.addr;
+                    }
+                    /*
+                    fprintf(stderr, "%u times %02X at $%06X\n",
+                        rle.len, (unsigned char)*source, addr);
+                    */
+                    PutL(addr, fp);
+                    PutMW(0, fp);
+                    PutMW(rle.len, fp);
+                    PutC(*source, fp);
+                    source += rle.len;
+                    addr   += rle.len;
+                    nbytes -= rle.len;
+                    continue;
+                }
+            }
+
+            if(addr == IPS_EOF_MARKER)
+            {
+                fprintf(stderr,
+                    "Error: IPS doesn't allow patches that go to $%X\n", addr);
+            }
+            else if(addr == IPS_ADDRESS_EXTERN)
+            {
+                fprintf(stderr,
+                    "Error: Address $%X is reserved for IPS_ADDRESS_EXTERN\n", addr);
+            }
+            else if(addr == IPS_ADDRESS_GLOBAL)
+            {
+                fprintf(stderr,
+                    "Error: Address $%X is reserved for IPS_ADDRESS_GLOBAL\n", addr);
+            }
+            else if(addr > 0xFFFFFF)
+            {
+                fprintf(stderr,
+                    "Error: Address $%X is too big for IPS format\n", addr);
+            }
+
+            unsigned eat = MaxHunkSize;
+            if(eat > nbytes) eat = nbytes;
+            //fprintf(stderr, "%u bytes hunk at $%06X\n", eat, addr);
+            PutL(addr, fp);
+            PutMW(eat, fp);
+            fwrite(source, eat, 1, fp);
+            addr   += eat;
+            source += eat;
+            nbytes -= eat;
+        }
+    }
     void GeneratePatch(class ROM& ROM, unsigned offset, const string& fn)
     {
         fprintf(stderr, "Creating %s\n", fn.c_str());
         
-        unsigned MaxHunkSize = GetConf("patch",   "maxhunksize");
-
         /* Now write the patch */
         FILE *fp = fopen(fn.c_str(), "wb");
         if(!fp)
@@ -63,44 +176,9 @@ namespace
             addr = ROM.FindNextBlob(addr, size);
             if(!size) break;
 
-            for(unsigned left = size; left > 0; )
-            {
-                unsigned count = MaxHunkSize;
-                if(count > left) count = left;
-                
-                //fprintf(stderr, "Writing %u(of %u) @ %06X\n", count, left, addr);
-                
-                if(addr == IPS_EOF_MARKER)
-                {
-                    fprintf(stderr,
-                        "Error: IPS doesn't allow patches that go to $%X\n", addr);
-                }
-                else if(addr == IPS_ADDRESS_EXTERN)
-                {
-                    fprintf(stderr,
-                        "Error: Address $%X is reserved for IPS_ADDRESS_EXTERN\n", addr);
-                }
-                else if(addr == IPS_ADDRESS_GLOBAL)
-                {
-                    fprintf(stderr,
-                        "Error: Address $%X is reserved for IPS_ADDRESS_GLOBAL\n", addr);
-                }
-                else if(addr > 0xFFFFFF)
-                {
-                    fprintf(stderr,
-                        "Error: Address $%X is too big for IPS format\n", addr);
-                }
-                
-                PutL(addr + offset, fp);
-                PutMW(count, fp);
-                
-                std::vector<unsigned char> data = ROM.GetContent(addr, count);
-                
-                PutS(&data[0], count, fp);
-                
-                left -= count;
-                addr += count;
-            }
+            std::vector<unsigned char> data = ROM.GetContent(addr, size);
+            PutChunk(fp, addr+offset, data.size(), (const char*)&data[0]);
+            addr += data.size();
         }
         fwrite("EOF",   1, 3, fp);
         fclose(fp);

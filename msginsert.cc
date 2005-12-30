@@ -1,4 +1,5 @@
 #include <ctime>
+#include <sstream>
 
 using namespace std;
 
@@ -10,6 +11,12 @@ namespace
     unsigned prev_sect_len = 0;
     bool     working       = false;
     
+    static const char backspace = (char)8;
+    
+    void RenderCursor(char c)
+    {
+        fprintf(stderr, "%c%c", c, backspace);
+    }
     void Working()
     {
         static const char animation[4] = {'-', '\\', '|', '/' };
@@ -67,7 +74,7 @@ namespace
             }
         }
         
-        if(!(curspos%shift)) fprintf(stderr, "%c\010", animation[curspos / shift]);
+        if(!(curspos%shift)) RenderCursor(animation[curspos/shift]);
         curspos = (curspos+1) % (4*shift);
     }
     
@@ -75,83 +82,93 @@ namespace
     {
         if(working)
         {
-            fprintf(stderr, " \010");
+            RenderCursor(' ');
             working = false;
         }
     }
     
-    void Error()
-    {
-        Notworking();
-        fprintf(stderr, " -\n");
-    }
-    
-    void Resume()
+    void NewBeginning()
     {
         prev_sect_len = 0;
         working       = false;
     }
     
-    void Back()
+    void UndoSection()
     {
         Notworking();
-        string s(prev_sect_len, '\010');
-        fprintf(stderr, "%-*s%s", s.size()*2, s.c_str(), s.c_str());
-        Resume();
+        
+        std::stringstream str;
+        for(unsigned a=0; a<prev_sect_len; ++a) str << backspace;
+        for(unsigned a=0; a<prev_sect_len; ++a) str << ' ';
+        for(unsigned a=0; a<prev_sect_len; ++a) str << backspace;
+        fprintf(stderr, "%s", str.str().c_str());
+        fflush(stderr);
+        
+        NewBeginning();
     }
     
     void SectionMessage(const std::string& header)
     {
-        Back();
+        UndoSection();
         fprintf(stderr, "%s", header.c_str());
+        fflush(stderr);
         prev_sect_len = header.size();
+    }
+
+    void BeginError()
+    {
+        Notworking();
+        fprintf(stderr, "*\n");
     }
 }
 
 void MessageLoadingDialog()
 {
     fprintf(stderr, "Loading dialog... ");
-    Resume();
+    NewBeginning();
 }
 void MessageLoadingImages()
 {
     fprintf(stderr, "Loading images... ");
-    Resume();
+    NewBeginning();
 }
 void MessageApplyingDictionary()
 {
     fprintf(stderr, "Applying dictionary... ");
-    Resume();
+    NewBeginning();
 }
 void MessageMeasuringScript()
 {
     fprintf(stderr, "Calculating script size... ");
-    Resume();
+    NewBeginning();
 }
 void MessageReorganizingFonts()
 {
     fprintf(stderr, "Analyzing character usage... ");
-    Resume();
+    NewBeginning();
 }
 void MessageLinkingModules(unsigned count)
 {
     fprintf(stderr, "Linking %u modules... ", count);
-    Resume();
+    NewBeginning();
 }
 void MessageWritingStrings()
 {
     fprintf(stderr, "Writing strings... ");
-    Resume();
+    NewBeginning();
 }
 void MessageWritingDict()
 {
     fprintf(stderr, "Writing dictionary... ");
-    Resume();
+    NewBeginning();
 }
 
 void MessageLoadingItem(const std::string& header)
 {
-    SectionMessage(header);
+    if(header.size() > 50)
+        SectionMessage(header.substr(0,23)+"..."+header.substr(header.size()-23));
+    else
+        SectionMessage(header);
 }
 void MessageZSection(const std::string& header)
 {
@@ -183,23 +200,23 @@ void MessageC8Section(const std::string& header)
 }
 void MessageUnknownHeader(const std::string& header)
 {
-    Error();
+    BeginError();
     fprintf(stderr, "Unknown header '%s'...", header.c_str());
-    Resume();
+    NewBeginning();
 }
 void MessageInvalidLabelChar(wchar_t c, unsigned label, const std::string& /*header*/)
 {
-    Error();
+    BeginError();
     fprintf(stderr,
             "$%X: Got char '%c', invalid is (in label)!", label, c);
-    Resume();
+    NewBeginning();
 }
 void MessageInvalidLabelChar(wchar_t c, const std::string& label, const std::string& /*header*/)
 {
-    Error();
+    BeginError();
     fprintf(stderr,
            "$%s: Got char '%c', expected ':' (in label)!", label.c_str(), c);
-    Resume();
+    NewBeginning();
 }
 void MessageWorking()
 {
@@ -207,41 +224,41 @@ void MessageWorking()
 }
 void MessageUnexpected(const std::wstring& unexpected)
 {
-    Error();
+    BeginError();
     fprintf(stderr, "Unexpected data '%s'", WstrToAsc(unexpected).c_str());
-    Resume();
+    NewBeginning();
 }
 void MessageDone()
 {
-    Back();
-    fprintf(stderr, "done.\n");
+    SectionMessage("done.");
+    fprintf(stderr, "\n");
 }
 void MessageSymbolIgnored(const std::wstring& symbol)
 {
-    Error();
+    BeginError();
     fprintf(stderr,
         "Warning: Symbol '%s' wouldn't work in different typefaces!\n"
         "         Thus not generating.",
             WstrToAsc(symbol).c_str());
-    Resume();
+    NewBeginning();
 }
 void MessageTFStartError(const std::wstring& tf)
 {
-    Error();
+    BeginError();
     fprintf(stderr, "Error: Started typeface with '%s' when one was already active.",
             WstrToAsc(tf).c_str());
-    Resume();
+    NewBeginning();
 }
 void MessageTFEndError(const std::wstring& tf)
 {
-    Error();
+    BeginError();
     fprintf(stderr, "Error: Ended typeface with '%s' when none was active.",
             WstrToAsc(tf).c_str());
-    Resume();
+    NewBeginning();
 }
 void MessageTooLongText(const ctstring& input, const ctstring& output)
 {
-    Error();
+    BeginError();
     fprintf(stderr,
         "Error: Too long text\n"
         "In:  %s\n"
@@ -249,36 +266,76 @@ void MessageTooLongText(const ctstring& input, const ctstring& output)
         "... ",
         DispString(input).c_str(),
         DispString(output).c_str());
-    Resume();
+    NewBeginning();
 }
 
 void MessageModuleWithoutAddress(const std::string& name)
 {
-    Error();
+    BeginError();
     fprintf(stderr, "O65 linker: Module %s is still without address\n", name.c_str());
-    Resume();
+    NewBeginning();
 }
 
 void MessageUndefinedSymbol(const std::string& name, const std::string& modname)
 {
-    Error();
+    BeginError();
     fprintf(stderr, "O65 linker: %s: Symbol '%s' still undefined\n",
         modname.c_str(), name.c_str());
-    Resume();
+    NewBeginning();
 }
 
 void MessageDuplicateDefinition(const std::string& name, unsigned nmods, unsigned ndefs)
 {
-    Error();
+    BeginError();
     fprintf(stderr, "O65 linker: Symbol '%s' defined in %u module(s) and %u global(s)\n",
         name.c_str(), nmods, ndefs);
-    Resume();
+    NewBeginning();
+}
+void MessageDuplicateDefinitionAt(const std::string& name, const std::string& who, const std::wstring& where)
+{
+    BeginError();
+    fprintf(stderr,
+        "O65 linker: ERROR:"
+        " Symbol \"%s\" defined by object \"%s\""
+        " is already present in object \"%s\"\n",
+        name.c_str(),
+        who.c_str(),
+        where.c_str());
+    NewBeginning();
+}
+
+void MessageDuplicateDefinitionAs(const std::string& name, unsigned value, unsigned newvalue)
+{
+    BeginError();
+    fprintf(stderr,
+         "O65 linker: Error: %s previously defined as %X,"
+         " can not redefine as %X\n",
+        name.c_str(), value, newvalue);
+    NewBeginning();
 }
 
 void MessageUndefinedSymbols(const std::string& modname, unsigned n)
 {
-    Error();
+    BeginError();
     fprintf(stderr, "O65 linker: %s: Still %u undefined symbol(s)\n",
         modname.c_str(), n);
-    Resume();
+    NewBeginning();
+}
+
+void MessageUnresolvedSymbol(const std::string& name)
+{
+    BeginError();
+    fprintf(stderr,
+        "O65 linker: ERROR: Unresolved symbol: %s\n",
+        name.c_str());
+    NewBeginning();
+}
+
+void MessageUnusedSymbol(const std::string& name)
+{
+    BeginError();
+    fprintf(stderr,
+        "O65 linker: Warning: Unused symbol: %s\n",
+        name.c_str());
+    NewBeginning();
 }

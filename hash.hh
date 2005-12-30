@@ -43,7 +43,7 @@ namespace __gnu_cxx
         return h;
     }
   };
-  struct hash<std::wstring>
+  template<> struct hash<std::wstring>
   {
     size_t operator() (const std::wstring &s) const
     {
@@ -57,7 +57,7 @@ namespace __gnu_cxx
         return h;
     }
   };
-  struct hash<wchar_t>
+  template<> struct hash<wchar_t>
   {
     size_t operator() (wchar_t n) const
     {

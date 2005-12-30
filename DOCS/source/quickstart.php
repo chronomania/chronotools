@@ -48,7 +48,7 @@ You only need to do this once.
 >\$ cp ct/etc/ct.cfg .</pre>
 
 That is, copy the <tt>ct.cfg</tt> from
-Chronotools's<tt>etc</tt> to your working directory.
+Chronotools's <tt>etc</tt> to your working directory.
 
 ", '1.1. Dump the ROM contents' => "
 
@@ -160,6 +160,8 @@ Besides editing the script, there are a myriad of tasks to do:
    complex thing and requires knowledge of your language's grammar.<br>
    It's needed in a few languages, where the names of player characters
    may be written differently depending on grammatical context.
+   Because of the level of language experdise required, many
+   translators choose not to do conjugation.
   </li>
 </ul>
 

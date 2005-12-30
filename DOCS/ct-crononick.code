@@ -1,4 +1,23 @@
-# Does Crononick.
+# Does Crononick in Finnish.
+
+#BEGIN_TABLES
+## Declare the relationship between capital and small letters.
+#>ABCDEFGHIJKLMNOPQRSTUVWXYZÅÄÖÉ
+#<abcdefghijklmnopqrstuvwxyzåäöé
+## Declare some character sets.
+#:V=aeiouyäöåé0123456
+#:K=bcdfghjklmnpqrstvwxz
+#:P=bcdfghjklmnpqrstvwxz
+#=========| Do_Crononick
+## If the word begins with two consonants, remove the first consonant.
+#  KP*    | P*
+## If the word ends with consonant + two same consonants + vowel, remove first consonant.
+#  *PKKV  | *KKV
+## If the word ends with two same consonants + vowel, remove 1 consonant.
+#  *KKV   | *KV
+## Other choices = no changes.
+#  *      | *
+#END_TABLES
 
 # Returns true if the parameter is a vowel.
 FUNCTION IsVowel
@@ -25,6 +44,21 @@ LET left c
 }
 RETURN
 
+# Outputs the character name except the last N.
+FUNCTION OutWordBut
+VAR len left tmp
+REG c
+LET left c
+CALL_GET Length len
+{
+  LET tmp c
+  = len left
+    RETURN
+  DEC len
+  OUT tmp
+}
+RETURN
+
 # Calculate the length of the character name
 FUNCTION Length
 VAR Len
@@ -34,6 +68,12 @@ LET Len 0
   INC Len
 }
 RETURN Len
+
+# Returns the Nth last character of the character name
+FUNCTION LastCharN
+REG c
+LOAD_LAST_CHAR c c
+RETURN c
 
 FUNCTION Do_Crononick
 VAR c1 c2 c3 c4 c5 Len

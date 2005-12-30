@@ -9,6 +9,10 @@
 #include <iconv.h>
 #endif
 
+#ifdef WIN32
+#define _GLIBCXX_USE_WCHAR_T 1
+#endif
+
 #undef putc
 #undef puts
 

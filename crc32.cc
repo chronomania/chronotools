@@ -11,7 +11,7 @@ namespace
             for(unsigned i=0; i<256; ++i)
             {
                 unsigned long crc = i;
-                for(unsigned j=8; j>0; --j) if(crc&1) crc = (crc>>1)^poly; else crc >>= 1;
+                for(unsigned j=8; j-->0; ) { bool c=crc&1; crc>>=1; if(c)crc^=poly; }
                 crctable[i] = crc;
             }
         }

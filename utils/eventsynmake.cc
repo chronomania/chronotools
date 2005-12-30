@@ -260,8 +260,8 @@ struct bitsetcompare
 {
     bool operator() (const std::bitset<MAX_OPS>& a, const std::bitset<MAX_OPS>& b) const
     {
-        return a.template to_string<char, std::char_traits<char>, std::allocator<char> >()
-             < b.template to_string<char, std::char_traits<char>, std::allocator<char> >();
+        return a.to_string<char, std::char_traits<char>, std::allocator<char> >()
+             < b.to_string<char, std::char_traits<char>, std::allocator<char> >();
     }
 };
 

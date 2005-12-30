@@ -5,6 +5,7 @@
 #include "autoptr"
 
 typedef autoptr<class XMLTree> XMLTreeP;
+
 class XMLTree: public ptrable
 {
 public:
@@ -20,10 +21,7 @@ public:
     class XMLTreeSet operator[] (const std::wstring&) const;
 
     template<typename Func>
-    void ForEach(const std::wstring& key, Func f) const
-    {
-        (*this)[key].Iterate(f);
-    }
+    void ForEach(const std::wstring& key, Func f) const;
 };
 
 const XMLTree ParseXML(const std::string& s);
@@ -62,3 +60,9 @@ private:
     std::list<XMLTreeP> matching_trees;
     std::list<std::wstring> matching_strings;
 };
+
+template<typename Func>
+void XMLTree::ForEach(const std::wstring& key, Func f) const
+{
+    (*this)[key].Iterate(f);
+}

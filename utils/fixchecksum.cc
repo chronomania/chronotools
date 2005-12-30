@@ -7,6 +7,11 @@ using namespace std;
 #define IPS_ADDRESS_EXTERN 0x01
 #define IPS_ADDRESS_GLOBAL 0x02
 
+/*
+ * TODO: Change this program to create RLE expressions.
+ * It now can _read_ them, but..
+ */
+
 namespace
 {
     vector<unsigned char> ROM;
@@ -87,6 +92,7 @@ int main(int argc, const char *const *argv)
 //    unsigned col=0;
     for(;;)
     {
+        bool rle=false;
         int wanted,c = fread(Buf, 1, 3, fp);
         if(c < 0 && ferror(fp)) { ipserr: perror("fread"); goto arf; }
         if(c < (wanted=3)) { ipseof:
@@ -102,13 +108,34 @@ int main(int argc, const char *const *argv)
         unsigned len = (((unsigned)Buf[0]) << 8)
                       | ((unsigned)Buf[1]);
         
+        if(len==0)
+        {
+            rle=true;
+            c = fread(Buf, 1, 2, fp);
+            if(c < 0 && ferror(fp)) { fprintf(stderr, "Got pos %X\n", pos); goto ipserr; }
+            if(c < (wanted=2)) { goto ipseof; }
+            len = (((unsigned)Buf[0]) << 8)
+                 | ((unsigned)Buf[1]);
+        }
+        
 //        fprintf(stderr, "%06X <- %-5u ", pos, len);
 //        if(++col == 5) { fprintf(stderr, "\n"); col=0; }
         
         vector<char> Buf2(len);
-        c = fread(&Buf2[0], 1, len, fp);
-        if(c < 0 && ferror(fp)) { goto ipserr; }
-        if(c != (wanted=(int)len)) { goto ipseof; }
+        if(rle)
+        {
+            c = fread(&Buf2[0], 1, 1, fp);
+            if(c < 0 && ferror(fp)) { goto ipserr; }
+            if(c != (wanted=(int)1)) { goto ipseof; }
+            for(unsigned c=1; c<len; ++c)
+                Buf2[c] = Buf2[0];
+        }
+        else
+        {
+            c = fread(&Buf2[0], 1, len, fp);
+            if(c < 0 && ferror(fp)) { goto ipserr; }
+            if(c != (wanted=(int)len)) { goto ipseof; }
+        }
         
         if(pos == IPS_ADDRESS_EXTERN || pos == IPS_ADDRESS_GLOBAL)
         {

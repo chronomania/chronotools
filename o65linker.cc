@@ -122,13 +122,8 @@ void O65linker::AddObject(const O65& object, const std::string& what, LinkageWis
         unsigned objnum;
         if(symcache->Find(symlist[a], objnum))
         {
-            fprintf(stderr,
-                "O65 linker: ERROR:"
-                " Symbol \"%s\" defined by object \"%s\""
-                " is already present in object \"%s\"\n",
-                symlist[a].c_str(),
-                what.c_str(),
-                objects[objnum]->GetName().c_str());
+            MessageDuplicateDefinitionAt(symlist[a], what,
+                AscToWstr(objects[objnum]->GetName()));
             clean = false;
         }
     }
@@ -222,10 +217,7 @@ void O65linker::DefineSymbol(const std::string& name, unsigned value)
             if(defines[c]->GetAddress() != value)
             {
                 /* Different address */
-                fprintf(stderr,
-                    "O65 linker: Error: %s previously defined as %X,"
-                    " can not redefine as %X\n",
-                        name.c_str(), defines[c]->GetAddress(), value);
+                MessageDuplicateDefinitionAs(name, defines[c]->GetAddress(), value);
             }
             /* No need to define again */
             return;
@@ -419,19 +411,18 @@ void O65linker::Link()
     {
         //fprintf(stderr,
         //    "O65 linker: Leftover references found.\n");
+        
+        // ERROR
         for(unsigned a=0; a<referers.size(); ++a)
-            fprintf(stderr,
-                "O65 linker: ERROR: Unresolved symbol: %s\n",
-                    referers[a]->GetName().c_str());
+            MessageUnresolvedSymbol(referers[a]->GetName());
     }
 
     for(unsigned c=0; c<defines.size(); ++c)
     {
         if(!defines[c]->IsUsed())
         {
-            fprintf(stderr,
-                "O65 linker: Warning: Symbol \"%s\" was defined but never used.\n",
-                defines[c]->GetName().c_str());
+            // WARNING
+            MessageUnusedSymbol(defines[c]->GetName());
         }
     }
 }

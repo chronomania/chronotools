@@ -10,7 +10,7 @@ typedef unsigned short word;
 void MessageReorganizingFonts() {}
 void MessageDone() {}
 void MessageLinkingModules(unsigned) {}
-void MessageLoadingItem(const string&) {}
+void MessageLoadingItem(const std::string&) {}
 void MessageWorking() {}
 
 static struct VWFdata

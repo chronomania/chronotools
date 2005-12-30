@@ -259,11 +259,11 @@ unsigned get_font_begin()
     return cache;
 }
 
-namespace std
+namespace std/*__gnu_cxx*/
 {
   template<> 
   int char_traits<ctchar>::
-  compare(const ctchar* s1, const ctchar* s2, size_t n)
+  compare(const ctchar* s1, const ctchar* s2, std::size_t n)
   {
     for(unsigned c=0; c<n; ++c) if(s1[c] != s2[c]) return s1[c] < s2[c] ? -1 : 1;
     return 0;

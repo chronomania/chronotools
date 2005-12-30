@@ -206,6 +206,7 @@ Copypaste from the Makefile:
 # VERSION 1.15.3.1 minor changes in conjugator for severe grammars.
 # VERSION 1.15.3.2 a bugfix in ctdump (deleting the *c block). Added more documentation!
 # VERSION 1.15.3.3 minor changes in default config.
+# VERSION 1.15.3.4 changes in portability, documentation, and RLE IPS support.
 </pre>
 
 To use the character name changing feature, do a redump with ctdump
@@ -519,12 +520,31 @@ a well-known fact that many people in ROM hacking scene aren't very
 respectful to copyrights.<br>
 Well, left to be seen...
 
-", 'parts:1.1. If you only are interested in some features/parts' => "
+", 'parts:1.1. Ripping my hacks' => "
 
-This system doesn't contain much reusable material,
-although it now does contain some separate assembly code.<br>
-I have made my own systems to compile and link code.<br>
-If you're uncertain, <a href=\"#copying\">send me email and explain your situation</a>.
+Among other things, Chronotools contains the following parts
+which are more or less reusable:
+<ul>
+ <li>base16, base62 converters</li>
+ <li>LZ compressor/decompressor (no assembler versions)</li>
+ <li>configuration parser</li>
+ <li>character set handler and optimizer (very hard to separate)</li>
+ <li>conjugator engine (very hard to separate)</li>
+ <li>dictionary generator (aka. DTE compressor) (very hard to separate)</li>
+ <li>fixed-width font and image handlers (C++ code) (very hard to separate)</li>
+ <li>assembly module linker library</li>
+ <li>block-fitter (binpacking, space optimization)</li>
+ <li>cross-referencing patches, reference handling and combining (hard to separate)</li>
+ <li>XML parsing</li>
+ <li>8pix variable width font engine (very hard to separate)</li>
+ <li>font typeface generator (hard to reuse)</li>
+ <li>ROM checksum fixer</li>
+ <li><a href=\"http://bisqwit.iki.fi/source/snescom.html\">assembler, disassembler and a linker</a></li>
+</ul>
+
+You almost certainly need programming expertise to reuse anything of those.
+Before doing anything, please
+<a href=\"#copying\">send me email and explain your situation</a>.
 
 ", 'docs:1. Documentation' => "
 

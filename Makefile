@@ -142,6 +142,7 @@ DEPDIRS = utils/
 # VERSION 1.15.3.1 minor changes in conjugator for severe grammars.
 # VERSION 1.15.3.2 a bugfix in ctdump (deleting the *c block). Added more documentation!
 # VERSION 1.15.3.3 minor changes in default config.
+# VERSION 1.15.3.4 changes in portability, documentation, and RLE IPS support.
 
 #OPTIM=-Os
 # -fshort-enums
@@ -151,13 +152,14 @@ DEPDIRS = utils/
 #OPTIM=-O3 -pg
 #LDFLAGS += -pg
 OPTIM=-O3
+#OPTIM=-O1 -g
 
 CXXFLAGS += -I.
 CFLAGS += -I/usr/include/slang
 LDFLAGS += -L/usr/lib/slang
 
 
-VERSION=1.15.3.3
+VERSION=1.15.3.4
 ARCHFILES=utils/xray.cc utils/xray.h \
           utils/viewer.c \
           utils/vwftest.cc \

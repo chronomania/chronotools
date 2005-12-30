@@ -15,12 +15,12 @@ void rangeset<Key>::const_iterator::Reconstruct()
 {
     if(i != data.end())
     {
-        lower = i->first;
+        rangetype<Key>::lower = i->first;
         typename Cont::const_iterator j = i;
         if(++j != data.end())
-            upper = j->first;
+            rangetype<Key>::upper = j->first;
         else
-            upper = lower;
+            rangetype<Key>::upper = rangetype<Key>::lower;
         
         if(i->second.is_nil())
         {

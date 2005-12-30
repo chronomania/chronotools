@@ -48,7 +48,7 @@ namespace
         {
             if(i == errlist.end() || (begun && prev < *i-1))
             {
-                fprintf(stderr, "%s: %06X-%06X already marked %s by %s\n",
+                fprintf(stderr, "%s: %06X-%06X already marked %s by %ls\n",
                                 msgtype, first,prev, type, why.c_str());
                 
                 std::set<std::wstring> users;

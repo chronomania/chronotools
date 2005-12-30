@@ -33,4 +33,8 @@ void MessageTooLongText(const ctstring& input, const ctstring& output);
 void MessageModuleWithoutAddress(const std::string& name);
 void MessageUndefinedSymbol(const std::string& name, const std::string& modname);
 void MessageDuplicateDefinition(const std::string& name, unsigned nmods, unsigned ndefs);
+void MessageDuplicateDefinitionAt(const std::string& name, const std::string& who, const std::wstring& where);
+void MessageDuplicateDefinitionAs(const std::string& name, unsigned value, unsigned newvalue);
 void MessageUndefinedSymbols(const std::string& modname, unsigned n);
+void MessageUnresolvedSymbol(const std::string& name);
+void MessageUnusedSymbol(const std::string& name);
