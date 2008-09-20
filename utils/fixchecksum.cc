@@ -164,6 +164,9 @@ int main(int argc, const char *const *argv)
     unsigned sum1=0, remainder=CalculatedSize-size;
     unsigned offset = ROM.size() - CalculatedSize;
 
+    /* First create dummy checksums, so that we won't calculate invalid values */
+    WriteCheckSumPair(offset + 0xFFDC, 0);
+
     if(CalculatedSize >= 0x410000)
     {
         /* ExHiROM must have $008000 mirrored at $408000 */

@@ -45,8 +45,8 @@ public:
         
         bool operator==(const const_iterator& b) const { return i == b.i; }
         bool operator!=(const const_iterator& b) const { return !operator==(b); }
-        void operator++ ();
-        void operator-- ();
+        const_iterator& operator++ ();
+        const_iterator& operator-- ();
         
     private:
         const Cont& data;

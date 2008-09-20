@@ -115,10 +115,10 @@ class O65::Segment
 public:
     vector<unsigned char> space;
 
-    // where it is assumed to start
+    //! where it is assumed to start
     unsigned base;
     
-    // absolute addresses of all publics
+    //! absolute addresses of all publics
     typedef map<std::string, unsigned> publicmap_t;
     publicmap_t publics;
 
@@ -138,8 +138,10 @@ private:
 O65::O65()
    : customheaders(),
      defs(new Defs),
-     code(NULL), data(NULL),
-     zero(NULL), bss(NULL),
+     code(NULL),
+     data(NULL),
+     zero(NULL),
+     bss(NULL),
      error(false)
 {
 }
@@ -212,6 +214,8 @@ void O65::Load(FILE* fp)
     
     LoadSWord(fp, use32); // Skip stack_len
     
+    //fprintf(stderr, "@%X: stack len\n", ftell(fp));
+    
     // Skip some headers
     for(;;)
     {
@@ -227,6 +231,8 @@ void O65::Load(FILE* fp)
         
         for(unsigned a=0; a<len; ++a) data[a] = fgetc(fp);
         
+        //fprintf(stderr, "Custom header %u: '%.*s'\n", type, len, data.data());
+        
         customheaders.push_back(make_pair(type, data));
     }
     
@@ -235,7 +241,11 @@ void O65::Load(FILE* fp)
     // zero and bss Segments don't exist in o65 format.
     
     // load external symbols
+    
     unsigned num_und = LoadSWord(fp, use32);
+
+    //fprintf(stderr, "@%X: %u externs..\n", ftell(fp), num_und);
+
     for(unsigned a=0; a<num_und; ++a)
     {
         std::string varname;
@@ -244,11 +254,19 @@ void O65::Load(FILE* fp)
         defs->AddUndefined(varname);
     }
     
+    //fprintf(stderr, "@%X: code relocs..\n", ftell(fp));
+    
     code->LoadRelocations(fp);
+
+    //fprintf(stderr, "@%X: data relocs..\n", ftell(fp));
+
     data->LoadRelocations(fp);
     // relocations don't exist for zero/bss in o65 format.
     
     unsigned num_global = LoadSWord(fp, use32);
+    
+    //fprintf(stderr, "@%X: %u globals\n", ftell(fp), num_global);
+    
     for(unsigned a=0; a<num_global; ++a)
     {
         std::string varname;
@@ -573,10 +591,10 @@ const O65::Segment*const * O65::GetSegRef(SegmentSelection seg) const
 {
     switch(seg)
     {
-        case CODE: return &code;
-        case DATA: return &data;
-        case ZERO: return &zero;
-        case BSS: return &bss;
+        case CODE: return code ? &code : NULL;
+        case DATA: return data ? &data : NULL;
+        case ZERO: return zero ? &zero : NULL;
+        case BSS: return bss ? &bss : NULL;
     }
     return NULL;
 }
@@ -651,6 +669,26 @@ void O65::DeclareWordRelocation(SegmentSelection seg, const std::string& name, u
     }
     (*s)->R.R16.AddReloc(addr, symno);
 }
+
+/*
+void O65::DeclareHiByteRelocation(SegmentSelection seg, const std::string& name, unsigned addr)
+{
+    Segment**s = GetSegRef(seg); if(!s) return;
+    
+    unsigned symno = defs->GetSymno(name);
+    
+    if(symno == ~0U)
+        symno = defs->AddUndefined(name);
+    else if(defs->IsDefined(symno))
+    {
+        unsigned value = defs->GetValue(symno);
+        addr -= (*s)->base;
+        (*s)->space[addr] = (value >> 8) & 0xFF;
+        return;
+    }
+    (*s)->R.R16hi.AddReloc(addr, symno);
+}
+*/
 
 void O65::DeclareLongRelocation(SegmentSelection seg, const std::string& name, unsigned addr)
 {
@@ -794,4 +832,16 @@ const Relocdata<unsigned> O65::GetRelocData(SegmentSelection seg) const
     const Segment*const *s = GetSegRef(seg);
     if(!s) return Relocdata<unsigned> ();
     return (*s)->R;
+}
+
+const std::string GetSegmentName(const SegmentSelection seg)
+{
+    switch(seg)
+    {
+        case CODE: return "code";
+        case DATA: return "data";
+        case ZERO: return "zero";
+        case BSS: return "bss";
+    }
+    return "?";
 }

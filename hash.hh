@@ -1,18 +1,20 @@
 #ifndef bqtHashHH
 #define bqtHashHH
-
 /* Set to 0 if you have compilation problems
  * with hash_set or hash_map
  */
-#define USE_HASH 1
+#ifndef USE_HASHMAP
+#define USE_HASHMAP 1
+#endif
 
 
-#if USE_HASH
+#if USE_HASHMAP
 
 #include <string>
+#include <utility>
 
-#include <ext/hash_map>
-#include <ext/hash_set>
+#include <tr1/unordered_map>
+#include <tr1/unordered_set>
 using namespace __gnu_cxx;
 
 using std::basic_string;
@@ -26,8 +28,13 @@ struct BitSwapHashFon
   }
 };
 
-namespace __gnu_cxx
-{
+namespace BisqHash {
+  template<typename T>
+  struct hash
+  {
+    size_t operator() (const T& t) const { return t; }
+  };
+  
   template<typename T>
   struct hash<basic_string<T> >
   {
@@ -43,6 +50,8 @@ namespace __gnu_cxx
         return h;
     }
   };
+#if 1
+#ifndef WIN32
   template<> struct hash<std::wstring>
   {
     size_t operator() (const std::wstring &s) const
@@ -57,6 +66,7 @@ namespace __gnu_cxx
         return h;
     }
   };
+#endif
   template<> struct hash<wchar_t>
   {
     size_t operator() (wchar_t n) const
@@ -72,7 +82,37 @@ namespace __gnu_cxx
         return (n * 33818641UL);
     }
   };
+#endif
+  template<> struct hash<unsigned long long>
+  {
+    size_t operator() (unsigned long long n) const
+    {
+        return (n * 33818641UL);
+    }
+  };
+  
+  template<typename A,typename B> struct hash<std::pair<A,B> >
+  {
+     size_t operator() (const std::pair<A,B>& p) const
+     {
+         return hash<A>() (p.first)
+              ^ hash<B>() (p.second);
+     }
+  };
 }
+
+template<typename K,typename V>
+class hash_map: public std::tr1::unordered_map<K,V, BisqHash::hash<K> >
+{
+};
+template<typename K>
+class hash_set: public std::tr1::unordered_set<K, BisqHash::hash<K> >
+{
+};
+//#define hash_map std::tr1::unordered_map
+//#define hash_set std::tr1::unordered_set
+
+
 
 #else
 
@@ -80,8 +120,10 @@ namespace __gnu_cxx
 #include <set>
 
 #define hash_map std::map
+#define hash_multimap std::multimap
 #define hash_set std::set
+#define hash_multiset std::multiset
 
-#endif // USE_HASH
+#endif // USE_HASHMAP
 
 #endif // bqtHashHH

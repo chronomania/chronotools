@@ -83,7 +83,7 @@
 #define SET_16_BIT_AX() rep #$30 : .xl : .al
 
 
-#define ALLOCATE() .( : pha: lda #!cont-1: sta TILEBUF: pla: bra Do_Allocate: cont: pla: .)
+#define ALLOCATE() .( : pha: lda #!(+)-1: sta TILEBUF: pla: bra Do_Allocate: +: pla: .)
 Do_Allocate:
         pei ($10)
         pei ($12)
@@ -96,7 +96,7 @@ Do_Allocate:
         pei ($20)
         pha:lda TILEBUF:pha:rts
 
-#define UNALLOCATE() .( : pha: lda #!cont-1: sta TILEBUF: pla: bra Do_UnAllocate: cont: .)
+#define UNALLOCATE() .( : pha: lda #!(+)-1: sta TILEBUF: pla: bra Do_UnAllocate: +: .)
 Do_UnAllocate:
         pla : sta $20
         pla : sta $1E
@@ -254,12 +254,13 @@ DrawS_normalEnd:
 ;   W_TILENUM  - tile number
 ;   P_TILEBUF1 - pointer to this tile to be constructed
 ;   P_TILEBUF2 - pointer to next tile to be constructed
+;   W_WRITEOFS - points to Write or BattleWrite, depending what this routine is used for
 ; Output:
 ;   X          - X+2 if a cell was full
 ;   P_FONT     - now points to the next tile in font
-;   B_PIXOFFS  - incremented by cell width
-;   P_TILEBUF1 - incremented by W_ONESIZE
-;   P_TILEBUF2 - incremented by W_ONESIZE
+;   B_PIXOFFS  - incremented by cell width, then modulo 8
+;   P_TILEBUF1 - incremented by W_ONESIZE (if B_PIXOFFS overflowed)
+;   P_TILEBUF2 - incremented by W_ONESIZE (if B_PIXOFFS overflowed)
 ;   W_TILENUM  - incremented if a cell was full
 ; Modifies in undefined way:
 ;   A
@@ -697,7 +698,7 @@ EquipLeftHelper:
         SET_16_BIT_AX()
         phx
          phy
-          phk : per + -1
+          phk : per (+) -1
           pea RTL_IN_PAGE_C2 - 1
           jmp @$C2A59A ; go get item number.
        + ply
@@ -727,7 +728,7 @@ EquipLeftItemFunc:
 
         pha ;Save A,X too
          phx
-          phk : per + -1
+          phk : per (+) -1
           pea RTL_IN_PAGE_C2 - 1
           ; Copied from jap. version: Print item count
           ldy #$04CA   ; source address

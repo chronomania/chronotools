@@ -2,6 +2,7 @@
 
 #include "wstring.hh"
 #include "ctcset.hh"
+#include "o65.hh"
 
 void MessageLoadingDialog();
 void MessageLoadingImages();
@@ -30,7 +31,7 @@ void MessageSymbolIgnored(const std::wstring& symbol);
 void MessageTFStartError(const std::wstring& tf);
 void MessageTFEndError(const std::wstring& tf);
 void MessageTooLongText(const ctstring& input, const ctstring& output);
-void MessageModuleWithoutAddress(const std::string& name);
+void MessageModuleWithoutAddress(const std::string& name, const SegmentSelection seg);
 void MessageUndefinedSymbol(const std::string& name, const std::string& modname);
 void MessageDuplicateDefinition(const std::string& name, unsigned nmods, unsigned ndefs);
 void MessageDuplicateDefinitionAt(const std::string& name, const std::string& who, const std::wstring& where);

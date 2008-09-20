@@ -27,20 +27,30 @@ struct rangetype
         return lower < b.upper && upper > b.lower;
     }
     bool contains(const Key& v) const { return lower <= v && upper > v; }
+    
+    rangetype<Key> intersect(const rangetype& b) const;
+    
+    /* Union and difference can produce two ranges. Thus not implemented... */
 
     unsigned length() const { return upper - lower; }
+    bool empty() const { return !length(); }
 };
 
 
-template<typename Key, typename Valueholder>
+template<typename Key, typename Valueholder, typename Allocator = std::allocator<Key> >
 class rangecollection
 {
-    typedef std::map<Key, Valueholder> Cont;
+    typedef std::map<Key, Valueholder, std::less<Key>,
+      typename Allocator::template rebind<std::pair<Key, Valueholder> >::other
+                    > Cont;
     Cont data;
 public:
     template<typename Valuetype>
     void set(const Key& lo, const Key& up, const Valuetype& val);
     void erase(const Key& lo, const Key& up);
+    
+    void erase_before(const Key& lo);
+    void erase_after(const Key& up);
     
     typedef typename Cont::const_iterator const_iterator;
     
@@ -51,6 +61,10 @@ public:
     typename Cont::size_type size() const { return data.size(); }
     bool empty() const { return data.empty(); }
     void clear() { data.clear(); }
+
+    /* flip() inverts the range within the given range.
+     * However, it is not yet implemented! */
+    void flip(const Key& floor, const Key &ceil);
     
     const const_iterator find(const Key& v) const;
 

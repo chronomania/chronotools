@@ -6,6 +6,7 @@
 #include <vector>
 
 #include "rangeset.hh"
+#include "o65.hh"
 
 #define NOWHERE 0x10000
 
@@ -47,7 +48,7 @@ public:
     void Add(unsigned longaddr, unsigned length);
     void Del(unsigned longaddr, unsigned length);
     
-    void OrganizeO65linker(class O65linker& objects);
+    void OrganizeO65linker(class O65linker& objects, const SegmentSelection seg = CODE);
     
     const std::set<unsigned> GetPageList() const;
     const freespaceset& GetList(unsigned pagenum) const;

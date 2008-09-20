@@ -73,6 +73,10 @@ namespace
                 fflush(log);
             }
         }
+    
+    private:
+        TableDumper(const TableDumper&);
+        TableDumper& operator=(const TableDumper&);
     };
     
     const ctstring LoadPString(unsigned offset,

@@ -497,18 +497,18 @@ unsigned freespacemap::FindFromAnyPage(unsigned length)
 
 #include "o65linker.hh"
 
-void freespacemap::OrganizeO65linker(O65linker& objects)
+void freespacemap::OrganizeO65linker(O65linker& objects, const SegmentSelection seg)
 {
     Compact();
     
-    vector<unsigned> sizes = objects.GetSizeList();
-    vector<unsigned> addrs = objects.GetAddrList();
+    std::vector<unsigned> sizes = objects.GetSizeList(seg);
+    std::vector<unsigned> addrs = objects.GetAddrList(seg);
     
-    vector<LinkageWish> linkages = objects.GetLinkageList();
+    std::vector<LinkageWish> linkages = objects.GetLinkageList(seg);
     
-    map<unsigned, vector<unsigned> > destinies;
-    map<unsigned, vector<unsigned> > groups;
-    vector<unsigned> items;
+    std::map<unsigned, std::vector<unsigned> > destinies;
+    std::map<unsigned, std::vector<unsigned> > groups;
+    std::vector<unsigned> items;
 
     /* All structures are filled at the same time so
      * that we can have this switch() here and see if
@@ -528,7 +528,10 @@ void freespacemap::OrganizeO65linker(O65linker& objects)
                 break;
             case LinkageWish::LinkHere:
             {
-                /* no linking, just convert the address */
+                /* No linking, just convert the address, */
+                /* And ensure we won't overwrite it */
+                Del(addrs[a], sizes[a]);
+                
                 addrs[a] = ROM2SNESaddr(addrs[a]);
                 break;
             }
@@ -631,5 +634,5 @@ void freespacemap::OrganizeO65linker(O65linker& objects)
     
     /* Everything done. */
 
-    objects.PutAddrList(addrs);
+    objects.PutAddrList(addrs, seg);
 }

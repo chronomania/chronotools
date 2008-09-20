@@ -97,7 +97,7 @@ static void Init(void)
 {
     ggiInit();
     vis = ggiOpen(NULL);
-    if(!vis || ggiSetGraphMode(vis, WINDOW_WIDTH,WINDOW_HEIGHT, 0,0, GT_16BIT))
+    if(!vis || ggiSetGraphMode(vis, WINDOW_WIDTH,WINDOW_HEIGHT, 0,0, GT_32BIT))
         exit(-1);
     memcpy(font, VGAFont, sizeof(font));
 }
@@ -186,7 +186,9 @@ static void Disp(const char *s)
     if(!fp)return;
     
     static byte merk[50][80];
-    static const unsigned PIXC[4] = {0,0x0D00,0x0300,0xF777};
+    //static const unsigned PIXC[4] = {0,0x0D00,0x0300,0xF777};
+    //static const unsigned PIXC[4] = {0,0x444444,0xCCCCCC,0xFFFFFF};
+    static const unsigned PIXC[4] = {0xFFFFFF,0xCCCCCC,0x444444,0};
     
 Redraw:    
     memset(merk, ' ', sizeof(merk));

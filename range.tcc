@@ -1,10 +1,11 @@
+#include <algorithm> // for std::max, std::min
 #include "range.hh"
 
 /* map::lower_bound(k) = find the first element whose key >= k */
 /* map::upper_bound(k) = find the first element whose key > k */
 
-template<typename Key, typename Valueholder>
-void rangecollection<Key,Valueholder>::erase(const Key& lo, const Key& up)
+template<typename Key, typename Valueholder, typename Allocator>
+void rangecollection<Key,Valueholder,Allocator>::erase(const Key& lo, const Key& up)
 {
     typename Cont::iterator next_thing = data.lower_bound(up);
     if(next_thing != data.end() && next_thing->first == up)
@@ -62,9 +63,29 @@ void rangecollection<Key,Valueholder>::erase(const Key& lo, const Key& up)
     }
 }
 
+template<typename Key, typename Valueholder, typename Allocator>
+void rangecollection<Key,Valueholder,Allocator>::erase_before(const Key& lo)
+{
+    if(!empty())
+    {
+        const_iterator b = begin();
+        if(b->first < lo) erase(b->first, lo);
+    }
+}
 
-template<typename Key, typename Valueholder> template<typename Valuetype>
-void rangecollection<Key,Valueholder>::set(const Key& lo, const Key& up, const Valuetype& val)
+template<typename Key, typename Valueholder, typename Allocator>
+void rangecollection<Key,Valueholder,Allocator>::erase_after(const Key& hi)
+{
+    if(!empty())
+    {
+        typename Cont::const_reverse_iterator b = data.rbegin();
+        if(b->first > hi) erase(hi, b->first);
+    }
+}
+
+template<typename Key, typename Valueholder, typename Allocator>
+  template<typename Valuetype>
+void rangecollection<Key,Valueholder,Allocator>::set(const Key& lo, const Key& up, const Valuetype& val)
 {
     Valueholder newvalue(val);
     
@@ -129,9 +150,19 @@ void rangecollection<Key,Valueholder>::set(const Key& lo, const Key& up, const V
     }
 }
 
-template<typename Key, typename Valueholder>
-const typename rangecollection<Key,Valueholder>::const_iterator
-    rangecollection<Key,Valueholder>::find(const Key& v) const
+template<typename Key, typename Valueholder, typename Allocator>
+void rangecollection<Key,Valueholder,Allocator>::flip(const Key& floor, const Key& ceil)
+{
+    const_iterator i = lower_bound(floor);
+    if(i == end() || i->first != floor)
+    {
+        ///// UNDER CONSTRUCTION
+    }
+}
+
+template<typename Key, typename Valueholder, typename Allocator>
+const typename rangecollection<Key,Valueholder,Allocator>::const_iterator
+    rangecollection<Key,Valueholder,Allocator>::find(const Key& v) const
 {
     typename Cont::const_iterator tmp = data.lower_bound(v);
     if(tmp == data.end())
@@ -147,4 +178,14 @@ const typename rangecollection<Key,Valueholder>::const_iterator
     }
     if(tmp->second.is_nil()) return end();
     return tmp;
+}
+
+template<typename Key>
+rangetype<Key> rangetype<Key>::intersect(const rangetype<Key>& b) const
+{
+    rangetype<Key> result;
+    result.lower = std::max(lower, b.lower);
+    result.upper = std::min(upper, b.upper);
+    if(result.upper < result.lower) result.upper = result.lower;
+    return result;
 }

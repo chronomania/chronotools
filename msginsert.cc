@@ -269,10 +269,11 @@ void MessageTooLongText(const ctstring& input, const ctstring& output)
     NewBeginning();
 }
 
-void MessageModuleWithoutAddress(const std::string& name)
+void MessageModuleWithoutAddress(const std::string& name, const SegmentSelection seg)
 {
     BeginError();
-    fprintf(stderr, "O65 linker: Module %s is still without address\n", name.c_str());
+    fprintf(stderr, "O65 linker: Module %s is still without address for seg %s\n",
+        name.c_str(), GetSegmentName(seg).c_str());
     NewBeginning();
 }
 
@@ -300,7 +301,7 @@ void MessageDuplicateDefinitionAt(const std::string& name, const std::string& wh
         " is already present in object \"%s\"\n",
         name.c_str(),
         who.c_str(),
-        where.c_str());
+        WstrToAsc(where).c_str());
     NewBeginning();
 }
 

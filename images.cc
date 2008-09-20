@@ -7,6 +7,8 @@
 #include "rommap.hh"
 #include "msginsert.hh"
 
+#include <errno.h>
+
 void LoadImageData
     (const TGAimage& image,
      vector<unsigned char>& data)
@@ -114,6 +116,72 @@ void insertor::WriteImages()
             
             MessageLoadingItem(fn);
 
+            data = Compress(&data[0], data.size());
+            
+            //fprintf(stderr, " (%u bytes)\n", data.size());
+            
+            const string name = fn + " data";
+            objects.AddLump(data, fn, name);
+            
+            if(ptr_seg_address == ptr_ofs_address+2)
+            {
+                objects.AddReference(name, LongPtrFrom(ptr_ofs_address));
+            }
+            else
+            {
+                objects.AddReference(name, OffsPtrFrom(ptr_ofs_address));
+                objects.AddReference(name, PagePtrFrom(ptr_seg_address));
+            }
+        }
+    }
+    
+    if(true) /* Load packed raw blobs (TODO: move this somewhere else) */
+    {
+        const ConfParser::ElemVec& elems = GetConf("images", "packedblob").Fields();
+        for(unsigned a=0; a<elems.size(); a += 5)
+        {
+            unsigned ptr_ofs_address   = elems[a+0];
+            unsigned ptr_seg_address   = elems[a+1];
+            unsigned space_address     = elems[a+2];
+            unsigned orig_size         = elems[a+3];
+            const wstring& filename    = elems[a+4];
+            
+            /* The addresses must be ROM-based. */
+            
+            const string fn = WstrToAsc(filename);
+
+            MessageLoadingItem(fn);
+            
+            FILE* fp = fopen(fn.c_str(), "rb");
+            if(!fp)
+            {
+                if(errno == ENOENT)
+                {
+                    fprintf(stderr, "> %s doesn't exist, ignoring\n", fn.c_str());
+                }
+                else
+                {
+                    string message = "> Failed to load ";
+                    message += fn;
+                    perror(message.c_str());
+                }
+                continue;
+            }
+            vector<unsigned char> data;
+            for(;;)
+            {
+                unsigned char Buf[8192];
+                int r = fread(Buf, sizeof Buf, 1, fp);
+                if(r <= 0) break;
+                data.insert(data.end(), Buf, Buf+r);
+            }
+            
+            fclose(fp);
+
+            // Add the freespace from the original location
+            // because the image will be moved anyway
+            freespace.Add(space_address, orig_size);
+            
             data = Compress(&data[0], data.size());
             
             //fprintf(stderr, " (%u bytes)\n", data.size());

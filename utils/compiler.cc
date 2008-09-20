@@ -1289,7 +1289,7 @@ class TableParser
         std::wstring ref;
 
     public:
-        Component(): type(compare_lastch_set), lastchpos(0), lastchpos2(0) {}
+        Component(): type(compare_lastch_set), lastchpos(0), lastchpos2(0), chars(),ref() {}
         
         void LastEqSet(unsigned l, const std::set<wchar_t>& s) { lastchpos=l; chars=s; type=compare_lastch_set; }
         void LastEqSet2(unsigned l, unsigned l2)
@@ -1370,7 +1370,7 @@ class TableParser
         unsigned chpos;
 
     public:
-        Action(): type(output_char), ch('?') {}
+        Action(): type(output_char), ch('?'),last_but(),func(),chpos() {}
         
         void OutCh(wchar_t c) { ch=c; type=output_char; }
         void OutCtx(unsigned n) { last_but=n; type=output_context; }
@@ -2332,7 +2332,7 @@ void Compile(FILE *fp)
         if(Buf.empty()) continue;
         
         unsigned indent=0;
-        vector<std::wstring> words;
+        std::vector<std::wstring> words;
         
         if(1) // Initialize indent, words
         {

@@ -147,44 +147,53 @@ void O65linker::AddObject(const O65& object, const std::string& what, unsigned a
     AddObject(object, what, wish);
 }
 
-const vector<unsigned> O65linker::GetSizeList() const
+const vector<unsigned> O65linker::GetSizeList(SegmentSelection seg) const
 {
     vector<unsigned> result;
     unsigned n = objects.size();
     result.reserve(n);
     for(unsigned a=0; a<n; ++a)
-        result.push_back(objects[a]->object.GetSegSize(CODE));
+        result.push_back(objects[a]->object.GetSegSize(seg));
     return result;
 }
 
-const vector<unsigned> O65linker::GetAddrList() const
+const vector<unsigned> O65linker::GetAddrList(SegmentSelection seg) const
 {
     vector<unsigned> result;
     unsigned n = objects.size();
     result.reserve(n);
     for(unsigned a=0; a<n; ++a)
-        result.push_back(objects[a]->linkage.GetAddress());
+    {
+        if(seg == CODE)
+            result.push_back(objects[a]->linkage.GetAddress());
+        else
+            result.push_back(0);
+    }
     return result;
 }
 
-const vector<LinkageWish> O65linker::GetLinkageList() const
+const vector<LinkageWish> O65linker::GetLinkageList(SegmentSelection seg) const
 {
     vector<LinkageWish> result;
     unsigned n = objects.size();
     result.reserve(n);
     for(unsigned a=0; a<n; ++a)
-        result.push_back(objects[a]->linkage);
+        if(seg == CODE)
+            result.push_back(objects[a]->linkage);
+        else
+            result.push_back(LinkageWish());
     return result;
 }
 
-void O65linker::PutAddrList(const vector<unsigned>& addrs)
+void O65linker::PutAddrList(const vector<unsigned>& addrs, SegmentSelection seg)
 {
     unsigned limit = addrs.size();
     if(objects.size() < limit) limit = objects.size();
     for(unsigned a=0; a<limit; ++a)
     {
-        objects[a]->linkage.SetAddress(addrs[a]);
-        objects[a]->object.Locate(CODE, addrs[a]);
+        if(seg == CODE)
+            objects[a]->linkage.SetAddress(addrs[a]);
+        objects[a]->object.Locate(seg, addrs[a]);
     }
 }
 
@@ -325,7 +334,7 @@ void O65linker::Link()
         Object& o = *objects[a];
         if(o.linkage.type != LinkageWish::LinkHere)
         {
-            MessageModuleWithoutAddress(o.GetName());
+            MessageModuleWithoutAddress(o.GetName(), CODE);
             continue;
         }
         

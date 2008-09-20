@@ -31,7 +31,7 @@ void rangemap<Key,Value>::const_iterator::Reconstruct()
     }
 }
 template<typename Key, typename Value>
-void rangemap<Key,Value>::const_iterator::operator++ ()
+typename rangemap<Key,Value>::const_iterator& rangemap<Key,Value>::const_iterator::operator++ ()
 {
     /* The last node before end() is always nil. */
     while(i != data.end())
@@ -40,9 +40,10 @@ void rangemap<Key,Value>::const_iterator::operator++ ()
         if(!i->second.is_nil())break;
     }
     Reconstruct();
+    return *this;
 }
 template<typename Key, typename Value>
-void rangemap<Key,Value>::const_iterator::operator-- ()
+typename rangemap<Key,Value>::const_iterator& rangemap<Key,Value>::const_iterator::operator-- ()
 {
     /* The first node can not be nil. */
     while(i != data.begin())
@@ -51,4 +52,5 @@ void rangemap<Key,Value>::const_iterator::operator-- ()
         if(!i->second.is_nil())break;
     }
     Reconstruct();
+    return *this;
 }

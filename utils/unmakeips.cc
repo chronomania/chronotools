@@ -3,6 +3,8 @@
 #include <vector>
 #include <map>
 
+#include "../crc32.h"
+
 using namespace std;
 
 #define IPS_ADDRESS_EXTERN 0x01
@@ -21,12 +23,26 @@ static int Improvize(char* buf, unsigned n)
     return n;
 }
 
+static size_t ReadV(FILE* fp)
+{
+    size_t result = 0, shift = 0;
+    for(;; shift += 7)
+    {
+        int c = fgetc(fp), low = c & 0x7F;
+        if(shift) ++low;
+        if(c == EOF) break;
+        if(c & 0x80) { result += low << shift; break; }
+        result += low << shift;
+    }
+    return result;
+}
+
 int main(int argc, const char *const *argv)
 {
     if(argc != 1+3)
     {
-        fprintf(stderr, "unmakeips: A simple IPS patcher with lots of error checks\n"
-               "Copyright (C) 1992,2004 Bisqwit (http://iki.fi/bisqwit/)\n"
+        fprintf(stderr, "unmakeips: A simple IPS/UPS patcher with lots of error checks\n"
+               "Copyright (C) 1992,2008 Bisqwit (http://iki.fi/bisqwit/)\n"
                "Usage: unmakeips ipsfile.ips oldfile newfile\n");
         return -1;
     }
@@ -47,25 +63,92 @@ int main(int argc, const char *const *argv)
     if(!fp || !original || !resultfile)
         return -1;
     
+    unsigned char Buf[5];
+    fread(Buf, 1, 5, fp);
+
+    if(!strncmp((const char *)Buf, "UPS1", 4))
+    {
+        fseek(fp, 0, SEEK_END);
+        size_t patchsize = ftell(fp);
+        fseek(fp, 4, SEEK_SET);
+        size_t oldsize = ReadV(fp);
+        size_t newsize = ReadV(fp);
+        size_t oldpos = 0;
+        if(oldsize != newsize)
+        {
+            // Figure out whether we're reverse patching
+            fseek(original, 0, SEEK_END);
+            size_t origsize = ftell(original);
+            rewind(original);
+            
+            if(origsize == newsize)
+                { fprintf(stderr, "Reverse patch detected\n");
+                  std::swap(oldsize, newsize); }
+            else if(origsize != oldsize)
+                { fprintf(stderr, "What are you patching? Input is %lu bytes, should be %lu or %lu\n",
+                    origsize, oldsize, newsize); }
+        }
+        while(ftell(fp) < patchsize - 12)
+        {
+            size_t inpos = ftell(fp);
+            size_t patchpos = ReadV(fp) + oldpos;
+            if(oldpos > 0) ++patchpos;
+            
+            size_t plainlen = patchpos-oldpos;
+            /*fprintf(stderr, "patchpos: %lX @ %lX,%lX (plain %lX); old(%lX)new(%lX)\n",
+                patchpos, inpos,oldpos, plainlen,
+                oldsize, newsize);*/
+            while(plainlen > 0)
+            {
+                char tmp[4096];
+                size_t bytes = plainlen; if(bytes > sizeof(tmp)) bytes = sizeof(tmp);
+                int c = fread(tmp, 1, bytes, original);
+                if(c < 0 && ferror(original)) goto inferr;
+                if(!c) c = Improvize(tmp, bytes);
+                int c2 = fwrite(tmp, 1, c, resultfile);
+                if(c2 < 0 && ferror(resultfile)) goto outferr;
+                if(c2 != c) goto outfeof;
+                plainlen -= c;
+            }
+            oldpos = ftell(resultfile);
+            while(oldpos < newsize)
+            {
+                int c = fgetc(fp);
+                if(c == 0) break;
+                { int e = fgetc(original); if(e != EOF) c ^= e; }
+                fputc(c, resultfile); ++oldpos;
+            }
+            if(oldpos == newsize)
+            {
+                fseek(fp, -12, SEEK_END);
+                break;
+            }
+        }
+        fflush(resultfile);
+        ftruncate(fileno(resultfile), newsize);
+        goto Created;
+    }
+    
     setbuf(fp, NULL);
     setbuf(original, NULL);
     setbuf(resultfile, NULL);
     
-    unsigned char Buf[5];
-    fread(Buf, 1, 5, fp);
     
     if(strncmp((const char *)Buf, "PATCH", 5))
     {
         fprintf(stderr, "This isn't a patch!\n"); arf:fclose(fp);
-        arf2:
+        goto arf2;
+    inferr: perror("fread"); goto arf2;
+    outferr: perror("fwrite"); goto arf2;
+    outfeof: fprintf(stderr, "Error writing to resultfile\n"); goto arf2;
+       arf2:
         fclose(original);
         fclose(resultfile);
         return -1;
     }
     
-    multimap<unsigned, vector<char> > lumps;
-    
-    unsigned col=0;
+   {multimap<size_t, vector<char> > lumps;
+   {size_t col=0;
     for(;;)
     {
         bool rle=false;
@@ -75,28 +158,28 @@ int main(int argc, const char *const *argv)
                     fprintf(stderr, "Unexpected end of file (%s) - wanted %d, got %d\n", patchfn, wanted, c);
                     goto arf; }
         if(!strncmp((const char *)Buf, "EOF", 3))break;
-        unsigned pos = (((unsigned)Buf[0]) << 16)
-                      |(((unsigned)Buf[1]) << 8)
-                      | ((unsigned)Buf[2]);
+        size_t pos = (((size_t)Buf[0]) << 16)
+                     |(((size_t)Buf[1]) << 8)
+                     | ((size_t)Buf[2]);
         c = fread(Buf, 1, 2, fp);
-        if(c < 0 && ferror(fp)) { fprintf(stderr, "Got pos %X\n", pos); goto ipserr; }
+        if(c < 0 && ferror(fp)) { fprintf(stderr, "Got pos %lX\n", pos); goto ipserr; }
         if(c < (wanted=2)) { goto ipseof; }
-        unsigned len = (((unsigned)Buf[0]) << 8)
-                      | ((unsigned)Buf[1]);
+        size_t len = (((size_t)Buf[0]) << 8)
+                    | ((size_t)Buf[1]);
         
         if(len==0)
         {
             rle=true;
             c = fread(Buf, 1, 2, fp);
-            if(c < 0 && ferror(fp)) { fprintf(stderr, "Got pos %X\n", pos); goto ipserr; }
+            if(c < 0 && ferror(fp)) { fprintf(stderr, "Got pos %lX\n", pos); goto ipserr; }
             if(c < (wanted=2)) { goto ipseof; }
-            len = (((unsigned)Buf[0]) << 8)
-                 | ((unsigned)Buf[1]);
+            len = (((size_t)Buf[0]) << 8)
+                 | ((size_t)Buf[1]);
 
-            fprintf(stderr, "%06X <= %-5u ", pos, len);
+            fprintf(stderr, "%06lX <= %-5lu ", pos, len);
         }
         else
-            fprintf(stderr, "%06X <- %-5u ", pos, len);
+            fprintf(stderr, "%06lX <- %-5lu ", pos, len);
         
         if(++col == 5) { fprintf(stderr, "\n"); col=0; }
         
@@ -106,7 +189,7 @@ int main(int argc, const char *const *argv)
             c = fread(&Buf2[0], 1, 1, fp);
             if(c < 0 && ferror(fp)) { goto ipserr; }
             if(c != (wanted=(int)1)) { goto ipseof; }
-            for(unsigned c=1; c<len; ++c)
+            for(size_t c=1; c<len; ++c)
                 Buf2[c] = Buf2[0];
         }
         else
@@ -122,39 +205,38 @@ int main(int argc, const char *const *argv)
         }
         else
         {
-            lumps.insert(pair<unsigned, vector<char> > (pos, Buf2));
+            lumps.insert(pair<size_t, vector<char> > (pos, Buf2));
         }
     }
     if(col) fprintf(stderr, "\n");
-    fclose(fp);
+   }fclose(fp);
     
-    unsigned bytes, curpos=0;
-    int c, c2;
+    size_t curpos=0;
     char tmp[4096];
-    multimap<unsigned, vector<char> >::const_iterator i;
+    multimap<size_t, vector<char> >::const_iterator i;
     for(i=lumps.begin(); i!=lumps.end(); ++i)
     {
-        unsigned newpos = i->first;
+        size_t newpos = i->first;
         if(newpos < curpos)
           { fprintf(stderr, "Malformed patch (overlapping chunks)!\n"); goto arf2; }
-        unsigned plainlen = newpos-curpos;
+        size_t plainlen = newpos-curpos;
         while(plainlen > 0)
         {
-            bytes = plainlen; if(bytes > sizeof(tmp)) bytes = sizeof(tmp);
-            c = fread(tmp, 1, bytes, original);
+            size_t bytes = plainlen; if(bytes > sizeof(tmp)) bytes = sizeof(tmp);
+            int c = fread(tmp, 1, bytes, original);
             if(c < 0 && ferror(original)) goto inferr;
             if(!c) c = Improvize(tmp, bytes);
-            c2 = fwrite(tmp, 1, c, resultfile);
+            int c2 = fwrite(tmp, 1, c, resultfile);
             if(c2 < 0 && ferror(resultfile)) goto outferr;
             if(c2 != c) goto outfeof;
             plainlen -= c;
         }
-        unsigned patchlen = i->second.size();
-        unsigned skiplen = patchlen;
+        size_t patchlen = i->second.size();
+        size_t skiplen = patchlen;
         while(skiplen > 0) // original is not necessarily seekable, thus just read it
         {
-            bytes = skiplen; if(bytes > sizeof(tmp)) bytes = sizeof(tmp);
-            c = fread(tmp, 1, bytes, original);
+            size_t bytes = skiplen; if(bytes > sizeof(tmp)) bytes = sizeof(tmp);
+            int c = fread(tmp, 1, bytes, original);
             if(c < 0 && ferror(original)) goto inferr;
             if(!c) c = Improvize(tmp, bytes);
             skiplen -= c;
@@ -166,14 +248,15 @@ int main(int argc, const char *const *argv)
     }
     while(!feof(original))
     {
-        c = fread(tmp, 1, sizeof tmp, original);
-        if(c < 0 && ferror(original)) { inferr: perror("fread"); goto arf2; }
+        int c = fread(tmp, 1, sizeof tmp, original);
+        if(c < 0 && ferror(original)) goto inferr;
         if(!c) break;
-        c2 = fwrite(tmp, 1, c, resultfile);
-        if(c2 < 0 && ferror(resultfile)) { outferr: perror("fwrite"); goto arf2; }
-        if(c2 != c) { outfeof: fprintf(stderr, "Error writing to resultfile\n"); goto arf2; }
-    }
+        int c2 = fwrite(tmp, 1, c, resultfile);
+        if(c2 < 0 && ferror(resultfile)) goto outferr;
+        if(c2 != c) goto outfeof;
+   }}
     
+Created:
     fprintf(stderr, "%s created successfully. %s not modified.\n", resfn, origfn);
     
     fclose(original);

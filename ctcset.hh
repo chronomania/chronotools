@@ -32,7 +32,7 @@ void RearrangeCharset(cset_class, const hash_map<ctchar, ctchar>& );
 const ctstring getctstring(const std::wstring&, cset_class=cset_12pix);
 
 // Get a ctstring from a blob
-const ctstring getctstring(const vector<unsigned char>& blob);
+const ctstring getctstring(const std::vector<unsigned char>& blob);
 
 unsigned get_font_begin();
 unsigned get_font_end();

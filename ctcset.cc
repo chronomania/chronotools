@@ -18,7 +18,7 @@ namespace
     class CharacterSet
     {
         hash_map<wchar_t, ctchar> revmap;
-        vector<ctchar> revmapfirst;
+        std::vector<ctchar> revmapfirst;
     
     private:
         void RebuildRevmap()
@@ -259,6 +259,7 @@ unsigned get_font_begin()
     return cache;
 }
 
+#if 0
 namespace std/*__gnu_cxx*/
 {
   template<> 
@@ -294,6 +295,7 @@ namespace std/*__gnu_cxx*/
     return s;
   }
 }
+#endif
 
 unsigned CalcSize(const ctstring &word)
 {
@@ -324,7 +326,7 @@ const ctstring getctstring(const std::wstring& s, cset_class cl)
     return result;
 }
 
-const ctstring getctstring(const vector<unsigned char>& blob)
+const ctstring getctstring(const std::vector<unsigned char>& blob)
 {
     ctstring result(blob.size(), 0);
     std::copy(blob.begin(), blob.end(), &result[0]);

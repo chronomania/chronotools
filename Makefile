@@ -143,6 +143,8 @@ DEPDIRS = utils/
 # VERSION 1.15.3.2 a bugfix in ctdump (deleting the *c block). Added more documentation!
 # VERSION 1.15.3.3 minor changes in default config.
 # VERSION 1.15.3.4 changes in portability, documentation, and RLE IPS support.
+# VERSION 1.15.3.5 drops support for Windows versions.
+# VERSION 1.15.4 adds packedblob support and fixes compilation on certain platforms.
 
 #OPTIM=-Os
 # -fshort-enums
@@ -159,7 +161,7 @@ CFLAGS += -I/usr/include/slang
 LDFLAGS += -L/usr/lib/slang
 
 
-VERSION=1.15.3.4
+VERSION=1.15.4
 ARCHFILES=utils/xray.cc utils/xray.h \
           utils/viewer.c \
           utils/vwftest.cc \
@@ -334,8 +336,11 @@ eventdata.inc: DOCS/eventdata.xml utils/eventsynmake
 utils/makeips: utils/makeips.cc
 	$(CXX) $(LDOPTS) -o $@ $^
 
+utils/makeups: utils/makeups.cc crc32.o
+	$(CXX) $(LDOPTS) -o $@ $^
+
 # Patch applier
-utils/unmakeips: utils/unmakeips.cc
+utils/unmakeips: utils/unmakeips.cc crc32.o
 	$(CXX) $(LDOPTS) $(CXXFLAGS) -o $@ $^
 
 # ROM checksum fixer in the patch file

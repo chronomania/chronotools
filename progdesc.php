@@ -38,7 +38,7 @@ So here's what you do if you want to translate Chrono Trigger.
 <ul>
  <li><a href=\"#download\">Download</a> Chronotools.
      (Source code on this site. Windows binaries also
-      available, but not always up-to-date.)</li>
+      available, but they are not supported.)</li>
  <li>You need the Chrono Trigger English ROM. (You won't get it from me.)</li>
  <li>Read <a href=\"http://bisqwit.iki.fi/ctfin/dev/quickstart.html\"
       >the quick start guide</a>.</li>
@@ -207,6 +207,8 @@ Copypaste from the Makefile:
 # VERSION 1.15.3.2 a bugfix in ctdump (deleting the *c block). Added more documentation!
 # VERSION 1.15.3.3 minor changes in default config.
 # VERSION 1.15.3.4 changes in portability, documentation, and RLE IPS support.
+# VERSION 1.15.3.5 drops support for Windows versions.
+# VERSION 1.15.4 adds packedblob support and fixes compilation on certain platforms.
 </pre>
 
 To use the character name changing feature, do a redump with ctdump
@@ -226,10 +228,7 @@ blocks to your script.
 add_call_of \"RoomScriptFunctionB8\" \$C03557 20 true</code><br>
  Otherwise you'll see wrong texts in wrong places.
 <p>
- Users who are stuck with a Windows system have to manage with
- version 1.14.3. There will not be Windows version updates, until
- the point in <a href=\"#helpneeded\">Help needed</a> is resolved
- in a way or another.
+ Latest Windows version is 1.14.3. Windows versions are no longer supported.
 
 ", '1. Program list' => "
 
@@ -608,32 +607,6 @@ Things that should be documented some day but currently are not:
  <small> Example screenshot in Russian </small>
 </div>
 <br clear=all>
-
-<hr>
-<h3>Help needed!</h3>
-
-Sorry, there is no Windows version of 1.15.2 until someone can work and
-demonstrate a way to get this code to cross-compile for Windows with
-<tt>mingw</tt> running in Linux:
-<pre><code>#include &lt;cstdio>
-#include &lt;string>
-#include &lt;boost/regex.hpp>
-using namespace std;
-void RegexReplace(const wstring& pattern, const wstring& replacement, wstring& subject)
-{
-    boost::basic_regex&lt;wchar_t> exp(pattern);
-    subject = boost::regex_replace(subject, exp, replacement, boost::format_sed);
-}
-int main(void)
-{
-    wstring s(L\"abc\");
-    RegexReplace(L\"a(.)c\", L\"a\\\\1\\\\x{33}c\", s);
-    printf(\"'%ls'\\n\", s.c_str());
-}</code></pre>
-It compiles fine with normal gcc, provided that libboost is installed,
-but it fails in numerous ways under mingw.
-<p>
-The latest Windows version is 1.14.3.
 
 ");
 
