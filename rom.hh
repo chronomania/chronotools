@@ -15,7 +15,7 @@ public:
     ROM(unsigned siz);
     ~ROM();
     
-    const unsigned size() const { return length; }
+    unsigned size() const { return length; }
 
     unsigned FindNextBlob(unsigned where, unsigned& length) const;
     
@@ -37,7 +37,7 @@ public:
 private:
     void Write(unsigned pos, unsigned char value);
     
-    const unsigned char operator[] (unsigned pos) const { return Data.GetByte(pos); }
+    unsigned char operator[] (unsigned pos) const { return Data.GetByte(pos); }
 
 };
 

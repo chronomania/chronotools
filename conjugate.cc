@@ -20,7 +20,7 @@ void Conjugatemap::Load(const insertor &ins)
         fprintf(stderr, "> Conjugator has nothing to do. Not using.\n");
         return;
     }
-    for(unsigned a=0; a<elems.size(); a += 3)
+    for(size_t a=0; a<elems.size(); a += 3)
     {
         form tmp;
         const wstring &func  = elems[a];
@@ -32,13 +32,13 @@ void Conjugatemap::Load(const insertor &ins)
         tmp.prefix = 0;
         
         tmp.maxwidth = 0;
-        for(unsigned b=0; b<width.size(); ++b)
+        for(size_t b=0; b<width.size(); ++b)
         {
             ctchar c = getctchar(width[b], cset_12pix);
             tmp.maxwidth += 1 + ins.GetFont12width(c);
         }
         
-        for(unsigned b=0; b<data.size(); ++b)
+        for(size_t b=0; b<data.size(); ++b)
         {
             if(data[b] == ' ' || data[b] == '\n'
             || data[b] == '\r' || data[b] == '\t') continue;
@@ -61,7 +61,7 @@ void Conjugatemap::Load(const insertor &ins)
                 default:
                     fprintf(stderr, "In configuration: Unknown person '%c'\n", data[b]);
             }
-            unsigned c = ++b;
+            size_t c = ++b;
             while(b < data.size() && WcharToAsc(data[b]) != ',') ++b;
             
             wstring s = data.substr(c, b-c);
@@ -69,7 +69,7 @@ void Conjugatemap::Load(const insertor &ins)
             const wstring &name = Symbols.GetRev(16).find(person)->second;
             
             ctstring key;
-            for(unsigned a=0; a<s.size(); ++a)
+            for(size_t a=0; a<s.size(); ++a)
                 if(s.compare(a, name.size(), name) == 0)
                 {
                     key += person;
@@ -92,9 +92,9 @@ void Conjugatemap::Work(ctstring &s, formit fit)
     datamap_t::const_iterator i;
     for(i=form.data.begin(); i!=form.data.end(); ++i)
     {
-        for(unsigned a=0; a < s.size(); )
+        for(size_t a=0; a < s.size(); )
         {
-            unsigned b = s.find(i->first, a);
+            size_t b = s.find(i->first, a);
             if(b == s.npos) break;
             
             if(!form.used)
@@ -108,7 +108,7 @@ void Conjugatemap::Work(ctstring &s, formit fit)
                     bool used = false;
                     
                     const ConfParser::ElemVec& elems = GetConf("font", "typeface").Fields();
-                    for(unsigned a=0; a<elems.size(); a += 6)
+                    for(size_t a=0; a<elems.size(); a += 6)
                     {
                         unsigned begin = elems[a+3];
                         unsigned end   = elems[a+4];

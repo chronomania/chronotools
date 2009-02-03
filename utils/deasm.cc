@@ -658,7 +658,7 @@ namespace
                     bitness);
         }
         
-        void OutputCall(const std::string& label, bool is_far)
+        void OutputCall(const std::string& label, bool /*is_far*/)
         {
             if(output.dummy)return;
             AddExpr(new Expr(Expr::Call, label));
@@ -1116,7 +1116,7 @@ namespace
         }
     };
     
-    void DisplayRoutine(unsigned first_address, const std::string& name)
+    void DisplayRoutine(unsigned first_address, const std::string& /*name*/)
     {
         Compiler machine;
         

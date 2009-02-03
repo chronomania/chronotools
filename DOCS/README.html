@@ -23,7 +23,7 @@ SMALL    {font-size:70%}
   <h1>Chrono Trigger translation development system</h1>
   <h2 class=level2> 0. Contents </h2>
   
-  This is the documentation of chronotools-1.15.4.
+  This is the documentation of chronotools-1.15.5.
 <div class=toc><table cellspacing=0 cellpadding=0 class=toc><tr><td width="33%" valign=middle align=left nowrap class=toc>&nbsp;&nbsp;&nbsp;1. <a href="#what">Purpose</a><br>&nbsp;&nbsp;&nbsp;2. <a href="#how">How to begin?</a><br>&nbsp;&nbsp;&nbsp;3. <a href="#status">Current status</a><br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;3.1. <a href="#changes">Version history</a><br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;3.1.1. <a href="#h0">Release notes</a><br>&nbsp;&nbsp;&nbsp;4. <a href="#h1">Program list</a><br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;4.1. <a href="#ctdump">ctdump</a><br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;4.2. <a href="#ctinsert">ctinsert</a><br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;4.3. <a href="#h2">other</a><br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;4.3.1. <a href="#h3">makeips</a><br></td>
 <td width="33%" valign=middle align=left nowrap class=toc>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;4.3.2. <a href="#h4">unmakeips</a><br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;4.3.3. <a href="#h5">xray</a><br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;4.3.4. <a href="#h6">viewer</a><br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;4.3.5. <a href="#h7">sramdump</a><br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;4.3.6. <a href="#h8">base62</a><br>&nbsp;&nbsp;&nbsp;5. <a href="#h9">Useful features</a><br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;5.1. <a href="#conj">Player name inflection</a><br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;5.2. <a href="#skew">Font/dictionary skew</a><br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;5.3. <a href="#wrap">Automatic paragraph wrapping</a><br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;5.4. <a href="#vwf8">Variable width 8pix font</a><br></td>
 <td width="34%" valign=middle align=left nowrap class=toc>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;5.5. <a href="#expand">Expansion to 48 Mbit or 64 Mbit</a><br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;5.6. <a href="#h10">Location event support</a><br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;5.7. <a href="#h11">Very configurable</a><br>&nbsp;&nbsp;&nbsp;6. <a href="#h12">Summary of extra features</a><br>&nbsp;&nbsp;&nbsp;7. <a href="#req">Requirements</a><br>&nbsp;&nbsp;&nbsp;8. <a href="#copying">Copying</a><br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;8.1. <a href="#parts">Ripping my hacks</a><br>&nbsp;&nbsp;&nbsp;9. <a href="#docs">Documentation</a><br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;9.1. <a href="#undocs">Undocumented things</a><br>&nbsp;&nbsp;&nbsp;10. <a href="#helpneeded">See also</a><br>&nbsp;&nbsp;&nbsp;11. <a href="#download">Downloading</a><br></td>
@@ -73,7 +73,7 @@ you might have about translating/hacking Chrono Trigger.<br>
 Chronotools is under active development.
 Here's the current situation.<br>
 Last updated:
-2007-03-22
+2009-02-03
 
 <p>
 <table>
@@ -229,6 +229,7 @@ Copypaste from the Makefile:
 # VERSION 1.15.3.4 changes in portability, documentation, and RLE IPS support.
 # VERSION 1.15.3.5 drops support for Windows versions.
 # VERSION 1.15.4 adds packedblob support and fixes compilation on certain platforms.
+# VERSION 1.15.5 improves compilability on more modern gcc versions
 </pre>
 
 To use the character name changing feature, do a redump with ctdump
@@ -531,8 +532,8 @@ and is distributed under the terms of the
  If you have questions or just want to talk about
  Chrono Trigger hacking, throw me email.
 <p>
- My email address:<span id=eml28><b id=eml14 class=nonmail>5mxi1l</b><span id=eml15 class=ismail>Joel</span><span id=eml16 class=nonmail><b>mp/fm@odni</b></span><span id=eml17 class=ismail> Yli</span><b id=eml18 class=nonmail>ergAd/mwu@</b><span id=eml19 class=ismail>luom</span><span id=eml20 class=nonmail><b>g1Ncd</b></span><span id=eml21 class=ismail>a &lt;bi</span><b id=eml22 class=nonmail>1.kte</b><span id=eml23 class=ismail>sqwi</span><span id=eml24 class=nonmail><b>@X.pe</b></span><span id=eml25 class=ismail>t@ik</span><b id=eml26 class=nonmail>vfcp1jd.e</b><span id=eml27 class=ismail>i.fi&gt;</span></span><script type="text/javascript"><!--
-s='';for(i=14;i<28;){document.getElementById('eml'+i++).innerHTML='';s+=document.getElementById('eml'+i++).innerHTML;}document.getElementById('eml'+i).innerHTML='<'+'a href="mailto:'+s+'">'+s+'<'+'/a>';
+ My email address:<span id=eml32><b id=eml18 class=nonmail>yo83qg</b><span id=eml19 class=ismail>Joel</span><span id=eml20 class=nonmail><b>ex1cJ</b></span><span id=eml21 class=ismail> Yli</span><b id=eml22 class=nonmail>l4w</b><span id=eml23 class=ismail>luom</span><span id=eml24 class=nonmail><b>J@wc</b></span><span id=eml25 class=ismail>a &lt;bi</span><b id=eml26 class=nonmail>s</b><span id=eml27 class=ismail>sqwi</span><span id=eml28 class=nonmail><b>tek@lnPl</b></span><span id=eml29 class=ismail>t@ik</span><b id=eml30 class=nonmail>S</b><span id=eml31 class=ismail>i.fi&gt;</span></span><script type="text/javascript"><!--
+s='';for(i=18;i<32;){document.getElementById('eml'+i++).innerHTML='';s+=document.getElementById('eml'+i++).innerHTML;}document.getElementById('eml'+i).innerHTML='<'+'a href="mailto:'+s+'">'+s+'<'+'/a>';
 --></script><br>
  If you send me e-mail, please ensure I can reply to you.
 <p>
@@ -635,9 +636,9 @@ Things that should be documented some day but currently are not:
    is at <a href="http://iki.fi/bisqwit/source/chronotools.html">http://iki.fi/bisqwit/source/chronotools.html</a>.<br>
    Check there for new versions.
 </div> <p align=right><small>Generated from
-       <tt>../progdesc.php</tt> (last updated: Sat, 20 Sep 2008 16:50:59 +0300)<br>
-  with <tt>docmaker.php</tt> (last updated: Sun, 12 Jun 2005 06:08:02 +0300)<br>
-  at Sat, 20 Sep 2008 16:51:03 +0300</small>
+       <tt>../progdesc.php</tt> (last updated: Tue, 03 Feb 2009 11:57:10 +0200)<br>
+  with <tt>docmaker.php</tt> (last updated: Tue, 03 Feb 2009 11:57:10 +0200)<br>
+  at Tue, 03 Feb 2009 11:57:51 +0200</small>
  </p>
 </body>
 </html>

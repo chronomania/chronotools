@@ -95,7 +95,7 @@ namespace
     }
 }
 
-int main(int argc, const char *const *argv)
+int main(int /*argc*/, const char *const *argv)
 {
     if(!argv[1] || !(fp = fopen(argv[1], "rb")))
     {

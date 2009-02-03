@@ -1,6 +1,7 @@
 #include <cstdio>
 #include <cerrno>
 #include <set>
+#include <cstring>
 
 #include "ctcset.hh"
 #include "wstring.hh"
@@ -211,7 +212,7 @@ namespace
                     perror(cfgfilename);
                 
                 fp = fopen(cfgtmpname, "wt");
-                fwrite(DefaultConfig, strlen(DefaultConfig), 1, fp);
+                fwrite(DefaultConfig, std::strlen(DefaultConfig), 1, fp);
                 fclose(fp);
                 fp = fopen(cfgtmpname, "rt");
                 was_tmp = true;

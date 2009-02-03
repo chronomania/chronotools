@@ -24,10 +24,11 @@ static const char scriptoutfile[] = "ctdump.out";
 /* static due to namespace conflict */
 static void LoadDict()
 {
-    unsigned DictPtr = ROM[GetConst(DICT_OFFSET)+0]
-                    + (ROM[GetConst(DICT_OFFSET)+1] << 8)
-                    + (ROM[GetConst(DICT_SEGMENT1)] << 16);
-    DictPtr = SNES2ROMaddr(DictPtr);
+    unsigned DictPtr
+        = ROM[GetConst(DICT_OFFSET)+0]
+       + (ROM[GetConst(DICT_OFFSET)+1] << 8)
+       + (ROM[GetConst(DICT_SEGMENT1)] << 16);
+    DictPtr = (unsigned)SNES2ROMaddr(DictPtr);
 
     unsigned char UpperLimit = ROM[GetConst(CSET_BEGINBYTE)];
     
@@ -59,7 +60,7 @@ static void Dump12Font()
                      + (ROM[GetConst(VWF12_WIDTH_OFFSET)+1]<<8)
                      + (ROM[GetConst(VWF12_WIDTH_SEGMENT)] << 16)
                      - Offset;
-    WidthPtr = SNES2ROMaddr(WidthPtr);
+    WidthPtr = (unsigned)SNES2ROMaddr(WidthPtr);
     
     unsigned FontSeg = SNES2ROMpage(ROM[GetConst(VWF12_SEGMENT)]);
     unsigned FontPtr1 = ROM[GetConst(VWF12_TAB1_OFFSET)+0]

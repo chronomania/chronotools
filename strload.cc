@@ -164,7 +164,7 @@ const ctstring LoadZString(unsigned beginoffs,
         
         if(ROM[p] == 0) break;
         
-        unsigned int byte = ROM[p];
+        unsigned byte = ROM[p];
         
         /* FIXME: Invent a better way to see this */
         if(extrasizes.size() == 1)
@@ -177,7 +177,7 @@ const ctstring LoadZString(unsigned beginoffs,
         
         foundstring += (ctchar)byte;
         
-        extrasizemap_t::const_iterator i = extrasizes.find(byte);
+        extrasizemap_t::const_iterator i = extrasizes.find( (unsigned short) byte);
         if(i != extrasizes.end())
         {
             unsigned extra = i->second;

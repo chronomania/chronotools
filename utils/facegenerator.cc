@@ -40,7 +40,7 @@ namespace
         }
         
         /* Make a difference */
-        const double diff(const value_t& b) const
+        double diff(const value_t& b) const
         {
             double dist_x = (x - b.x);
             double dist_y = (y - b.y);

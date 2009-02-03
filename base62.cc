@@ -19,7 +19,7 @@ const std::string EncodeBase62(unsigned n, unsigned min_digits)
     return result;
 }
 
-const bool CumulateBase62(unsigned& value, char c)
+bool CumulateBase62(unsigned& value, char c)
 {
     if(c >= '0' && c <= '9')
         value=value*62 + (c-'0');

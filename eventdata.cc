@@ -2896,7 +2896,7 @@ private:
             if(!choices.empty())
             {
                 std::fprintf(stderr, "%*s", indent, "");
-                std::fprintf(stderr, "%u choices.\n", choices.size());
+                std::fprintf(stderr, "%u choices.\n", (unsigned)choices.size());
             }
             for(maptype::const_iterator
                 i = data.begin();
@@ -2951,7 +2951,7 @@ private:
             if(!choices.empty())
             {
                 std::fprintf(stderr, "%*s", indent, "");
-                std::fprintf(stderr, "%u choices.\n", choices.size());
+                std::fprintf(stderr, "%u choices.\n", (unsigned) choices.size());
             }
             for(maptype::const_iterator
                 i = data.begin();
@@ -3022,7 +3022,7 @@ private:
     }
 
     const std::list<Command> FindChoices
-        (const std::wstring& cmd, bool goto_backward) const
+        (const std::wstring& cmd, bool /*goto_backward*/) const
     {
         std::list<Command> choices;
         FindChoices_aux(STRTree, choices, cmd.data(), cmd.size());

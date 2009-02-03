@@ -112,7 +112,7 @@ const std::string wstringOut::puts(const std::wstring &s) const
     while(left > 0)
     {
         char OutBuf[4096], *outptr = OutBuf;
-        unsigned outsize = sizeof OutBuf;
+        size_t outsize = sizeof OutBuf;
         size_t retval = iconv(converter,
                               const_cast<ICONV_INPUTTYPE> (&input),
                               &left,
@@ -171,8 +171,8 @@ bool wstringOut::isok(wchar_t p) const
 #if USE_ICONV
     char OutBuf[256], *outptr = OutBuf;
     const char *tmp = (const char *)(&p);
-    unsigned outsize = sizeof OutBuf;
-    unsigned insize = sizeof(p);
+    size_t outsize = sizeof OutBuf;
+    size_t insize = sizeof(p);
     size_t retval = iconv(tester,
                           const_cast<ICONV_INPUTTYPE> (&tmp),
                           &insize,
@@ -238,7 +238,7 @@ const std::wstring wstringIn::puts(const std::string &s) const
     while(left > 0)
     {
         char OutBuf[4096], *outptr = OutBuf;
-        unsigned outsize = sizeof OutBuf;
+        size_t outsize = sizeof OutBuf;
         size_t retval = iconv(converter,
                               const_cast<ICONV_INPUTTYPE> (&input),
                               &left,

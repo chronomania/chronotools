@@ -2,6 +2,7 @@
 #include <list>
 #include <set>
 #include <map>
+#include <algorithm>
 
 #include "codegen.hh"
 #include "macrogenerator.hh"
@@ -1010,7 +1011,7 @@ private:
         
         double base_happiness = EvaluateHappiness(result);
         
-        fprintf(stderr, "Evaluating %u candidates...\n", candidates.size());
+        fprintf(stderr, "Evaluating %lu candidates...\n", candidates.size());
         for(cand_it j = candidates.begin();
                     j != candidates.end();
                     ++j)
@@ -1159,6 +1160,7 @@ static void ThreadJumps()
     }
 }
 
+#if 0
 static void CombineNodes()
 {
     typedef std::list<CodeNodePtr>::iterator vec_it;
@@ -1273,7 +1275,7 @@ static void ReorderNodes()
         if(!rootnode)
         {
             fprintf(out,
-                    ";Ouch, none of %u nodes were rootnodes!\n", AllNodes.size());
+                    ";Ouch, none of %lu nodes were rootnodes!\n", AllNodes.size());
             return;
         }
         
@@ -1309,7 +1311,7 @@ static void ReorderNodes()
             {
                 CodeNode& refnode = **i;
                 if(refnode.next_ins == &node
-                || refnode.jump.target_ins == &node && !refnode.jump.Is_Call)
+                || (refnode.jump.target_ins == &node && !refnode.jump.Is_Call))
                 {
                     if(done.find(&refnode) == done.end())
                         todo.insert(&refnode);
@@ -1353,6 +1355,8 @@ static void ReorderNodes()
         }
     }
 }
+#endif
+
 static void OptimizeWithNextNodes()
 {
     typedef std::list<CodeNodePtr>::iterator vec_it;
@@ -1388,6 +1392,7 @@ FindMore:
     }
 }
 
+#if 0
 static void DumpNodes()
 {
     typedef std::list<CodeNodePtr>::const_iterator vec_it;
@@ -1405,6 +1410,7 @@ static void DumpNodes()
     }
     std::fprintf(out, ";-------------\n");
 }
+#endif
 
 static void TidyDefines()
 {

@@ -6,7 +6,7 @@ const std::string EncodeBase16(unsigned n, unsigned min_digits)
     return format("%*X", min_digits, n);
 }
 
-const bool CumulateBase16(unsigned& value, char c)
+bool CumulateBase16(unsigned& value, char c)
 {
     if(c >= '0' && c <= '9')
         value=value*16 + (c-'0');

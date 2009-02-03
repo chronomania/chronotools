@@ -39,7 +39,7 @@ public:
         }
     }
     const std::string& name(unsigned char x) const { return opcodes[x]; }
-    const unsigned addrmode(unsigned char x) const { return addrmodes[x]; }
+    unsigned addrmode(unsigned char x) const { return addrmodes[x]; }
 };
 
 std::map<unsigned, labeldata> labels;
@@ -249,7 +249,7 @@ void FixReps()
         i != labels.end();
         ++i)
     {
-        unsigned address = i->first;
+        /*unsigned address = i->first;*/
         labeldata& label = i->second;
         
         if(label.op == "rep" || label.op == "sep")

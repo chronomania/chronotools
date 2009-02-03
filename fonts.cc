@@ -669,7 +669,7 @@ namespace
         FILE *log = GetLogFile("font", "log_rearrange");
         if(!log) return;
         
-        fprintf(log, "Rearranged %u %s symbols:\n", Rearranges.size(), what.c_str());
+        fprintf(log, "Rearranged %u %s symbols:\n", (unsigned) Rearranges.size(), what.c_str());
         
         for(Rearrangemap_t::const_iterator i=Rearranges.begin(); i!=Rearranges.end(); ++i)
         {
@@ -861,9 +861,9 @@ void insertor::ReorganizeFonts()
             case stringdata::zptr8:
             {
                 unsigned char attr = 0;
-                for(unsigned a=0; a<str.size(); ++a)
+                for(size_t a=0; a<str.size(); ++a)
                 {
-                    const unsigned aa = a; ctchar c = str[aa];
+                    const size_t aa = a; ctchar c = str[aa];
                     
                     if(c == 10)
                     {
@@ -886,9 +886,9 @@ void insertor::ReorganizeFonts()
             }
             case stringdata::zptr12:
             {
-                for(unsigned a=0; a<str.size(); ++a)
+                for(size_t a=0; a<str.size(); ++a)
                 {
-                    const unsigned aa = a; ctchar c = str[a];
+                    const size_t aa = a; ctchar c = str[a];
                     
                     extrasizemap_t::const_iterator j = Extras_12.find(c);
                     if(j != Extras_12.end()) a += j->second;
@@ -904,9 +904,9 @@ void insertor::ReorganizeFonts()
             case stringdata::fixed:
             case stringdata::compressed:
             {
-                for(unsigned a=0; a<str.size(); ++a)
+                for(size_t a=0; a<str.size(); ++a)
                 {
-                    const unsigned aa = a; ctchar c = str[a];
+                    const size_t aa = a; ctchar c = str[a];
                     
                     if(Fixed_12.find(c) != Fixed_12.end()) continue;
 
@@ -921,10 +921,10 @@ void insertor::ReorganizeFonts()
     }
     
     /* Transform the dictionary characters */
-    for(unsigned d=0; d<dict.size(); ++d)
+    for(size_t d=0; d<dict.size(); ++d)
     {
         ctstring& dictword = dict[d];
-        for(unsigned a=0; a<dictword.size(); ++a)
+        for(size_t a=0; a<dictword.size(); ++a)
         {
             ctchar c = dictword[a];
             Rearrangemap_t::const_iterator k = Rearrange_12.find(c);

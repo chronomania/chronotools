@@ -369,8 +369,8 @@ void CaseGenerator::CreateTable(CaseValue minval, CaseValue range)
 void CaseGenerator::Generate()
 {
     CaseValue minval=0, maxval=0;
-    unsigned count = items.size();
-    for(unsigned a=0; a < items.size(); ++a)
+    size_t count = items.size();
+    for(size_t a=0; a < items.size(); ++a)
     {
         if(!a)
         {
@@ -384,13 +384,13 @@ void CaseGenerator::Generate()
         }
         if(items[a].low != items[a].high) ++count;
     }
-    CaseValue range = maxval-minval;
     
-    unsigned size_tree  = (3+2) * count;
-    unsigned size_table = (range+1)*2 + 3+2;
 
 #if SUPPORT_TABLES
+    CaseValue range = maxval-minval;
 #if OPTIMIZE_SIZE
+    size_t size_tree  = (3+2) * count;
+    size_t size_table = (range+1)*2 + 3+2;
     if(size_tree < size_table)
 #else
     if(count < CASE_VALUES_THRESHOLD
@@ -412,7 +412,7 @@ void CaseGenerator::Generate()
 void CaseGenerator::Generate(const CaseItemList& source, const CaseLabel& over)
 {
     defaultlabel = over;
-    for(unsigned a=0; a<source.size(); ++a)
+    for(size_t a=0; a<source.size(); ++a)
     {
         const CaseItem& item = source[a];
         std::set<CaseValue>::const_iterator i;
@@ -426,7 +426,7 @@ void CaseGenerator::Generate(const CaseItemList& source, const CaseLabel& over)
                 continue;
             }
 
-            for(unsigned b=0; b<items.size(); ++b)
+            for(size_t b=0; b<items.size(); ++b)
                 if(items[b].Includes(*i))
                 {
                     if(items[b].target != item.target)
@@ -439,8 +439,8 @@ void CaseGenerator::Generate(const CaseItemList& source, const CaseLabel& over)
             
             CaseValue new_low  = *i;
             CaseValue new_high = *i;
-            unsigned newnum = items.size();
-            for(unsigned b=0; b<items.size(); )
+            size_t newnum = items.size();
+            for(size_t b=0; b<items.size(); )
             {
                 if(items[b].target != item.target)
                 {

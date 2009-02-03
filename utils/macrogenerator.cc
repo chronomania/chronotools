@@ -14,7 +14,7 @@ static const std::string CreatePattern(const std::string& a, const std::string& 
     if(a == b) return a;
     std::string beginpart, endpart;
     
-    unsigned beginpartlen = 0;
+    size_t beginpartlen = 0;
     while(beginpartlen < a.size()
        && beginpartlen < b.size()
        && a[beginpartlen] == b[beginpartlen])
@@ -23,7 +23,7 @@ static const std::string CreatePattern(const std::string& a, const std::string& 
     }
     beginpart = a.substr(0, beginpartlen);
     
-    unsigned endpartlen = 0;
+    size_t endpartlen = 0;
     while(a.size() > beginpartlen + endpartlen
        && b.size() > beginpartlen + endpartlen
        && a[a.size()-endpartlen-1] == b[b.size()-endpartlen-1])
@@ -59,14 +59,14 @@ typedef codevec_t::iterator vec_it;
 
 static const std::string GetEye(const std::string& pat, const std::string& s)
 {
-    unsigned patbegin = s.size(), patend = 0, end;
+    size_t patbegin = s.size(), patend = 0, end;
     for(end=0; end<pat.size(); ++end)
         if(pat[end] == WildCard) { patbegin = end; break; }
 
-    for(unsigned a=1; a<=pat.size(); ++a)
+    for(size_t a=1; a<=pat.size(); ++a)
     {
-        unsigned patpos = pat.size()-a;
-        unsigned   spos = s.size()-a;
+        size_t patpos = pat.size()-a;
+        size_t   spos = s.size()-a;
         patend = spos;
         if(patpos <= end) break;
         if(pat[patpos] == WildCard) break;
@@ -81,8 +81,8 @@ static bool TestAcceptPattern(const std::string& pat, const std::string& s)
               << ") in (" << s
               << ")";
 */
-    unsigned patend = 0;
-    unsigned patbegin = pat.find(WildCard), end = patbegin;
+    size_t patend = 0;
+    size_t patbegin = pat.find(WildCard), end = patbegin;
     if(patbegin == pat.npos) { end = pat.size(); patbegin = s.size(); }
     
     if(s.compare(0, patbegin, pat, 0, patbegin) != 0) return false;
@@ -93,10 +93,10 @@ static bool TestAcceptPattern(const std::string& pat, const std::string& s)
         if(end+1 < pat.size() && std::isalnum(pat[end+1])) return false;
     }
     
-    for(unsigned a=1; a<=pat.size(); ++a)
+    for(size_t a=1; a<=pat.size(); ++a)
     {
-        unsigned patpos = pat.size()-a;
-        unsigned   spos = s.size()-a;
+        size_t patpos = pat.size()-a;
+        size_t   spos = s.size()-a;
         patend = spos;
         if(patpos <= end) break;
         if(pat[patpos] == WildCard) break;
@@ -112,7 +112,7 @@ static bool TestAcceptPattern(const std::string& pat, const std::string& s)
               << ")\n";
 */
     if(patstring.empty()) return true;
-    for(unsigned a=0; a<patstring.size(); ++a)
+    for(size_t a=0; a<patstring.size(); ++a)
     {
         if(!std::isalnum(patstring[a])) return false;
     }
@@ -128,7 +128,7 @@ static bool TestAcceptPatterns(const std::vector<std::string>& pats,
     for(it_it i = itlist.begin(); i != itlist.end(); ++i)
     {
         vec_it j = *i;
-        for(unsigned a=0; a<pats.size(); ++a)
+        for(size_t a=0; a<pats.size(); ++a)
         {
             if(!TestAcceptPattern(pats[a], *j)) return false;
             ++j;
@@ -168,28 +168,28 @@ void FindPatterns(codevec_t& data)
             std::string def = "#define ";
             def += macroname;
             def += '(';
-            for(unsigned p=0,w=0; w<width; ++w)
+            for(size_t p=0,w=0; w<width; ++w)
                 if(eqmap.find(w) == eqmap.end()
                 && patterns[w].find(WildCard) != patterns[w].npos)
                 {
-                    char pname[32]; std::sprintf(pname, "_p_%u", w);
+                    char pname[32]; std::sprintf(pname, "_p_%lu", w);
                     if(p++) def += ',';
                     def += pname;
                 }
             def += ") ";
             
-            for(unsigned w=0; w<patterns.size(); ++w)
+            for(size_t w=0; w<patterns.size(); ++w)
             {
                 if(w > 0) def += " : ";
                 
                 std::string cmd = patterns[w];
-                unsigned a = cmd.find(WildCard);
+                size_t a = cmd.find(WildCard);
                 if(a != cmd.npos)
                 {
-                    unsigned p = w;
+                    size_t p = w;
                     if(eqmap.find(p) != eqmap.end()) p = eqmap[p];
-                    char pname[32]; std::sprintf(pname, "_p_%u", p);
-                    unsigned len = std::string(pname).size();
+                    char pname[32]; std::sprintf(pname, "_p_%lu", p);
+                    size_t len = std::string(pname).size();
                     cmd.replace(a, 1, pname, 0, len);
                 }
                 def += cmd;
@@ -202,7 +202,7 @@ void FindPatterns(codevec_t& data)
                 vec_it pos = *i;
                 
                 std::vector<std::string> eyes(width);
-                for(unsigned w=0; w<width; ++w)
+                for(size_t w=0; w<width; ++w)
                 {
                     //std::cerr << "*pos=(" << *pos << ")\n";
                     eyes[w] = GetEye(patterns[w], *pos);
@@ -213,7 +213,7 @@ void FindPatterns(codevec_t& data)
                 
                 std::string cmd = macroname;
                 cmd += '(';
-                for(unsigned w=0; w<width; ++w)
+                for(size_t w=0; w<width; ++w)
                     if(!eyes[w].empty()
                     && eqset.find(w) == eqset.end())
                     {
@@ -231,7 +231,7 @@ void FindPatterns(codevec_t& data)
         
         void BuildEquivalences()
         {
-            unsigned depth = itlist.size();
+            size_t depth = itlist.size();
             
             patterns.resize(width);
             
@@ -240,18 +240,18 @@ void FindPatterns(codevec_t& data)
                 vec_it pos = *i, pos0 = *itlist.begin();
                 if(pos == pos0)
                 {
-                    for(unsigned w=0; w<width; ++w)
+                    for(size_t w=0; w<width; ++w)
                         patterns[w] = *pos++;
                 }
                 else
                 {
-                    for(unsigned w=0; w<width; ++w)
+                    for(size_t w=0; w<width; ++w)
                         ExpandPattern(patterns[w], *pos0++, *pos++);
                 }
             }
             
             /*
-            for(unsigned w=0; w<width; ++w)
+            for(size_t w=0; w<width; ++w)
                 std::cerr << patterns[w] << "\n";
             std::cerr << "---\n";
             */
@@ -264,12 +264,12 @@ void FindPatterns(codevec_t& data)
                 vec_it pos = *i;
                 
                 std::vector<std::string> eyes(width);
-                for(unsigned w=0; w<width; ++w)
+                for(size_t w=0; w<width; ++w)
                     eyes[w] = GetEye(patterns[w], *pos++);
                 
                 std::set<equivalence> equivalences;
-                for(unsigned a=0; a<width; ++a)
-                    for(unsigned b=a+1; b<width; ++b)
+                for(size_t a=0; a<width; ++a)
+                    for(size_t b=a+1; b<width; ++b)
                         if(eyes[a] == eyes[b])
                             equivalences.insert(std::make_pair(a, b));
                 equivs.push_back(equivalences);
@@ -279,7 +279,7 @@ void FindPatterns(codevec_t& data)
                                           i != equivs[0].end();
                                           ++i)
             {
-                for(unsigned a=1; a<equivs.size(); ++a)
+                for(size_t a=1; a<equivs.size(); ++a)
                     if(equivs[a].find(*i) == equivs[a].end())
                         goto NotOk;
                 eqall.insert(*i);
@@ -288,7 +288,7 @@ void FindPatterns(codevec_t& data)
         }
     };
     
-    unsigned bestscore=0;
+    size_t bestscore=0;
     result bestresult;
     
     for(unsigned macrosize = 4; macrosize >= 1; --macrosize)
@@ -358,10 +358,10 @@ void FindPatterns(codevec_t& data)
             }
             if(itlist.size() > 1)
             {
-                unsigned depth = itlist.size();
-                unsigned width = macrosize;
+                size_t depth = itlist.size();
+                size_t width = macrosize;
                 
-                unsigned score = depth*width;
+                size_t score = depth*width;
                 
                 if(score > bestscore)
                 {

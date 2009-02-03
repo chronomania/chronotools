@@ -23,6 +23,7 @@ CXX=$(HOST)g++
 CC=$(HOST)gcc
 CPP=$(HOST)gcc
 
+#CPPFLAGS += -Wno-effc++ -Werror -Wno-conversion
 
 DEPDIRS = utils/
 
@@ -145,6 +146,7 @@ DEPDIRS = utils/
 # VERSION 1.15.3.4 changes in portability, documentation, and RLE IPS support.
 # VERSION 1.15.3.5 drops support for Windows versions.
 # VERSION 1.15.4 adds packedblob support and fixes compilation on certain platforms.
+# VERSION 1.15.5 improves compilability on more modern gcc versions
 
 #OPTIM=-Os
 # -fshort-enums
@@ -161,9 +163,9 @@ CFLAGS += -I/usr/include/slang
 LDFLAGS += -L/usr/lib/slang
 
 
-VERSION=1.15.4
+VERSION=1.15.5
 ARCHFILES=utils/xray.cc utils/xray.h \
-          utils/viewer.c \
+          utils/viewer.c utils/cp437-8x8 \
           utils/vwftest.cc \
           utils/spacefind.cc \
           utils/base62.cc \

@@ -14,13 +14,13 @@
 
 namespace
 {
-    typedef rangeset<unsigned> rommap;
-    typedef rangemap<unsigned, std::wstring> reasonmap;
+    typedef rangeset<size_t> rommap;
+    typedef rangemap<size_t, std::wstring> reasonmap;
 
     rommap space, protect;
     reasonmap reasons;
     
-    unsigned known_romsize = 0;
+    size_t known_romsize = 0;
 }
 
 unsigned char *ROM;
@@ -34,37 +34,37 @@ unsigned char *ROM;
 namespace
 {
     void MarkingMessage(const char* msgtype,
-                        const std::set<unsigned>& errlist,
+                        const std::set<size_t>& errlist,
                         const std::wstring& why,
                         const char* type)
     {
-        std::set<unsigned>::const_iterator i;
+        std::set<size_t>::const_iterator i;
         
         bool begun=false;
-        unsigned first=0;
-        unsigned prev=0;
+        size_t first=0;
+        size_t prev=0;
         
         for(i=errlist.begin(); ; ++i)
         {
             if(i == errlist.end() || (begun && prev < *i-1))
             {
                 fprintf(stderr, "%s: %06X-%06X already marked %s by %ls\n",
-                                msgtype, first,prev, type, why.c_str());
+                                msgtype, (unsigned)first, (unsigned)prev, type, why.c_str());
                 
                 std::set<std::wstring> users;
                 
                 /* Find the first element that begins after the given address */
 
                 reasonmap::const_iterator j = reasons.lower_bound(first);
-                if(j->range.lower > first)
+                if(j->lower > first)
                 {
                     if(j != reasons.begin())
                     {
                         reasonmap::const_iterator prev = j; --prev;
-                        if(prev->range.upper > first) --j;
+                        if(prev->upper > first) --j;
                     }
                 }
-                while(j != reasons.end() && j->range.lower <= prev)
+                while(j != reasons.end() && j->lower <= prev)
                 {
                     users.insert(j->value);
                     ++j;
@@ -89,45 +89,45 @@ namespace
             prev = *i;
         }
     }
-    void MarkingError(const std::set<unsigned>& errlist,
+    void MarkingError(const std::set<size_t>& errlist,
                       const std::wstring& why, const char *type)
     {
         MarkingMessage("Error", errlist, why, type);
     }
-    void MarkingWarning(const std::set<unsigned>& errlist,
+    void MarkingWarning(const std::set<size_t>& errlist,
                         const std::wstring& why, const char *type)
     {
         MarkingMessage("Warning", errlist, why, type);
     }
     
-    void SetReasons(unsigned begin, unsigned length, const std::wstring& what)
+    void SetReasons(size_t begin, size_t length, const std::wstring& what)
     {
         reasons.set(begin, begin+length, what);
     }
     
     void ExplainProtMap(FILE *log,
-                        unsigned begin, unsigned length,
+                        size_t begin, size_t length,
                         const char* type)
     {
-        unsigned endpos = begin+length;
+        size_t endpos = begin+length;
         
         reasonmap contents;
         
         contents.set(begin, endpos, L"");
         
         reasonmap::const_iterator j = reasons.lower_bound(begin);
-        if(j->range.lower > begin)
+        if(j->lower > begin)
         {
             if(j != reasons.begin())
             {
                 reasonmap::const_iterator prev = j; --prev;
-                if(prev->range.upper > begin) --j;
+                if(prev->upper > begin) --j;
             }
         }
-        while(j != reasons.end() && j->range.lower <= endpos)
+        while(j != reasons.end() && j->lower <= endpos)
         {
-            contents.set(std::max(j->range.lower, begin),
-                         std::min(j->range.upper, endpos),
+            contents.set(std::max(j->lower, begin),
+                         std::min(j->upper, endpos),
                          j->value);
             ++j;
         }
@@ -138,9 +138,9 @@ namespace
             ++i)
         {
             fprintf(log, "  %06X-%06X: %10u %-10s",
-                i->range.lower,
-                i->range.upper-1,
-                i->range.upper - i->range.lower,
+                (unsigned) (i->lower),
+                (unsigned) (i->upper - 1),
+                (unsigned) (i->upper - i->lower),
                 type);
             
             fprintf(log, "%s\n", WstrToAsc(i->value).c_str());
@@ -148,9 +148,9 @@ namespace
         }
     }
     
-    unsigned GetRomSize()
+    size_t GetRomSize()
     {
-        unsigned romsize = known_romsize;
+        size_t romsize = known_romsize;
         if(!space.empty())
         {
             rommap::const_iterator tmp = space.end(); --tmp;
@@ -169,18 +169,20 @@ namespace
     {
         bool begun=false;
         
-        unsigned romsize = GetRomSize();
+        size_t romsize = GetRomSize();
         
         std::vector<unsigned char> types(romsize);
         
         for(rommap::const_iterator i = space.begin(); i != space.end(); ++i)
-            for(unsigned a = i->lower; a < i->upper; ++a)
+            for(size_t a = i->lower; a < i->upper; ++a)
                 types[a] |= 1;
         for(rommap::const_iterator i = protect.begin(); i != protect.end(); ++i)
-            for(unsigned a = i->lower; a < i->upper; ++a)
+            for(size_t a = i->lower; a < i->upper; ++a)
                 types[a] |= 2;
         
-        for(unsigned first=0,lasttype=0, a=0; a<=romsize; ++a)
+        size_t first=0;
+        unsigned lasttype=0;
+        for(size_t a=0; a<=romsize; ++a)
         {
             unsigned type = types[a];
 
@@ -260,12 +262,12 @@ void ShowProtMap2()
            );
 }
 
-void MarkFree(unsigned begin, unsigned length, const std::wstring& reason)
+void MarkFree(size_t begin, size_t length, const std::wstring& reason)
 {
-    std::set<unsigned> error;
+    std::set<size_t> error;
     //fprintf(stderr, "Marking %u bytes free at %06X\n", length, begin);
     
-    for(unsigned n=0; n<length; ++n)
+    for(size_t n=0; n<length; ++n)
     {
         if(protect.find(begin+n) != protect.end())
             error.insert(begin+n);
@@ -279,12 +281,12 @@ void MarkFree(unsigned begin, unsigned length, const std::wstring& reason)
     if(length > 0) SetReasons(begin, length, reason);
 }
 
-void MarkProt(unsigned begin, unsigned length, const std::wstring& reason)
+void MarkProt(size_t begin, size_t length, const std::wstring& reason)
 {
-    std::set<unsigned> error, warning;
+    std::set<size_t> error, warning;
     
     //fprintf(stderr, "Marking %u bytes protected at %06X\n", length, begin);
-    for(unsigned n=0; n<length; ++n)
+    for(size_t n=0; n<length; ++n)
     {
         if(space.find(begin+n) != space.end())
             error.insert(begin+n);
@@ -299,7 +301,7 @@ void MarkProt(unsigned begin, unsigned length, const std::wstring& reason)
     if(length > 0) SetReasons(begin, length, reason);
 }
 
-void UnProt(unsigned begin, unsigned length)
+void UnProt(size_t begin, size_t length)
 {
     protect.erase(begin, begin+length);
 }
@@ -311,18 +313,18 @@ void FindEndSpaces(void)
 
 void ListSpaces(void)
 {
-    std::map<unsigned, rommap> freemap;
+    std::map<size_t, rommap> freemap;
 
     /* Divide the "free" map to pages */
     for(rommap::const_iterator i = space.begin(); i != space.end(); ++i)
     {
-        unsigned begin = i->lower;
-        unsigned end   = i->upper;
+        size_t begin = i->lower;
+        size_t end   = i->upper;
         
         while(begin < end)
         {
-            unsigned page = begin & 0xFF0000;
-            unsigned max  = page + 0x10000;
+            size_t page = begin & 0xFF0000;
+            size_t max  = page + 0x10000;
             if(max > end) max = end;
             freemap[page >> 16].set(begin - page, max - page);
             begin = max+1;
@@ -332,7 +334,7 @@ void ListSpaces(void)
     //fprintf(stderr, "Dumping free space list...");
     StartBlock(L"", L"free space");
     
-    for(map<unsigned, rommap>::const_iterator
+    for(map<size_t, rommap>::const_iterator
         i = freemap.begin(); i != freemap.end(); ++i)
     {
         PutAscii(wformat(L"*s%02X\n", i->first));
@@ -362,8 +364,8 @@ void LoadROM(FILE *fp)
         hdrskip = 512;
     }
     fseek(fp, 0, SEEK_END);
-    unsigned romsize = ftell(fp)-hdrskip;
-    fprintf(stderr, " $%X bytes...", romsize);
+    size_t romsize = ftell(fp) - hdrskip;
+    fprintf(stderr, " $%X bytes...", (unsigned)romsize);
     ROM = NULL;
 #ifdef USE_MMAP
     /* This takes about 0.0001s on my computer over nfs */
@@ -408,7 +410,7 @@ namespace
     } ROMinfo;
 }
 
-unsigned long GetROMsize()
+size_t GetROMsize()
 {
     return 0x100000 /* 1 Megabyte */
          * (ROMinfo.romsize / 8);

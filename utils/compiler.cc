@@ -4,6 +4,7 @@
 #include <map>
 #include <list>
 #include <vector>
+#include <cstdlib>
 
 #include "wstring.hh"
 #include "config.hh"
@@ -417,7 +418,7 @@ namespace
         void GenerateComparison
             (unsigned indent,
              const std::string& notjump,
-             const std::string& jump)
+             const std::string& /*jump*/)
         {
             std::string elselabel = GenLabel();
             
@@ -716,7 +717,7 @@ namespace
             if(name[0] == '\'')
                 val = getctchar(name[1], cset_12pix);
             else
-                val = strtol(WstrToAsc(name).c_str(), NULL, 10);
+                val = std::strtol(WstrToAsc(name).c_str(), NULL, 10);
             
             if(val >= 256)
             {
@@ -822,7 +823,7 @@ namespace
                 if(name[0] == '\'')
                     val = getctchar(name[1], cset_12pix);
                 else
-                    val = strtol(WstrToAsc(name).c_str(), NULL, 10);
+                    val = std::strtol(WstrToAsc(name).c_str(), NULL, 10);
                 
                 if(!A_is_16bit() && val >= 256)
                 {
@@ -910,7 +911,7 @@ namespace
                 }
 
             public:
-                CaseHandler(class Assembler& a,
+                CaseHandler(class Assembler& /*a*/,
                             const std::string &posilabel)
                 : LastWasBra(false), ChainCompare(false),
                   LastCompare(),
@@ -1934,9 +1935,9 @@ class TableParser
         /* First find out how many bytes of the mask
          * and the result are common after the star.
          */
-        unsigned result_ignore_after_star = 0;
-        unsigned result_star_pos = result.find(L'*');
-        for(unsigned b=0; b<mask.size(); ++b)
+        size_t result_ignore_after_star = 0;
+        size_t result_star_pos = result.find(L'*');
+        for(size_t b=0; b<mask.size(); ++b)
         {
             wchar_t ch = mask[b];
             if(ch == '*') continue;
@@ -1968,8 +1969,8 @@ class TableParser
         }
         
         /* Now, generate the comparison rules. */
-        unsigned last_count=0;
-        for(unsigned b=mask.size(); b-->0; )
+        size_t last_count=0;
+        for(size_t b=mask.size(); b-->0; )
         {
             wchar_t ch = mask[b];
             if(ch == '*') { break; }
@@ -2025,7 +2026,7 @@ class TableParser
         last_count -= result_ignore_after_star;
         
         bool seen_star=false;
-        for(unsigned b=0; b<result.size(); ++b)
+        for(size_t b=0; b<result.size(); ++b)
         {
             wchar_t ch = result[b];
             if(ch == '*')
@@ -2077,7 +2078,7 @@ public:
         
         collist columns;
         
-        for(unsigned a=0; a<lines.size(); ++a)
+        for(size_t a=0; a<lines.size(); ++a)
         {
             const std::wstring& line = lines[a];
             if(line.empty()) continue;
@@ -2090,7 +2091,7 @@ public:
                     if(line.size() < 3) continue;
 
                     /* Build u2l and l2u (case conversion maps) */
-                    for(unsigned b=0; b<up.size() && b<lo.size(); ++b)
+                    for(size_t b=0; b<up.size() && b<lo.size(); ++b)
                     {
                         u2l[up[b]] = lo[b]; 
                         l2u[lo[b]] = up[b];
@@ -2112,10 +2113,10 @@ public:
                 case '=':
                 {
                     /* Find the column positions and function names from the header */
-                    for(unsigned b=0; b<line.size(); ++b)
+                    for(size_t b=0; b<line.size(); ++b)
                     {
                         if(line[b]=='=' || line[b]==' ' || line[b]==' ' || line[b]=='|') continue;
-                        unsigned begin = b;
+                        size_t begin = b;
                         while(b < line.size() && line[b]!=' ')++b;
                         const std::wstring funame = line.substr(begin, b-begin);
                         columns[begin].push_back(funame);
@@ -2125,15 +2126,15 @@ public:
                 default:
                 {
                     /* Anything else - assume it's a mask */
-                    unsigned barpos = line.find(L'|');
+                    size_t barpos = line.find(L'|');
                     if(barpos == line.npos) continue;
                     
                     std::wstring mask = Trim(line.substr(0, barpos));
                     for(collist::const_iterator next, i = columns.begin(); i != columns.end(); i=next)
                     {
                         next = i; ++next;
-                        unsigned begin = i->first;
-                        unsigned end = line.size();
+                        size_t begin = i->first;
+                        size_t end = line.size();
                         if(next != columns.end()) end = next->first;
                         
                         std::wstring col = Trim(line.substr(begin, end-begin));
@@ -2319,13 +2320,13 @@ void Compile(FILE *fp)
         }
     }
     
-    for(unsigned a=0; a<file.size(); )
+    for(size_t a=0; a<file.size(); )
     {
         std::wstring Buf;
         if(1)
         {
             // Get line
-            unsigned b=a;
+            size_t b=a;
             while(b<file.size() && file[b]!='\n') ++b;
             Buf = file.substr(a, b-a); a = b+1;
         }
@@ -2382,7 +2383,7 @@ void Compile(FILE *fp)
                 std::wstring Buf;
                 
                 // Get line
-                unsigned b=a;
+                size_t b=a;
                 while(b<file.size() && file[b]!='\n') ++b;
                 Buf = file.substr(a, b-a); a = b+1;
                 
@@ -2393,14 +2394,14 @@ void Compile(FILE *fp)
         }
         else if(firstword == "VAR")
         {
-            for(unsigned a=1; a<words.size(); ++a)
+            for(size_t a=1; a<words.size(); ++a)
             {
                 Asm.DECLARE_VAR(words[a]);
             }
         }
         else if(firstword == "REG")
         {
-            for(unsigned a=1; a<words.size(); ++a)
+            for(size_t a=1; a<words.size(); ++a)
             {
                 Asm.DECLARE_REGVAR(words[a]);
             }
