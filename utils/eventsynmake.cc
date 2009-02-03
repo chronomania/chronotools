@@ -28,7 +28,7 @@ static std::vector<Cmd> cmds;
 static std::map<std::wstring, std::list<unsigned> > ops;
 
 static void BeginParam(std::wstringstream& cmdbuf,
-                       const std::wstring& pos, const std::wstring& name)
+                       const std::wstring& /*pos*/, const std::wstring& /*name*/)
 {
     /*
         add(data, pos, name)

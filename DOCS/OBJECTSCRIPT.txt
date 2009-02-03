@@ -1,0 +1,567 @@
+~;;;;;;;;;;;;;;;;;;;;;
+
+HuoneENMUODOSTUSskripti:
+  
+   MUISTIKARTTA:
+   
+     7F0580 = $1580 bytes of data for script to use.
+     7F2000 = objektien m‰‰r‰ t‰ss‰ sceness‰ (byte).
+     7F2001 = scenen koodi.
+     7F3700 = 32 bytes (?)
+     7F3720 = 32 bytes (?)
+     7F3740 = 32 bytes (?)
+     7F3760 = 32 bytes (?)
+     7F3780 =  6 bytes (?)
+     
+     BD: objektien m‰‰r‰ (talletettu).
+     6D: (objektin numero).
+     68: Suoritettavien opcodejen m‰‰r‰ yhteen putkeen.
+     67: Opcodelaskuri.
+     
+     Objektin numerolla voidaan indeksoda seuraavia tauluja:
+       0F81
+       1000
+       1001
+       1180 = pointteri suoritettavaan koodiin
+       1301
+       1400 = objektin ?paletin? osoite $E4-sivulla
+       1601
+       1680
+       1681
+       1780
+       1801
+       1881
+       1A00 = ?
+       1A01 
+       1A81 = 
+       1B01 = alustetaan nollaksi jossain vaiheessa
+       1B80 = alustetaan nollaksi jossain vaiheessa
+       1C00 = 
+       1C01 = joku flag
+       1C81 = bitmask jossa &1 ja &2
+       FE00
+     7F0B80 = tallennettu koodipointteri (op $88)
+     7F0A00 = dialog active flag (luultavasti)
+     7F0A01 = pause counter
+     7F0A80 = "result", johon mm. dialogivalinnan tulos kirjoitetaan
+     7F0B00 = 
+     7F0B01 = liittyy jotenkin animaatiohon
+     
+     Muita indeksoitavia tauluja:
+     7F0200
+
+$C0:58AB A2 00 01    LDX $0100                          A:0100 X:00FF Y:00FF D:0100 DB:00 PB:C
+$C0:58AE 86 4E       STX [$00:D+$4E]      ;$00:014E     A:0100 X:0100 Y:00FF D:0100 DB:00 PB:C
+$C0:58B0 A2 00 19    LDX $1900                          A:0100 X:0100 Y:00FF D:0100 DB:00 PB:C
+$C0:58B3 86 4B       STX [$00:D+$4B]      ;$00:014B     A:0100 X:1900 Y:00FF D:0100 DB:00 PB:C
+$C0:58B5 A9 00       LDA A, $00                         A:0100 X:1900 Y:00FF D:0100 DB:00 PB:C
+$C0:58B7 85 4D       STA [$00:D+$4D]      ;$00:014D     A:0100 X:1900 Y:00FF D:0100 DB:00 PB:C
+$C0:58B9 20 F1 2D    JSR PB:$2DF1         ;$C0:2DF1     A:0100 X:1900 Y:00FF D:0100 DB:00 PB:C
+; ^ $00:$1900 <- zerofill #$0100 bytes
+$C0:58BC A2 C0 15    LDX $15C0                          A:0180 X:0100 Y:00FF D:0100 DB:00 PB:C
+$C0:58BF 86 4E       STX [$00:D+$4E]      ;$00:014E     A:0180 X:15C0 Y:00FF D:0100 DB:00 PB:C
+$C0:58C1 A2 80 05    LDX $0580                          A:0180 X:15C0 Y:00FF D:0100 DB:00 PB:C
+$C0:58C4 86 4B       STX [$00:D+$4B]      ;$00:014B     A:0180 X:0580 Y:00FF D:0100 DB:00 PB:C
+$C0:58C6 A9 7F       LDA A, $7F                         A:0180 X:0580 Y:00FF D:0100 DB:00 PB:C
+$C0:58C8 85 4D       STA [$00:D+$4D]      ;$00:014D     A:017F X:0580 Y:00FF D:0100 DB:00 PB:C
+$C0:58CA 20 F1 2D    JSR PB:$2DF1         ;$C0:2DF1     A:017F X:0580 Y:00FF D:0100 DB:00 PB:C
+; ^ $7F:$0580 <- zerofill #$15C0 bytes
+$C0:58CD A9 80       LDA A, $80                         A:0180 X:15C0 Y:00FF D:0100 DB:00 PB:C
+$C0:58CF 85 74       STA [$00:D+$74]      ;$00:0174     A:0180 X:15C0 Y:00FF D:0100 DB:00 PB:C
+$C0:58D1 85 75       STA [$00:D+$75]      ;$00:0175     A:0180 X:15C0 Y:00FF D:0100 DB:00 PB:C
+$C0:58D3 85 76       STA [$00:D+$76]      ;$00:0176     A:0180 X:15C0 Y:00FF D:0100 DB:00 PB:C
+$C0:58D5 85 77       STA [$00:D+$77]      ;$00:0177     A:0180 X:15C0 Y:00FF D:0100 DB:00 PB:C
+$C0:58D7 A2 00 80    LDX $8000                          A:0180 X:15C0 Y:00FF D:0100 DB:00 PB:C
+$C0:58DA 86 71       STX [$00:D+$71]      ;$00:0171     A:0180 X:8000 Y:00FF D:0100 DB:00 PB:C
+$C0:58DC 64 73       STZ [$00:D+$73]      ;$00:0173     A:0180 X:8000 Y:00FF D:0100 DB:00 PB:C
+; Haetaan sceness‰ olevien objektien m‰‰r‰
+$C0:58DE AF 00 20 7F LDA $7F:$2000        ;$7F:2000     A:0180 X:8000 Y:00FF D:0100 DB:00 PB:C
+$C0:58E2 C2 20       REP $20                            A:010A X:8000 Y:00FF D:0100 DB:00 PB:C
+$C0:58E4 29 FF 00    AND A, $00FF                       A:010A X:8000 Y:00FF D:0100 DB:00 PB:C
+$C0:58E7 0A          ASL A                              A:000A X:8000 Y:00FF D:0100 DB:00 PB:C
+; Tallennetaan maksimi talteen
+$C0:58E8 85 BD       STA [$00:D+$BD]      ;$00:01BD     A:0014 X:8000 Y:00FF D:0100 DB:00 PB:C
+$C0:58EA A2 00 00    LDX $0000                          A:0014 X:8000 Y:00FF D:0100 DB:00 PB:C
+; T‰st‰ alkaa skriptilooppi!
+$C0:58ED 9E 01 1B    STZ DB:($1B01+x)     ;$00:1B01     A:0014 X:0000 Y:00FF D:0100 DB:00 PB:C
+$C0:58F0 9E 80 1B    STZ DB:($1B80+x)     ;$00:1B80     A:0014 X:0000 Y:00FF D:0100 DB:00 PB:C
+$C0:58F3 BD 00 11    LDA DB:($1100+x)     ;$00:1100     A:0014 X:0000 Y:00FF D:0100 DB:00 PB:C
+$C0:58F6 30 26       BMI $591E                          A:0007 X:0000 Y:00FF D:0100 DB:00 PB:C
+; Haetaan k‰sitelt‰v‰n objektin koodipointteri.
+$C0:58F8 BD 80 11    LDA DB:($1180+x)     ;$00:1180     A:0007 X:0000 Y:00FF D:0100 DB:00 PB:C
+; K‰sitelt‰v‰n objektin numero talteen.
+$C0:58FB 86 6D       STX [$00:D+$6D]      ;$00:016D     A:0140 X:0000 Y:00FF D:0100 DB:00 PB:C
+$C0:58FD AA          TAX                                A:0140 X:0000 Y:00FF D:0100 DB:00 PB:C
+$C0:58FE E2 20       SEP $20                            A:0140 X:0140 Y:00FF D:0100 DB:00 PB:C
+
+;Haetaan opcode
+;   X on osoite skriptiin skriptibufferissa
+;   Suoritetaan niin kauan kunnes tulee 00-opcode vastaan.
+$C0:58FE E2 20       SEP $20                            A:0140 X:0140 Y:00FF D:0100 DB:00 PB:C
+$C0:5900 BF 01 20 7F LDA $7F:($2001+x)    ;$7F:2141     A:0140 X:0140 Y:00FF D:0100 DB:00 PB:C
+$C0:5904 F0 0F       BEQ $5915                          A:01B8 X:0140 Y:00FF D:0100 DB:00 PB:C
+$C0:5906 9B          TXY                                A:01B8 X:0140 Y:00FF D:0100 DB:00 PB:C
+;   osoite talteen Y:ksi
+$C0:5907 C2 20       REP $20                            A:01B8 X:0140 Y:0140 D:0100 DB:00 PB:C
+$C0:5909 29 FF 00    AND A, $00FF                       A:01B8 X:0140 Y:0140 D:0100 DB:00 PB:C
+$C0:590C 0A          ASL A                              A:00B8 X:0140 Y:0140 D:0100 DB:00 PB:C
+$C0:590D AA          TAX                                A:0170 X:0140 Y:0140 D:0100 DB:00 PB:C
+$C0:590E E2 20       SEP $20                            A:0170 X:0170 Y:0140 D:0100 DB:00 PB:C
+; Nyt A:ssa on opcode, X:ss‰ A*2 ja Y:ss‰ skriptiosoite
+$C0:5910 FC 6E 5D    JSR [PB:word[PB:$5D6E+x]] ;$C0:3557 A:0170 X:0170 Y:0140 D:0100 DB:00 PB:
+; Tuloksena X:ss‰ on uusi skriptiosoite.
+$C0:5913 80 EB       BRA $5900                          A:01F8 X:0144 Y:0140 D:0100 DB:00 PB:C
+;^Haetaan seuraava opcode
+; Loopin loppu.
+$C0:5915 C2 20       REP $20                            A:0100 X:014F Y:014E D:0100 DB:00 PB:C
+$C0:5917 E8          INX                                A:0100 X:014F Y:014E D:0100 DB:00 PB:C
+$C0:5918 8A          TXA                                A:0100 X:0150 Y:014E D:0100 DB:00 PB:C
+; Haetaan k‰sitelt‰v‰n objektin numero.
+$C0:5919 A6 6D       LDX [$00:D+$6D]      ;$00:016D     A:0150 X:0150 Y:014E D:0100 DB:00 PB:C
+$C0:591B 9D 80 11    STA DB:($1180+x)     ;$00:1180     A:0150 X:0000 Y:014E D:0100 DB:00 PB:C
+$C0:591E E8          INX                                A:0150 X:0000 Y:014E D:0100 DB:00 PB:C
+$C0:591F E8          INX                                A:0150 X:0001 Y:014E D:0100 DB:00 PB:C
+; Jos se ei ole viel‰ maksimi,
+$C0:5920 E4 BD       CPX [$00:D+$BD]      ;$00:01BD     A:0150 X:0002 Y:014E D:0100 DB:00 PB:C
+; Niin k‰sitell‰‰n seuraava.
+$C0:5922 D0 C9       BNE $58ED                          A:0150 X:0002 Y:014E D:0100 DB:00 PB:C
+; Lopulta kaikki on k‰sitelty.
+$C0:5924 E2 20       SEP $20                            A:01AF X:0014 Y:01A4 D:0100 DB:00 PB:C0 S:06FB P:envmxdIZC HC:484 VC:131 00
+$C0:5926 82 9A 44    BRL $9DC3                          A:01AF X:0014 Y:01A4 D:0100 DB:00 PB:C0 S:06FB P:envMxdIZC HC:502 VC:131 00
+
+
+
+
+; Huoneen sis‰ll‰ looppi - jota ei n‰emm‰ k‰ytet‰ kaikkialla.
+; K‰sittelee yhden objektin skripti‰ niin kauan kunnes tulee
+; vastaan CLC tai kunnes opcodeja on k‰sitelty annettu m‰‰r‰.
+
+;Sub
+$C0:5A93 A5 68       LDA [$00:D+$68]      ;$00:0168     A:0080 X:000A Y:000E D:0100 DB:00 PB:C0 S:06F9 P:eNvMXdizc HC:1256 VC:255 00
+$C0:5A95 85 67       STA [$00:D+$67]      ;$00:0167     A:0005 X:000A Y:000E D:0100 DB:00 PB:C0 S:06F9 P:envMXdizc HC:1276 VC:255 00
+; $67 <- tavuja j‰ljell‰
+$C0:5A97 C2 20       REP $20                            A:0005 X:000A Y:000E D:0100 DB:00 PB:C0 S:06F9 P:envMXdizc HC:1296 VC:255 00
+; A <- objektin koodipointteri
+$C0:5A99 BD 80 11    LDA DB:($1180+x)     ;$00:118A     A:0005 X:000A Y:000E D:0100 DB:00 PB:C0 S:06F9 P:envmXdizc HC:1314 VC:255 00
+; $6D <- objektin numero
+$C0:5A9C 86 6D       STX [$00:D+$6D]      ;$00:016D     A:01C4 X:000A Y:000E D:0100 DB:00 PB:C0 S:06F9 P:envmXdizc HC:1348 VC:255 00
+$C0:5A9E C2 10       REP $10                            A:01C4 X:000A Y:000E D:0100 DB:00 PB:C0 S:06F9 P:envmXdizc HC:000 VC:256 00
+$C0:5AA0 AA          TAX                                A:01C4 X:000A Y:000E D:0100 DB:00 PB:C0 S:06F9 P:envmxdizc HC:018 VC:256 00
+$C0:5AA1 E2 20       SEP $20                            A:01C4 X:01C4 Y:000E D:0100 DB:00 PB:C0 S:06F9 P:envmxdizc HC:030 VC:256 00
+; Looppi. Haetaan opcode.
+$C0:5AA3 BF 01 20 7F LDA $7F:($2001+x)    ;$7F:21C5     A:01C4 X:01C4 Y:000E D:0100 DB:00 PB:C0 S:06F9 P:envMxdizc HC:048 VC:256 00
+$C0:5AA7 9B          TXY                                A:01B0 X:01C4 Y:000E D:0100 DB:00 PB:C0 S:06F9 P:eNvMxdizc HC:080 VC:256 00
+$C0:5AA8 C2 20       REP $20                            A:01B0 X:01C4 Y:01C4 D:0100 DB:00 PB:C0 S:06F9 P:envMxdizc HC:092 VC:256 00
+$C0:5AAA 29 FF 00    AND A, $00FF                       A:01B0 X:01C4 Y:01C4 D:0100 DB:00 PB:C0 S:06F9 P:envmxdizc HC:110 VC:256 00
+$C0:5AAD 0A          ASL A                              A:00B0 X:01C4 Y:01C4 D:0100 DB:00 PB:C0 S:06F9 P:envmxdizc HC:128 VC:256 00
+$C0:5AAE AA          TAX                                A:0160 X:01C4 Y:01C4 D:0100 DB:00 PB:C0 S:06F9 P:envmxdizc HC:140 VC:256 00
+$C0:5AAF E2 20       SEP $20                            A:0160 X:0160 Y:01C4 D:0100 DB:00 PB:C0 S:06F9 P:envmxdizc HC:152 VC:256 00
+$C0:5AB1 FC 6E 5D    JSR [PB:word[PB:$5D6E+x]] ;$C0:3002 A:0160 X:0160 Y:01C4 D:0100 DB:00 PB:C0 S:06F9 P:envMxdizc HC:170 VC:256 00
+;^K‰sitell‰‰n opcode.
+$C0:5AB4 90 04       BCC $5ABA                          A:0080 X:01C4 Y:000A D:0100 DB:00 PB:C0 S:06F9 P:envMxdizc HC:300 VC:257 00
+$C0:5AB6 C6 67       DEC [$00:D+$67]      ;$00:0167     A:01E3 X:01E3 Y:01FE D:0100 DB:00 PB:C0 S:06F9 P:envMxdizC HC:926 VC:001 00
+$C0:5AB8 D0 E9       BNE $5AA3                          A:01E3 X:01E3 Y:01FE D:0100 DB:00 PB:C0 S:06F9 P:envMxdizC HC:960 VC:001 00
+$C0:5ABA C2 20       REP $20                            A:0080 X:01C4 Y:000A D:0100 DB:00 PB:C0 S:06F9 P:envMxdizc HC:318 VC:257 00
+$C0:5ABC 8A          TXA                                A:0080 X:01C4 Y:000A D:0100 DB:00 PB:C0 S:06F9 P:envmxdizc HC:336 VC:257 00
+; Objektin numero takaisin X:‰‰n
+$C0:5ABD A6 6D       LDX [$00:D+$6D]      ;$00:016D     A:01C4 X:01C4 Y:000A D:0100 DB:00 PB:C0 S:06F9 P:envmxdizc HC:348 VC:257 00
+; Objektin koodipointteri talteen
+$C0:5ABF 9D 80 11    STA DB:($1180+x)     ;$00:118A     A:01C4 X:000A Y:000A D:0100 DB:00 PB:C0 S:06F9 P:envmxdizc HC:376 VC:257 00
+$C0:5AC2 E2 30       SEP $30                            A:01C4 X:000A Y:000A D:0100 DB:00 PB:C0 S:06F9 P:envmxdizc HC:410 VC:257 00
+$C0:5AC4 60          RTS                                A:01C4 X:000A Y:000A D:0100 DB:00 PB:C0 S:06F9 P:envMXdizc HC:428 VC:257 00
+;endsub
+
+
+;;; LOCATION EVENT CONSTRUCTION
+$C0:0085 20 86 0B    JSR $0B86  [$00:0B86]   A:0100 X:0002 Y:0004 D:0100 DB:00 S:06FF P:envMxdI
+$C0:0088 20 F4 00    JSR $00F4  [$00:00F4]   A:0020 X:08A0 Y:0004 D:0100 DB:00 S:06FF P:envMxdI
+; Clear objects. (Fills $1B00 with zero)
+$C0:008B 20 92 B1    JSR $B192  [$00:B192]   A:0000 X:0006 Y:0048 D:0100 DB:00 S:06FF P:envMxdI
+$C0:008E 20 A6 56    JSR $56A6  [$00:56A6]   A:0B80 X:0000 Y:0028 D:0100 DB:00 S:06FF P:envMxdI
+; Puts 32 * #$8080 to $7F1CC8
+$C0:0091 20 AA 28    JSR $28AA  [$00:28AA]   A:0016 X:0030 Y:005C D:0100 DB:00 S:06FF P:envMxdI
+$C0:0094 20 48 28    JSR $2848  [$00:2848]   A:8080 X:0020 Y:005C D:0100 DB:00 S:06FF P:envMxdI
+
+;;; LOCATION EVENT CONSTRUCTION...
+$C0:00F4 20 2B 09    JSR $092B  [$00:092B]   A:0020 X:08A0 Y:0004 D:0100 DB:00 S:06FD P:envMxdI
+$C0:00F7 20 53 1B    JSR $1B53  [$00:1B53]   A:001C X:08A0 Y:0004 D:0100 DB:00 S:06FD P:envMxdI
+$C0:00FA 20 60 09    JSR $0960  [$00:0960]   A:00FF X:001C Y:0004 D:0100 DB:00 S:06FD P:eNvMxdI
+$C0:00FD 20 CF 6D    JSR $6DCF  [$00:6DCF]   A:30FF X:1C17 Y:0004 D:0100 DB:00 S:06FD P:envMxdI
+$C0:0100 20 84 70    JSR $7084  [$00:7084]   A:5080 X:1000 Y:0004 D:0100 DB:00 S:06FD P:eNvMxdI
+$C0:0103 20 7E 7F    JSR $7F7E  [$00:7F7E]   A:FFFF X:2736 Y:2100 D:0100 DB:00 S:06FD P:envMxdI
+$C0:0106 20 3B A3    JSR $A33B  [$00:A33B]   A:0180 X:0100 Y:2100 D:0100 DB:00 S:06FD P:envMxdI
+$C0:0109 20 DD 09    JSR $09DD  [$00:09DD]   A:0425 X:0425 Y:0000 D:0100 DB:00 S:06FD P:envMxdI
+$C0:010C 20 14 0A    JSR $0A14  [$00:0A14]   A:B07E X:0006 Y:0000 D:0100 DB:00 S:06FD P:envMxdI
+; Load event.
+$C0:010F 20 D4 56    JSR $56D4  [$00:56D4]   A:C07E X:0003 Y:0000 D:0100 DB:00 S:06FD P:envMxdI
+; Initialize tilemaps.
+;   To $05B0
+$C0:0112 22 FA FF FD JSL $FDFFFA[$FD:FFFA]   A:FFFF X:5D6E Y:3786 D:0100 DB:00 S:06FD P:envMxdI
+; Initializes sprites (?)
+;   To $0520
+$C0:0116 22 F4 FF FD JSL $FDFFF4[$FD:FFF4]   A:0000 X:0093 Y:003C D:0100 DB:00 S:06FD P:envMxdI
+$C0:011A 60          RTS                     A:0000 X:0006 Y:0048 D:0100 DB:00 S:06FD P:envMxdI
+
+;; Loads an event.
+$C0:56D4 C2 20       REP #$20                A:C07E X:0003 Y:0000 D:0100 DB:00 S:06FB P:envMxdI
+;; Load location number*14
+$C0:56D6 A6 FE       LDX $FE    [$00:01FE]   A:C07E X:0003 Y:0000 D:0100 DB:00 S:06FB P:envmxdI
+;; Load event handler number
+$C0:56D8 BF 08 00 F6 LDA $F60008,x[$F6:0024] A:C07E X:001C Y:0000 D:0100 DB:00 S:06FB P:envmxdI
+$C0:56DC 85 D9       STA $D9    [$00:01D9]   A:0144 X:001C Y:0000 D:0100 DB:00 S:06FB P:envmxdI
+$C0:56DE 18          CLC                     A:0144 X:001C Y:0000 D:0100 DB:00 S:06FB P:envmxdI
+$C0:56DF 65 D9       ADC $D9    [$00:01D9]   A:0144 X:001C Y:0000 D:0100 DB:00 S:06FB P:envmxdI
+$C0:56E1 65 D9       ADC $D9    [$00:01D9]   A:0288 X:001C Y:0000 D:0100 DB:00 S:06FB P:envmxdI
+;; Multiply by 3, then load event code pointer
+$C0:56E3 AA          TAX                     A:03CC X:001C Y:0000 D:0100 DB:00 S:06FB P:envmxdI
+$C0:56E4 BF F0 F9 FC LDA $FCF9F0,x[$FC:FDBC] A:03CC X:03CC Y:0000 D:0100 DB:00 S:06FB P:envmxdI
+$C0:56E8 8D 00 03    STA $0300  [$00:0300]   A:051B X:03CC Y:0000 D:0100 DB:00 S:06FB P:envmxdI
+$C0:56EB A9 00 20    LDA #$2000              A:051B X:03CC Y:0000 D:0100 DB:00 S:06FB P:envmxdI
+$C0:56EE 8D 03 03    STA $0303  [$00:0303]   A:2000 X:03CC Y:0000 D:0100 DB:00 S:06FB P:envmxdI
+$C0:56F1 E2 20       SEP #$20                A:2000 X:03CC Y:0000 D:0100 DB:00 S:06FB P:envmxdI
+$C0:56F3 BF F2 F9 FC LDA $FCF9F2,x[$FC:FDBE] A:2000 X:03CC Y:0000 D:0100 DB:00 S:06FB P:envMxdI
+$C0:56F7 8D 02 03    STA $0302  [$00:0302]   A:20FB X:03CC Y:0000 D:0100 DB:00 S:06FB P:eNvMxdI
+$C0:56FA A9 7F       LDA #$7F                A:20FB X:03CC Y:0000 D:0100 DB:00 S:06FB P:eNvMxdI
+$C0:56FC 8D 05 03    STA $0305  [$00:0305]   A:207F X:03CC Y:0000 D:0100 DB:00 S:06FB P:envMxdI
+; Call decompressor
+;   decompress to $7F2000..$7F36FF
+$C0:56FF 22 02 00 C3 JSL $C30002[$C3:0002]   A:207F X:03CC Y:0000 D:0100 DB:00 S:06FB P:envMxdI
+; Verifies the event is ok
+$C0:5703 20 C7 5C    JSR $5CC7  [$00:5CC7]   A:207F X:03CC Y:0000 D:0100 DB:00 S:06FB P:envMxdI
+$C0:5706 82 E3 05    BRL $05E3  [$5CEC]      A:2014 X:1700 Y:0000 D:0100 DB:00 S:06FB P:envMxdI
+; Copies 32 bytes from $C0:5D37 to $7F:3700 (disassembly omitted)
+; Copies 32 bytes from $C0:5D50 to $7F:3720 (disassembly omitted)
+; Copies 32 bytes from $C0:5D50 to $7F:3740 (disassembly omitted)
+; Copies 32 bytes from $C0:5D50 to $7F:3760 (disassembly omitted)
+; Copies  6 bytes from $C0:5D68 to $7F:3780 (disassembly omitted)
+$C0:5D33 AB          PLB                     A:FFFF X:5D6E Y:3786 D:0100 DB:7F S:06FA P:envmxdI
+$C0:5D34 E2 20       SEP #$20                A:FFFF X:5D6E Y:3786 D:0100 DB:00 S:06FB P:envmxdI
+$C0:5D36 60          RTS                     A:FFFF X:5D6E Y:3786 D:0100 DB:00 S:06FB P:envMxdI
+
+
+; C0:5CC7 checks that the event is ok.
+; If the event begins with 0D 0A (uncompiled), it crashes with green screen.
+; If the event is > $1700 bytes long, it crashes with blue screen.
+$C0:5CC7 AF 00 20 7F LDA $7F2000[$7F:2000]   A:207F X:03CC Y:0000 D:0100 DB:00 S:06F9 P:envMxdI
+$C0:5CCB C9 0D       CMP #$0D                A:2014 X:03CC Y:0000 D:0100 DB:00 S:06F9 P:envMxdI
+$C0:5CCD D0 0E       BNE $0E    [$5CDD]      A:2014 X:03CC Y:0000 D:0100 DB:00 S:06F9 P:envMxdI
+ 005CCF AF 01 20 7F   LDA $7F2001
+ 005CD3 C9 0A         CMP #$0A
+ 005CD5 D0 06         BNE +6 (005CDD)
+ 005CD7 A2 F0 01      LDX #$01F0
+ 005CDA 82 41 D1      BRL -11967 (002E1E)
+$C0:5CDD A2 00 17    LDX #$1700              A:2014 X:03CC Y:0000 D:0100 DB:00 S:06F9 P:envMxdI
+$C0:5CE0 EC 06 03    CPX $0306  [$00:0306]   A:2014 X:1700 Y:0000 D:0100 DB:00 S:06F9 P:envMxdI
+$C0:5CE3 10 06       BPL $06    [$5CEB]      A:2014 X:1700 Y:0000 D:0100 DB:00 S:06F9 P:envMxdI
+ 005CE5 A2 0F 00      LDX #$000F
+ 005CE8 82 33 D1      BRL -11981 (002E1E)
+$C0:5CEB 60          RTS                     A:2014 X:1700 Y:0000 D:0100 DB:00 S:06F9 P:envMxdI
+
+$FD:FFFA 4C 98 DE    JMP $DE98  [$00:DE98]   A:FFFF X:5D6E Y:3786 D:0100 DB:00 S:06FA P:envMxdI
+ 3DDE98 08          PHP 
+ 3DDE99 0B          PHD 
+ 3DDE9A 8B          PHB 
+ 3DDE9B A9 00       LDA #$00
+ 3DDE9D 48          PHA
+ 3DDE9E AB          PLB 
+ 3DDE9F C2 10       REP #$10
+ 3DDEA1 E2 20       SEP #$20
+ 3DDEA3 A2 00 05    LDX #$0500
+ 3DDEA6 DA          PHX 
+ 3DDEA7 2B          PLD             ; D = $0500
+ 3DDEA8 A9 00       LDA #$00
+ 3DDEAA EB          XBA 
+ 3DDEAB AE FE 01    LDX $01FE       ; X = location number*14
+ 3DDEAE BF 01 00 F6 LDA $F60001,x   ; Load tileset number
+ 3DDEB2 29 3F       AND #$3F        
+ 3DDEB4 0A          ASL             ; X = ($F60001[X] & $3F) * 2
+ 3DDEB5 AA          TAX 
+ 3DDEB6 C2 20       REP #$20
+ 3DDEB8 BF 90 F2 FD LDA $FDF290,x   ; X = $FDF290[X]
+ 3DDEBC AA          TAX 
+ 3DDEBD A9 00 04    LDA #$0400
+ 3DDEC0 8D 81 21    STA $2181  
+ 3DDEC3 A9 0C 00    LDA #$000C
+ 3DDEC6 85 18       STA $18         ; for(i=0; i<12; ++i)
+ 3DDEC8 E2 20       SEP #$20        ; {
+ 3DDECA A9 7F       LDA #$7F
+ 3DDECC 8D 83 21    STA $2183       ;   WRAM address = $7F0400
+ 3DDECF A0 00 00    LDY #$0000      ;   Y = 0
+ 3DDED2 BF 10 F3 FD LDA $FDF310,x   ;   A = $FDF310[X++]
+ 3DDED6 E8          INX                 
+ 3DDED7 C9 80       CMP #$80        ;   if(A == $80)
+ 3DDED9 D0 08       BNE +8 (3DDEE3) ;   {
+ 3DDEDB A9 80       LDA #$80        ;     $05B3[Y] = $80
+ 3DDEDD 99 B3 05    STA $05B3,y     ;   }
+ 3DDEE0 4C 0B E0    JMP $E00B       ;   else
+ 3DDEE3 99 B0 05    STA $05B0,y     ;   {
+ 3DDEE6 BF 10 F3 FD LDA $FDF310,x   ;     $05B0[Y] = A
+ 3DDEEA 99 B2 05    STA $05B2,y     ;     $05B2[Y] = $FDF310[X++]
+ 3DDEED E8          INX                 
+ 3DDEEE BF 10 F3 FD LDA $FDF310,x       
+ 3DDEF2 99 B3 05    STA $05B3,y     ;     $05B3[Y] = $FDF310[x++]
+ 3DDEF5 E8          INX                 
+ 3DDEF6 A9 7F       LDA #$7F            
+ 3DDEF8 99 B4 05    STA $05B4,y     ;     $05B4[Y] = $7F
+ 3DDEFB B9 B0 05    LDA $05B0,y     ;     A = $05B0[Y]
+ 3DDEFE C9 02       CMP #$02        ;     If(A == $02)
+ 3DDF00 D0 63       BNE +99 (3DDF65);     {
+ 3DDF02 A9 00       LDA #$00            
+ 3DDF04 99 B0 05    STA $05B0,y     ;       $05B0[Y] = 0
+ 3DDF07 99 B1 05    STA $05B1,y     ;       $05B1[Y] = 0
+ 3DDF0A A9 04       LDA #$04        ;       for(n=0; n<4; ++n)
+ 3DDF0C 85 10       STA $10         ;       {
+ 3DDF0E C2 20       REP #$20            
+ 3DDF10 BF 10 F3 FD LDA $FDF310,x   ;         A = ($FDF310[X] & $FF) * 4
+ 3DDF14 29 FF 00    AND #$00FF          
+ 3DDF17 0A          ASL                 
+ 3DDF18 0A          ASL                 
+ 3DDF19 EB          XBA                 
+ 3DDF1A 8D 7F 21    STA $217F           
+ 3DDF1D EB          XBA                 
+ 3DDF1E 8D 7F 21    STA $217F       ;         [WRAM] = A (word); WRAM+=2
+ 3DDF21 BF 11 F3 FD LDA $FDF311,x   ;         A = ($FDF311[X] & $FF) * 4
+ 3DDF25 29 FF 00    AND #$00FF          
+ 3DDF28 0A          ASL                 
+ 3DDF29 0A          ASL                 
+ 3DDF2A EB          XBA                 
+ 3DDF2B 8D 7F 21    STA $217F           
+ 3DDF2E EB          XBA                 
+ 3DDF2F 8D 7F 21    STA $217F       ;         [WRAM] = A (word) ; WRAM+=2
+ 3DDF32 E2 20       SEP #$20            
+ 3DDF34 C6 10       DEC $10         ;       } /*for*/
+ 3DDF36 D0 D6       BNE -42 (3DDF0E)    
+ 3DDF38 E8          INX             ;       X += 2
+ 3DDF39 E8          INX                 
+ 3DDF3A A9 04       LDA #$04        ;       for(n=0; n<4; ++n)
+ 3DDF3C 85 10       STA $10         ;       {
+ 3DDF3E BF 10 F3 FD LDA $FDF310,x   ;         [WRAM] = $FDF310[X] (4 bytes)
+ 3DDF42 8D 80 21    STA $2180       ;         WRAM += 4
+ 3DDF45 BF 11 F3 FD LDA $FDF311,x       
+ 3DDF49 8D 80 21    STA $2180           
+ 3DDF4C BF 12 F3 FD LDA $FDF312,x       
+ 3DDF50 8D 80 21    STA $2180           
+ 3DDF53 BF 13 F3 FD LDA $FDF313,x       
+ 3DDF57 8D 80 21    STA $2180           
+ 3DDF5A C6 10       DEC $10             
+ 3DDF5C D0 E0       BNE -32 (3DDF3E) ;      } /*for*/
+ 3DDF5E E8          INX              ;      X += 4
+ 3DDF5F E8          INX                 
+ 3DDF60 E8          INX                 
+ 3DDF61 E8          INX              ;    }
+ 3DDF62 4C 0B E0    JMP $E00B        ;    else if(A == $04)
+ 3DDF65 C9 04       CMP #$04         ;    {
+ 3DDF67 D0 65       BNE +101 (3DDFCE)   
+ 3DDF69 A9 00       LDA #$00            
+ 3DDF6B 99 B0 05    STA $05B0,y      ;      $05B0[Y] = 0
+ 3DDF6E 99 B1 05    STA $05B1,y      ;      $05B1[Y] = 0
+ 3DDF71 A9 08       LDA #$08         ;      for(n=0; n<8; ++n)
+ 3DDF73 85 10       STA $10          ;      {
+ 3DDF75 DA          PHX              ;        if((n&3)==0) tmp=X;
+ 3DDF76 C2 20       REP #$20            
+ 3DDF78 BF 10 F3 FD LDA $FDF310,x    ;        A = ($FDF310[X++] & $FF) * 4
+ 3DDF7C E8          INX                 
+ 3DDF7D 29 FF 00    AND #$00FF          
+ 3DDF80 0A          ASL                 
+ 3DDF81 0A          ASL                 
+ 3DDF82 EB          XBA                 
+ 3DDF83 8D 7F 21    STA $217F        ;        [WRAM] = A (word); WRAM+=2
+ 3DDF86 EB          XBA                 
+ 3DDF87 8D 7F 21    STA $217F           
+ 3DDF8A E2 20       SEP #$20         ;      
+ 3DDF8C C6 10       DEC $10             
+ 3DDF8E A5 10       LDA $10             
+ 3DDF90 29 03       AND #$03         ;        if((n&3)==3) X=tmp;
+ 3DDF92 D0 E2       BNE -30 (3DDF76)    
+ 3DDF94 FA          PLX              ;      
+ 3DDF95 A5 10       LDA $10             
+ 3DDF97 D0 DC       BNE -36 (3DDF75) ;      }/*for*/
+ 3DDF99 E8          INX              ;      X += 4;
+ 3DDF9A E8          INX                 
+ 3DDF9B E8          INX                 
+ 3DDF9C E8          INX                 
+ 3DDF9D A9 08       LDA #$08         ;      for(n=0; n<8; ++n)
+ 3DDF9F 85 10       STA $10          ;      {
+ 3DDFA1 DA          PHX              ;        if((n&3)==0) tmp=X;
+ 3DDFA2 BF 10 F3 FD LDA $FDF310,x    ;  
+ 3DDFA6 8D 80 21    STA $2180        ;        [WRAM++] = $FDF310[X++]
+ 3DDFA9 E8          INX              ;  
+ 3DDFAA BF 10 F3 FD LDA $FDF310,x    ;        [WRAM++] = $FDF310[X++]
+ 3DDFAE 8D 80 21    STA $2180           
+ 3DDFB1 E8          INX                 
+ 3DDFB2 C6 10       DEC $10             
+ 3DDFB4 A5 10       LDA $10          ;        if((n&3)==3) X=tmp;
+ 3DDFB6 29 03       AND #$03            
+ 3DDFB8 D0 E8       BNE -24 (3DDFA2)    
+ 3DDFBA FA          PLX                 
+ 3DDFBB A5 10       LDA $10             
+ 3DDFBD D0 E2       BNE -30 (3DDFA1) ;      } /*for*/
+ 3DDFBF C2 21       REP #$21            
+ 3DDFC1 8A          TXA                 
+ 3DDFC2 69 08 00    ADC #$0008       ;      X+=8
+ 3DDFC5 AA          TAX                 
+ 3DDFC6 A9 00 00    LDA #$0000          
+ 3DDFC9 E2 20       SEP #$20         ;    }
+ 3DDFCB 4C 0B E0    JMP $E00B        ;    else
+ 3DDFCE A9 00       LDA #$00         ;    {
+ 3DDFD0 99 B0 05    STA $05B0,y      ;      $05B0[Y] = 0
+ 3DDFD3 99 B1 05    STA $05B1,y      ;      $05B1[Y] = 0
+ 3DDFD6 A9 08       LDA #$08         ;      for(n=0; n<8; ++n)
+ 3DDFD8 85 10       STA $10          ;      {
+ 3DDFDA C2 20       REP #$20            
+ 3DDFDC BF 10 F3 FD LDA $FDF310,x    ;        A = ($FDF310[X++] & $FF) * 4
+ 3DDFE0 29 FF 00    AND #$00FF          
+ 3DDFE3 0A          ASL                 
+ 3DDFE4 0A          ASL                 
+ 3DDFE5 E2 20       SEP #$20            
+ 3DDFE7 8D 80 21    STA $2180           
+ 3DDFEA EB          XBA                 
+ 3DDFEB 8D 80 21    STA $2180        ;        [WRAM] = A (word); WRAM+=2
+ 3DDFEE E8          INX                 
+ 3DDFEF C6 10       DEC $10          ;      }
+ 3DDFF1 D0 E7       BNE -25 (3DDFDA)    
+ 3DDFF3 A9 08       LDA #$08         ;      for(n=0; n<8; ++n)
+ 3DDFF5 85 10       STA $10          ;      {
+ 3DDFF7 BF 10 F3 FD LDA $FDF310,x    ;        [WRAM++] = $FDF310[X++]
+ 3DDFFB 8D 80 21    STA $2180           
+ 3DDFFE BF 11 F3 FD LDA $FDF311,x    ;        [WRAM++] = $FDF310[X++]
+ 3DE002 8D 80 21    STA $2180           
+ 3DE005 E8          INX                 
+ 3DE006 E8          INX                 
+ 3DE007 C6 10       DEC $10          ;      }
+ 3DE009 D0 EC       BNE -20 (3DDFF7) ;    }/*endif*/
+ 3DE00B C2 21       REP #$21            }/*endif*/
+ 3DE00D 98          TYA                 
+ 3DE00E 69 05 00    ADC #$0005       ;  Y += 5
+ 3DE011 A8          TAY 
+ 3DE012 A9 00 00    LDA #$0000
+ 3DE015 E2 20       SEP #$20
+ 3DE017 C6 18       DEC $18          
+ 3DE019 F0 03       BEQ +3 (3DE01E)
+ 3DE01B 4C D2 DE    JMP $DED2        ;}/*for*/
+ 3DE01E AB          PLB 
+ 3DE01F 2B          PLD 
+ 3DE020 28          PLP 
+ 3DE021 6B          RTL 
+
+
+$FD:FFF4 4C 92 E2    JMP $E292  [$00:E292]   A:0000 X:0093 Y:003C D:0100 DB:00 S:06FA P:envMxdI
+ 3DE292 08          PHP 
+ 3DE293 0B          PHD 
+ 3DE294 8B          PHB 
+ 3DE295 A9 00       LDA #$00
+ 3DE297 48          PHA 
+ 3DE298 AB          PLB 
+ 3DE299 C2 10       REP #$10
+ 3DE29B E2 20       SEP #$20
+ 3DE29D A2 00 05    LDX #$0500
+ 3DE2A0 DA          PHX 
+ 3DE2A1 2B          PLD                          ; D = $0500
+ 3DE2A2 A9 00       LDA #$00
+ 3DE2A4 EB          XBA 
+ 3DE2A5 AE FE 01    LDX $01FE                    ; load event number * 14
+ 3DE2A8 BF 03 00 F6 LDA $F60003,x              
+ 3DE2AC 0A          ASL             
+ 3DE2AD AA          TAX                          ; X = ($F60003[X]) * 2
+ 3DE2AE C2 20       REP #$20
+ 3DE2B0 BF C7 F9 FD LDA $FDF9C7,x                ; X = $FDF9C7[X]
+ 3DE2B4 AA          TAX 
+ 3DE2B5 A9 20 05    LDA #$0520                   ; WRAM address = $00520
+ 3DE2B8 8D 81 21    STA $2181                    
+ 3DE2BB A9 0C 00    LDA #$000C                   
+ 3DE2BE 85 18       STA $18                      ; Y = 0
+ 3DE2C0 E2 20       SEP #$20
+ 3DE2C2 A9 00       LDA #$00                     ; for(Y=0; Y < $48; Y+=12)
+ 3DE2C4 8D 83 21    STA $2183                    ; {
+ 3DE2C7 A0 00 00    LDY #$0000                   
+ 3DE2CA BF 77 FA FD LDA $FDFA77,x                ;   A = $FDFA77[X]
+ 3DE2CE 29 F0       AND #$F0                     ;   switch(A & $F0)
+ 3DE2D0 F0 32       BEQ +50 (3DE304)             ;   {
+ 3DE2D2 C9 10       CMP #$10
+ 3DE2D4 F0 34       BEQ +52 (3DE30A)             ;   case $20..$70, $90..F0:
+ 3DE2D6 C9 80       CMP #$80
+ 3DE2D8 F0 30       BEQ +48 (3DE30A)
+ 3DE2DA BF 77 FA FD LDA $FDFA77,x                ;     $0520[Y] = $FDFA77[X++]
+ 3DE2DE 99 20 05    STA $0520,y
+ 3DE2E1 E8          INX 
+ 3DE2E2 BF 77 FA FD LDA $FDFA77,x                ;     $0521[Y] = $FDFA77[X++]
+ 3DE2E6 99 21 05    STA $0521,y
+ 3DE2E9 E8          INX 
+ 3DE2EA BF 77 FA FD LDA $FDFA77,x                ;     $0522[Y] = $FDFA77[X++]
+ 3DE2EE 99 22 05    STA $0522,y
+ 3DE2F1 E8          INX 
+ 3DE2F2 A9 00       LDA #$00
+ 3DE2F4 99 23 05    STA $0523,y                  ;     $0523[Y] = 0
+ 3DE2F7 99 24 05    STA $0524,y                  ;     $0524[Y] = 0
+ 3DE2FA BF 77 FA FD LDA $FDFA77,x
+ 3DE2FE 99 25 05    STA $0525,y                  ;     $0525[Y] = $FDFA77[X++]
+ 3DE301 E8          INX                          ;     break;
+ 3DE302 80 74       BRA +116 (3DE378)            ;   case $00:
+ 3DE304 E8          INX                          ;     X++;
+ 3DE305 99 20 05    STA $0520,y                  ;     $0520[Y] =0;
+ 3DE308 80 6E       BRA +110 (3DE378)            ;     break;
+ 3DE30A 48          PHA                          ;   case $10, $80:
+ 3DE30B BF 77 FA FD LDA $FDFA77,x
+ 3DE30F 99 20 05    STA $0520,y                  ;     $0520[Y] = $FDFA77[X++]
+ 3DE312 E8          INX 
+ 3DE313 BF 77 FA FD LDA $FDFA77,x
+ 3DE317 99 21 05    STA $0521,y                  ;     $0521[Y] = $FDFA77[X++]
+ 3DE31A E8          INX 
+ 3DE31B BF 77 FA FD LDA $FDFA77,x
+ 3DE31F 99 22 05    STA $0522,y                  ;     $0522[Y] = $FDFA77[X++]
+ 3DE322 E8          INX 
+ 3DE323 A9 00       LDA #$00
+ 3DE325 99 23 05    STA $0523,y                  ;     $0523[Y] = 0
+ 3DE328 99 24 05    STA $0524,y                  ;     $0524[Y] = 0
+ 3DE32B BF 77 FA FD LDA $FDFA77,x
+ 3DE32F 99 25 05    STA $0525,y                  ;     $0525[Y] = $FDFA77[X++]
+ 3DE332 E8          INX 
+ 3DE333 BF 77 FA FD LDA $FDFA77,x
+ 3DE337 99 26 05    STA $0526,y                  ;     $0526[Y] = $FDFA77[X++]
+ 3DE33A E8          INX 
+ 3DE33B BF 77 FA FD LDA $FDFA77,x
+ 3DE33F 99 27 05    STA $0527,y                  ;     $0527[Y] = $FDFA77[X++]
+ 3DE342 E8          INX 
+ 3DE343 BF 77 FA FD LDA $FDFA77,x
+ 3DE347 99 28 05    STA $0528,y                  ;     $0528[Y] = $FDFA77[X++]
+ 3DE34A E8          INX                      
+ 3DE34B 68          PLA 
+ 3DE34C C9 80       CMP #$80                     ;     If(case was $80)
+ 3DE34E D0 28       BNE +40 (3DE378);            ;     {
+ 3DE350 C2 21       REP #$21
+ 3DE352 8A          TXA 
+ 3DE353 69 77 FA    ADC #$FA77
+ 3DE356 99 29 05    STA $0529,y                  ;       $0529[Y] = (case) + $FA77
+ 3DE359 A9 00 00    LDA #$0000
+ 3DE35C E2 20       SEP #$20
+ 3DE35E A9 FD       LDA #$FD
+ 3DE360 99 2B 05    STA $052B,y                  ;       $052B[Y] = $FD
+ 3DE363 B9 20 05    LDA $0520,y
+ 3DE366 29 0F       AND #$0F
+ 3DE368 85 0E       STA $0E                      ;       [$0E] = $520[Y] & 15
+ 3DE36A 64 0F       STZ $0F                      ;       [$0F] = 0
+ 3DE36C C2 20       REP #$20
+ 3DE36E 8A          TXA 
+ 3DE36F 38          SEC 
+ 3DE370 65 0E       ADC $0E
+ 3DE372 AA          TAX                          ;       X = X + ($0520[Y] & 15)
+ 3DE373 A9 00 00    LDA #$0000
+ 3DE376 E2 20       SEP #$20                     ;       }
+ 3DE378 98          TYA                          ;   }
+ 3DE379 18          CLC 
+ 3DE37A 69 0C       ADC #$0C                     ; 
+ 3DE37C A8          TAY 
+ 3DE37D C9 48       CMP #$48                     ; }/*for*/
+ 3DE37F F0 03       BEQ +3 (3DE384)
+ 3DE381 4C CA E2    JMP $E2CA
+ 3DE384 A9 00       LDA #$00                     ; Empties the other six slots.
+ 3DE386 99 20 05    STA $0520,y                  ; $0520[Y] = 0
+ 3DE389 99 2C 05    STA $052C,y                  ; $052C[Y] = 0
+ 3DE38C 99 38 05    STA $0538,y                  ; $0538[Y] = 0
+ 3DE38F 99 44 05    STA $0544,y                  ; $0544[Y] = 0
+ 3DE392 99 50 05    STA $0550,y                  ; $0550[Y] = 0
+ 3DE395 99 5C 05    STA $055C,y                  ; $055C[Y] = 0
+ 3DE398 AB          PLB 
+ 3DE399 2B          PLD 
+ 3DE39A 28          PLP 
+ 3DE39B 6B          RTL 

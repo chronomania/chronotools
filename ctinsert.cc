@@ -200,7 +200,7 @@ namespace
     {
         unsigned size = GetROMsize();
         unsigned sizebyte = 0;
-        for(sizebyte=0; (1 << sizebyte)*1024U < size; ++sizebyte);
+        for(sizebyte=0; (1 << sizebyte)*1024U < size; ++sizebyte) {}
         
         if(size >= 0x600000)
         {

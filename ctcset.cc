@@ -24,7 +24,7 @@ namespace
         void RebuildRevmap()
         {
             revmapfirst.clear();
-            revmapfirst.resize(GetConf("font", "charcachesize"), 0);
+            revmapfirst.resize( (unsigned) GetConf("font", "charcachesize"), 0);
              
             std::wstring noncharstr = GetConf("font", "nonchar");
             wchar_t nonchar = noncharstr[0];

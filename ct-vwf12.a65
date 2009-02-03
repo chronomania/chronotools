@@ -1,0 +1,194 @@
+; EXAMPLE CODE
+
+DRAW_CHARACTER:
+	rep #$20
+	
+	; [$76] <- [$35] * 24 + #$2060
+	; Calculate pointer to the left parts of the font.
+	
+	lda $35            ; Load the symbol
+	asl : asl : asl
+	sta $6C            ; Multiply by 8 and store to temp
+	asl : adc $6C      ; Multiply by 2 and add temp (now it's multiplied by 24)
+	clc : adc #$2060   ; Add the beginning of the font
+	sta $76            ; Store to a var
+	
+	; [$79] <- ([$35] / 2) * 24 + #$3860
+	; Calculate pointer to the right parts of the font.
+	; Right parts are only 4 pixel wide, so there are two per byte.
+	
+	lda $35
+	lsr                ; divide by 2
+	asl : asl : asl    ;
+	sta $6C
+	asl : adc $6C
+	clc : adc #$3860
+	sta $79
+	
+	; [$6A] <- [$34] & 7  ; Load and store the shift position
+	
+	lda $34
+	and #$0007
+	sta $6A            
+	
+	; Store the bitmap buffer start to $73.
+	lda $10
+	clc : adc #$0008
+	sta $73
+	
+	; Store the segment part of the bitmap buffer.
+	sep #$20
+	lda $12
+	sta $75
+	
+	; Store the segment part of the font buffers.
+	lda #$FF
+	sta $78
+	sta $7B
+	
+	; Calculate a byte offset to the tile index buffer.
+	lda $34
+	and #$F8
+	lsr : lsr
+	sta $6E
+	stz $6F
+	
+	; Copy the index to the font.
+	lda $35
+	sta $62
+	
+	jsr DRAW_TILE
+	
+	lda #$00 : xba  ; Load A = $00xx
+	
+	; Load the character number
+	lda $35
+	; Subtract the actual start of the font
+	sec : sbc #$A0
+	tax
+	; Load the width of the tile
+	lda $C260E6,x
+	
+	; Add the width to the pixel position counter.
+	clc : adc $34
+	sta $34
+	
+	rts
+
+DRAW_TILE:
+
+	phb
+	 lda #$C2
+	 pha : plb
+	 
+	 ; Counter: Do 4 times
+	 lda #$04
+	 sta $68
+	 
+	 ; Stores the word 0 into $60.
+	 ; $60 is the X position in the font.
+	 stz $60
+	 stz $61
+	 
+	- jsr DRAW_SCANLINE
+	  rep #$20 : inc $60 : inc $73
+	  sep #$20
+	  jsr DRAW_SCANLINE
+	  rep #$20 : inc $60 : inc $73
+	  sep #$20
+	 dec $68
+	 bne -
+	 
+	 ; I don't remember what this means.
+	 ; It adds #$00F0 to word at [$73].
+	 
+	 rep #$20
+	 lda $73
+	 clc : adc #$00F0
+	 sta $73
+	 
+	 sep #$20
+	 
+	 ; Counter: Do 8 times
+	 lda #$08
+	 sta $68
+	- jsr DRAW_SCANLINE
+	  rep #$20 : inc $60 : inc $73
+	  sep #$20
+	  jsr DRAW_SCANLINE
+	  rep #$20 : inc $60 : inc $73
+	  sep #$20
+	 dec $68
+	 bne -
+	 
+	plb
+	rts
+
+DRAW_SCANLINE:
+	; Loads the bitmap from the left part of the font
+	ldy $60
+	lda [$76],y
+	xba
+	
+	; Loads the character number.
+	; If it's even, the right part of the font is in upper bits.
+	; Otherwise, it's in the lower bits.
+	lda $62
+	lsr
+	bcc cont
+     odd:
+	lda [$79],y
+	asl : asl : asl : asl
+	bra cont
+     even:
+	lda [$79],y
+	and #$F0
+     cont:
+        rep #$20
+	tay
+	stz $63
+	
+	; Load the shifting position (0..7)
+	lda $6A
+	and #$0007
+	asl
+	tax
+	tya
+	jmp (TABLE,x)
+TABLE:
+	.word s0,s1,s2,s3,s4,s5,s6,s7
+	
+s0:
+	sep #$20
+	ldx $6E
+	ldy $5FE8,x :       sta [$73],y
+	ldy $5FE6,x : xba : sta [$73],y
+	rts
+s4:	lsr
+s3:	lsr
+s2:	lsr
+s1:	lsr
+	sep #$20
+	ldx $6E
+	ldy $5FE8,x :       sta [$73],y
+	ldy $5FE6,x : xba : ora [$73],y : sta [$73],y
+	rts
+s5:	asl : rol $63
+s6:	asl : rol $63
+s7:	asl : rol $63
+	sep #$20
+	ldx $6E
+	ldy $5FEA,x :       sta [$73],y
+	ldy $5FE8,x : xba : sta [$73],y
+	ldy $5FE6,x : lda $63 : ora [$73],y : sta [$73],y
+	rts
+5FE6:	.word #$0000
+5FE8:	.word #$0010
+5FEA:	.word #$0020, #$0030, #$0040, #$0050, #$0060, #$0070,
+	.word #$0080, #$0090, #$00A0, #$00B0, #$00C0, #$00D0, #$00E0, #$00F0
+     	.word #$0200, #$0210, #$0220, #$0230, #$0240, #$0250, #$0260, #$0270
+	.word #$0280, #$0290, #$02A0, #$02B0, #$02C0, #$02D0, #$02E0, #$02F0
+     	.word #$0100, #$0110, #$0120, #$0130, #$0140, #$0150, #$0160, #$0170
+	.word #$0180, #$0190, #$01A0, #$01B0, #$01C0, #$01D0, #$01E0, #$01F0
+     	.word #$0300, #$0310, #$0320, #$0330, #$0340, #$0350, #$0360, #$0370
+	.word #$0380, #$0390, #$03A0, #$03B0, #$03C0, #$03D0, #$03E0, #$03F0

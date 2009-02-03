@@ -41,7 +41,7 @@ namespace BisqHash {
     size_t operator() (const basic_string<T> &s) const
     {
         unsigned h=0;
-        for(unsigned a=0,b=s.size(); a<b; ++a)
+        for(size_t a=0,b=s.size(); a<b; ++a)
         {
             unsigned c = s[a];
             c=h^c;
@@ -57,7 +57,7 @@ namespace BisqHash {
     size_t operator() (const std::wstring &s) const
     {
         unsigned h=0;
-        for(unsigned a=0,b=s.size(); a<b; ++a)
+        for(size_t a=0,b=s.size(); a<b; ++a)
         {
             unsigned c = s[a];
             c=h^c;

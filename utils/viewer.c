@@ -10,7 +10,20 @@
 #include <limits.h>
 #include <errno.h>
 #include <signal.h>
+#define SLsmg_printf SLsmg_printf_renamed
 #include <slang.h>
+#undef SLsmg_printf
+#include <stdarg.h>
+
+/* Slang's SLsmg_printf is defined non-const. Override that stupidity. */
+static void SLsmg_printf(const char*fmt, ...)
+{
+    va_list ap;
+    va_start(ap, fmt);
+    size_t tmp = (size_t)fmt;
+    SLsmg_vprintf( (char*)tmp, ap);
+    va_end(ap);
+}
 
 static const unsigned CT_HDR = 0;
 /*static const unsigned CT_HDR = 0x200;*/
@@ -132,7 +145,7 @@ static void initmerktab(void)
                     merktab[a][b][c][d] = n;
                 }
 }
-
+#if 0
 static unsigned char REV(unsigned char n)
 {
     n = ((n>>1) & 0x55) | ((n<<1) & 0xAA); /* Swap 0[1], 1[1] */
@@ -140,6 +153,7 @@ static unsigned char REV(unsigned char n)
     n = ((n>>4) & 0x0F) | ((n<<4) & 0xF0); /* Swap 0[4], 4[4] */
     return n;
 }
+#endif
 
 static int Equal(const unsigned char *s, const unsigned char *rom, unsigned step, int len)
 {
@@ -470,7 +484,7 @@ static void display(void)
             }
         }
 
-        if(usecset != normalset && chr == '¶')
+        if(usecset != normalset && chr == (unsigned char)'¶')
         {
 Hex:        attr = (searchtype && !(searchtype%searchstep)) ? 15 : 3;
             writ(("0123456789ABCDEF"[(unsigned char)*s>>4]), attr);
@@ -571,7 +585,7 @@ static void DoSearch(unsigned step, const unsigned char *what, int len)
         {
             oldfound = p;
             /* bingo */
-            pos = p>X*Y/3 ? p-X*Y/3 : 0;
+            pos = p > (size_t)(X*Y/3) ? p-X*Y/3 : 0;
             return;
         }
     }    
@@ -579,7 +593,7 @@ static void DoSearch(unsigned step, const unsigned char *what, int len)
 
 static void SlangUpdate(int sig)
 {
-    static const char *const colours[16] =
+    static char colours[16][14] = /* non-const because of S-lang stupidity */
     {
         "black","blue","green","cyan","red","magenta","brown","lightgray",
         "gray","brightblue","brightgreen","brightcyan",                   
@@ -594,7 +608,7 @@ static void SlangUpdate(int sig)
             SLtt_set_color(b*16+f, NULL,
                 (char *)(colours[f]),
                 (char *)(colours[b]));
-                   
+
     SLsmg_init_smg();
     SLtt_get_screen_size();
     LINES = SLtt_Screen_Rows;
@@ -603,7 +617,7 @@ static void SlangUpdate(int sig)
     SLsmg_cls();
     X=COLS, Y=LINES;
 }
-static void SlangInit()
+static void SlangInit(void)
 {
     SLang_init_tty(0,0,0);
     
@@ -680,9 +694,9 @@ Restart:
             case '': Lt: if(pos>0)pos--; Upd(); break;
             case '': Rt: pos++; Upd(); break;
             case '': Dn: if(fullhex)pos+=X/2;else pos+=X; Upd(); break;
-            case '': Up: if(pos>X)pos-=X;else pos=0; Upd(); break;
+            case '': Up: if(pos>(size_t)X)pos-=X;else pos=0; Upd(); break;
             case '': case '.': case ' ': PgDn: pos += X*Y/2; Upd(); break;
-            case '': case ',':           PgUp: if(pos>X*Y)pos -= X*Y/2;else pos=0; Upd(); break;
+            case '': case ',':           PgUp: if(pos>(size_t)(X*Y))pos -= X*Y/2;else pos=0; Upd(); break;
             case 'a': if(X>=4)--X; Upd(); break;
             case 's': if(X<900)++X; Upd(); break;
             case 'b': breaks=((breaks+1)%3); Upd(); break;
@@ -754,8 +768,7 @@ Restart:
             }
             case '/':
             {
-                char Buf[512], *t;
-                const char *s;
+                char Buf[512], *t, *s;
                 unsigned step=1;
                 unsigned base = 16;
                 SLsmg_gotorc(0,22);
@@ -800,7 +813,7 @@ Restart:
                         if(*s!=',')break;
                     }
                 }
-                DoSearch(step, Buf, t-Buf);
+                DoSearch(step, (const unsigned char*) Buf, t-Buf);
                 
                 Upd();
                 tctl(1);

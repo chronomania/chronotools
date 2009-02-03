@@ -6,7 +6,7 @@
 ROM::ROM(unsigned siz)
    : Data(), length(siz)
 {
-    unsigned romsize = GetConf("general", "romsize");
+    /*unsigned romsize =*/ GetConf("general", "romsize");
     // hmm...
 }
 

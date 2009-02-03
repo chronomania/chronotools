@@ -1,0 +1,77 @@
+#
+# This file is derived from taipus.cc, which in turn
+# is derived from taipus.rb, and attempts to describe
+# the algorithm so that it's translatable in asm.
+# 
+# It is responsible of conjugating names in the game
+# (Chrono Trigger) in the Finnish language.
+# Also used in Tales of Phantasia.
+#
+# Copyright (C) 1992,2003 Bisqwit ( http://iki.fi/bisqwit/ )
+#
+# The insertor ( http://bisqwit.iki.fi/source/chronotools.html )
+# compiles this to SNES machine code when inserting the script.
+#
+#  Syntax
+#
+#  FUNCTION name
+#     Declare a subroutine.
+#     If parameter given, it's assigned to variable "c".
+#  OUT value
+#     Outputs character in value
+#  VAR name..
+#     Define local variables. All variables are of byte size.
+#     All variables are initialized with the parameter value upon call.
+#     If no parameter was given, then undefined value.
+#  REG name..
+#     Define register variables (work like local variables,
+#     but are stored in the A register instead of the stack).
+#  LET name1 value
+#     Assign name1 from value
+#  INC name
+#     Increment the value of name
+#  DEC name
+#     Decrement the value of name
+#  { 
+#     Loop over the character name, store current character in variable "c".
+#  }
+#     End character name loop
+#     Note: Loops may not be nested. (Recursion is allowed though).
+#  ? name characters
+#     If name is in set, process subblock
+#  > name value
+#     If(name > value), process subblock
+#  = name value
+#     If(name == value), process subblock
+#  TRUE
+#     Return TRUE
+#  FALSE
+#     Return FALSE
+#  RETURN [name]
+#     If name given, return variable
+#     Return from function.
+#  IF name1 [value]
+#     Calls the bool-func name1.
+#     If value given, will be passed as param.
+#     Process subblock if true retval.
+#  CALL_GET name1 name2 [param]
+#     Calls the integer-func name1, return value to name2.
+#  CALL name1 [value]
+#     Calls a function, ignores the return value.
+#     If value given, will be passed as param.
+#
+#  All numeric constants in form 'c' are compiled in
+#  the Chrono Trigger character set instead of ASCII.
+#  Same goes for characters in the "?" command.
+#
+#  The character set of this file is the one
+#  specified in settings.hh (currently iso-8859-15).
+#
+# -- Begins here --
+
+# Returns true if the parameter is a vowel.
+FUNCTION IsVowel
+REG c
+? c aeiouy‰ˆÂÈAEIOUYƒ÷≈…0123456
+  TRUE
+FALSE

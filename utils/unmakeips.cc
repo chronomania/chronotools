@@ -3,6 +3,8 @@
 #include <vector>
 #include <map>
 
+#include <unistd.h> // for ftruncate and fileno
+
 #include "../crc32.h"
 
 using namespace std;
@@ -10,7 +12,7 @@ using namespace std;
 #define IPS_ADDRESS_EXTERN 0x01
 #define IPS_ADDRESS_GLOBAL 0x02
 
-static int Improvize(char* buf, unsigned n)
+static size_t Improvize(char* buf, size_t n)
 {
     static bool warned = false;
     if(!warned)
@@ -18,7 +20,7 @@ static int Improvize(char* buf, unsigned n)
         fprintf(stderr, "Warning: Output file will be larger than original.\n");
         warned = true;
     }
-    for(unsigned a=0; a<n; ++a)
+    for(size_t a=0; a<n; ++a)
         buf[a] = 0;
     return n;
 }
@@ -88,9 +90,9 @@ int main(int argc, const char *const *argv)
                 { fprintf(stderr, "What are you patching? Input is %lu bytes, should be %lu or %lu\n",
                     origsize, oldsize, newsize); }
         }
-        while(ftell(fp) < patchsize - 12)
+        while( (size_t)ftell(fp) < patchsize - 12)
         {
-            size_t inpos = ftell(fp);
+            /*size_t inpos = ftell(fp);*/
             size_t patchpos = ReadV(fp) + oldpos;
             if(oldpos > 0) ++patchpos;
             
@@ -102,11 +104,11 @@ int main(int argc, const char *const *argv)
             {
                 char tmp[4096];
                 size_t bytes = plainlen; if(bytes > sizeof(tmp)) bytes = sizeof(tmp);
-                int c = fread(tmp, 1, bytes, original);
-                if(c < 0 && ferror(original)) goto inferr;
+                size_t c = fread(tmp, 1, bytes, original);
+                if(c <= 0 && ferror(original)) goto inferr;
                 if(!c) c = Improvize(tmp, bytes);
-                int c2 = fwrite(tmp, 1, c, resultfile);
-                if(c2 < 0 && ferror(resultfile)) goto outferr;
+                size_t c2 = fwrite(tmp, 1, c, resultfile);
+                if(c2 <= 0 && ferror(resultfile)) goto outferr;
                 if(c2 != c) goto outfeof;
                 plainlen -= c;
             }
@@ -152,17 +154,17 @@ int main(int argc, const char *const *argv)
     for(;;)
     {
         bool rle=false;
-        int wanted,c = fread(Buf, 1, 3, fp);
-        if(c < 0 && ferror(fp)) { ipserr: perror("fread"); goto arf; }
+        size_t wanted, c = fread(Buf, 1, 3, fp);
+        if(c <= 0 && ferror(fp)) { ipserr: perror("fread"); goto arf; }
         if(c < (wanted=3)) { ipseof:
-                    fprintf(stderr, "Unexpected end of file (%s) - wanted %d, got %d\n", patchfn, wanted, c);
+                    fprintf(stderr, "Unexpected end of file (%s) - wanted %d, got %d\n", patchfn, (int)wanted, (int)c);
                     goto arf; }
         if(!strncmp((const char *)Buf, "EOF", 3))break;
         size_t pos = (((size_t)Buf[0]) << 16)
                      |(((size_t)Buf[1]) << 8)
                      | ((size_t)Buf[2]);
         c = fread(Buf, 1, 2, fp);
-        if(c < 0 && ferror(fp)) { fprintf(stderr, "Got pos %lX\n", pos); goto ipserr; }
+        if(c <= 0 && ferror(fp)) { fprintf(stderr, "Got pos %lX\n", pos); goto ipserr; }
         if(c < (wanted=2)) { goto ipseof; }
         size_t len = (((size_t)Buf[0]) << 8)
                     | ((size_t)Buf[1]);
@@ -171,7 +173,7 @@ int main(int argc, const char *const *argv)
         {
             rle=true;
             c = fread(Buf, 1, 2, fp);
-            if(c < 0 && ferror(fp)) { fprintf(stderr, "Got pos %lX\n", pos); goto ipserr; }
+            if(c <= 0 && ferror(fp)) { fprintf(stderr, "Got pos %lX\n", pos); goto ipserr; }
             if(c < (wanted=2)) { goto ipseof; }
             len = (((size_t)Buf[0]) << 8)
                  | ((size_t)Buf[1]);
@@ -187,16 +189,16 @@ int main(int argc, const char *const *argv)
         if(rle)
         {
             c = fread(&Buf2[0], 1, 1, fp);
-            if(c < 0 && ferror(fp)) { goto ipserr; }
-            if(c != (wanted=(int)1)) { goto ipseof; }
+            if(c <= 0 && ferror(fp)) { goto ipserr; }
+            if(c != (wanted=1)) { goto ipseof; }
             for(size_t c=1; c<len; ++c)
                 Buf2[c] = Buf2[0];
         }
         else
         {
             c = fread(&Buf2[0], 1, len, fp);
-            if(c < 0 && ferror(fp)) { goto ipserr; }
-            if(c != (wanted=(int)len)) { goto ipseof; }
+            if(c <= 0 && ferror(fp)) { goto ipserr; }
+            if(c != (wanted = len)) { goto ipseof; }
         }
         
         if(pos == IPS_ADDRESS_EXTERN || pos == IPS_ADDRESS_GLOBAL)
@@ -223,11 +225,11 @@ int main(int argc, const char *const *argv)
         while(plainlen > 0)
         {
             size_t bytes = plainlen; if(bytes > sizeof(tmp)) bytes = sizeof(tmp);
-            int c = fread(tmp, 1, bytes, original);
-            if(c < 0 && ferror(original)) goto inferr;
+            size_t c = fread(tmp, 1, bytes, original);
+            if(c <= 0 && ferror(original)) goto inferr;
             if(!c) c = Improvize(tmp, bytes);
-            int c2 = fwrite(tmp, 1, c, resultfile);
-            if(c2 < 0 && ferror(resultfile)) goto outferr;
+            size_t c2 = fwrite(tmp, 1, c, resultfile);
+            if(c2 <= 0 && ferror(resultfile)) goto outferr;
             if(c2 != c) goto outfeof;
             plainlen -= c;
         }
@@ -236,23 +238,23 @@ int main(int argc, const char *const *argv)
         while(skiplen > 0) // original is not necessarily seekable, thus just read it
         {
             size_t bytes = skiplen; if(bytes > sizeof(tmp)) bytes = sizeof(tmp);
-            int c = fread(tmp, 1, bytes, original);
-            if(c < 0 && ferror(original)) goto inferr;
+            size_t c = fread(tmp, 1, bytes, original);
+            if(c <= 0 && ferror(original)) goto inferr;
             if(!c) c = Improvize(tmp, bytes);
             skiplen -= c;
         }
-        int c = fwrite(&i->second[0], 1, patchlen, resultfile);
-        if(c < 0 && ferror(resultfile)) goto outferr;
-        if(c != (int)patchlen)goto outfeof;
+        size_t c = fwrite(&i->second[0], 1, patchlen, resultfile);
+        if(c <= 0 && ferror(resultfile)) goto outferr;
+        if(c != patchlen)goto outfeof;
         curpos = newpos + patchlen;
     }
     while(!feof(original))
     {
-        int c = fread(tmp, 1, sizeof tmp, original);
-        if(c < 0 && ferror(original)) goto inferr;
+        size_t c = fread(tmp, 1, sizeof tmp, original);
+        if(c <= 0 && ferror(original)) goto inferr;
         if(!c) break;
-        int c2 = fwrite(tmp, 1, c, resultfile);
-        if(c2 < 0 && ferror(resultfile)) goto outferr;
+        size_t c2 = fwrite(tmp, 1, c, resultfile);
+        if(c2 <= 0 && ferror(resultfile)) goto outferr;
         if(c2 != c) goto outfeof;
    }}
     

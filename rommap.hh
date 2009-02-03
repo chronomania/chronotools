@@ -11,15 +11,15 @@ extern unsigned char *ROM;
 void ShowProtMap();  // from dumper's view
 void ShowProtMap2(); // from insertor's view
 
-void MarkFree(unsigned begin, unsigned length, const std::wstring& reason = L"");
-void MarkProt(unsigned begin, unsigned length, const std::wstring& reason = L"");
-void UnProt(unsigned begin, unsigned length);
+void MarkFree(size_t begin, size_t length, const std::wstring& reason = L"");
+void MarkProt(size_t begin, size_t length, const std::wstring& reason = L"");
+void UnProt(size_t begin, size_t length);
 
 void LoadROM(FILE *fp);
 
 void FindEndSpaces(void);
 void ListSpaces(void);
 
-unsigned long GetROMsize();
+size_t GetROMsize();
 
 #endif

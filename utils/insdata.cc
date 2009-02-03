@@ -1,5 +1,6 @@
 #include "insdata.hh"
 #include "assemble.hh"
+#include <algorithm>
 
 const struct AddrMode AddrModes[] =
 {

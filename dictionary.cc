@@ -161,13 +161,13 @@ namespace
             return effectless.find(dictword) != effectless.end();
         }
         
-        unsigned CalcSaving(const ctstring& word, const ctstring& where) const
+        size_t CalcSaving(const ctstring& word, const ctstring& where) const
         {
-            unsigned saving = 0;
-            unsigned saved_length = CalcSize(word);
-            for(unsigned a=0; a<where.size(); )
+            size_t saving = 0;
+            size_t saved_length = CalcSize(word);
+            for(size_t a=0; a<where.size(); )
             {
-                unsigned b = where.find(word, a);
+                size_t b = where.find(word, a);
                 
                 if(b == where.npos)break;
                 
@@ -177,9 +177,9 @@ namespace
             }
             return saving;
         }
-        unsigned CalcSaving(const ctstring& word, const PageScriptList& pages) const
+        size_t CalcSaving(const ctstring& word, const PageScriptList& pages) const
         {
-            unsigned saving = 0;
+            size_t saving = 0;
             for(PageScriptList::const_iterator i=pages.begin(); i!=pages.end(); ++i)
                 saving += CalcSaving(word, i->script);
             return saving;
@@ -410,24 +410,24 @@ namespace
                     const PageScript& page = *i;
                     const ctstring& script = i->script;
                     
-                    for(unsigned a=0;;)
+                    for(size_t a=0;;)
                     {
-                        unsigned b = script.find(dictword, a);
+                        size_t b = script.find(dictword, a);
                         if(b == script.npos) break;
                         
                         //fprintf(stderr, ".");
                     
-                        const unsigned maxbeg = 3;
-                        const unsigned maxend = 3;
+                        const size_t maxbeg = 3;
+                        const size_t maxend = 3;
                     
                         bool begspace = dictword[0] == spacechar;
                         
-                        for(unsigned beglen=0; ; ++beglen)
+                        for(size_t beglen=0; ; ++beglen)
                         {
                             if(beglen > b) break;
                             
-                            unsigned begin  = b-beglen;
-                            unsigned maxlen = script.size() - (begin + dictword.size());
+                            size_t begin  = b-beglen;
+                            size_t maxlen = script.size() - (begin + dictword.size());
                             if(maxlen > maxend) maxlen = maxend;
                             
                             if(beglen > 0)
@@ -443,8 +443,8 @@ namespace
                             
                             bool endspace = dictword[dictword.size()-1] == spacechar;
                             
-                            unsigned length = dictword.size() + beglen;
-                            for(unsigned endlen=0; ; ++endlen, ++length)
+                            size_t length = dictword.size() + beglen;
+                            for(size_t endlen=0; ; ++endlen, ++length)
                             {
                                 if(endlen > 0)
                                 {
@@ -470,7 +470,7 @@ namespace
 
     #if 1
                 // Don't allow keys that are just substrings of previous dict words
-                for(unsigned d=0; d<dict.size(); ++d)
+                for(size_t d=0; d<dict.size(); ++d)
                     rejected.push_back(dict[d]);
     #endif
                 
@@ -492,20 +492,20 @@ namespace
         #if 0
                         // Calculate saving from the compressed form
                         ctstring comprword = word;
-                        for(unsigned d=0; d<dict.size(); ++d)
+                        for(size_t d=0; d<dict.size(); ++d)
                         {
                             ctchar replacement = dictbegin + d;
                             str_replace_inplace(comprword, dict[d], replacement);
                         }
                         // Each instance of the string
-                        unsigned oldbytes = CalcSize(comprword);
+                        size_t oldbytes = CalcSize(comprword);
         #else
                         // Calculate saving from the uncompressed form
-                        unsigned oldbytes = CalcSize(word);
+                        size_t oldbytes = CalcSize(word);
         #endif
                         // Will be replaced by one byte
-                        unsigned newbytes = 1;
-                        unsigned saving = oldbytes - newbytes;
+                        size_t newbytes = 1;
+                        size_t saving = oldbytes - newbytes;
                         
                         double realscore = saving * j->second;
 
@@ -519,7 +519,7 @@ namespace
                             if(word != dictword)
                             {
         #if 0
-                                for(unsigned a=0; a<dict.size(); ++a)
+                                for(size_t a=0; a<dict.size(); ++a)
                                     if(dict[a] == word)
                                     {
                                         exists = true;
@@ -539,7 +539,7 @@ namespace
                                 }
         #endif
         #if 0
-                                for(unsigned a=0; a<dict.size(); ++a)
+                                for(size_t a=0; a<dict.size(); ++a)
                                     if(dict[a].find(word) != dict[a].npos)
                                     {
                                         exists = true;
@@ -584,6 +584,7 @@ namespace
     };
 }
 
+/*
 #include <cstdarg>
 static void PreloadDict(vector<ctstring>& dict,
    const wchar_t *arg, ...)
@@ -599,6 +600,7 @@ static void PreloadDict(vector<ctstring>& dict,
     }
     va_end(ap);
 }
+*/
 
 void insertor::RebuildDictionary()
 {
@@ -821,7 +823,7 @@ NULL);
                 latest_gains[dictword] = saving;
             }
         
-        fprintf(stderr, "/%u bytes; %u/%u", CalcScriptSize(pages), dict.size(), dict_fullsize);
+        fprintf(stderr, "/%u bytes; %u/%u", (unsigned)CalcScriptSize(pages), (unsigned)dict.size(), (unsigned)dict_fullsize);
 
         Finder.Do(saved_pages, pages,
                   //dict.size(), dict_fullsize,
@@ -1004,17 +1006,18 @@ void insertor::DictionaryCompress()
     const unsigned dictbegin = 0x21;
     const unsigned dictend   = get_font_begin();
 
-    const unsigned dict_fullsize = dictend - dictbegin;
+    const size_t dict_fullsize = dictend - dictbegin;
     
     if(dict_fullsize != dict.size() && !rebuild_dict)
     {
         fprintf(stderr,
             "Warning: Dictionary size should be %u, not %u.\n"
             "         Please rebuild dictionary!\n",
-            dict_fullsize, dict.size());
+            (unsigned) dict_fullsize,
+            (unsigned) dict.size());
     }
     
-    unsigned origsize = CalculateScriptSize();
+    size_t origsize = CalculateScriptSize();
 
     if(rebuild_dict) RebuildDictionary();
     
@@ -1024,20 +1027,20 @@ void insertor::DictionaryCompress()
         ApplyDictionary();
     }
 
-    unsigned resultsize = CalculateScriptSize();
+    size_t resultsize = CalculateScriptSize();
 
-    unsigned dictbytes = 0;
-    for(unsigned a=0; a<dict.size(); ++a)dictbytes += CalcSize(dict[a]) + 1;
+    size_t dictbytes = 0;
+    for(size_t a=0; a<dict.size(); ++a)dictbytes += CalcSize(dict[a]) + 1;
     
     if(apply_dictionary)
     {
         fprintf(stderr, "> Original script size: %u bytes; new script size: %u bytes\n"
                         "> Saved: %u bytes (%.1f%% off); dictionary size: %u bytes\n",
-            origsize,
-            resultsize,
-            origsize-resultsize,
+            (unsigned) origsize,
+            (unsigned) resultsize,
+            (unsigned) (origsize-resultsize),
             (origsize-resultsize)*100.0/origsize,
-            dictbytes);
+            (unsigned) dictbytes);
     }
 
     if(rebuild_dict)
@@ -1057,17 +1060,17 @@ void insertor::DictionaryCompress()
                 ";-----------------\n"
                 ";dictionary, used for compression. don't try to translate it.\n"
                 ";-----------------\n",
-                origsize,
-                resultsize,
-                origsize-resultsize,
+                (unsigned) origsize,
+                (unsigned) resultsize,
+                (unsigned) (origsize-resultsize),
                 (origsize-resultsize)*100.0/origsize,
-                dictbytes
+                (unsigned) dictbytes
                    );
 
-            for(unsigned d=0; d<dict.size(); ++d)
+            for(size_t d=0; d<dict.size(); ++d)
             {
                 fprintf(log, "$%02X:%s;\n",
-                    dictbegin+d,
+                    (unsigned)(dictbegin+d),
                     DispString(dict[d]).c_str());
             }
             fflush(log);
@@ -1092,7 +1095,7 @@ void insertor::WriteDictionary()
 
     PagePtrList tmp;
     
-    for(unsigned a=0; a<dict.size(); ++a)
+    for(size_t a=0; a<dict.size(); ++a)
     {
         const string s = GetString(dict[a]);
         vector<unsigned char> Buf(s.size() + 1);

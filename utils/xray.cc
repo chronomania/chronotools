@@ -151,7 +151,7 @@ static void LoadPokeFont(FILE *fp)
         fseek(fp, 8, SEEK_CUR);
     }
 }
-static void putc(unsigned x,unsigned y, unsigned char ch, unsigned char c)
+/*static void putc(unsigned x,unsigned y, unsigned char ch, unsigned char c)
 {
     unsigned ax, ay;
     for(ay=0; ay<8; ay++)
@@ -160,9 +160,9 @@ static void putc(unsigned x,unsigned y, unsigned char ch, unsigned char c)
         for(ax=0; ax<8; ax++)
             ggiPutPixel(vis, x+ax, y+ay, ((b1 >> (7-ax))&1) ? c : 15);
     }
-}
+}*/
 
-static void UncompressDump(FILE *fp)
+static void UncompressDump(FILE */*fp*/)
 {
     return;
 /*
@@ -210,7 +210,7 @@ Redraw:
     
     for(;;)
     {
-        unsigned cx=0, cy=0;
+        /*unsigned cx=0, cy=0;*/
         
         unsigned sxlimit = TILESPACE_X / 8;
         unsigned sylimit = TILESPACE_Y / ylimit;

@@ -1,0 +1,117 @@
+# Does Crononick in Finnish.
+
+#BEGIN_TABLES
+## Declare the relationship between capital and small letters.
+#>ABCDEFGHIJKLMNOPQRSTUVWXYZ≈ƒ÷…
+#<abcdefghijklmnopqrstuvwxyzÂ‰ˆÈ
+## Declare some character sets.
+#:V=aeiouy‰ˆÂÈ0123456
+#:K=bcdfghjklmnpqrstvwxz
+#:P=bcdfghjklmnpqrstvwxz
+#=========| Do_Crononick
+## If the word begins with two consonants, remove the first consonant.
+#  KP*    | P*
+## If the word ends with consonant + two same consonants + vowel, remove first consonant.
+#  *PKKV  | *KKV
+## If the word ends with two same consonants + vowel, remove 1 consonant.
+#  *KKV   | *KV
+## Other choices = no changes.
+#  *      | *
+#END_TABLES
+
+# Returns true if the parameter is a vowel.
+FUNCTION IsVowel
+REG c
+? c aeiouy‰ˆÂÈAEIOUYƒ÷≈…0123456
+  TRUE
+FALSE
+
+FUNCTION IsConso
+REG c
+? c bcdfghjklmnpqrstvwxzBCDFGHJKLMNPQRSTVWXZ
+  TRUE
+FALSE
+
+# Outputs the character name, but only given number of characters.
+FUNCTION OutWord
+VAR left c
+LET left c
+{
+  = left 0
+    RETURN
+  OUT c
+  DEC left
+}
+RETURN
+
+# Outputs the character name except the last N.
+FUNCTION OutWordBut
+VAR len left tmp
+REG c
+LET left c
+CALL_GET Length len
+{
+  LET tmp c
+  = len left
+    RETURN
+  DEC len
+  OUT tmp
+}
+RETURN
+
+# Calculate the length of the character name
+FUNCTION Length
+VAR Len
+REG c
+LET Len 0
+{
+  INC Len
+}
+RETURN Len
+
+# Returns the Nth last character of the character name
+FUNCTION LastCharN
+REG c
+LOAD_LAST_CHAR c c
+RETURN c
+
+FUNCTION Do_Crononick
+VAR c1 c2 c3 c4 c5 Len
+CALL_GET Length Len
+= Len 5
+  LOAD_CHAR c1 0
+  LOAD_CHAR c2 1
+  LOAD_CHAR c3 2
+  LOAD_CHAR c4 3
+  LOAD_CHAR c5 4
+  IF IsConso c1
+    IF IsConso c2
+      # If starts with two consonants
+      # Then the template is: Crono -> Rono
+      CALL_GET UpCase c2 c2
+      OUT c2
+      OUT c3
+      OUT c4
+      OUT c5
+      RETURN
+  IF IsVowel c5
+    = c3 c4
+      IF IsConso c4
+        # Jos p‰‰ttyy kahteen konsonanttiin ja yhteen vokaaliin
+        IF IsVowel c2
+          CALL OutWord 3
+          # Toka merkki oli vokaali.
+          # T‰llˆin malli on: Mikko -> Miko
+          OUT c5
+          RETURN
+        CALL OutWord 1
+        # Ei, toka merkki on konsonantti.
+        # T‰llˆin malli on: Ilkka -> Ikka
+        OUT c3
+        OUT c4
+        OUT c5
+        RETURN
+# Something wasn't ok.
+# Default choice: unmodified name.
+CALL OutWord Len
+RETURN

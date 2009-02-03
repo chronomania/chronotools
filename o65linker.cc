@@ -63,7 +63,7 @@ public:
     {
     }
     const std::string& GetName() const { return name; }
-    const unsigned GetAddress() const { return address; }
+    unsigned GetAddress() const { return address; }
     bool IsUsed() const { return used; }
     void Use() { used=true; }
 };

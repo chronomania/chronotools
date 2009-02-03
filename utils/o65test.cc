@@ -13,7 +13,7 @@ int main(void)
     
     const vector<unsigned char>& code = tmp.GetSeg(CODE);
     
-    printf("Code size: %u bytes\n", code.size());
+    printf("Code size: %lu bytes\n", code.size());
     
     printf(" Write_4bit is at %06X\n", tmp.GetSymAddress(CODE, "Write_4bit"));
     printf(" NextTile is at %06X\n", tmp.GetSymAddress(CODE, "NextTile"));

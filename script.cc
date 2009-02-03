@@ -256,7 +256,7 @@ const ctstring insertor::ParseScriptEntry(const wstring &input, const stringdata
         else if(is_dialog && !code.compare(0, delay.size(), delay))
         {
             result += (ctchar)3;
-            result += (ctchar)atoi(code.c_str() + delay.size(), 10);
+            result += (ctchar)atoi(code.c_str() + delay.size(), 16);
         }
         else if(is_dialog && code == tech)
         {

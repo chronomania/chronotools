@@ -1,0 +1,1213 @@
+#ifndef OMIT_IsVowel
+IsVowel:
+	sep #$20
+	.as : cmp #$BE
+	beq L128
+	bcs L125
+	cmp #$AE
+	beq L128
+	bcs L123
+	cmp #$A4
+	beq L128
+	bcs L122
+	cmp #$A0
+	bne L129
+	bra L128
+L122:
+	cmp #$A8
+	bne L129
+	bra L128
+L123:
+	cmp #$B8
+	beq L128
+	bcs L124
+	cmp #$B4
+	bne L129
+	bra L128
+L124:
+	cmp #$BA
+	bne L129
+	bra L128
+L125:
+	cmp #$D2
+	beq L128
+	bcs L127
+	cmp #$C8
+	beq L128
+	bcs L126
+	cmp #$C2
+	bne L129
+	bra L128
+L126:
+	cmp #$CE
+	bne L129
+	bra L128
+L127:
+	cmp #$E0
+	bcc L129
+	cmp #$E4
+	bcc L128
+	sbc #$F0
+	cmp #$4
+	bcs L129
+L128:
+	sec
+	rts
+L129:
+	clc
+	rts
+#endif
+#ifndef OMIT_IsVowelTypeChar
+IsVowelTypeChar:
+	sep #$20
+	pha
+	sta $1,s
+	jsr IsVowel
+	bcc L130
+	sep #$10
+	ply
+	rts
+L130:
+	lda $1,s
+	sec
+	.as : sbc #$D4
+	cmp #$7
+	bcs L131
+	sep #$11
+	ply
+	rts
+L131:
+	clc
+	sep #$10
+	ply
+	rts
+#endif
+#ifndef OMIT_IsBackVowelTypeChar
+IsBackVowelTypeChar:
+	sep #$20
+	.as : cmp #$CE
+	beq L135
+	bcs L133
+	cmp #$B4
+	beq L135
+	bcs L132
+	cmp #$A0
+	beq L135
+	cmp #$AE
+	bne L136
+	bra L135
+L132:
+	cmp #$BA
+	beq L135
+	cmp #$C8
+	bne L136
+	bra L135
+L133:
+	cmp #$D6
+	bcc L134
+	cmp #$D8
+	bcc L135
+	cmp #$DA
+	beq L135
+	cmp #$DC
+	bne L136
+	bra L135
+L134:
+	cmp #$D4
+	bne L136
+L135:
+	sec
+	rts
+L136:
+	clc
+	rts
+#endif
+#ifndef OMIT_IsFrontVowelTypeChar
+IsFrontVowelTypeChar:
+	sep #$20
+	.as : cmp #$DB
+	beq L140
+	bcs L138
+	cmp #$D5
+	beq L140
+	bcs L137
+	cmp #$B8
+	beq L140
+	cmp #$D2
+	bne L141
+	bra L140
+L137:
+	sbc #$D8
+	cmp #$2
+	bcs L141
+	bra L140
+L138:
+	cmp #$E1
+	bcc L139
+	cmp #$E3
+	bcc L140
+	sbc #$F1
+	cmp #$2
+	bcs L141
+	bra L140
+L139:
+	cmp #$DD
+	bne L141
+L140:
+	sec
+	rts
+L141:
+	clc
+	rts
+#endif
+#ifndef OMIT_IsOtherVowelTypeChar
+IsOtherVowelTypeChar:
+	sep #$20
+	.as : cmp #$BE
+	beq L144
+	bcs L142
+	cmp #$A4
+	beq L144
+	cmp #$A8
+	bne L145
+	bra L144
+L142:
+	cmp #$E3
+	beq L144
+	bcs L143
+	cmp #$C2
+	bne L145
+	bra L144
+L143:
+	cmp #$F3
+	bne L145
+L144:
+	sec
+	rts
+L145:
+	clc
+	rts
+#endif
+#ifndef OMIT_IsNumber
+IsNumber:
+	sep #$21
+	.as : sbc #$D4
+	cmp #$A
+	bcs L146
+	sec
+	rts
+L146:
+	clc
+	rts
+#endif
+#ifndef OMIT_IsKPT
+IsKPT:
+	sep #$20
+	.as : cmp #$B3
+	beq L149
+	bcs L147
+	cmp #$AA
+	beq L149
+	cmp #$AF
+	bne L150
+	bra L149
+L147:
+	cmp #$C9
+	beq L149
+	bcs L148
+	cmp #$C4
+	bne L150
+	bra L149
+L148:
+	cmp #$CD
+	bne L150
+L149:
+	sec
+	rts
+L150:
+	clc
+	rts
+#endif
+#ifndef OMIT_IsFront
+IsFront:
+	sep #$20
+	pha
+	pha
+	pha
+	pha
+	.as : lda #$0
+	sta $1,s
+	sta $2,s
+	sta $3,s
+	rep #$10
+	.xl : ldx #0
+L151:
+	jsr LoopHelper
+	beq L160
+	sta $4,s
+	lda #$1
+	sta $3,s
+	lda $4,s
+	phx
+	jsr IsBackVowelTypeChar
+	rep #$10
+	plx
+	bcc L152
+	lda #$1
+	sta $1,s
+L152:
+	lda $4,s
+	phx
+	jsr IsFrontVowelTypeChar
+	rep #$10
+	plx
+	bcc L153
+	lda #$2
+	sta $1,s
+L153:
+	lda $4,s
+	phx
+	jsr IsOtherVowelTypeChar
+	rep #$10
+	plx
+	bcc L154
+	lda #$1
+	sta $2,s
+L154:
+	lda $4,s
+	cmp #$C1
+	beq L158
+	bcs L156
+	cmp #$AA
+	beq L158
+	bcs L155
+	cmp #$A7
+	bne L159
+	bra L158
+L155:
+	cmp #$B0
+	bne L159
+	bra L158
+L156:
+	cmp #$CA
+	beq L158
+	bcs L157
+	cmp #$C4
+	bne L159
+	bra L158
+L157:
+	cmp #$E0
+	beq L158
+	cmp #$F0
+	bne L159
+L158:
+	lda #$0
+	sta $3,s
+L159:
+	inx
+	bra L151
+L160:
+	lda $1,s
+	cmp #$2
+	bne L161
+	sec
+	ply
+	ply
+	rts
+L161:
+	lda $1,s
+	cmp #$1
+	bne L162
+	clc
+	ply
+	ply
+	rts
+L162:
+	lda $2,s
+	cmp #$1
+	bne L163
+	sec
+	ply
+	ply
+	rts
+L163:
+	lda $3,s
+	cmp #$1
+	bne L164
+	sec
+	ply
+	ply
+	rts
+L164:
+	clc
+	ply
+	ply
+	rts
+#endif
+#ifndef OMIT_Length
+Length:
+	sep #$20
+	pha
+	.as : lda #$0
+	sta $1,s
+	rep #$10
+	.xl : ldx #0
+L165:
+	jsr LoopHelper
+	beq L166
+	lda $1,s
+	inc
+	sta $1,s
+	inx
+	bra L165
+L166:
+	lda $1,s
+	sep #$10
+	ply
+	rts
+#endif
+#ifndef OMIT_LastCharN
+LastCharN:
+	rep #$20
+	.al : and #$FF
+	rep #$10
+	ora #$8000
+	tax
+	jsr LoopHelper
+	rts
+#endif
+#ifndef OMIT_IsAbbrev
+IsAbbrev:
+	sep #$20
+	pha
+	pha
+	pha
+	pha
+	pha
+	.as : lda #$0
+	sta $1,s
+	sta $2,s
+	sta $3,s
+	rep #$10
+	.xl : ldx #0
+L167:
+	jsr LoopHelper
+	beq L171
+	sta $5,s
+	lda $1,s
+	inc
+	sta $1,s
+	lda #$1
+	sta $4,s
+	lda $5,s
+	phx
+	jsr IsVowel
+	rep #$10
+	plx
+	bcc L168
+	lda #$1
+	sta $2,s
+	sta $3,s
+	lda #$0
+	sta $4,s
+L168:
+	lda $5,s
+	phx
+	jsr IsNumber
+	rep #$10
+	plx
+	bcc L169
+	sep #$20
+	lda $3,s
+	cmp #$1
+	bne L169
+	lda #$0
+	sta $2,s
+L169:
+	sep #$20
+	lda $4,s
+	cmp #$1
+	bne L170
+	lda #$0
+	sta $3,s
+L170:
+	inx
+	bra L167
+L171:
+	lda $1,s
+	cmp #$1
+	bne L172
+	sep #$11
+	ply
+	ply
+	ply
+	ply
+	ply
+	rts
+L172:
+	lda $2,s
+	bne L173
+	sep #$11
+	ply
+	ply
+	ply
+	ply
+	ply
+	rts
+L173:
+	clc
+	sep #$10
+	ply
+	ply
+	ply
+	ply
+	ply
+	rts
+#endif
+#ifndef OMIT_IsEs
+IsEs:
+	sep #$20
+	.as : lda #$1
+	jsr LastCharN
+	jsr IsVowelTypeChar
+	bcc L175
+	sep #$20
+	lda #$0
+	jsr LastCharN
+	cmp #$B2
+	beq L174
+	cmp #$CC
+	bne L175
+L174:
+	sec
+	rts
+L175:
+	clc
+	rts
+#endif
+#ifndef OMIT_IsDe
+IsDe:
+	sep #$20
+	.as : lda #$1
+	jsr LastCharN
+	cmp #$A3
+	beq L176
+	cmp #$BD
+	bne L178
+L176:
+	lda #$0
+	jsr LastCharN
+	cmp #$A4
+	beq L177
+	cmp #$BE
+	bne L178
+L177:
+	sec
+	rts
+L178:
+	clc
+	rts
+#endif
+#ifndef OMIT_IsAlien
+IsAlien:
+	sep #$20
+	.as : lda #$0
+	jsr LastCharN
+	cmp #$B6
+	beq L179
+	cmp #$D0
+	bne L181
+L179:
+	lda #$1
+	jsr LastCharN
+	cmp #$AE
+	beq L180
+	cmp #$C8
+	bne L181
+L180:
+	sec
+	rts
+L181:
+	clc
+	rts
+#endif
+#ifndef OMIT_EndWithVowel
+EndWithVowel:
+	sep #$20
+	.as : lda #$0
+	jsr LastCharN
+	jsr IsVowelTypeChar
+	bcc L182
+	rts
+L182:
+	rts
+#endif
+#ifndef OMIT_DoubleHard
+DoubleHard:
+	sep #$20
+	pha
+	jsr EndWithVowel
+	bcc L183
+	sep #$20
+	.as : lda #$2
+	jsr LastCharN
+	sta $1,s
+	lda #$1
+	jsr LastCharN
+	cmp $1,s
+	bne L183
+	jsr IsKPT
+	bcc L183
+	sep #$10
+	ply
+	rts
+L183:
+	clc
+	sep #$10
+	ply
+	rts
+#endif
+#ifndef OMIT_AkiEnd
+AkiEnd:
+	sep #$20
+	.as : lda #$2
+	jsr LastCharN
+	cmp #$BA
+	beq L185
+	bcs L184
+	cmp #$A0
+	bne L188
+	bra L185
+L184:
+	cmp #$E1
+	beq L185
+	cmp #$F1
+	bne L188
+L185:
+	lda #$1
+	jsr LastCharN
+	cmp #$AA
+	beq L186
+	cmp #$C4
+	bne L188
+L186:
+	lda #$0
+	jsr LastCharN
+	cmp #$A8
+	beq L187
+	cmp #$C2
+	bne L188
+L187:
+	sec
+	rts
+L188:
+	clc
+	rts
+#endif
+#ifndef OMIT_OutWord
+OutWord:
+	sep #$20
+	pha
+	pha
+	sta $1,s
+	rep #$10
+	.xl : ldx #0
+L189:
+	jsr LoopHelper
+	beq L191
+	sta $2,s
+	lda $1,s
+	bne L190
+	ply
+	rts
+L190:
+	lda $1,s
+	dec
+	sta $1,s
+	.as : lda #0
+	xba
+	lda $2,s
+	phx
+	jsr OutcHelper
+	plx
+	inx
+	bra L189
+L191:
+	ply
+	rts
+#endif
+#ifndef OMIT_OutWordBut
+OutWordBut:
+	sep #$20
+	pha
+	pha
+	pha
+	sta $2,s
+	jsr Length
+	sta $1,s
+	rep #$10
+	.xl : ldx #0
+L192:
+	jsr LoopHelper
+	beq L194
+	sta $3,s
+	lda $1,s
+	cmp $2,s
+	bne L193
+	ply
+	sep #$10
+	ply
+	rts
+L193:
+	lda $1,s
+	dec
+	sta $1,s
+	.as : lda #0
+	xba
+	lda $3,s
+	rep #$10
+	phx
+	jsr OutcHelper
+	plx
+	inx
+	bra L192
+L194:
+	ply
+	sep #$10
+	ply
+	rts
+#endif
+#ifndef OMIT_HardStem
+HardStem:
+	sep #$20
+	pha
+	jsr IsAlien
+	bcc L195
+	.as : lda #$0
+	jsr OutWordBut
+	rep #$20
+	.al : lda #$F6
+	jsr OutcHelper
+	lda #$CD
+	sep #$10
+	ply
+	brl OutcHelper
+L195:
+	jsr IsAbbrev
+	bcc L207
+	.as : lda #$0
+	jsr OutWordBut
+	rep #$20
+	.al : lda #$EA
+	jsr OutcHelper
+	lda #$0
+	jsr LastCharN
+	sta $1,s
+	.as : cmp #$C5
+	bcc L198
+	cmp #$C8
+	bcc L200
+	cmp #$D0
+	bcc L197
+	cmp #$D2
+	bcc L200
+	cmp #$DB
+	beq L200
+	bcs L196
+	cmp #$D8
+	bne L201
+	bra L200
+L196:
+	cmp #$DD
+	bne L201
+	bra L200
+L197:
+	sec
+	sbc #$CB
+	cmp #$2
+	bcs L201
+	bra L200
+L198:
+	cmp #$B1
+	bcc L199
+	cmp #$B3
+	bcc L200
+	cmp #$B6
+	bcc L201
+	cmp #$B8
+	bcc L200
+	cmp #$BF
+	bne L201
+	bra L200
+L199:
+	cmp #$A5
+	beq L200
+	bcc L201
+	sbc #$AB
+	cmp #$3
+	bcs L201
+L200:
+	rep #$20
+	.al : lda #$F1
+	sep #$10
+	ply
+	brl OutcHelper
+L201:
+	sep #$20
+	lda $1,s
+	.as : cmp #$B9
+	beq L202
+	cmp #$D3
+	bne L203
+L202:
+	rep #$20
+	.al : lda #$BA
+	sep #$10
+	ply
+	brl OutcHelper
+L203:
+	sep #$20
+	lda $1,s
+	.as : cmp #$D9
+	bcc L204
+	cmp #$DB
+	bcc L205
+	cmp #$DC
+	bne L206
+	bra L205
+L204:
+	sec
+	sbc #$D4
+	cmp #$4
+	bcs L206
+L205:
+	sep #$10
+	ply
+	rts
+L206:
+	rep #$20
+	.al : lda #$CD
+	sep #$10
+	ply
+	brl OutcHelper
+L207:
+	jsr IsEs
+	bcc L208
+	sep #$20
+	.as : lda #$0
+	jsr OutWordBut
+	rep #$20
+	.al : lda #$CD
+	ply
+	brl OutcHelper
+L208:
+	jsr IsDe
+	bcc L209
+	.as : lda #$0
+	jsr OutWordBut
+	rep #$20
+	.al : lda #$CD
+	jsr OutcHelper
+	lda #$CD
+	sep #$10
+	ply
+	brl OutcHelper
+L209:
+	jsr EndWithVowel
+	bcc L211
+	jsr AkiEnd
+	bcc L210
+	.as : lda #$1
+	jsr OutWordBut
+	rep #$20
+	.al : lda #$BE
+	ply
+	brl OutcHelper
+L210:
+	sep #$20
+	.as : lda #$0
+	sep #$10
+	ply
+	bra OutWordBut
+L211:
+	sep #$20
+	lda #$0
+	jsr OutWordBut
+	rep #$20
+	.al : lda #$C2
+	ply
+	brl OutcHelper
+#endif
+#ifndef OMIT_SoftStem
+SoftStem:
+	jsr IsAlien
+	bcc L212
+	.as : lda #$0
+	jsr OutWordBut
+	rep #$20
+	.al : lda #$F6
+	brl OutcHelper
+L212:
+	jsr IsAbbrev
+	bcc L213
+	.as : lda #$0
+	jsr OutWordBut
+	rep #$20
+	.al : lda #$EA
+	brl OutcHelper
+L213:
+	jsr IsEs
+	bcc L214
+	sep #$20
+	.as : lda #$1
+	jsr OutWordBut
+	rep #$20
+	.al : lda #$C4
+	jsr OutcHelper
+	lda #$CC
+	jsr OutcHelper
+	lda #$BE
+	brl OutcHelper
+L214:
+	jsr IsDe
+	bcc L215
+	.as : lda #$2
+	jsr OutWordBut
+	rep #$20
+	.al : lda #$CD
+	jsr OutcHelper
+	lda #$BE
+	jsr OutcHelper
+	lda #$BE
+	brl OutcHelper
+L215:
+	jsr EndWithVowel
+	bcc L218
+	jsr DoubleHard
+	bcc L216
+	sep #$20
+	.as : lda #$2
+	jsr OutWordBut
+	lda #$0
+	jsr LastCharN
+	rep #$20
+	.al : and #$FF
+	brl OutcHelper
+L216:
+	jsr AkiEnd
+	bcc L217
+	.as : lda #$2
+	jsr OutWordBut
+	rep #$20
+	.al : lda #$BE
+	brl OutcHelper
+L217:
+	sep #$20
+	.as : lda #$0
+	bra OutWordBut
+L218:
+	sep #$20
+	lda #$0
+	jsr OutWordBut
+	rep #$20
+	.al : lda #$C2
+	brl OutcHelper
+#endif
+#ifndef OMIT_EssiveStem
+EssiveStem:
+	jsr IsAlien
+	bcc L219
+	.as : lda #$0
+	jsr OutWordBut
+	rep #$20
+	.al : lda #$F6
+	brl OutcHelper
+L219:
+	jsr IsAbbrev
+	bcc L220
+	.as : lda #$0
+	jsr OutWordBut
+	rep #$20
+	.al : lda #$EA
+	brl OutcHelper
+L220:
+	jsr IsEs
+	bcc L221
+	sep #$20
+	.as : lda #$1
+	jsr OutWordBut
+	rep #$20
+	.al : lda #$C4
+	jsr OutcHelper
+	lda #$CC
+	jsr OutcHelper
+	lda #$BE
+	brl OutcHelper
+L221:
+	jsr IsDe
+	bcc L222
+	.as : lda #$2
+	jsr OutWordBut
+	rep #$20
+	.al : lda #$CD
+	jsr OutcHelper
+	lda #$BE
+	jsr OutcHelper
+	lda #$BE
+	brl OutcHelper
+L222:
+	jsr EndWithVowel
+	bcc L224
+	jsr AkiEnd
+	bcc L223
+	.as : lda #$1
+	jsr OutWordBut
+	rep #$20
+	.al : lda #$BE
+	brl OutcHelper
+L223:
+	sep #$20
+	.as : lda #$0
+	bra OutWordBut
+L224:
+	sep #$20
+	lda #$0
+	jsr OutWordBut
+	rep #$20
+	.al : lda #$C2
+	brl OutcHelper
+#endif
+#ifndef OMIT_IllativeStem
+IllativeStem:
+	sep #$20
+	pha
+	jsr IsAlien
+	bcc L225
+	.as : lda #$0
+	jsr OutWordBut
+	rep #$20
+	.al : lda #$F6
+	jsr OutcHelper
+	lda #$C1
+	jsr OutcHelper
+	lda #$CE
+	sep #$10
+	ply
+	brl OutcHelper
+L225:
+	jsr IsAbbrev
+	bcc L226
+	.as : lda #$0
+	jsr OutWordBut
+	rep #$20
+	.al : lda #$EA
+	jsr OutcHelper
+	jsr Out_A
+	sep #$10
+	ply
+	bra Out_A
+L226:
+	jsr IsEs
+	bcc L227
+	sep #$20
+	.as : lda #$1
+	jsr OutWordBut
+	rep #$20
+	.al : lda #$C4
+	jsr OutcHelper
+	lda #$CC
+	jsr OutcHelper
+	lda #$BE
+	jsr OutcHelper
+	lda #$BE
+	sep #$10
+	ply
+	brl OutcHelper
+L227:
+	jsr IsDe
+	bcc L228
+	.as : lda #$2
+	jsr OutWordBut
+	rep #$20
+	.al : lda #$CD
+	jsr OutcHelper
+	lda #$BE
+	jsr OutcHelper
+	lda #$BE
+	jsr OutcHelper
+	lda #$CC
+	jsr OutcHelper
+	lda #$BE
+	jsr OutcHelper
+	lda #$BE
+	sep #$10
+	ply
+	brl OutcHelper
+L228:
+	jsr EndWithVowel
+	bcc L231
+	jsr DoubleHard
+	bcc L229
+	sep #$20
+	.as : lda #$2
+	jsr OutWordBut
+	lda #$0
+	jsr LastCharN
+	sta $1,s
+	rep #$20
+	.al : and #$FF
+	jsr OutcHelper
+	lda $1,s
+	and #$FF
+	sep #$10
+	ply
+	brl OutcHelper
+L229:
+	jsr AkiEnd
+	bcc L230
+	.as : lda #$2
+	jsr OutWordBut
+	rep #$20
+	.al : lda #$BE
+	jsr OutcHelper
+	lda #$BE
+	sep #$10
+	ply
+	brl OutcHelper
+L230:
+	sep #$20
+	.as : lda #$0
+	jsr OutWordBut
+	lda #$0
+	jsr LastCharN
+	sta $1,s
+	rep #$20
+	.al : and #$FF
+	sep #$10
+	ply
+	brl OutcHelper
+L231:
+	sep #$20
+	.as : lda #$0
+	jsr OutWordBut
+	rep #$20
+	.al : lda #$C2
+	jsr OutcHelper
+	lda #$C2
+	sep #$10
+	ply
+	brl OutcHelper
+#endif
+#if !defined(OMIT_Do_A) || !defined(OMIT_Do_LLA) || !defined(OMIT_Do_LTA) || !defined(OMIT_Do_NA) || !defined(OMIT_Do_SSA) || !defined(OMIT_Do_STA) || !defined(OMIT_Do_TTA) || !defined(OMIT_Out_A)
+Out_A:
+	jsr IsFront
+	bcc L232
+	rep #$20
+	.al : lda #$F1
+	brl OutcHelper
+#endif
+#ifndef OMIT_Out_A
+L232:
+	rep #$20
+	.al : lda #$BA
+	brl OutcHelper
+#endif
+#ifndef OMIT_Do_N
+Do_N:
+	jsr SoftStem
+	rep #$20
+	.al : lda #$C7
+	brl OutcHelper
+#endif
+#ifndef OMIT_Do_A
+Do_A:
+	jsr HardStem
+	bra Out_A
+#endif
+#ifndef OMIT_Do_SSA
+Do_SSA:
+	jsr SoftStem
+	rep #$20
+	.al : lda #$CC
+	jsr OutcHelper
+	lda #$CC
+	jsr OutcHelper
+	bra Out_A
+#endif
+#ifndef OMIT_Do_LLA
+Do_LLA:
+	jsr SoftStem
+	rep #$20
+	.al : lda #$C5
+	jsr OutcHelper
+	lda #$C5
+	jsr OutcHelper
+	bra Out_A
+#endif
+#ifndef OMIT_Do_LTA
+Do_LTA:
+	jsr SoftStem
+	rep #$20
+	.al : lda #$C5
+	jsr OutcHelper
+	lda #$CD
+	jsr OutcHelper
+	bra Out_A
+#endif
+#ifndef OMIT_Do_LLE
+Do_LLE:
+	jsr SoftStem
+	rep #$20
+	.al : lda #$C5
+	jsr OutcHelper
+	lda #$C5
+	jsr OutcHelper
+	lda #$BE
+	brl OutcHelper
+#endif
+#ifndef OMIT_Do_STA
+Do_STA:
+	jsr SoftStem
+	rep #$20
+	.al : lda #$CC
+	jsr OutcHelper
+	lda #$CD
+	jsr OutcHelper
+	bra Out_A
+#endif
+#ifndef OMIT_Do_TTA
+Do_TTA:
+	jsr SoftStem
+	rep #$20
+	.al : lda #$CD
+	jsr OutcHelper
+	lda #$CD
+	jsr OutcHelper
+	bra Out_A
+#endif
+#ifndef OMIT_Do_KSI
+Do_KSI:
+	jsr SoftStem
+	rep #$20
+	.al : lda #$C4
+	jsr OutcHelper
+	lda #$CC
+	jsr OutcHelper
+	lda #$C2
+	brl OutcHelper
+#endif
+#ifndef OMIT_Do_NA
+Do_NA:
+	jsr EssiveStem
+	rep #$20
+	.al : lda #$C7
+	jsr OutcHelper
+	bra Out_A
+#endif
+#ifndef OMIT_Do_HUN
+Do_HUN:
+	jsr IllativeStem
+	rep #$20
+	.al : lda #$C7
+	brl OutcHelper
+#endif
