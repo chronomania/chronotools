@@ -55,7 +55,9 @@ wstringOut::wstringOut()
 {
 #if USE_ICONV
     converter = iconv_open(charset.c_str(), midset);
+    if(converter == (iconv_t)-1) perror("iconv_open");
     tester = iconv_open(charset.c_str(), midset);
+    if(tester == (iconv_t)-1) perror("iconv_open");
 #endif
 }
 

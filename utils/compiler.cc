@@ -37,7 +37,7 @@ namespace
         char Buf[64]; std::sprintf(Buf, " $%u,s", index);
         return s + Buf;
     }
-    
+
     bool A_is_16bit()
     {
         const FlagAssumption flags = GetAssumption();
@@ -53,7 +53,7 @@ namespace
         const FlagAssumption flags = GetAssumption();
         return flags.GetXY() == Assume16bitXY;
     }
-    
+
     enum CarryAssumedState { CarrySet, CarryUnset, CarryUnknown };
     class CarryAssumption
     {
@@ -68,7 +68,7 @@ namespace
         {
             //Dump("Combining: ");
             //b.Dump(" and: ");
-            
+
             if(!b.specified) return;
             if(!specified) { state = b.state; }
             else if(state != b.state) { state=CarryUnknown; }
@@ -91,7 +91,7 @@ namespace
         bool operator== (CarryAssumedState s) const { return state == s; }
         bool operator!= (CarryAssumedState s) const { return state != s; }
     };
-    
+
     CarryAssumption assumed_carry;
     const CarryAssumption& GetCarryAssumption() { return assumed_carry; }
     void Assume(const CarryAssumption &s) { assumed_carry = s; }
@@ -102,30 +102,30 @@ namespace
     class Assembler
     {
         std::wstring CurSubName;
-        
+
         struct variable
         {
             unsigned stackpos;
             bool read,written,loaded;
             bool is_regvar;
-            
+
             variable() : stackpos(0),read(false),written(false),loaded(false),
                          is_regvar(false)
             {
             }
         };
-        
+
         typedef map<std::wstring, variable> vars_t;
         vars_t vars;
 
         bool started;       // Code begun?
         unsigned LoopCount; // How many loops active
-        
+
         struct BranchStateData
         {
             FlagAssumption  flags;
             CarryAssumption carry;
-            
+
             void CombineCurrent()
             {
                 flags.Combine(GetAssumption());
@@ -134,19 +134,19 @@ namespace
         public:
             BranchStateData(): flags(), carry() { }
         };
-        
+
         struct BranchData
         {
             unsigned level;
             std::string label;
-            
+
             BranchStateData state;
         public:
             BranchData(): level(), label(), state() { }
         };
         typedef std::list<BranchData> branchlist_t;
         branchlist_t openbranches;
-        
+
         struct FunctionData
         {
             FlagAssumption flags;
@@ -156,16 +156,16 @@ namespace
         };
         typedef map<std::wstring, FunctionData> functionlist_t;
         functionlist_t functiondata;
-        
+
         std::wstring PendingCall;
-        
+
         class ConstState
         {
             bool known;
             unsigned value;
         public:
             ConstState() : known(false),value(0) {}
-        
+
             void Invalidate() { known=false; }
             bool Known() const { return known; }
             void Set(unsigned v) { known=true; value=v; }
@@ -185,25 +185,25 @@ namespace
             void Set(const std::wstring &v) { known=true; var=v; }
             bool Is(const std::wstring &v) const { return known && var==v; }
         };
-        
+
         struct regstate
         {
             ConstState Const;
             VarState Var;
         public:
             regstate(): Const(), Var() { }
-                
+
             void Invalidate() { Const.Invalidate(); Var.Invalidate(); }
         };
-        
+
         regstate ALstate, AHstate;
-        
+
         void Invalidate_A()
         {
             ALstate.Invalidate();
             AHstate.Invalidate();
         }
-        
+
         unsigned CountMemVariables() const
         {
             // Count variables
@@ -212,14 +212,14 @@ namespace
             for(vars_t::const_iterator i=vars.begin(); i!=vars.end(); ++i)
                 if(i->second.is_regvar)
                     --varcount;
-            
+
             return varcount;
         }
-        
+
         void DeallocateVars()
         {
             unsigned varcount = CountMemVariables();
-            
+
             if(varcount >= 6
             || varcount == 4
             || XY_is_16bit())
@@ -237,12 +237,12 @@ namespace
                 varcount -= 1;
             }
         }
-        
+
         void FRAME_BEGIN()
         {
             unsigned varcount = CountMemVariables();
             functiondata[CurSubName].varcount = varcount;
-            
+
             /* Note: All vars will be initialized with A's current value */
         #if 0
             // That's why this is disabled
@@ -265,7 +265,7 @@ namespace
         void FRAME_END()
         {
             if(CurSubName.empty()) return;
-            
+
             for(vars_t::const_iterator
                 i = vars.begin();
                 i != vars.end();
@@ -289,7 +289,7 @@ namespace
                         warning);
                 }
             }
-            
+
             FINISH_BRANCHES();
             //VOID_RETURN(); - assume we've already done it
         }
@@ -300,7 +300,7 @@ namespace
         void CheckPendingCall()
         {
             if(PendingCall.empty()) return;
-            
+
             // leave A unmodified and issue call to function
 
             // X needs to be saved if we're in a loop.
@@ -308,13 +308,13 @@ namespace
             {
                 Emit("phx", Want16bitXY);
             }
-            
+
             EmitBranch("jsr", WstrToAsc(PendingCall));
             Assume(CarryUnknown);
 
             // No idea what A contains after function call.
             Invalidate_A();
-            
+
             if(PendingCall == OutcHelperName)
             {
                 // OutcHelper is assumed to return
@@ -326,19 +326,19 @@ namespace
                 const FlagAssumption& flags = functiondata[PendingCall].flags;
                 Assume(flags.GetA(), flags.GetXY());
             }
-            
+
             if(LoopCount)
             {
                 Emit("plx", Want16bitXY);
             }
-            
+
             PendingCall.clear();
         }
         void CheckCodeStart()
         {
             CheckPendingCall();
             if(started) return;
-            
+
             FRAME_BEGIN();
             started = true;
         }
@@ -359,23 +359,23 @@ namespace
                      WstrToAsc(CurSubName).c_str(), WstrToAsc(varname).c_str());
                 return 0;
             }
-            
+
             return i->second.stackpos;
         }
-        
+
         void RememberBranch(const std::string& name, unsigned ind,
                             const FlagAssumption& flags,
                             const CarryAssumption& carry)
         {
             // Remember that when entering this level,
             // must cancel this label.
-            
+
             BranchData tmp;
             tmp.level = ind;
             tmp.label = name;
             tmp.state.flags = flags;
             tmp.state.carry = carry;
-            
+
             openbranches.push_back(tmp);
         }
         void RememberBranch(const std::string& name, unsigned ind)
@@ -396,32 +396,32 @@ namespace
             FlagAssumption flags = GetAssumption();
             RememberBranch(name, ind, flags, carry);
         }
-        
+
         void EndBranch(BranchData& data)
         {
             CheckCodeStart();
-            
+
             //data.state.carry.Dump("Saved: ");
             //DumpCarry("Current: ");
-            
+
             data.state.CombineCurrent();
-            
+
             Invalidate_A();
 
             EmitLabel(data.label);
             Assume(data.state.flags.GetA(), data.state.flags.GetXY());
             Assume(data.state.carry);
-            
+
             //DumpCarry("Result: ");
         }
-        
+
         void GenerateComparison
             (unsigned indent,
              const std::string& notjump,
              const std::string& /*jump*/)
         {
             std::string elselabel = GenLabel();
-            
+
             if(notjump == "bcc")
             {
                 if(GetCarryAssumption() == CarrySet) return;
@@ -454,7 +454,7 @@ namespace
                 Assume(CarryUnset);
                 return;
             }
-            
+
             EmitBranch(notjump, elselabel);
             RememberBranch(elselabel, indent);
         }
@@ -463,7 +463,7 @@ namespace
         const std::wstring LoopHelperName;
         const std::wstring OutcHelperName;
         const std::wstring MagicVarName;
-        
+
         Assembler()
         : CurSubName(),
           vars(),
@@ -483,7 +483,7 @@ namespace
             EmitSegment("code");
             LoopCount=0;
         }
-        
+
         void INDENT_LEVEL(unsigned level)
         {
             // Go the label list in REVERSE order; First-in, last-out
@@ -504,14 +504,14 @@ namespace
             CurSubName = name;
             started = false;
             vars.clear();
-            
+
             EmitIfNDef(std::string("OMIT_") + WstrToAsc(name));
-            
+
             EmitLabel(WstrToAsc(name));
             KeepLabel(WstrToAsc(name));
             Assume(UnknownXY, UnknownA);
             Assume(CarryUnknown);
-            
+
             Invalidate_A();
         }
         void END_FUNCTION()
@@ -534,12 +534,12 @@ namespace
                 //   pha - this goes to 6E3
                 // after that, s = 6E2.
                 // Thus, [s+1] refers to var1, [s+2] to var2, and so on.
-                
+
                 unsigned stackpos = vars.size() + 1;
-                
+
                 // FIXME: Should order the vars so that reg vars are last!
                 // In order to get proper stack positions.
-                
+
                 vars[name].is_regvar = false;
                 vars[name].stackpos = stackpos;
             }
@@ -556,7 +556,7 @@ namespace
                 PendingCall.clear();
                 CheckCodeStart();
                 DeallocateVars();
-                
+
                 EmitBranch("brl", Target);
                 EmitBarrier();
                 UndefineCarry();
@@ -564,9 +564,9 @@ namespace
                 return;
             }
             CheckCodeStart();
-            
+
             DeallocateVars();
-            
+
             functiondata[CurSubName].flags.Combine(GetAssumption());
             Emit("rts");
             EmitBarrier();
@@ -576,7 +576,7 @@ namespace
         {
             CheckCodeStart();
             // emit flag, then return
-            
+
             unsigned varcount = CountMemVariables();
 
             if(value)
@@ -606,7 +606,7 @@ namespace
                 if(GetCarryAssumption() != CarryUnset)
                 {
                     // clc = false
-                    
+
                     if(varcount > 0 && !(varcount & ~ 2))
                     {
                         // Handy to set XY=16bit here too
@@ -625,17 +625,17 @@ namespace
                 VOID_RETURN();
             }
         }
-        
+
         bool IsCached(const std::wstring &name) const
         {
             return ALstate.Var.Is(name);
         }
-        
+
         void LOAD_VAR(const std::wstring &name, bool need_16bit = false)
         {
             CheckCodeStart();
             // load var to A
-            
+
             if(vars.find(name) != vars.end())
             {
                 vars[name].read = true;
@@ -654,16 +654,16 @@ namespace
 
                 unsigned stackpos = GetStackOffset(name);
                 vars[name].loaded = true;
-                
+
                 if(!vars[name].written)
                 {
                     // Now only gives this warning for memory vars.
-                    
+
                     fprintf(stderr,
                         "  Warning: In function '%s', variable '%s' was read before written.\n",
                         WstrToAsc(CurSubName).c_str(), WstrToAsc(name).c_str());
                 }
-                
+
                 if(need_16bit && !AHstate.Const.Is(0))
                 {
                     if(ALstate.Const.Is(0))
@@ -703,32 +703,32 @@ namespace
                         }
                     }
                 }
-                
+
                 Emit(CreateStackIns("lda", stackpos), Want8bitA);
 
                 ALstate.Var.Set(name);
                 ALstate.Const.Invalidate();
-                
+
                 return;
             }
-            
+
             unsigned val = 0;
-            
+
             if(name[0] == '\'')
                 val = getctchar(name[1], cset_12pix);
             else
                 val = std::strtol(WstrToAsc(name).c_str(), NULL, 10);
-            
+
             if(val >= 256)
             {
                 fprintf(stderr,
                     "  Warning: In function '%s', numeric constant %u too large (>255)\n",
                     WstrToAsc(CurSubName).c_str(), val);
             }
-            
+
             unsigned lo = val&255;
             unsigned hi = val>>8;
-            
+
             if(A_is_16bit()
             || (need_16bit && !AHstate.Const.Is(hi)))
             {
@@ -749,7 +749,7 @@ namespace
         void STORE_VAR(const std::wstring &name)
         {
             CheckCodeStart();
-            
+
             if(ALstate.Var.Is(name)) return;
 
             if(vars.find(name) == vars.end()
@@ -760,7 +760,7 @@ namespace
                 Emit(CreateStackIns("sta", stackpos), Want8bitA);
             }
             vars[name].written = true;
-            
+
             ALstate.Var.Set(name);
         }
         void INC_VAR(const std::wstring &name)
@@ -774,7 +774,7 @@ namespace
             ALstate.Const.Inc();
 
             STORE_VAR(name);
-            
+
             // curiously, lda&inc&sta don't touch carry.
         }
         void DEC_VAR(const std::wstring &name)
@@ -792,26 +792,26 @@ namespace
         void CALL_FUNC(const std::wstring &name)
         {
             CheckCodeStart();
-            
+
             PendingCall = name;
         }
         void COMPARE_BOOL(unsigned indent)
         {
             CheckCodeStart();
-            
+
             // process subblock if boolean set
-            
+
             GenerateComparison(indent, "bcc", "bcs");
         }
         void COMPARE_EQUAL(const std::wstring &name, unsigned indent)
         {
             CheckCodeStart();
-            
+
             if(vars.find(name) != vars.end())
             {
                 unsigned stackpos = GetStackOffset(name);
                 vars[name].read = vars[name].loaded = true;
-                
+
                 // process subblock if A is equal to given var
                 // Note: Checking ALstate would be useless here.
                 Emit(CreateStackIns("cmp", stackpos), Want8bitA);
@@ -819,12 +819,12 @@ namespace
             else
             {
                 unsigned val = 0;
-                
+
                 if(name[0] == '\'')
                     val = getctchar(name[1], cset_12pix);
                 else
                     val = std::strtol(WstrToAsc(name).c_str(), NULL, 10);
-                
+
                 if(!A_is_16bit() && val >= 256)
                 {
                     fprintf(stderr,
@@ -835,18 +835,18 @@ namespace
                 Emit(CreateImmedIns("cmp", val));
             }
             Assume(CarryUnknown);
-            
+
             GenerateComparison(indent, "bne", "beq");
         }
         void COMPARE_ZERO(const std::wstring &name, unsigned indent)
         {
             CheckCodeStart();
-            
+
             // process subblock if var is zero
             LOAD_VAR(name);
 
             // Note: we're not checking ALstate here, would be mostly useless check
-            
+
             GenerateComparison(indent, "bne", "beq");
         }
         void SELECT_CASE(const std::wstring &cset, unsigned indent)
@@ -859,9 +859,9 @@ namespace
                 bool      BraPending;
                 std::string    PendingLabel;
                 std::string    LastCompareType;
-                
+
                 std::map<std::string, BranchStateData> jumps;
-                
+
             private:
                 void EmitCompareJump
                    (CaseValue value,
@@ -876,7 +876,7 @@ namespace
                         LastCompare  = value;
                         ChainCompare = true;
                     }
-                    
+
                     if(comparetype == "bcc")
                     {
                         jumps[target].flags.Combine(GetAssumption());
@@ -896,7 +896,7 @@ namespace
                         jumps[target].CombineCurrent();
                         EmitBranch(comparetype, target);
                     }
-                    
+
                     LastWasBra      = false;
                     LastCompareType = comparetype;
                 }
@@ -921,7 +921,7 @@ namespace
                   jumps()
                 {
                 }
-                
+
                 virtual CaseValue GetMinValue()    const { return 0;   }
                 virtual CaseValue GetMaxValue()    const { return 255; }
                 virtual CaseValue GetDefaultCase() const { return -1;  }
@@ -991,7 +991,7 @@ namespace
                 virtual void EmitSubtract(CaseValue value)
                 {
                     CheckPendingBra();
-                    
+
                     /*
                     if(A_is_8bit() && GetCarryAssumption() == CarryUnset)
                     {
@@ -1022,12 +1022,12 @@ namespace
                 {
                     CheckPendingBra();
                     EmitLabel(label);
-                    
+
                     FlagAssumption  flags = GetFlags(label);
                     CarryAssumption carry = GetCarry(label);
                     Assume(flags.GetA(), flags.GetXY());
                     Assume(carry);
-                    
+
                     LastWasBra   = false;
                 }
                 virtual void EmitJumpTable(const std::vector<std::string>& table)
@@ -1042,18 +1042,18 @@ namespace
                     Emit("asl", Want16bitA, Want16bitXY);
                     Assume(CarryUnset); // assume the shift didn't overflow.
                     Emit("tax", Want16bitA, Want16bitXY);
-                    
+
                     const CarryAssumption carry = GetCarryAssumption();
                     const FlagAssumption  flags = GetAssumption();
-                    
+
                     //DumpCarry();
-                    
+
                     EmitBranch(".jmpx", tablelabel);
                     EmitBarrier();
                     UndefineCarry();
-                    
+
                     EmitSegment("data");
-                    
+
                     EmitLabel(tablelabel);
                     for(unsigned a=0; a<table.size(); ++a)
                     {
@@ -1061,31 +1061,42 @@ namespace
                         EmitBranch(".word", label);
                         jumps[label].flags.Combine(flags);
                         jumps[label].carry.Combine(carry);
-                        
+
                         //jumps[label].carry.Dump("^Flags: ");
                     }
                     LastWasBra   = true;
-                    
+
                     EmitBarrier();
                     UndefineCarry();
-                    
+
                     EmitSegment("code");
                 }
-                
+                virtual void EmitTestBits16(unsigned bitmask, const std::string& target,
+                                            bool assume_capped)
+                {
+                    abort(); // Unsupported
+                }
+
+                virtual void EmitTestBits8(unsigned bitmask, const std::string& target,
+                                           bool assume_capped)
+                {
+                    abort(); // Unsupported
+                }
+
                 const FlagAssumption& GetFlags(const std::string& label)
                 {
                     return jumps[label].flags;
                 }
-                
+
                 const CarryAssumption& GetCarry(const std::string& label)
                 {
                     return jumps[label].carry;
                 }
             };
-            
+
             std::string positivelabel = GenLabel();
             std::string negativelabel = GenLabel();
-            
+
             CaseHandler casehandler(*this, positivelabel);
             CaseItemList cases;
             CaseItem tmpcase;
@@ -1093,14 +1104,14 @@ namespace
             {
                 // Names can only contain 8bit chars!
                 // Note: we're not checking ALstate here, would be mostly useless check
-                
+
                 ctchar c = getctchar(cset[a], cset_12pix);
                 tmpcase.values.insert(c);
             }
             tmpcase.target = positivelabel;
             cases.push_back(tmpcase);
             casehandler.Generate(cases, negativelabel);
-            
+
             FlagAssumption  flags = casehandler.GetFlags(positivelabel);
             CarryAssumption carry = casehandler.GetCarry(positivelabel);
             EmitLabel(positivelabel);
@@ -1111,39 +1122,39 @@ namespace
             carry = casehandler.GetCarry(negativelabel);
             RememberBranch(negativelabel, indent, flags, carry);
         }
-        
+
         struct LoopData
         {
             std::string BeginLabel;
             std::string EndLabel;
-            
+
             FlagAssumption EndFlags;
         };
-        
+
         std::list<LoopData> LoopStack;
         void START_CHARNAME_LOOP()
         {
             CheckCodeStart();
-            
+
             LoopData data;
             data.BeginLabel = GenLabel();
             data.EndLabel   = GenLabel();
-            
+
             ++LoopCount;
             Emit("ldx #0", Want16bitXY);
-            
+
             EmitLabel(data.BeginLabel);
             // A is not really unknown here, but it's difficult
             // to fix - and it's not important, as this jsr doesn't
             // require anything.
             Assume(Assume16bitXY, UnknownA);
-            
+
             EmitBranch("jsr", WstrToAsc(LoopHelperName));
             Assume(Assume16bitXY, Assume8bitA);
             Assume(CarryUnknown);
-            
+
             // LoopHelper is known to give A=8-bit and X=16-bit.
-            
+
             data.EndFlags = GetAssumption();
             EmitBranch("beq", data.EndLabel);
 
@@ -1154,16 +1165,16 @@ namespace
             // mark read, because it indeed has been
             // read (in the loop end condition).
             vars[MagicVarName].read = true;
-            
+
             LoopStack.push_front(data);
         }
         void END_CHARNAME_LOOP()
         {
             LoopData data = *LoopStack.begin();
             LoopStack.pop_front();
-            
+
             CheckCodeStart();
-            
+
             Emit("inx", Want16bitXY);
             EmitBranch("bra", data.BeginLabel);
             EmitBarrier();
@@ -1172,9 +1183,9 @@ namespace
             EmitLabel(data.EndLabel);
             Assume(data.EndFlags.GetA(), data.EndFlags.GetXY());
             Assume(CarryUnknown);
-            
+
             Invalidate_A();
-            
+
             --LoopCount;
         }
         void LOAD_CHARACTER()
@@ -1194,7 +1205,7 @@ namespace
             Assume(Assume16bitXY, Assume8bitA);
             Assume(CarryUnknown);
         }
-        
+
         void OUT_CHARACTER()
         {
             // outputs character in A
@@ -1211,7 +1222,7 @@ const std::vector<std::wstring> Split
    bool squish=true)
 {
     std::vector<std::wstring> words;
-    
+
     unsigned a=0, b=text.size();
     while(a<b)
     {
@@ -1272,7 +1283,7 @@ class TableParser
     {
         return wformat(L"CheckCharSet_%lc", setch);
     }
-    
+
     struct Component
     {
         enum
@@ -1283,7 +1294,7 @@ class TableParser
             compare_boolfunc,
             compare_endfunc
         } type;
-        
+
         unsigned          lastchpos;
         unsigned          lastchpos2;
         std::set<wchar_t> chars;
@@ -1291,7 +1302,7 @@ class TableParser
 
     public:
         Component(): type(compare_lastch_set), lastchpos(0), lastchpos2(0), chars(),ref() {}
-        
+
         void LastEqSet(unsigned l, const std::set<wchar_t>& s) { lastchpos=l; chars=s; type=compare_lastch_set; }
         void LastEqSet2(unsigned l, unsigned l2)
         {
@@ -1302,12 +1313,12 @@ class TableParser
         void LastBoolFunc(unsigned l, const std::wstring& s)  { lastchpos=l; ref=s; type=compare_lastch_boolfunc; }
         void SetBoolFunc(const std::wstring& s)   { ref=s; type=compare_boolfunc; }
         void SetEndFunc(const std::wstring& s)   { ref=s; type=compare_endfunc; }
-        
+
         const std::wstring GetCSet() const
         {
             return ::GetCSet(chars);
         }
-        
+
         bool operator==(const Component& b) const
         {
             if(type != b.type) return false;
@@ -1331,7 +1342,7 @@ class TableParser
             if(type==compare_lastch_set) { if(chars != b.chars) return GetCSet() < b.GetCSet(); }
             return false;
         }
-        
+
         bool IsCombinableWith(const Component& b) const
         {
             if(type != b.type) return false;
@@ -1364,7 +1375,7 @@ class TableParser
             output_ref,
             call_function
         } type;
-        
+
         wchar_t ch;
         unsigned last_but;
         std::wstring func;
@@ -1372,12 +1383,12 @@ class TableParser
 
     public:
         Action(): type(output_char), ch('?'),last_but(),func(),chpos() {}
-        
+
         void OutCh(wchar_t c) { ch=c; type=output_char; }
         void OutCtx(unsigned n) { last_but=n; type=output_context; }
         void OutRef(unsigned c) { chpos=c; type=output_ref; }
         void CallFunc(const std::wstring& s) { func=s; type=call_function; }
-        
+
         bool operator==(const Action& b) const
         {
             if(type != b.type) return false;
@@ -1411,11 +1422,11 @@ class TableParser
         }
         return result;
     }
-    
+
     struct Rule
     {
         std::set<Component> components;
-        
+
         bool operator==(const Rule& b) const
         {
             return components == b.components;
@@ -1425,7 +1436,7 @@ class TableParser
         {
             return components < b.components;
         }
-        
+
     public:
         bool HasComponent(const Component& com) const
         {
@@ -1435,7 +1446,7 @@ class TableParser
         {
             components.erase(com);
         }
-        
+
         bool IsCombinableWith(const Rule& b) const
         {
             if(components.size() != b.components.size()) return false;
@@ -1451,7 +1462,7 @@ class TableParser
         void CombineWith(const Rule& b)
         {
             std::set<Component> newset;
-            
+
             for(std::set<Component>::iterator
                 i=components.begin(),
                 j=b.components.begin(); i!=components.end(); ++i,++j)
@@ -1462,7 +1473,7 @@ class TableParser
             }
             components = newset;
         }
-    
+
         void GenerateCode(Assembler& Asm, unsigned& indent) const
         {
             for(std::set<Component>::const_iterator
@@ -1471,7 +1482,7 @@ class TableParser
                 Asm.INDENT_LEVEL(indent);
 
                 const Component& com = *i;
-                
+
                 switch(com.type)
                 {
                     case Component::compare_boolfunc:
@@ -1564,7 +1575,7 @@ class TableParser
     struct Compilation
     {
         std::vector<Action> actions;
-        
+
         bool operator== (const Compilation& b) const
         {
             return actions == b.actions;
@@ -1579,7 +1590,7 @@ class TableParser
         void GenerateCode(Assembler& Asm, const unsigned indent) const
         {
             Asm.INDENT_LEVEL(indent);
-            
+
             for(unsigned a=0; a<actions.size(); ++a)
             {
                 const Action& act = actions[a];
@@ -1639,7 +1650,7 @@ class TableParser
             }
         }
     };
-    
+
     struct RuleTree;
     typedef autoeqptr<RuleTree> RuleTreePtr;
     struct RuleTree: public ptrable
@@ -1647,7 +1658,7 @@ class TableParser
         std::vector<RuleTreePtr> subtrees;
         Rule rule;
         Compilation compilation;
-    
+
         bool operator== (const RuleTree& b) const
         {
             return rule == b.rule
@@ -1661,12 +1672,12 @@ class TableParser
             if(compilation != b.compilation) return compilation < b.compilation;
             return subtrees < b.subtrees;
         }
-        
+
     private:
         void Assimilate(const RuleTree& r)
         {
             rule.components.insert
-            (r.rule.components.begin(), 
+            (r.rule.components.begin(),
              r.rule.components.end());
             compilation.actions.insert
             (compilation.actions.end(),
@@ -1677,35 +1688,35 @@ class TableParser
              r.subtrees.begin(),
              r.subtrees.end());
         }
-        
+
         bool HasEqualConsequence(RuleTree& b) const
         {
             return subtrees    == b.subtrees
                 && compilation == b.compilation;
         }
-        
+
         bool OptimizeCommonComponents()
         {
             /* Find out how many times each component is used */
             Component best_cond;   //what component?
             unsigned best_count=0; //how many times? (for scoring)
             unsigned best_pos  =0; //where is the first occurance?
-            
+
             /* Note: Must preserve the order, and thus must not have gaps
              * in the matching condition lists.
              */
-            
+
             for(unsigned s=0; s<subtrees.size(); ++s)
             {
                 std::map<Component, unsigned> component_amounts;
-                
+
                 const Rule& r = subtrees[s]->rule;
                 std::set<Component>::const_iterator j;
-                
+
                 for(j = r.components.begin(); j != r.components.end(); ++j)
                 {
                     unsigned n_found = 1;
-                    
+
                     for(unsigned s2=s+1; s2<subtrees.size(); ++s2)
                     {
                         const Rule& r2 = subtrees[s2]->rule;
@@ -1720,20 +1731,20 @@ class TableParser
                     }
                 }
             }
-            
+
             if(best_count > 1)
             {
                 RuleTree* newtree = new RuleTree;
                 newtree->rule.components.insert(best_cond);
-                
+
                 unsigned n_trees = 0;
                 for(unsigned s=best_pos; s<subtrees.size(); ++s, ++n_trees)
                 {
                     Rule& r = subtrees[s]->rule;
-                    
+
                     std::set<Component>::iterator j = r.components.find(best_cond);
                     if(j == r.components.end()) break;
-                    
+
                     r.components.erase(j);
                     newtree->subtrees.push_back(subtrees[s]);
                 }
@@ -1744,14 +1755,14 @@ class TableParser
             }
             return false;
         }
-        
+
         void OptimizeCommonResults()
         {
             for(unsigned s=0; s+1<subtrees.size(); ++s)
             {
                 RuleTree& t1 =*subtrees[s+0];
                 RuleTree& t2 =*subtrees[s+1];
-                
+
                 if(t1.rule.IsCombinableWith(t2.rule)
                 && t1.HasEqualConsequence(t2))
                 {
@@ -1774,19 +1785,19 @@ class TableParser
                 Assimilate(*tmp);
                 goto Reoptimize;
             }
-        
+
             for(unsigned s=0; s<subtrees.size(); ++s)
                 subtrees[s]->Optimize();
 
             if(OptimizeCommonComponents())
                 goto Reoptimize;
-            
+
             OptimizeCommonResults();
         }
 
         typedef std::map<Compilation, unsigned> ActionUsageMap;
         typedef std::map<RuleTree, std::wstring> RuleTreeConversionMap;
-        
+
         void FindCommonActions(ActionUsageMap& map)
         {
             if(!compilation.actions.empty())
@@ -1796,14 +1807,14 @@ class TableParser
             for(unsigned s=0; s<subtrees.size(); ++s)
                 subtrees[s]->FindCommonActions(map);
         }
-        
+
         void ConvertTreeToFunctions(RuleTreeConversionMap& map)
         {
             for(unsigned s=0; s<subtrees.size(); ++s)
             {
                 subtrees[s]->ConvertTreeToFunctions(map);
             }
-            
+
             std::wstring funcname;
             RuleTreeConversionMap::iterator i = map.find(*this);
             if(i == map.end())
@@ -1813,16 +1824,16 @@ class TableParser
             }
             else
                 funcname = i->second;
-            
+
             rule.components.clear();
             compilation.actions.clear();
-            
+
             Component tmp;
             tmp.SetEndFunc(funcname);
             rule.components.insert(tmp);
             subtrees.clear();
         }
-        
+
         void ReplaceAllActionByCall(const Compilation& example, const std::wstring& funame)
         {
             if(compilation == example)
@@ -1839,7 +1850,7 @@ class TableParser
         unsigned CountLastCh() const
         {
             unsigned max_lastch = 0;
-            
+
             for(std::set<Component>::const_iterator
                 i=rule.components.begin(); i!=rule.components.end(); ++i)
             {
@@ -1847,7 +1858,7 @@ class TableParser
                 {
                     case Component::compare_lastch_set2:
                         max_lastch = std::max(max_lastch, i->lastchpos2);
-                        /* passthru */                    
+                        /* passthru */
                     case Component::compare_lastch_set:
                     case Component::compare_lastch_boolfunc:
                         max_lastch = std::max(max_lastch, i->lastchpos);
@@ -1863,27 +1874,27 @@ class TableParser
             }
             return max_lastch;
         }
-        
+
         void GenerateCode(Assembler& Asm, unsigned indent) const
         {
 #if 0
             std::cout << "<\n";
 #endif
             rule.GenerateCode(Asm, indent);
-            
+
             for(unsigned s=0; s<subtrees.size(); ++s)
             {
                 const RuleTree& p = *subtrees[s];
                 p.GenerateCode(Asm, indent);
             }
-            
+
             compilation.GenerateCode(Asm, indent);
 #if 0
             std::cout << ">\n";
 #endif
         }
     };
-    
+
     class Function
     {
         RuleTree rules;
@@ -1892,7 +1903,7 @@ class TableParser
         {
             rules.GenerateCode(Asm, 2);
         }
-        
+
     public:
         void Define(const Rule& rule, const Compilation& compilation)
         {
@@ -1901,7 +1912,7 @@ class TableParser
             r->compilation = compilation;
             rules.subtrees.push_back(r);
         }
-        
+
         void FindCommonActions(RuleTree::ActionUsageMap& map)
         {
             rules.FindCommonActions(map);
@@ -1919,13 +1930,13 @@ class TableParser
         {
             rules.Optimize();
         }
-        
+
         void Generate(Assembler& Asm) const
         {
             GenerateCode(rules, Asm);
         }
     };
-    
+
     void BuildFunction(Rule& rule, Compilation& compilation,
                        const std::wstring& mask,
                        const std::wstring& result)
@@ -1941,11 +1952,11 @@ class TableParser
         {
             wchar_t ch = mask[b];
             if(ch == '*') continue;
-            
+
             /* Filters don't eat bytes */
             std::map<wchar_t, std::wstring>::const_iterator filti = filters.find(ch);
             if(filti != filters.end()) continue;
-            
+
             if(result_star_pos != result.npos
             && result_star_pos+1 < result.size()
             && ch == result[result_star_pos+1])
@@ -1959,7 +1970,7 @@ class TableParser
                 break;
             }
         }
-        
+
         if(mask.substr(0,1) != L"*")
         {
             fprintf(stderr,
@@ -1967,14 +1978,14 @@ class TableParser
                 ConvStr(mask).c_str(), ConvStr(result).c_str());
             return;
         }
-        
+
         /* Now, generate the comparison rules. */
         size_t last_count=0;
         for(size_t b=mask.size(); b-->0; )
         {
             wchar_t ch = mask[b];
             if(ch == '*') { break; }
-            
+
             /* Filters don't eat bytes */
             std::map<wchar_t, std::wstring>::const_iterator filti = filters.find(ch);
             if(filti != filters.end())
@@ -1984,14 +1995,14 @@ class TableParser
                 rule.components.insert(com);
                 continue;
             }
-            
+
             std::map<wchar_t, unsigned>::const_iterator refi = set_refs.find(ch);
             if(refi != set_refs.end())
             {
                 Component com;
                 com.LastEqSet2(last_count, refi->second);
                 rule.components.insert(com);
-                
+
                 ++last_count;
                 continue;
             }
@@ -2002,12 +2013,12 @@ class TableParser
                 std::cout << ConvStr(wformat(L"Charset('%lc'): '%ls'\n", ch, GetCSet(cseti->second).c_str()));
                 std::cout << std::flush;
 #endif
-                
+
                 Component com;
                 com.LastBoolFunc(last_count, GetSetFuncName(ch));
                 set_refs[ch] = last_count;
                 rule.components.insert(com);
-                
+
                 ++last_count;
                 continue;
             }
@@ -2015,16 +2026,16 @@ class TableParser
             Component com;
             com.LastEqSet(last_count, BuildCharset(tmp));
             rule.components.insert(com);
-            
+
             ++last_count;
         }
-        
+
 #if 0
         std::cout << WstrToAsc(wformat(L"# mask(%ls)result(%ls)last(%u)ignore(%u)\n",
                          mask.c_str(), result.c_str(), last_count, result_ignore_after_star));
 #endif
         last_count -= result_ignore_after_star;
-        
+
         bool seen_star=false;
         for(size_t b=0; b<result.size(); ++b)
         {
@@ -2045,7 +2056,7 @@ class TableParser
 #if 0
         std::cout << WstrToAsc(wformat(L"# > chr(%lc)\n", ch));
 #endif
-            
+
             std::map<wchar_t, unsigned>::const_iterator refi = set_refs.find(ch);
             if(refi != set_refs.end())
             {
@@ -2067,17 +2078,17 @@ class TableParser
             compilation.actions.push_back(act);
         }
     }
-    
+
 public:
     void Parse(const std::vector<std::wstring>& lines)
     {
         std::wstring lo, up;
-        
+
         typedef std::list<std::wstring> funclist;
         typedef std::map<unsigned, funclist> collist;
-        
+
         collist columns;
-        
+
         for(size_t a=0; a<lines.size(); ++a)
         {
             const std::wstring& line = lines[a];
@@ -2093,7 +2104,7 @@ public:
                     /* Build u2l and l2u (case conversion maps) */
                     for(size_t b=0; b<up.size() && b<lo.size(); ++b)
                     {
-                        u2l[up[b]] = lo[b]; 
+                        u2l[up[b]] = lo[b];
                         l2u[lo[b]] = up[b];
                     }
 
@@ -2128,7 +2139,7 @@ public:
                     /* Anything else - assume it's a mask */
                     size_t barpos = line.find(L'|');
                     if(barpos == line.npos) continue;
-                    
+
                     std::wstring mask = Trim(line.substr(0, barpos));
                     for(collist::const_iterator next, i = columns.begin(); i != columns.end(); i=next)
                     {
@@ -2136,30 +2147,30 @@ public:
                         size_t begin = i->first;
                         size_t end = line.size();
                         if(next != columns.end()) end = next->first;
-                        
+
                         std::wstring col = Trim(line.substr(begin, end-begin));
-                        
+
                         for(funclist::const_iterator j = i->second.begin(); j != i->second.end(); ++j)
                         {
                             Rule r;
                             Compilation c;
-                            
+
 #if 0
                             std::cout << ConvStr(
                                 wformat(L"BuildFunction(%ls)Mask(%ls)Result(%ls)\n",
                                         j->c_str(),mask.c_str(),col.c_str()));
                             std::cout << std::flush;
 #endif
-        
+
                             BuildFunction(r, c, mask, col);
-                            
+
                             functions[*j].Define(r, c);
                         }
                     }
                 }
             }
         }
-        
+
         for(std::map<std::wstring, Function>::iterator
             i = functions.begin(); i != functions.end(); ++i)
         {
@@ -2172,7 +2183,7 @@ public:
         {
             i->second.FindCommonActions(map);
         }
-        
+
         unsigned counter = 0;
         for(RuleTree::ActionUsageMap::const_iterator
             i = map.begin(); i != map.end(); ++i)
@@ -2189,7 +2200,7 @@ public:
                 }
             }
         }
-        
+
 #if CONVERT_RULETREES
         for(std::map<std::wstring, Function>::iterator
             i = functions.begin(); i != functions.end(); ++i)
@@ -2198,7 +2209,7 @@ public:
         }
 #endif
     }
-    
+
     void Generate(Assembler& Asm) const
     {
         for(std::map<wchar_t, std::set<wchar_t> >::const_iterator
@@ -2222,7 +2233,7 @@ public:
             //std::wcout << L"END FUNCTION\n";
 #endif
         }
-        
+
         for(std::map<std::wstring, Compilation>::const_iterator
             i = actionmap.begin(); i != actionmap.end(); ++i)
         {
@@ -2231,17 +2242,17 @@ public:
 #endif
             Asm.START_FUNCTION(i->first);
             Asm.INDENT_LEVEL(0);
-            
+
             i->second.GenerateCode(Asm, 2);
-            
+
             Asm.INDENT_LEVEL(0);
             Asm.VOID_RETURN();
             Asm.END_FUNCTION();
 #if DEBUG_TABLECODE
             //std::wcout << L"END FUNCTION\n";
 #endif
-        }        
-        
+        }
+
         for(RuleTree::RuleTreeConversionMap::const_iterator
             i = ruletreemap.begin(); i != ruletreemap.end(); ++i)
         {
@@ -2251,9 +2262,9 @@ public:
             Asm.START_FUNCTION(i->second);
             Asm.DECLARE_REGVAR(Asm.MagicVarName);
             Asm.INDENT_LEVEL(0);
-            
+
             i->first.GenerateCode(Asm, 2);
-            
+
 #if CONVERT_RULETREES
             Asm.INDENT_LEVEL(2);
             Emit("sec"); // carry set="no rule found"
@@ -2265,7 +2276,7 @@ public:
             //std::wcout << L"END FUNCTION\n";
 #endif
         }
-        
+
         for(std::map<std::wstring, Function>::const_iterator
             i = functions.begin(); i != functions.end(); ++i)
         {
@@ -2275,9 +2286,9 @@ public:
             Asm.START_FUNCTION(i->first);
             Asm.DECLARE_REGVAR(Asm.MagicVarName);
             Asm.INDENT_LEVEL(0);
-            
+
             i->second.Generate(Asm);
-            
+
 #if CONVERT_RULETREES
             Asm.INDENT_LEVEL(2);
             Emit("sec"); // carry set="no rule found"
@@ -2304,14 +2315,14 @@ void Compile(FILE *fp)
 {
     Assembler Asm;
     TableParser Tables;
-    
+
     std::wstring file;
-    
+
     if(1) // Read file to wstring
     {
         wstringIn conv;
         conv.SetSet(getcharset());
-        
+
         for(;;)
         {
             char Buf[2048];
@@ -2319,7 +2330,7 @@ void Compile(FILE *fp)
             file += conv.puts(Buf);
         }
     }
-    
+
     for(size_t a=0; a<file.size(); )
     {
         std::wstring Buf;
@@ -2331,10 +2342,10 @@ void Compile(FILE *fp)
             Buf = file.substr(a, b-a); a = b+1;
         }
         if(Buf.empty()) continue;
-        
+
         unsigned indent=0;
         std::vector<std::wstring> words;
-        
+
         if(1) // Initialize indent, words
         {
             const wchar_t *s = Buf.data();
@@ -2342,23 +2353,23 @@ void Compile(FILE *fp)
 
             words = Split(s, L' ', L'\'', true);
         }
-        
+
         if(words.empty())
         {
             fprintf(stderr, "Weird, '%s' is empty line?\n",
                 ConvStr(Buf).c_str());
             continue;
         }
-        
+
         if(words[0][0] == '#')
         {
             continue;
         }
-        
+
         Asm.INDENT_LEVEL(indent);
-        
+
         const std::string firstword = WstrToAsc(words[0]);
-        
+
         if(firstword == "TRUE")
         {
             Asm.BOOLEAN_RETURN(true);
@@ -2381,12 +2392,12 @@ void Compile(FILE *fp)
             while(a < file.size())
             {
                 std::wstring Buf;
-                
+
                 // Get line
                 size_t b=a;
                 while(b<file.size() && file[b]!='\n') ++b;
                 Buf = file.substr(a, b-a); a = b+1;
-                
+
                 if(Buf == L"END_TABLES") break;
                 lines.push_back(Buf);
             }
@@ -2466,7 +2477,7 @@ void Compile(FILE *fp)
                 // Changing this has no effect in
                 // functionality, but may have in code size
                 bool lda_param_2 = Asm.IsCached(words[2]);
-                
+
                 if(lda_param_2)
                 {
                     Asm.LOAD_VAR(words[2]);
@@ -2522,15 +2533,15 @@ int main(int argc, const char *const *argv)
     }
     FILE *fp = fopen(argv[1], "rt"); if(!fp) { perror(argv[1]); return -1; }
     FILE *fo = fopen(argv[2], "wt"); if(!fo) { perror(argv[2]); return -1; }
-    
+
     BeginCode(fo);
-    
+
     Compile(fp);
-    
+
     EndCode();
-    
+
     fclose(fp);
     fclose(fo);
-    
+
     return 0;
 }

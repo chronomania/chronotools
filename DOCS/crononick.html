@@ -23,9 +23,9 @@ SMALL    {font-size:70%}
   <h1>Chronotools - crononick</h1>
   <h2 class=level2> 0. Contents </h2>
   
-  This is the documentation of chronotools-1.15.4.
-<div class=toc><table cellspacing=0 cellpadding=0 class=toc><tr><td width="50%" valign=middle align=left nowrap class=toc>&nbsp;&nbsp;&nbsp;1. <a href="#h0">Introduction</a><br></td>
-<td width="50%" valign=middle align=left nowrap class=toc>&nbsp;&nbsp;&nbsp;2. <a href="#h1">How to</a><br>&nbsp;&nbsp;&nbsp;3. <a href="#download">Downloading</a><br></td>
+  This is the documentation of chronotools-1.15.5.
+<div class=toc><table cellspacing=0 cellpadding=0 class=toc><tr><td width="50%" valign=middle align=left nowrap class=toc>&nbsp;&nbsp;&nbsp;1. <a href="#h0">Introduction</a><br>&nbsp;&nbsp;&nbsp;2. <a href="#h1">How to</a><br></td>
+<td width="50%" valign=middle align=left nowrap class=toc>&nbsp;&nbsp;&nbsp;3. <a href="#h2">What does the Finnish version do?</a><br>&nbsp;&nbsp;&nbsp;4. <a href="#download">Downloading</a><br></td>
 </tr></table></div><H2 id="h0" class="level2"><a name="h0"></a>1. Introduction</H2><div class="level2" id="divh0">
    
 <b>Q:</b>
@@ -33,7 +33,7 @@ What exactly is <code>[crononick]</code>? Can I just replace it
 with Crono? From what I saw only Ayla uses it in her dialogue.
 <p>
 <b>A:</b>
-Ayla talks simply language, and from the very first moment she
+Ayla talks simple language, and from the very first moment she
 sees Crono, she likes him a lot and gives him a new name, a
 simpler name.<br>
 From that on, she calls Crono always by that nickname.
@@ -41,8 +41,8 @@ From that on, she calls Crono always by that nickname.
 In the Japanese version, Crono's default name is Kurono, and
 Ayla's version of that name is Kuro.<br>
 If the user gives Crono a new name and the name is longer
-than two syllables, the <code>[crononick]</code> handler
-only displays the first two syllables of it.
+than two syllables, the Japanese <code>[crononick]</code>
+handler only displays the first two syllables of it.
 <p>
 In the English version you don't see this happening because the
 localizers weren't able to invent an algorithm to simplify the name.<br>
@@ -74,14 +74,27 @@ add_call_of "CrononickHandler"   $C25B3B 13 false
 </pre>
 You can find my code file in the <code>DOCS/ct-crononick.code</code> file.
 
-</div><H2 id="download" class="level2"><a name="download"></a>3. Downloading</H2><div class="level2" id="divdownload">
+</div><H2 id="h2" class="level2"><a name="h2"></a>3. What does the Finnish version do?</H2><div class="level2" id="divh2">
+
+In the Finnish version, Crononick is formed using the following substitution rules:
+<ol>
+ <li>If the name begins with two differing consonants, remove the first one and uppercase the second.<br>
+     E.g. Crono -> Rono, Sven -> Ven</li>
+ <li>If the name ends with a vowel, two identical consonants and a vowel, remove the second-last letter.<br>
+     E.g. Mikko -> Miko, Matti -> Mati</li>
+ <li>If the name ends with a consonant, two identical consonants and a vowel, remove the non-identical consonant.<br>
+     E.g. Ilkka -> Ikka</li>
+ <li>Otherwise use the unmodified name</li>
+</ol>
+
+</div><H2 id="download" class="level2"><a name="download"></a>4. Downloading</H2><div class="level2" id="divdownload">
    The official home page of chronotools
    is at <a href="http://iki.fi/bisqwit/source/chronotools.html">http://iki.fi/bisqwit/source/chronotools.html</a>.<br>
    Check there for new versions.
 </div> <p align=right><small>Generated from
-       <tt>source/crononick.php</tt> (last updated: Fri, 18 Feb 2005 15:08:46 +0200)<br>
-  with <tt>docmaker.php</tt> (last updated: Sat, 13 Dec 2008 16:26:19 +0200)<br>
-  at Tue, 03 Feb 2009 10:57:00 +0200</small>
+       <tt>source/crononick.php</tt> (last updated: Tue, 03 Feb 2009 13:10:13 +0200)<br>
+  with <tt>docmaker.php</tt> (last updated: Tue, 03 Feb 2009 11:57:55 +0200)<br>
+  at Fri, 15 Oct 2010 16:30:43 +0300</small>
  </p>
 </body>
 </html>

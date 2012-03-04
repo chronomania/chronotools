@@ -9,10 +9,10 @@
 #include <ggi/ggi.h>
 
 static const unsigned WINDOW_WIDTH  = 1088;
-static const unsigned WINDOW_HEIGHT = 768;
+static const unsigned WINDOW_HEIGHT = 600;//768;
 
 static const unsigned TILESPACE_X   = 960;
-static const unsigned TILESPACE_Y   = 768;
+static const unsigned TILESPACE_Y   = 600;//768;
 
 /*
  Copyright (C) 1992,2003 Bisqwit (http://iki.fi/bisqwit/)
@@ -322,6 +322,7 @@ Redraw:
                 }
             }
         
+        ggiFlush(vis);
         ggiSetGCForeground(vis, 255);
         
         {

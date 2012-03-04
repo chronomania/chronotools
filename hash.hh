@@ -4,7 +4,7 @@
  * with hash_set or hash_map
  */
 #ifndef USE_HASHMAP
-#define USE_HASHMAP 1
+#define USE_HASHMAP 0
 #endif
 
 

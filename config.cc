@@ -6,6 +6,7 @@
 #include "ctcset.hh"
 #include "wstring.hh"
 #include "confparser.hh"
+#include "config.hh"
 
 namespace
 {
@@ -129,8 +130,70 @@ dummy=0\n\
     const char cfgtmpname[] = "ct-cfg.tmp";
 };
 
+namespace
+{
+    /* Can't be embedded to be instantified under GetConf,
+     * because "characterset" must be loaded in program start.
+     */
+    bool Config_Loaded = false;
+    void LoadConfig()
+    {
+        if(Config_Loaded) return;
+        Config_Loaded = true;
+        
+        bool was_tmp = false;
+        
+        fprintf(stderr, "Reading %s...", cfgfilename);
+        
+        FILE *fp = fopen(cfgfilename, "rt");
+        if(!fp)
+        {
+            if(errno == ENOENT)
+            {
+                fprintf(stderr,
+                    "The configuration file '%s' doesn't exist.\n"
+                    "You should have one if you are dumping any other ROMs\n"
+                    "than the standard english Chrono Trigger ROM, or if\n"
+                    "you are inserting scripts to ROMs.\n"
+                    "Ask Bisqwit how to create one.\n"
+                    "Using internal defaults for now.\n",
+                    cfgfilename);
+            }
+            else
+                perror(cfgfilename);
+            
+            fp = fopen(cfgtmpname, "wt");
+            fwrite(DefaultConfig, std::strlen(DefaultConfig), 1, fp);
+            fclose(fp);
+            fp = fopen(cfgtmpname, "rt");
+            was_tmp = true;
+        }
+        
+        char Buf[8192];
+        setvbuf(fp, Buf, _IOFBF, sizeof Buf);
+
+        config.Parse(fp);
+
+        std::wstring cset = GetConf("general", "characterset");
+        setcharset(WstrToAsc(cset).c_str());
+
+        rewind(fp);
+        clearerr(fp);
+        
+        config.Clear();
+        config.Parse(fp);
+        
+        fclose(fp);
+
+        if(was_tmp)remove(cfgtmpname);
+        
+        fprintf(stderr, " done\n");
+    }
+}
+
 const ConfParser::Field& GetConf(const char *sect, const char *var)
 {
+    LoadConfig();
     try
     {
         return config[sect][var];
@@ -178,65 +241,4 @@ const ConfParser::Field& GetConf(const char *sect, const char *var)
         static const ConfParser::Field error;
         return error;
     }
-}
-
-namespace
-{
-    /* Can't be embedded to be instantified under GetConf,
-     * because "characterset" must be loaded in program start.
-     */
-    class ConfigLoader
-    {
-    public:
-        ConfigLoader()
-        {
-            bool was_tmp = false;
-            
-            fprintf(stderr, "Reading %s...", cfgfilename);
-            
-            FILE *fp = fopen(cfgfilename, "rt");
-            if(!fp)
-            {
-                if(errno == ENOENT)
-                {
-                    fprintf(stderr,
-                        "The configuration file '%s' doesn't exist.\n"
-                        "You should have one if you are dumping any other ROMs\n"
-                        "than the standard english Chrono Trigger ROM, or if\n"
-                        "you are inserting scripts to ROMs.\n"
-                        "Ask Bisqwit how to create one.\n"
-                        "Using internal defaults for now.\n",
-                        cfgfilename);
-                }
-                else
-                    perror(cfgfilename);
-                
-                fp = fopen(cfgtmpname, "wt");
-                fwrite(DefaultConfig, std::strlen(DefaultConfig), 1, fp);
-                fclose(fp);
-                fp = fopen(cfgtmpname, "rt");
-                was_tmp = true;
-            }
-            
-            char Buf[8192];
-            setvbuf(fp, Buf, _IOFBF, sizeof Buf);
-
-            config.Parse(fp);
-
-            std::wstring cset = GetConf("general", "characterset");
-            setcharset(WstrToAsc(cset).c_str());
-
-            rewind(fp);
-            clearerr(fp);
-            
-            config.Clear();
-            config.Parse(fp);
-            
-            fclose(fp);
-
-            if(was_tmp)remove(cfgtmpname);
-            
-            fprintf(stderr, " done\n");
-        }
-    } ConfigLoader;
 }

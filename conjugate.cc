@@ -203,12 +203,13 @@ void insertor::WriteConjugator()
     for(i=forms.begin(); i!=forms.end(); ++i)
     {
         if(!i->used) continue;
-        
+
         const wstring& funcname = i->func;
-        
+
         string CodeName = "CODE_";
         CodeName += WstrToAsc(funcname);
-        
+
+        fprintf(stderr, "Defining conjugator code %s as $%X\n", CodeName.c_str(), i->prefix);
         objects.DefineSymbol(CodeName, i->prefix);
     }
 }

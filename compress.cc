@@ -8,6 +8,10 @@
 
 #define MAX_RECURSION_DEPTH  2
 #define DEEP_RUN_FORWARD  2048
+
+//#define MAX_RECURSION_DEPTH  2
+//#define DEEP_RUN_FORWARD    16
+
 //#define MAX_RECURSION_DEPTH  0
 //#define DEEP_RUN_FORWARD     1
 
@@ -42,15 +46,15 @@
 namespace
 {
     template<typename T>
-    static void copy_n(const T* in, unsigned size, T* out)
+    static void copy_n(const T* in, size_t size, T* out)
     {
         for(; size > 0; --size)
             *out++ = *in++;
     }
     
-    static unsigned MatchingLength
+    static size_t MatchingLength
         (const unsigned char* in1,
-         unsigned size,
+         size_t size,
          const unsigned char* in2)
     {
         // Trivial implementation would be:
@@ -58,8 +62,8 @@ namespace
         // However this function attempts to gain something
         // by comparing sizeof(unsigned) bytes at time instead
         // of 1 byte at time.
-        unsigned len = 0;
-        const unsigned intsize = sizeof(unsigned);
+        size_t len = 0;
+        const size_t intsize = sizeof(unsigned);
         const unsigned*const p1 = reinterpret_cast<const unsigned*>(in1);
         const unsigned*const p2 = reinterpret_cast<const unsigned*>(in2);
         while(size >= intsize && p1[len] == p2[len]) { ++len; size -= intsize; }
@@ -72,40 +76,40 @@ namespace
     {
         struct CacheRecord
         {
-            unsigned len;  // 0=nowhere, 3..maxlen = length.
-            unsigned offs; // 0=nowhere, 1..maxoffs = relative offset
+            size_t len;  // 0=nowhere, 3..maxlen = length.
+            size_t offs; // 0=nowhere, 1..maxoffs = relative offset
         };
     public:
-        SavingMap(const unsigned char* data, unsigned length,
-                  unsigned maxlen, unsigned maxoffs)
+        SavingMap(const unsigned char* data, size_t length,
+                  size_t maxlen, size_t maxoffs)
             : Data(data), Length(length),
               MaxLength(maxlen), MaxOffs(maxoffs)
         {
             Cache.clear(); Cache.resize(length);
-            for(unsigned pos=0; pos<length; ++pos) CachePos(pos);
+            for(size_t pos=0; pos<length; ++pos) CachePos(pos);
         }
         
         typedef CacheRecord QueryResult;
         
-        const QueryResult& Query(unsigned pos) const
+        const QueryResult& Query(size_t pos) const
         {
             return Cache[pos];
         }
     private:
-        void CachePos(unsigned pos) const
+        void CachePos(size_t pos) const
         {
-            const unsigned min_offs = pos - std::min(pos, MaxOffs);
-            const unsigned max_offs = pos;
-            const unsigned output_min = 3;
-            const unsigned output_max = std::min(Length-pos, MaxLength+3);
+            const size_t min_offs = pos - std::min(pos, MaxOffs);
+            const size_t max_offs = pos;
+            const size_t output_min = 3;
+            const size_t output_max = std::min(Length-pos, MaxLength+3);
             const unsigned char* out_offs  = Data+pos;
             
-            unsigned best_len = 0;
-            unsigned best_offs= 0;
+            size_t best_len = 0;
+            size_t best_offs= 0;
             
-            for(unsigned offs = min_offs; offs < max_offs; ++offs)
+            for(size_t offs = min_offs; offs < max_offs; ++offs)
             {
-                const unsigned len = MatchingLength(Data+offs, output_max, out_offs);
+                const size_t len = MatchingLength(Data+offs, output_max, out_offs);
                 
                 if(len < output_min) continue;
                 
@@ -125,9 +129,9 @@ namespace
 
     private:
         const unsigned char*const  Data;
-        const unsigned Length;
-        const unsigned MaxLength;
-        const unsigned MaxOffs;
+        const size_t Length;
+        const size_t MaxLength;
+        const size_t MaxOffs;
         mutable std::vector<CacheRecord> Cache;
     };
     
@@ -143,7 +147,7 @@ namespace
             
             void SendControl(unsigned char value)
             {
-                unsigned endpos = (*this).size();
+                size_t endpos = (*this).size();
 #ifdef DEBUG_COMPRESS
                 fprintf(stderr, "@%04X Sending control %02X. Packet begin=%04X\n",
                     endpos, value, packetbegin);
@@ -165,12 +169,12 @@ namespace
                 (*this).push_back(0);
             }
         private:
-            unsigned packetbegin;
+            size_t packetbegin;
         };
 
     public:
-        Compressor(const unsigned char*const data, const unsigned length,
-                   const unsigned DepthBits)
+        Compressor(const unsigned char*const data, const size_t length,
+                   const size_t DepthBits)
             : Data(data), Length(length),
               OffsBits(DepthBits),
               ControlTemplate(DepthBits == 11 ? 0xC0 : 0x00),
@@ -187,22 +191,22 @@ namespace
             ResultStream result;
             
             // For each byte in source.
-            for(unsigned pos=0; pos<Length; )
+            for(size_t pos=0; pos<Length; )
             {
                 // Select one of the following choices:
                 // - Assign a value for counter and run counter
                 // - Copy 8 bytes raw.
-                unsigned best_counter = PickCounter(pos, MaxRecursion);
+                size_t best_counter = PickCounter(pos, MaxRecursion);
 
                 if(best_counter != DefaultLength)
                 {
                     result.SendControl(ControlTemplate | best_counter);
                 }
 
-                unsigned bitpos = result.size();
+                size_t bitpos = result.size();
                 
                 unsigned char bits = 0xFF;
-                for(unsigned a=0; a<best_counter; ++a)
+                for(size_t a=0; a<best_counter; ++a)
                 {
                     if(a >= 8)
                     {
@@ -241,7 +245,7 @@ namespace
                 
                 result.insert(result.begin()+bitpos, 1, bits);
 /*
-                for(unsigned a=0; a<result.size(); ++a)
+                for(size_t a=0; a<result.size(); ++a)
                     fprintf(stderr, "%c%02X", (a&15)?' ':'\n', result[a]);
                 fprintf(stderr, "\n");
 */
@@ -260,27 +264,27 @@ namespace
         public:
             struct record
             {
-                unsigned n_source;
-                unsigned n_result;
-                unsigned pick;
+                size_t n_source;
+                size_t n_result;
+                size_t pick;
                 bool cached;
             public:
                 record(): cached(false) { }
             };
 
-            void Resize(unsigned size) { data.resize(size); }
-            const record& operator[] (unsigned n) const { return data[n]; }
-            record& operator[] (unsigned n) { return data[n]; }
+            void Resize(size_t size) { data.resize(size); }
+            const record& operator[] (size_t n) const { return data[n]; }
+            record& operator[] (size_t n) { return data[n]; }
         private:
             std::vector<PickCacheType::record> data;
         } PickCache[MAX_RECURSION_DEPTH];
 #endif
         
         /* For various number of recursions. */
-        unsigned PickCounter(unsigned pos,
-                             unsigned& n_source,
-                             unsigned& n_result,
-                             unsigned MaxRecursion)
+        size_t PickCounter(size_t pos,
+                           size_t& n_source,
+                           size_t& n_result,
+                           size_t MaxRecursion)
         {
 #if MAX_RECURSION_DEPTH > 0
             if(MaxRecursion < MAX_RECURSION_DEPTH)
@@ -296,17 +300,17 @@ namespace
             }
 #endif
             double best_goodness   = 0;
-            unsigned best_counter  = 0;
-            unsigned best_n_source = 0;
-            unsigned best_n_result = 0;
+            size_t best_counter  = 0;
+            size_t best_n_source = 0;
+            size_t best_n_result = 0;
             
-            unsigned testpos       = pos;
-            unsigned this_n_result = 1; // The "bits" will be 1 byte.
+            size_t testpos       = pos;
+            size_t this_n_result = 1; // The "bits" will be 1 byte.
             
             unsigned char bits = 0xFF;
             
             // for each bit, try and see what works.
-            for(unsigned counter=0x01; counter<=0x3F; ++counter)
+            for(size_t counter=0x01; counter<=0x3F; ++counter)
             {
                 if(counter == 1)
                     this_n_result += 3; /* Introduce a header. */
@@ -343,15 +347,15 @@ namespace
                 }
                 
                 // Calculate the value of this choice.
-                unsigned evaluate_n_result = this_n_result;
-                unsigned evaluate_n_source = testpos-pos; // how many bytes eaten.
+                size_t evaluate_n_result = this_n_result;
+                size_t evaluate_n_source = testpos-pos; // how many bytes eaten.
                 
 #if MAX_RECURSION_DEPTH > 0
                 if(testpos < Length)
                 {
                     if(MaxRecursion > 1)
                     {
-                        unsigned s=0, r=0;
+                        size_t s=0, r=0;
                         // Recurse to get a better estimate of the goodness of this choice.
                         PickCounter(testpos, s, r, MaxRecursion-1);
                         // ignore the consequent counter.
@@ -360,11 +364,11 @@ namespace
                     }
                     else if(MaxRecursion == 1)
                     {
-                        unsigned s=0, r=0;
-                        unsigned subpos = testpos;
-                        for(unsigned n=0; n<DEEP_RUN_FORWARD && subpos < Length; ++n)
+                        size_t s=0, r=0;
+                        size_t subpos = testpos;
+                        for(size_t n=0; n<DEEP_RUN_FORWARD && subpos < Length; ++n)
                         {
-                            unsigned subs = 0, subr = 0;
+                            size_t subs = 0, subr = 0;
                             PickCounter(subpos, subs, subr, 0);
                             subpos += subs;
                             s += subs;
@@ -405,19 +409,19 @@ namespace
             return best_counter;
         }
         
-        unsigned PickCounter(unsigned pos, unsigned MaxRecursion)
+        size_t PickCounter(size_t pos, size_t MaxRecursion)
         {
-            unsigned n_source=0;
-            unsigned n_result=0;
+            size_t n_source=0;
+            size_t n_result=0;
             return PickCounter(pos, n_source, n_result, MaxRecursion);
         }
         
     private:
-        static const unsigned DefaultLength = 8;
+        static const size_t DefaultLength = 8;
         
         const unsigned char* Data;
-        const unsigned Length;
-        const unsigned OffsBits;
+        const size_t Length;
+        const size_t OffsBits;
         const unsigned char ControlTemplate;
         
         const SavingMap Savings;
@@ -426,14 +430,14 @@ namespace
 
 
 const vector<unsigned char> Compress
-    (const unsigned char* data, unsigned length,
+    (const unsigned char* data, size_t length,
      unsigned Depth      /* 11 or 12 */
      )
 {
     Compressor com(data, length, Depth);
     vector<unsigned char> result;
     bool first=true;
-    for(unsigned maxrec=0; maxrec<MAX_RECURSION_DEPTH; ++maxrec)
+    for(size_t maxrec=0; maxrec<MAX_RECURSION_DEPTH; ++maxrec)
     {
         vector<unsigned char> tmp = com.Compress(maxrec);
         if(first || tmp.size() < result.size()) result = tmp;
@@ -442,7 +446,7 @@ const vector<unsigned char> Compress
     return result;
 }
 
-const vector<unsigned char> Compress(const unsigned char* data, unsigned length)
+const vector<unsigned char> Compress(const unsigned char* data, size_t length)
 {
     vector<unsigned char> result1 = Compress(data, length, 11);
     return result1;
@@ -451,7 +455,7 @@ const vector<unsigned char> Compress(const unsigned char* data, unsigned length)
     return result1.size() <= result2.size() ? result1 : result2;
 }
 
-unsigned Uncompress                 /* Return value: compressed size */
+size_t Uncompress                 /* Return value: compressed size */
     (const unsigned char* Memory,   /* Pointer to the compressed data */
      vector<unsigned char>& Target, /* Where to decompress to */
      const unsigned char* End
@@ -459,7 +463,7 @@ unsigned Uncompress                 /* Return value: compressed size */
 {
     Target.clear();
     
-    unsigned bytes_left = End-Memory;
+    size_t bytes_left = End-Memory;
     #define NEED_BYTES(n) \
         do { if(bytes_left < n) return 0; } while(0)
     #define ATE_BYTES(n) \
@@ -471,11 +475,11 @@ unsigned Uncompress                 /* Return value: compressed size */
         do { NEED_BYTES(1); (dest)=(Memory[0]); ATE_BYTES(1); } while(0)
     
     #define READ_ENDPOS(dest) \
-        do { unsigned endtmp; READ_WORD(endtmp); dest = Begin + endtmp; } while(0)
+        do { size_t endtmp; READ_WORD(endtmp); dest = Begin + endtmp; } while(0)
 
     #define GENERATE_FROM(source, n) \
     { \
-        unsigned len = Target.size(); \
+        size_t len = Target.size(); \
         Target.resize(len+n); \
         copy_n(source, n, &Target[len]); \
     }
@@ -551,8 +555,8 @@ unsigned Uncompress                 /* Return value: compressed size */
                     unsigned code;
                     READ_WORD(code);
                     
-                    unsigned Length = (code >> OffsetBits) + 3;
-                    unsigned Offset = code & ((1 << OffsetBits) - 1);
+                    size_t Length = (code >> OffsetBits) + 3;
+                    size_t Offset = code & ((1 << OffsetBits) - 1);
 
 #ifdef DEBUG_DECOMPRESS
                     fprintf(stderr, " %04X(-%u,%u)", code, Offset, Length);

@@ -28,7 +28,7 @@ These programs do quite much more than just some little editing:
 
 This project has grown together with
 <a href=\"http://bisqwit.iki.fi/ctfin/\">Bisqwit's Finnish Chrono Trigger translation</a>,
-but it's not limited to Finnish.<br>
+and to a lesser degree together with Mziab's Polish translation (no link), but it's not limited to either Finnish or Polish.<br>
 It has been designed to allow as much flexibility as possible.
 
 ", 'how:1. How to begin?' => "
@@ -45,12 +45,12 @@ So here's what you do if you want to translate Chrono Trigger.
 </ul>
 
 Feel free to <a href=\"#copying\">contact me</a> in questions
-you might have about translating/hacking Chrono†Trigger.<br>
+you might have about translating/hacking Chrono¬†Trigger.<br>
 
 ", 'status:1. Current status' => "
 
 <img src=\"/src/chronotools-toad.gif\" align=left alt=\"\">
-Chronotools is under active development.
+Chronotools is no longer under active development.
 Here's the current situation.<br>
 Last updated:
 ".date('Y-m-d', filemtime('/WWW/src/.desc-chronotools.php'))."
@@ -84,6 +84,10 @@ Last updated:
     <td>40%</td> <td>it isn't good or complete, but it exists</td></tr>
 <tr><td>Room/event modifying</td>
     <td>10%</td> <td>not easy, not necessary - but possible</td></tr>
+<tr><td>Emulator compatibility</td>
+    <td>80%</td> <td>tested extensively with SNES9x 1.43, slight VWF8-related bugs</td></tr>
+<tr><td>Hardware compatibility</td>
+    <td>60%</td> <td>Issues with the VWF8 scrolling and DMA updates outside NMI</td></tr>
 </table>
 
 ", 'changes:1.1. Version history' => "
@@ -210,6 +214,7 @@ Copypaste from the Makefile:
 # VERSION 1.15.3.5 drops support for Windows versions.
 # VERSION 1.15.4 adds packedblob support and fixes compilation on certain platforms.
 # VERSION 1.15.5 improves compilability on more modern gcc versions
+# VERSION 1.15.5.1 improves compilability on more modern gcc versions
 </pre>
 
 To use the character name changing feature, do a redump with ctdump
@@ -290,7 +295,7 @@ for browsing the ROM contents.
 ", '1.1.1. viewer' => "
 
 viewer requires S-Lang and is a textmode ROM browser
-originally developed by me for PokÈmon hacking.
+originally developed by me for Pok√©mon hacking.
 
 ", '1.1.1. sramdump' => "
 
@@ -381,16 +386,16 @@ You can force line breaks (like in HTML), but you don't have to.
 <p>
 The image on the right shows this script piece:
 <pre class=smallerpre
->T‰m‰ on Leenen Aukio. Sanotaan, ett‰ jos
-joskus kuulee Leenen Kellon soivan, el‰‰
-mielenkiintoisen ja onnellisen el‰m‰n!
+>T√§m√§ on Leenen Aukio. Sanotaan, ett√§ jos
+joskus kuulee Leenen Kellon soivan, el√§√§
+mielenkiintoisen ja onnellisen el√§m√§n!
 </pre>
 And is equal to if I had wrote this:
 <pre class=smallerpre
->T‰m‰ on Leenen Aukio. Sanotaan, ett‰[nl]
+>T√§m√§ on Leenen Aukio. Sanotaan, ett√§[nl]
 jos joskus kuulee Leenen Kellon soivan,[nl]
-el‰‰ mielenkiintoisen ja onnellisen[nl]
-el‰m‰n!</pre>
+el√§√§ mielenkiintoisen ja onnellisen[nl]
+el√§m√§n!</pre>
 
 <br clear=all>
 
@@ -510,15 +515,10 @@ and is distributed under the terms of the
 <a href=\"http://www.gnu.org/licenses/licenses.html#GPL\">General Public License</a> (GPL).
 <p>
  If you have questions or just want to talk about
- Chrono†Trigger hacking, throw me email.
+ Chrono¬†Trigger hacking, throw me email.
 <p>
  ".GetEmail('My email address:', 'Joel Yliluoma', 'bisqwi'. 't@iki.fi')."<br>
- If you send me e-mail, please ensure I can reply to you.
-<p>
-I've previously stated here that I'm not publishing files because it's
-a†well-known fact that many people in ROM†hacking scene aren't very
-respectful to copyrights.<br>
-Well, left to be seen...
+ If you send me e-mail, please make sure that I can reply to you.
 
 ", 'parts:1.1. Ripping my hacks' => "
 

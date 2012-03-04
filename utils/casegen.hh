@@ -32,7 +32,11 @@ public:
     virtual void EmitCompareGE(CaseValue value, const std::string& target) = 0;
     virtual void EmitSubtract(CaseValue value) = 0;
     virtual void EmitJumpTable(const std::vector<std::string>& table) = 0;
-    
+    virtual void EmitTestBits16(unsigned bitmask, const std::string& target,
+                                bool assume_capped) = 0;
+    virtual void EmitTestBits8(unsigned bitmask, const std::string& target,
+                               bool assume_capped) = 0;
+
     // Starts a logical block of code.
     // Return value: a label to put at the end of block.
     virtual const std::string EmitBlock() = 0;
@@ -62,10 +66,22 @@ private:
     CaseLabel defaultlabel;
     std::vector<IntCaseItem> items;
     
+    static void AnalyzeItems(
+        const std::vector<IntCaseItem>& items,
+        CaseValue& minval,
+        CaseValue& maxval,
+        size_t&    n_comparisons);
+    static void OffsetItems(
+        std::vector<IntCaseItem>& items,
+        CaseValue sub);
+    static void SubtractTreeRecursively(
+        IntCaseItem& head,
+        CaseValue sub);
+
     void InitializePointers();
     void BalanceNodes(IntCaseItem** Head,
                       IntCaseItem* Parent);
-    void EmitCaseTree(const IntCaseItem& node);
+    void EmitCaseTree(IntCaseItem& node);
     void EmitLastEQlow(const IntCaseItem& node);
     
     void CreateTree();

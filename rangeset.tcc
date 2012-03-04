@@ -1,5 +1,7 @@
 #include "rangeset.hh"
 
+#include <cstdio>
+
 template<typename Key,typename Allocator>
 const typename rangeset<Key,Allocator>::const_iterator
     rangeset<Key,Allocator>::ConstructIterator(typename Cont::const_iterator i) const
@@ -24,7 +26,7 @@ void rangeset<Key,Allocator>::const_iterator::Reconstruct()
 
         if(i->second.is_nil())
         {
-            fprintf(stderr, "rangeset: internal error\n");
+            std::fprintf(stderr, "rangeset: internal error\n");
         }
     }
 }

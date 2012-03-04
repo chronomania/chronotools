@@ -17,9 +17,10 @@ private:
     revtype rev2, rev8, rev16;
 
     void AddSym(const std::wstring& sym, ctchar c, int targets);
-    void Load();
 public:
     Symbols();
+    void Load();
+
     const type&    GetMap(unsigned ind) const;
     const revtype& GetRev(unsigned ind) const;
 };

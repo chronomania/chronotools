@@ -147,6 +147,7 @@ DEPDIRS = utils/
 # VERSION 1.15.3.5 drops support for Windows versions.
 # VERSION 1.15.4 adds packedblob support and fixes compilation on certain platforms.
 # VERSION 1.15.5 improves compilability on more modern gcc versions
+# VERSION 1.15.5.1 improves compilability on more modern gcc versions
 
 #OPTIM=-Os
 # -fshort-enums
@@ -163,7 +164,7 @@ CFLAGS += -I/usr/include/slang
 LDFLAGS += -L/usr/lib/slang
 
 
-VERSION=1.15.5
+VERSION=1.15.5.1
 ARCHFILES=utils/xray.cc utils/xray.h \
           utils/viewer.c utils/cp437-8x8 \
           utils/vwftest.cc \
@@ -456,7 +457,7 @@ ct-crononick.o65: ct-crononick1.a65 ct-crononick.a65
 
 
 DOCS/%: FORCE
-	@make -s "ARCHNAME=${ARCHNAME}" -C DOCS `echo $@|sed 's|^[^/]*/||'`
+	@+ make -s "ARCHNAME=${ARCHNAME}" -C DOCS `echo $@|sed 's|^[^/]*/||'`
 
 #ct.txt: ctdump chrono-dumpee.smc
 #	./ctdump chrono-dumpee.smc >ct_tmp.txt || rm -f ct_tmp.txt && false

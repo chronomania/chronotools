@@ -20,6 +20,7 @@ class ConfParser::CharIStream
     const std::wstring getLine();
 
     bool equal(wchar_t c1, char c2) const;
+    bool equal(wchar_t c1, wchar_t c2) const { return c1==c2; }
     bool isSpace(wchar_t c) const;
     bool isDigit(wchar_t c) const;
     wchar_t toUpper(wchar_t c) const;
@@ -35,7 +36,7 @@ class ConfParser::CharIStream
     wstringIn conv;
     FILE *fp;
     std::wstring cache;
-    unsigned cacheptr;
+    std::size_t cacheptr;
     wchar_t getC();
     
     wchar_t nextChar;
@@ -64,7 +65,6 @@ wchar_t ConfParser::CharIStream::getC()
         if(cacheptr < cache.size())  
         {
             wchar_t result = cache[cacheptr++];
-            //fprintf(stderr, "Cache: '%c' (%X)\n", (char)result, (unsigned)result);
             return result;
         }
         
@@ -75,7 +75,6 @@ wchar_t ConfParser::CharIStream::getC()
             char Buf[512];
             size_t n = fread(Buf, 1, sizeof Buf, fp);
             if(n == 0) break;
-            
             cache += conv.puts(std::string(Buf, n));
         }
         // So now cache may be of arbitrary size.
@@ -99,7 +98,7 @@ wchar_t ConfParser::CharIStream::getChar()
 {
     wchar_t retval = nextChar;
     nextChar = getC();
-    if(retval == '\n') ++line;
+    if(retval == L'\n') ++line;
     return retval;
 }
 
@@ -108,8 +107,8 @@ const std::wstring ConfParser::CharIStream::getLine()
     std::wstring result;
     for(;;)
     {
-        if(nextChar == '\r') { getChar(); continue; }
-        if(nextChar == '\n') { getChar(); break; }
+        if(nextChar == L'\r') { getChar(); continue; }
+        if(nextChar == L'\n') { getChar(); break; }
         result += getChar();
     }
     ++line;
@@ -123,19 +122,19 @@ bool ConfParser::CharIStream::equal(wchar_t c1, char c2) const
 
 bool ConfParser::CharIStream::isSpace(wchar_t c) const
 {
-    return c == ' ' || c == '\t' || c == '\r' || c == '\n';
+    return c == L' ' || c == L'\t' || c == L'\r' || c == L'\n';
 }
 
 bool ConfParser::CharIStream::isDigit(wchar_t c) const
 {
-    return c >= '0' && c <= '9';
+    return c >= L'0' && c <= L'9';
 }
 
 wchar_t ConfParser::CharIStream::toUpper(wchar_t c) const
 {
-    if(c < 'a') return c;
-    if(c > 'z') return c;
-    return c + 'A' - 'a';
+    if(c < L'a') return c;
+    if(c > L'z') return c;
+    return c + L'A' - L'a';
 }
 
 void ConfParser::CharIStream::skipWS()
@@ -221,9 +220,9 @@ bool ConfParser::ParseField(CharIStream& is, Field& field, bool mergeStrings)
                 if(is.equal(c, '\\'))
                 {
                     c = is.getChar();
-                    if(is.equal(c, 'n')) c = '\n';
-                    else if(is.equal(c, 't')) c = '\t';
-                    else if(is.equal(c, 'r')) c = '\r';
+                    if(is.equal(c, 'n')) c = L'\n';
+                    else if(is.equal(c, 't')) c = L'\t';
+                    else if(is.equal(c, 'r')) c = L'\r';
                 }
                 else
                     if(is.equal(c, '"')) break;
@@ -242,7 +241,7 @@ bool ConfParser::ParseField(CharIStream& is, Field& field, bool mergeStrings)
         else if(is.isDigit(c) || is.equal(c, '$'))
         {
             bool isHex = false;
-            if(is.equal(c, '0') && is.equal(is.peekChar(), 'x'))
+            if(is.equal(c, '0') && is.equal(is.peekChar(), L'x'))
             {
                 is.getChar(); c = is.getChar();
                 isHex = true;
@@ -258,19 +257,19 @@ bool ConfParser::ParseField(CharIStream& is, Field& field, bool mergeStrings)
             element.DField = 0;
             while(true)
             {
-                unsigned value = is.toUpper(c)-'0';
-                if(isHex && value > 9) value -= 'A'-'0'-10;
+                unsigned value = is.toUpper(c)-L'0';
+                if(isHex && value > 9) value -= L'A'-L'0'-10;
                 element.IField *= isHex ? 16 : 10;
                 element.IField += value;
 
                 c = is.toUpper(is.peekChar());
-                if(is.isDigit(c) || (isHex && c>='A' && c<='F'))
+                if(is.isDigit(c) || (isHex && c>=L'A' && c<=L'F'))
                     c = is.getChar();
                 else
                     break;
             }
             element.DField = element.IField;
-            if(is.peekChar() == '%')
+            if(is.peekChar() == L'%')
             {
                 element.DField /= 100.0;
                 is.getChar();
@@ -278,9 +277,9 @@ bool ConfParser::ParseField(CharIStream& is, Field& field, bool mergeStrings)
             field.elements.push_back(element);
         }
         else if(is.equal(c, 't') &&
-                is.equal(is.getChar(), 'r') &&
-                is.equal(is.getChar(), 'u') &&
-                is.equal(is.getChar(), 'e'))
+                is.equal(is.getChar(), L'r') &&
+                is.equal(is.getChar(), L'u') &&
+                is.equal(is.getChar(), L'e'))
         {
             Field::Element element;
             element.IField = 1;
@@ -288,10 +287,10 @@ bool ConfParser::ParseField(CharIStream& is, Field& field, bool mergeStrings)
             field.elements.push_back(element);
         }
         else if(is.equal(c, 'f') &&
-                is.equal(is.getChar(), 'a') &&
-                is.equal(is.getChar(), 'l') &&
-                is.equal(is.getChar(), 's') &&
-                is.equal(is.getChar(), 'e'))
+                is.equal(is.getChar(), L'a') &&
+                is.equal(is.getChar(), L'l') &&
+                is.equal(is.getChar(), L's') &&
+                is.equal(is.getChar(), L'e'))
         {
             Field::Element element;
             element.IField = 0;

@@ -12,7 +12,7 @@ using std::string;
 namespace
 {
 #if USE_ICONV
-    string CharSet = "iso-8859-1";
+    std::string CharSet = "iso-8859-1";
 #endif
 
     class CharacterSet

@@ -7,9 +7,9 @@ str_replace(const basic_string<CharT>& search,
             const basic_string<CharT>& where)
 {
     basic_string<CharT> result;
-    for(unsigned a=0; a < where.size(); )
+    for(std::string::size_type a=0; a < where.size(); )
     {
-        unsigned b = where.find(search, a);
+        std::string::size_type b = where.find(search, a);
         if(b == where.npos)
         {
             //result += where.substr(a);
@@ -32,9 +32,9 @@ str_replace(const basic_string<CharT>& search,
             const basic_string<CharT>& where)
 {
     basic_string<CharT> result;
-    for(unsigned a=0; a < where.size(); )
+    for(std::string::size_type a=0; a < where.size(); )
     {
-        unsigned b = where.find(search, a);
+        std::string::size_type b = where.find(search, a);
         if(b == where.npos)
         {
             //result += where.substr(a);

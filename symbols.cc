@@ -128,10 +128,6 @@ Symbols::Symbols()
    : symbols2(), symbols8(), symbols16(),
      rev2(), rev8(), rev16()
 {
-    Load();
-#if 0 /* nobody cares */
-    fprintf(stderr, "Built symbol converter\n");
-#endif
 }
 
 class Symbols Symbols;
