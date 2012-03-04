@@ -52,16 +52,16 @@ For Finnish, they were the following:
 Form                   ZGX     R66     Pekka   Magus      Crono  
 -----------------------------------------------------------------
 genitive/accusative    ZGX:n   R66:n   Pekan   Maguksen   Cronon
-partitive              ZGX:‰‰  R66:a   Pekkaa  Magusta    Cronoa
-inessive               ZGX:ss‰ R66:ssa Pekassa Maguksessa Cronossa
-adessive               ZGX:ll‰ R66:lla Pekalla Maguksella Cronolla
-ablative               ZGX:lt‰ R66:lta Pekalta Magukselta Cronolta
+partitive              ZGX:√§√§  R66:a   Pekkaa  Magusta    Cronoa
+inessive               ZGX:ss√§ R66:ssa Pekassa Maguksessa Cronossa
+adessive               ZGX:ll√§ R66:lla Pekalla Maguksella Cronolla
+ablative               ZGX:lt√§ R66:lta Pekalta Magukselta Cronolta
 allative               ZGX:lle R66:lle Pekalle Magukselle Cronolle
-elative                ZGX:st‰ R66:sta Pekasta Maguksesta Cronosta
-abessive               ZGX:tt‰ R66:tta Pekatta Maguksetta Cronotta
+elative                ZGX:st√§ R66:sta Pekasta Maguksesta Cronosta
+abessive               ZGX:tt√§ R66:tta Pekatta Maguksetta Cronotta
 translative            ZGX:ksi R66:ksi Pekaksi Magukseksi Cronoksi
-essive                 ZGX:n‰  R66:na  Pekkana Maguksena  Cronona
-illative               ZGX:‰‰n R66:een Pekkaan Magukseen  Cronoon
+essive                 ZGX:n√§  R66:na  Pekkana Maguksena  Cronona
+illative               ZGX:√§√§n R66:een Pekkaan Magukseen  Cronoon
 </pre>
 
 The "Form" here refers to the linguistic name of the conjugation.<br>
@@ -93,26 +93,31 @@ setup "Do_A" "
  cCronoa,mMarlea,lLuccaa,rRobosta,fFrogia,fFroggia,
  aAylaa,uMagusta,uMaguksea,eEpochia,
  1[member1]:a,2[member2]:a,3[member3]:a,
- 1[member1]:‰,2[member2]:‰,3[member3]:‰" ":ta"
+ 1[member1]:√§,2[member2]:√§,3[member3]:√§" ":ta"
 
 setup "Do_LLA" "
  cCronolla,mMarlella,lLuccalla,lLucalla,rRoboksella,fFrogilla,
  aAylalla,uMaguksella,uMagusilla,eEpochilla,
  1[member1]:lla,2[member2]:lla,3[member3]:lla,
- 1[member1]:ll‰,2[member2]:ll‰,3[member3]:ll‰" "kella"
+ 1[member1]:ll√§,2[member2]:ll√§,3[member3]:ll√§" "kella"
 </pre>
 
 The first parameter of <code>setup</code> is the function name
 that is responsible of handling this conjugation.
-<p>
+ <p>
 The second parameter is the list of all strings that the
-conjugator will assume as a call to this conjugation.
+conjugator will <i>assume as a call to this conjugation</i>.
 The parameter is commaseparated and each string begins
 with a letter: c for Crono, m for Marle, l for Lucca, r for Robo,
 f for Frog, a for Ayla, u for Magus, e for Epoch, 1 for
 the first member of party, 2 for the second member of party
 and 3 for the third member of the party.
-<p>
+ <p>
+These names are expected to be <i>found</i> in the script,
+and they will be <i>replaced</i> with calls to the conjugator
+engine with the respective character name. In other words,
+these names listed will not be rendered as-is.
+ <p>
 The third parameter is a string that is used by the script
 wrapping code. It describes the <em>widest</em> possible string
 that the conjugation could append to the character name.
@@ -123,8 +128,8 @@ This is the hardest part for average people.<br
 You have to write your own conjugator!<br>
 Have a look at <tt>DOCS/ct-conj.code</tt> (the Finnish conjugator
 as an example) and try to grasp it.<br>
-Sorry, I can't help you more than this.
-<p>
+Sorry, I can't help you more than this. Yes, it requires some programming.
+ <p>
 Anyway, when you are done with your code file, you just compile
 it with utils/compile, combine it with ct-conj.a65 and assemble
 it with <a href="http://bisqwit.iki.fi/source/snescom.html">snescom</a>.
@@ -154,9 +159,9 @@ Ask me for help if you didn't get it :)
    is at <a href="http://iki.fi/bisqwit/source/chronotools.html">http://iki.fi/bisqwit/source/chronotools.html</a>.<br>
    Check there for new versions.
 </div> <p align=right><small>Generated from
-       <tt>source/conjugation.php</tt> (last updated: Tue, 03 Feb 2009 11:57:55 +0200)<br>
+       <tt>source/conjugation.php</tt> (last updated: Tue, 03 Feb 2009 13:13:59 +0200)<br>
   with <tt>docmaker.php</tt> (last updated: Tue, 03 Feb 2009 11:57:55 +0200)<br>
-  at Tue, 03 Feb 2009 11:57:56 +0200</small>
+  at Fri, 15 Oct 2010 16:30:43 +0300</small>
  </p>
 </body>
 </html>

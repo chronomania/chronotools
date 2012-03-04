@@ -286,6 +286,8 @@ int main(void)
         "Chrono Trigger script insertor version "VERSION"\n"
         "Copyright (C) 1992,2005 Bisqwit (http://iki.fi/bisqwit/)\n");
     
+    Symbols.Load();
+
     insertor *ins = new insertor;
     
     /* Ensure the ROM size */

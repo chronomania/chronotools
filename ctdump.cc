@@ -7,6 +7,7 @@ using namespace std;
 
 #include "rommap.hh"
 #include "romaddr.hh"
+#include "symbols.hh"
 #include "settings.hh"
 #include "eventdata.hh"
 #include "dumpevent.hh"
@@ -549,6 +550,8 @@ int main(int argc, const char* const* argv)
         "Chrono Trigger script dumper version "VERSION"\n"
         "Copyright (C) 1992,2005 Bisqwit (http://iki.fi/bisqwit/)\n");
     
+    Symbols.Load();
+
     if(argc != 2)
     {
         fprintf(stderr,

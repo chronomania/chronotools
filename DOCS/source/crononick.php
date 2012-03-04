@@ -13,7 +13,7 @@ What exactly is <code>[crononick]</code>? Can I just replace it
 with Crono? From what I saw only Ayla uses it in her dialogue.
 <p>
 <b>A:</b>
-Ayla talks simply language, and from the very first moment she
+Ayla talks simple language, and from the very first moment she
 sees Crono, she likes him a lot and gives him a new name, a
 simpler name.<br>
 From that on, she calls Crono always by that nickname.
@@ -21,8 +21,8 @@ From that on, she calls Crono always by that nickname.
 In the Japanese version, Crono's default name is Kurono, and
 Ayla's version of that name is Kuro.<br>
 If the user gives Crono a new name and the name is longer
-than two syllables, the <code>[crononick]</code> handler
-only displays the first two syllables of it.
+than two syllables, the Japanese <code>[crononick]</code>
+handler only displays the first two syllables of it.
 <p>
 In the English version you don't see this happening because the
 localizers weren't able to invent an algorithm to simplify the name.<br>
@@ -53,5 +53,18 @@ load_code \"ct-crononick.o65\"
 add_call_of \"CrononickHandler\"   \$C25B3B 13 false
 </pre>
 You can find my code file in the <code>DOCS/ct-crononick.code</code> file.
+
+", '1. What does the Finnish version do?' => "
+
+In the Finnish version, Crononick is formed using the following substitution rules:
+<ol>
+ <li>If the name begins with two differing consonants, remove the first one and uppercase the second.<br>
+     E.g. Crono -> Rono, Sven -> Ven</li>
+ <li>If the name ends with a vowel, two identical consonants and a vowel, remove the second-last letter.<br>
+     E.g. Mikko -> Miko, Matti -> Mati</li>
+ <li>If the name ends with a consonant, two identical consonants and a vowel, remove the non-identical consonant.<br>
+     E.g. Ilkka -> Ikka</li>
+ <li>Otherwise use the unmodified name</li>
+</ol>
 
 ");

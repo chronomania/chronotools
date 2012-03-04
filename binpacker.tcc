@@ -170,9 +170,9 @@ namespace
     {
         for(unsigned a=0; a<holes.size(); ++a)
         {
-            std::cerr << "  Hole(size(" << GetHoleSize(a)
+            /*std::cerr << "  Hole(size(" << GetHoleSize(a)
                       << ")used(" << GetCapacity(a)
-                      << "%)";
+                      << "%)";*/
 #if BINPACKER_DUMP_ITEMS
             std::cerr << "items(";
             bool first=true,firstout=true;
@@ -218,7 +218,7 @@ const std::vector<unsigned> PackBins
 {
     BinPacker<sizetype> packer(Bins, Items);
 #if BINPACKER_DUMP
-    if(!packer.IsGood()) packer.Dump();
+    /*if(!packer.IsGood())*/ packer.Dump();
 #endif
     return packer.GetResult();
 }

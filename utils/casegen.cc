@@ -1,3 +1,4 @@
+#include <cstdio>
 #include "casegen.hh"
 #include <algorithm>
 
@@ -24,6 +25,9 @@
 
 #define OPTIMIZE_SIZE  0
 #define SUPPORT_TABLES 0
+
+#define SUPPORT_BITMASKTEST 0
+#define PREFER_USING_SUB 1
 
 bool CaseGenerator::IntCaseItem::HasLowerBound(const CaseGenerator& g) const
 {
@@ -67,23 +71,20 @@ void CaseGenerator::InitializePointers()
         IntCaseItem& item = items[a];
         
         //std::printf("%ld,%ld\n", item.low, item.high);
-        
-        item.parent = NULL;
+        item.parent = a > 0              ? &items[a-1] : NULL;
         item.left   = NULL;
-        item.right  = NULL;
-        if(a > 0)
-        {
-            IntCaseItem& prev = items[a-1];
-            
-            item.parent = &prev;
-            prev.right  = &item;
-        }
+        item.right  = a+1 < items.size() ? &items[a+1] : NULL;
     }
 }
 
 void CaseGenerator::BalanceNodes(IntCaseItem** Head, IntCaseItem* Parent)
 {
     IntCaseItem* np = *Head;
+    if(np && np->low == 0)
+    {
+        BalanceNodes(&np->right, np);
+        return;
+    }
     if(np)
     {
         int i = 0, ranges = 0;
@@ -100,7 +101,9 @@ void CaseGenerator::BalanceNodes(IntCaseItem** Head, IntCaseItem* Parent)
             npp  = Head;
             Left = *npp;
             if(i == 3)
+            {
                 npp = &(*npp)->right;
+            }
             else
             {
                 i = (i + ranges + 1) / 2;
@@ -138,10 +141,20 @@ void CaseGenerator::EmitLastEQlow(const IntCaseItem& node)
 #endif
 }
 
-void CaseGenerator::EmitCaseTree(const IntCaseItem& node)
+void CaseGenerator::SubtractTreeRecursively(
+    IntCaseItem& head,
+    CaseValue sub)
+{
+    head.low   -= sub;
+    head.high  -= sub;
+    if(head.left)  SubtractTreeRecursively(*head.left, sub);
+    if(head.right) SubtractTreeRecursively(*head.right, sub);
+}
+
+void CaseGenerator::EmitCaseTree(IntCaseItem& node)
 {
 /*
-    std::printf("Case(%ld,%ld)", node.low, node.high);
+    std::printf("; Case(%ld,%ld)", node.low, node.high);
     if(node.left)
     {
         std::printf(" - left(%ld,%ld)", node.left->low, node.left->high);
@@ -163,8 +176,20 @@ void CaseGenerator::EmitCaseTree(const IntCaseItem& node)
     std::printf("\n");
 */
     if(node.IsBounded(*this))
+    {
         EmitJump(node.target);
-    else if(!node.IsRange())
+        return;
+    }
+    
+#if PREFER_USING_SUB
+    if(!node.left && node.low != 0 && node.IsRange())
+    {
+        EmitSubtract(node.low);
+        SubtractTreeRecursively(node, node.low);
+    }
+#endif
+    
+    if(!node.IsRange())
     {
         // single value.
         if(node.right && node.left)
@@ -341,10 +366,14 @@ void CaseGenerator::EmitCaseTree(const IntCaseItem& node)
 
 void CaseGenerator::CreateTree()
 {
-    InitializePointers();
-    IntCaseItem* head = &items[0];
-    BalanceNodes(&head, NULL);
-    EmitCaseTree(*head);
+    if(!items.empty())
+    {
+        InitializePointers();
+
+        IntCaseItem* head = &items[0];
+        BalanceNodes(&head, NULL);
+        EmitCaseTree(*head);
+    }
     EmitJump(defaultlabel);
 }
 
@@ -366,47 +395,230 @@ void CaseGenerator::CreateTable(CaseValue minval, CaseValue range)
     EmitJumpTable(table);
 }
 
-void CaseGenerator::Generate()
+void CaseGenerator::AnalyzeItems(
+    const std::vector<IntCaseItem>& items,
+    CaseValue& minval,
+    CaseValue& maxval,
+    size_t&    n_comparisons)
 {
-    CaseValue minval=0, maxval=0;
-    size_t count = items.size();
+    minval = items.front().low;
+    maxval = items.back().high;
+    n_comparisons = items.size();
+
     for(size_t a=0; a < items.size(); ++a)
+        if(items[a].low != items[a].high)
+            ++n_comparisons;
+}
+
+static bool IsDisconnectedBitset(unsigned bitmask)
+{
+    bool off=false, on=false;
+    for(unsigned a=0; a<=15; ++a)
     {
-        if(!a)
+        if(bitmask & (1 << a))
+            { if(off) return true; on=true; }
+        else
+            { if(on) off=true; }
+    }
+    return false;
+}
+
+void CaseGenerator::OffsetItems(
+    std::vector<IntCaseItem>& items,
+    CaseValue offset)
+{
+    for(size_t a=0; a<items.size(); ++a)
+    {
+        items[a].low  = (items[a].low  - offset) & 255;
+        items[a].high = (items[a].high - offset) & 255;
+    }
+
+    std::sort(items.begin(), items.end());
+    for(size_t a=0; a<items.size(); ++a)
+    {
+        if(items[a].low > items[a].high)
         {
-            minval = items[a].low;
-            maxval = items[a].high;
+            IntCaseItem tmp(items[a]);
+            tmp.low       = 0;
+            items[a].high = 255;
+            items.insert(items.begin(), tmp);
+            --a;
+        }
+    }
+    /*for(size_t a=0; a+1<items.size(); )
+    {
+        if(items[a].high+1 >= items[a+1].low
+        && items[a].target == items[a+1].target)
+        {
+            items[a].high = items[a+1].high;
+            items.erase(items.begin() + a+1);
         }
         else
-        {
-            if(items[a].low < minval) minval = items[a].low;
-            if(items[a].high > maxval) maxval = items[a].high;
-        }
-        if(items[a].low != items[a].high) ++count;
-    }
-    
+            ++a;
+    }*/
+}
+
+void CaseGenerator::Generate()
+{
+    size_t count;
+    CaseValue minval, maxval;
+    AnalyzeItems(items, minval,maxval, count);
 
 #if SUPPORT_TABLES
     CaseValue range = maxval-minval;
-#if OPTIMIZE_SIZE
+  #if OPTIMIZE_SIZE
     size_t size_tree  = (3+2) * count;
-    size_t size_table = (range+1)*2 + 3+2;
-    if(size_tree < size_table)
-#else
-    if(count < CASE_VALUES_THRESHOLD
-    || range > 10*count
-    || range < 0)
-#endif
-#endif
-    {
-        CreateTree();
-    }
-#if SUPPORT_TABLES
-    else
+    size_t size_table = (range+1)*2 + 14;//3+2;
+    if(size_tree >= size_table)
+  #else
+    if(count >= CASE_VALUES_THRESHOLD
+    && range <= 10*count
+    && range >= 0)
+  #endif
     {
         CreateTable(minval, range);
+        return;
     }
 #endif
+    // Not created as a table.
+
+#if SUPPORT_BITMASKTEST
+    // Check if the test can be severely shortened by the
+    // application of 16-bit tests.
+    // Supported only if the dataset is 8-bit with wrap-around.
+    if(GetMinValue() == 0 && GetMaxValue() == 255)
+    {
+        for(;;)
+        {
+            std::set<CaseLabel> distinct_targets;
+            for(size_t a=0; a<items.size(); ++a)
+                distinct_targets.insert(items[a].target);
+
+            size_t cost_estimate_before = count*2;
+
+            size_t   suggested_offset = 0;
+            unsigned suggested_bitmask = 0;
+            std::string suggested_target;
+
+            for(std::set<CaseLabel>::const_iterator
+                i = distinct_targets.begin();
+                i != distinct_targets.end();
+                ++i)
+            {
+                for(size_t offset = 0; offset < 256; ++offset)
+                {
+                    std::vector<IntCaseItem> modified_items(items);
+                    OffsetItems(modified_items, offset);
+
+                    unsigned bitmask = 0;
+                    unsigned n_bits_set = 0;
+                    for(size_t a=0; a<modified_items.size(); )
+                    {
+                        if(modified_items[a].target != *i) { ++a; continue; }
+                        CaseValue mi = modified_items[a].low;
+                        CaseValue ma = modified_items[a].high;
+
+                        for(CaseValue b=0; b<=15; ++b)
+                            if(b >= mi && b <= ma)
+                            {
+                                ++n_bits_set;
+                                bitmask |= 1<<b;
+                            }
+                        bool remain = ma > 15;
+                        if(!remain)
+                            modified_items.erase(modified_items.begin() + a);
+                        else
+                            ++a;
+                    }
+
+                    if(n_bits_set > 0 && n_bits_set < 15
+                    && ((offset==0&&!(bitmask&1))
+                          || IsDisconnectedBitset(bitmask)))
+                    {
+                        size_t mod_count;
+                        CaseValue mod_minval, mod_maxval;
+                        AnalyzeItems(modified_items, mod_minval, mod_maxval, mod_count);
+                        
+                        size_t mod_cost_estimate = mod_count*2;
+                        if(offset != 0) mod_cost_estimate += 2;
+                        if(bitmask >= 0x100 || (bitmask & 1))
+                        {
+                            mod_cost_estimate += 2; // for 16-bit bitmask
+                            if(mod_maxval >= 16)
+                                mod_cost_estimate += 2;
+                        }
+                        else
+                        {
+                            mod_cost_estimate += 1; // for bitmask
+                            if(mod_maxval >= 8)
+                                mod_cost_estimate += 2;
+                        }
+                        
+                        if(mod_cost_estimate <= cost_estimate_before)
+                        {
+                            suggested_offset  = offset;
+                            suggested_bitmask = bitmask;
+                            suggested_target  = *i;
+                            cost_estimate_before = mod_cost_estimate;
+                        }
+                    }
+                }
+            }
+            
+            if(suggested_bitmask == 0) break;
+            
+            /*for(size_t a=0; a<items.size(); ++a)
+            {
+                std::printf("> <%s> %ld-%ld\n",
+                    items[a].target.c_str(),
+                    items[a].low, items[a].high);
+            }*/
+
+            if(suggested_offset != 0)
+            {
+                EmitSubtract(suggested_offset);
+                OffsetItems(items, suggested_offset);
+            }
+
+            AnalyzeItems(items, minval,maxval, count);
+
+            if(suggested_bitmask < 0x100)
+                EmitTestBits8( suggested_bitmask, suggested_target, maxval < 8 );
+            else
+                EmitTestBits16( suggested_bitmask, suggested_target, maxval < 16 );
+            std::fflush(stdout);
+
+            for(size_t a=0; a<items.size(); )
+            {
+                /*std::printf("; <%s> %ld-%ld\n",
+                    items[a].target.c_str(),
+                    items[a].low, items[a].high);*/
+                if(items[a].target != suggested_target) ++a;
+                if(items[a].high <= 15)
+                    items.erase(items.begin() + a);
+                else
+                {
+                    if(items[a].low <= 15) items[a].low = 16;
+                    ++a;
+                }
+            }
+            std::sort(items.begin(), items.end());
+            
+            AnalyzeItems(items, minval,maxval, count);
+        }
+    }
+#endif
+#if PREFER_USING_SUB
+    if(!items.empty() && minval != 0)
+    {
+        EmitSubtract(minval);
+        OffsetItems(items, minval);
+        Generate();
+        return;
+    }
+#endif
+    //std::printf("; Create tree %d\n", (int) items.size());
+    CreateTree();
 }
 
 void CaseGenerator::Generate(const CaseItemList& source, const CaseLabel& over)

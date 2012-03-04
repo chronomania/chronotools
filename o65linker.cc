@@ -124,7 +124,7 @@ void O65linker::AddObject(const O65& object, const std::string& what, LinkageWis
         {
             MessageDuplicateDefinitionAt(symlist[a], what,
                 AscToWstr(objects[objnum]->GetName()));
-            clean = false;
+            //clean = false;
         }
     }
     

@@ -171,7 +171,7 @@ namespace
         
         size_t romsize = GetRomSize();
         
-        std::vector<unsigned char> types(romsize);
+        std::vector<unsigned char> types(romsize+1);
         
         for(rommap::const_iterator i = space.begin(); i != space.end(); ++i)
             for(size_t a = i->lower; a < i->upper; ++a)
@@ -392,9 +392,9 @@ void LoadROM(FILE *fp)
     fprintf(stderr, "\n");
 }
 
-namespace
+size_t GetROMsize()
 {
-    struct ROMinfo
+    static struct ROMinfo
     {
         unsigned romsize;
         ROMinfo() : romsize(GetConf("general", "romsize"))
@@ -408,10 +408,6 @@ namespace
             }
         }
     } ROMinfo;
-}
-
-size_t GetROMsize()
-{
     return 0x100000 /* 1 Megabyte */
          * (ROMinfo.romsize / 8);
 }

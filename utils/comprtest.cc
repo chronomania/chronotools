@@ -1,4 +1,5 @@
 #include <vector>
+#include <cstdio>
 
 #include "compress.hh"
 
@@ -77,13 +78,13 @@ static void Try(const vector<unsigned char>& Orig, unsigned n,
     unsigned errors = 0;
     if(origsize != comsize)
     {
-        fprintf(stderr, "- Error: Compressor ate %u bytes, should be %u\n",
+        fprintf(stderr, "- *ERROR*: Compressor ate %u bytes, should be %u\n",
             origsize, comsize);
         ++errors;
     }
     if(resultsize != n)
     {
-        fprintf(stderr, "- Error: Compressor made %u bytes, should be %u\n",
+        fprintf(stderr, "- *ERROR*: Compressor made %u bytes, should be %u\n",
             resultsize, n);
         ++errors;
     }
@@ -96,7 +97,7 @@ static void Try(const vector<unsigned char>& Orig, unsigned n,
     }
     if(diffs)
     {
-        fprintf(stderr, "- Error: %u bytes of difference\n", diffs);
+        fprintf(stderr, "- *ERROR*: %u bytes of difference\n", diffs);
         ++errors;
     }
     if(!errors)
@@ -119,28 +120,43 @@ static const vector<unsigned char> Compress(unsigned n)
 
 static void PerformanceTest(unsigned n)
 {
+    RecompressTests(n);
     vector<unsigned char> result = Compress(n);
     fprintf(stderr, "Recompressed as %u bytes (from %u bytes)", result.size(), n);
 
     vector<unsigned char> data;
-    unsigned origsize = Uncompress(&result[0], data);
+    size_t origsize = Uncompress(&result[0], data);
+    char valid[128] = "???";
+    if(data.size() == Data.size())
+    {
+        std::sprintf(valid, "OK");
+        for(size_t a=0; a<Data.size(); ++a)
+            if(data[a] != Data[a])
+            {
+                std::sprintf(valid, "Recompress fail at %zu", a);
+                break;
+            }
+    }
+
     if(origsize != result.size() || data.size() != n)
         fprintf(stderr, " - fail\n");
     else if(lastsize > result.size())
     {
-        fprintf(stderr, " - OK - improved %.2f%%\n",
+        fprintf(stderr, " - %s - improved %.2f%%\n",
+            valid,
             (int)(lastsize - result.size()) * 100.0 / lastsize
                );
     }
     else if(lastsize < result.size())
     {
-        fprintf(stderr, " - OK - declined %.2f%%\n",
+        fprintf(stderr, " - %s - declined %.2f%%\n",
+            valid,
             (int)(result.size() - lastsize) * 100.0 / lastsize
                );
     }
     else
     {
-        fprintf(stderr, " - OK\n");
+        fprintf(stderr, " - %s\n", valid);
     }
     fprintf(stderr, "\n");
 }
@@ -181,47 +197,47 @@ int main(void)
 
 #if 1
     addr = 0xDB0000; // Settings
-    n = Decompress(addr);
+    n = Decompress(addr); DumpGFX(addr);
     PerformanceTest(n);
     
     addr = 0xFE6002; // Title screen stuff
-    n = Decompress(addr);
+    n = Decompress(addr); DumpGFX(addr);
     PerformanceTest(n);
     
     addr = 0xC40EB8; // more map gfx
-    n = Decompress(addr);
+    n = Decompress(addr); DumpGFX(addr);
     PerformanceTest(n);
     
     addr = 0xC59A56; // players on map
-    n = Decompress(addr);
+    n = Decompress(addr); DumpGFX(addr);
     PerformanceTest(n);
     
     addr = 0xC40000; // map gfx, perhaps
-    n = Decompress(addr);
+    n = Decompress(addr); DumpGFX(addr);
     PerformanceTest(n);
     
     addr = 0xC6FB00; // tile indices in time gauge ?
-    n = Decompress(addr);
+    n = Decompress(addr); DumpGFX(addr);
     PerformanceTest(n);
     
     addr = 0xC62000; // no idea about this one
-    n = Decompress(addr);
+    n = Decompress(addr); DumpGFX(addr);
     PerformanceTest(n);
     
     addr = 0xC5D80B; // "?" time label
-    n = Decompress(addr);
+    n = Decompress(addr); DumpGFX(addr);
     PerformanceTest(n);
     
     addr = 0xC5DA88; // Time label boxes and "PONTPO"
-    n = Decompress(addr);
+    n = Decompress(addr); DumpGFX(addr);
     PerformanceTest(n);
     
     addr = 0xFD0000; // It's a font
-    n = Decompress(addr);
+    n = Decompress(addr); DumpGFX(addr);
     PerformanceTest(n);
     
     addr = 0xC38000; // time gauge gfx titles
-    n = Decompress(addr);
+    n = Decompress(addr); DumpGFX(addr);
     PerformanceTest(n);
 #endif
     
@@ -251,7 +267,7 @@ int main(void)
 #endif
 
     /* Character names and other miscellaneous data: */
-    DumpGFX(0xDB0000);
+    //DumpGFX(0xDB0000);
 
 #if 0
     fprintf(stderr, "Uncompressed %u bytes.\n", n);

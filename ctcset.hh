@@ -2,13 +2,14 @@
 #define bqtCTcsetH
 
 #include <vector>
+#include <string>
 
 #include "wstring.hh"
 #include "hash.hh"
 
 typedef unsigned short ctchar;
 
-typedef basic_string<ctchar> ctstring;
+typedef std::basic_string<ctchar> ctstring;
 
 #if USE_ICONV
 extern const char *getcharset();

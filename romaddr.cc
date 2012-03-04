@@ -3,8 +3,7 @@
 
 unsigned char ROM2SNESpage(unsigned char page)
 {
-    return 0x80 + page;
-    
+    //return 0x80 + page;
     
     if(page < 0x40) return page | 0xC0;
     
@@ -17,8 +16,7 @@ unsigned char ROM2SNESpage(unsigned char page)
 
 unsigned char SNES2ROMpage(unsigned char page)
 {
-    return page - 0x80;
-    
+    //return page - 0x80;
     if(page == 0 || page >= 0x80) return page & 0x3F;
     return (page & 0x3F) + 0x40;
 }
