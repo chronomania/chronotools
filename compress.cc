@@ -262,8 +262,9 @@ namespace
                         //if(n_eights_ignored > MAX_EIGHTBYTE_SEQUENCES)
                         //    n_eights_ignored = MAX_EIGHTBYTE_SEQUENCES;
                         found_compressable = true;
+                        count              -= n_eights_ignored*8;
                     }
-                    unsigned offset = count - n_eights_ignored*8;
+                    unsigned offset = count;
                     if(offset >= 8)
                     {
                         if(offset <= 0x3F) length = offset; else length = 0x3F;
