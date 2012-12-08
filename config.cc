@@ -123,7 +123,7 @@ def12sym $F1 \"...\"\n\
 charcachesize=256\n\
 dummy=0\n\
 ";
-    
+
     ConfParser config;
 
     const char cfgfilename[] = "ct.cfg";
@@ -140,11 +140,11 @@ namespace
     {
         if(Config_Loaded) return;
         Config_Loaded = true;
-        
+
         bool was_tmp = false;
-        
+
         fprintf(stderr, "Reading %s...", cfgfilename);
-        
+
         FILE *fp = fopen(cfgfilename, "rt");
         if(!fp)
         {
@@ -161,14 +161,14 @@ namespace
             }
             else
                 perror(cfgfilename);
-            
+
             fp = fopen(cfgtmpname, "wt");
             fwrite(DefaultConfig, std::strlen(DefaultConfig), 1, fp);
             fclose(fp);
             fp = fopen(cfgtmpname, "rt");
             was_tmp = true;
         }
-        
+
         char Buf[8192];
         setvbuf(fp, Buf, _IOFBF, sizeof Buf);
 
@@ -179,14 +179,14 @@ namespace
 
         rewind(fp);
         clearerr(fp);
-        
+
         config.Clear();
         config.Parse(fp);
-        
+
         fclose(fp);
 
         if(was_tmp)remove(cfgtmpname);
-        
+
         fprintf(stderr, " done\n");
     }
 }
@@ -202,9 +202,9 @@ const ConfParser::Field& GetConf(const char *sect, const char *var)
     {
         typedef std::string errortype;
         static std::set<errortype> displayed;
-        
+
         const errortype ErrorName(sect_error.GetSection());
-        
+
         if(displayed.find(ErrorName) == displayed.end())
         {
             fprintf(stderr,
@@ -222,10 +222,10 @@ const ConfParser::Field& GetConf(const char *sect, const char *var)
     {
         typedef std::pair<std::string, std::string> errortype;
         static std::set<errortype> displayed;
-        
+
         const errortype ErrorName(field_error.GetField().c_str(),
                                   field_error.GetSection().c_str());
-        
+
         if(displayed.find(ErrorName) == displayed.end())
         {
             fprintf(stderr,

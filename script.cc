@@ -31,14 +31,14 @@ namespace
         FILE *fp;
         unsigned cacheptr;
         wstring cache;
-        
+
         wchar_t getc_priv()
         {
             for(;;)
             {
                 if(cacheptr < cache.size())
                     return cache[cacheptr++];
-                
+
                 cache.clear();
                 cacheptr = 0;
                 while(cache.empty())
@@ -46,7 +46,7 @@ namespace
                     char Buf[512];
                     size_t n = fread(Buf, 1, sizeof Buf, fp);
                     if(n == 0) break;
-                    
+
                     cache += conv.puts(std::string(Buf, n));
                 }
                 // So now cache may be of arbitrary size.
@@ -78,19 +78,19 @@ namespace
         const ScriptCharGet& operator=(const ScriptCharGet&);
         ScriptCharGet(const ScriptCharGet& );
     };
-    
+
     bool CumulateBase62(unsigned& label, const string& header, char c)
     {
         if(!::CumulateBase62(label, c))
         {
             string tmp = EncodeBase62(label, 4);
-            
+
             MessageInvalidLabelChar(c, tmp, header);
             return false;
         }
         return true;
     }
-    
+
     bool CumulateBase16(unsigned& label, const string& header, char c)
     {
         if(!::CumulateBase16(label, c))
@@ -121,7 +121,7 @@ namespace
 const ctstring insertor::ParseScriptEntry(const wstring &input, const stringdata &model)
 {
     wstring content = input;
-    
+
     const bool is_dialog = model.type == stringdata::zptr12;
     const bool is_8pix   = model.type == stringdata::zptr8;
     const bool is_fixed  = !is_dialog && !is_8pix;
@@ -133,7 +133,7 @@ const ctstring insertor::ParseScriptEntry(const wstring &input, const stringdata
                        : 0);
 
     int current_typeface = -1;
-    
+
     if(is_dialog)
     {
 #ifndef WIN32
@@ -157,21 +157,21 @@ const ctstring insertor::ParseScriptEntry(const wstring &input, const stringdata
         //if(current_typeface == -1)
         {
             bool foundsym = false;
-            
+
             wstring bs; bs += content[a];
             wstring us = content.substr(a);
-            
+
             Symbols::type::const_iterator
                 i,
                 b = symbols.upper_bound(bs),
                 e = symbols.upper_bound(us);
-            
+
             for(i=b; i!=e; ++i)
             {
                 if(!content.compare(a, i->first.size(), i->first))
                 {
                     unsigned testlen = i->first.size();
-                    
+
                     if(current_typeface >= 0
                     //&& i->second >= get_font_begin()
                       )
@@ -179,7 +179,7 @@ const ctstring insertor::ParseScriptEntry(const wstring &input, const stringdata
                         MessageSymbolIgnored(i->first);
                         continue;
                     }
-                    
+
                     a += testlen-1;
                     result += i->second;
                     foundsym = true;
@@ -188,14 +188,14 @@ const ctstring insertor::ParseScriptEntry(const wstring &input, const stringdata
             }
             if(foundsym) continue;
         }
-        
+
         // Next test for [codes].
         wchar_t c = content[a];
         if(c != L'[')
         {
             // No code, translate byte.
             ctchar chronoc = 0;
-            
+
             switch(model.type)
             {
                 case stringdata::zptr12:
@@ -212,18 +212,18 @@ const ctstring insertor::ParseScriptEntry(const wstring &input, const stringdata
                 case stringdata::locationevent:
                     ; // ignore, should not occur here
             }
-            
+
             /* A slight optimization: We're not typeface-changing spaces! */
             if(current_typeface >= 0 && c != L' ')
             {
                 unsigned offset = Typefaces[current_typeface].get_offset();
                 chronoc += offset;
             }
-            
+
             result += chronoc;
             continue;
         }
-        
+
         wstring code;
         for(code += c; ++a < content.size(); )
         {
@@ -231,12 +231,12 @@ const ctstring insertor::ParseScriptEntry(const wstring &input, const stringdata
             code += c;
             if(c == L']')break;
         }
-        
+
         // Codes used by dialog engine
         static const wstring delay = L"[delay ";
         static const wstring tech  = L"[tech]";
         static const wstring monster=L"[monster]";
-        
+
         // Codes used by status screen engine
         static const wstring code0 = L"[gfx";
         static const wstring code1 = L"[next";
@@ -251,7 +251,7 @@ const ctstring insertor::ParseScriptEntry(const wstring &input, const stringdata
         static const wstring code10= L"[attr,";
         static const wstring code11= L"[func2,";
         static const wstring code12= L"[stat,";
-        
+
         if(false) {} // for indentation...
         else if(is_dialog && !code.compare(0, delay.size(), delay))
         {
@@ -275,7 +275,7 @@ const ctstring insertor::ParseScriptEntry(const wstring &input, const stringdata
             {
                 const wstring& begin = Typefaces[a].get_begin_marker();
                 const wstring& end   = Typefaces[a].get_end_marker();
-                
+
                 if(code == begin)
                 {
                     if(current_typeface >= 0)
@@ -302,7 +302,7 @@ const ctstring insertor::ParseScriptEntry(const wstring &input, const stringdata
         {
         Handle8Code:
             unsigned a=0, b=code.size();
-            
+
             while(a<b && code[a] != ',') ++a;
             while(a<b && code[a] == ',')
             {
@@ -332,7 +332,7 @@ const ctstring insertor::ParseScriptEntry(const wstring &input, const stringdata
         else
         {
             result += (ctchar)atoi(code.c_str()+1, 16);
-            
+
             if(model.type != stringdata::compressed)
             {
                 /* raw codes are only allowed in compressed data. */
@@ -341,7 +341,7 @@ const ctstring insertor::ParseScriptEntry(const wstring &input, const stringdata
             }
         }
     }
-    
+
     if(is_dialog)
     {
         Conjugater->Work(result);
@@ -357,20 +357,20 @@ void insertor::LoadFile(FILE *fp)
 
     if(!Conjugater)
         Conjugater = new Conjugatemap(*this);
-    
+
     string header;
-    
+
     wchar_t c;
 
     ScriptCharGet getter(fp);
 #define cget(c) (c=getter.getc())
-    
+
     cget(c);
-    
+
     stringdata model;
 
     rawcodes.clear();
-    
+
     std::wstring unexpected;
     #define UNEXPECTED(c) unexpected += (c)
     #define EXPECTED() \
@@ -381,7 +381,7 @@ void insertor::LoadFile(FILE *fp)
         }
 
     MessageLoadingDialog();
-    
+
     EventCompiler EvCom;
     for(;;)
     {
@@ -406,7 +406,7 @@ void insertor::LoadFile(FILE *fp)
                 header += WcharToAsc(c);
             }
             while(c != (wchar_t)EOF && c != '\n') { cget(c); }
-            
+
             model.ref_id  = 0;
             model.tab_id  = 0;
             model.width   = 0;
@@ -421,8 +421,8 @@ void insertor::LoadFile(FILE *fp)
                     char type = header[++a];
                     unsigned addr = 0;
                     while(++a < header.size() && header[a] != ':')
-                        CumulateBase62(addr, header, header[a]); 
-                    
+                        CumulateBase62(addr, header, header[a]);
+
                     if(IsSNESbased(addr))
                     {
                         fprintf(stderr,
@@ -430,7 +430,7 @@ void insertor::LoadFile(FILE *fp)
                             header.c_str());
                         addr = SNES2ROMaddr(addr);
                     }
-                    
+
                     switch(type)
                     {
                         case '^': refs.push_back(PagePtrFrom(addr)); break;
@@ -438,24 +438,24 @@ void insertor::LoadFile(FILE *fp)
                         default: fprintf(stderr, "Unknown typeid '%c'\n", type);
                     }
                 }
-                
+
                 if(!refs.empty())
                 {
                     refers.push_back(refs);
                     model.ref_id = refers.size();
-                    
+
                     if(header[0] == 'Z')
                     {
                         fprintf(stderr, "\nWarning: *Z ineffective (*z assumed) when pointers used\n");
                         header[0] = 'z';
                     }
                 }
-                
+
                 if(header[0] == 'Z')
                 {
                     model.tab_id = ++table_counter;
                 }
-                
+
                 model.type = stringdata::zptr12;
                 MessageZSection(header);
             }
@@ -533,21 +533,21 @@ void insertor::LoadFile(FILE *fp)
             {
                 MessageUnknownHeader(header);
             }
-            
+
             continue;
         }
-        
+
         if(c == '$')
         {
             EXPECTED();
-            
+
             std::string slabel;
             unsigned label = 0;
             for(;;)
             {
                 cget(c);
                 if(c == (wchar_t)EOF || c == ':')break;
-                
+
                 if(!header.empty() && (header[0] == 'd' || header[0] == 's'))
                 {
                     // freespace and dict labels are hex
@@ -609,30 +609,30 @@ void insertor::LoadFile(FILE *fp)
                 }
                 content += c;
             }
-            
+
             if(header.size() == 3 && header[0] == 's')
             {
                 // Free space record
-                
+
                 string ascii = WstrToAsc(content);
-                
+
                 unsigned page=0, begin=label, end=0;
                 sscanf(header.c_str(), "s%X", &page);
                 sscanf(ascii.c_str(), "%X", &end);
-                
+
                 unsigned length = end-begin;
-                
+
                 freespace.Add(page, begin, length);
-                
+
                 continue;
             }
 
             if(header.size() >= 1 && header[0] == 'd')
             {
                 // Dictionary record
-                
+
                 const Symbols::type &symbols = Symbols.GetMap(16);
-                
+
                 /* FIXME: This symbol parsing is
                  * DUPLICATE from ParseScriptEntry()
                  */
@@ -644,15 +644,15 @@ void insertor::LoadFile(FILE *fp)
                     if(true)
                     {
                         bool foundsym = false;
-                        
+
                         wstring bs; bs += content[a];
                         wstring us = content.substr(a);
-                        
+
                         Symbols::type::const_iterator
                             i,
                             b = symbols.upper_bound(bs),
                             e = symbols.upper_bound(us);
-                        
+
                         for(i=b; i!=e; ++i)
                         {
                             if(!content.compare(a, i->first.size(), i->first))
@@ -666,7 +666,7 @@ void insertor::LoadFile(FILE *fp)
                         }
                         if(foundsym) continue;
                     }
-                    
+
                     // Next test for [codes].
                     wchar_t c = content[a];
                     if(c != L'[')
@@ -676,7 +676,7 @@ void insertor::LoadFile(FILE *fp)
                         dictword += chronoc;
                         continue;
                     }
-                    
+
                     wstring code;
                     for(code += c; ++a < content.size(); )
                     {
@@ -684,14 +684,14 @@ void insertor::LoadFile(FILE *fp)
                         code += c;
                         if(c != L']')break;
                     }
-                    
+
                     dictword += atoi(code.c_str()+1, 16);
                 }
 
                 dict.push_back(dictword);
                 continue;
             }
-            
+
             // It was one of these:
             //   'z' (dialog)
             //   'Z' (dialog but moved)
@@ -710,7 +710,7 @@ void insertor::LoadFile(FILE *fp)
                 // Mark the space unused already
                 freespace.Add(label, model.width);
             }
-            
+
             if(model.type == stringdata::locationevent)
             {
                 EvCom.AddData(model.address, slabel, content);
@@ -722,16 +722,16 @@ void insertor::LoadFile(FILE *fp)
                 model.str = ParseScriptEntry(content, model);
                 model.address = label;
 
-                strings.push_back(model); 
+                strings.push_back(model);
             }
             continue;
         }
-        
+
         UNEXPECTED(c);
     }
-    
+
     EvCom.Close();
-    
+
     for(unsigned a=0; a<EvCom.events.size(); ++a)
     {
         stringdata tmp;
@@ -740,9 +740,9 @@ void insertor::LoadFile(FILE *fp)
         tmp.str     = getctstring(EvCom.events[a].data);
         strings.push_back(tmp);
     }
-    
+
     MessageDone();
-    
+
     if(!rawcodes.empty())
     {
         fprintf(stderr, "Warning: Raw codes encountered:");
@@ -755,17 +755,17 @@ void insertor::LoadFile(FILE *fp)
 unsigned insertor::CalculateScriptSize() const
 {
     MessageMeasuringScript();
-    
+
     map<unsigned, PagePtrList> tmp;
     for(stringlist::const_iterator i=strings.begin(); i!=strings.end(); ++i)
     {
         if(i->type == stringdata::zptr12)
         {
             MessageWorking();
-            
+
             const string s = GetString(i->str);
             vector<unsigned char> data(s.c_str(), s.c_str() + s.size() + 1);
-            
+
             tmp[i->address >> 16].AddItem(data, i->address & 0xFFFF);
         }
     }
@@ -778,9 +778,9 @@ unsigned insertor::CalculateScriptSize() const
         i->second.Combine();
         size += i->second.Size();
     }
-    
+
     MessageDone();
-    
+
     return size;
 }
 
@@ -793,11 +793,11 @@ const list<pair<unsigned, ctstring> > insertor::GetScriptByPage() const
         {
             const string s = GetString(i->str);
             vector<unsigned char> data(s.c_str(), s.c_str() + s.size() + 1);
-            
+
             tmp[i->address >> 16].AddItem(data, i->address & 0xFFFF);
         }
     }
-    
+
     list<pair<unsigned, ctstring> > result;
 
     //unsigned size = 0;
@@ -805,11 +805,11 @@ const list<pair<unsigned, ctstring> > insertor::GetScriptByPage() const
         i = tmp.begin(); i != tmp.end(); ++i)
     {
         i->second.Combine();
-        
+
         const vector<unsigned char> s = i->second.GetS();
-        
+
         ctstring tmp;
-        
+
         for(unsigned a=0; a<s.size(); ++a)
         {
             unsigned int byte = s[a];
@@ -819,7 +819,7 @@ const list<pair<unsigned, ctstring> > insertor::GetScriptByPage() const
         }
         result.push_back(make_pair(i->first, tmp));
     }
-    
+
     return result;
 }
 
@@ -830,14 +830,14 @@ void insertor::WriteFixedStrings()
         if(i->type == stringdata::fixed)
         {
             MessageWorking();
-            
+
             unsigned pos = i->address;
             const ctstring &s = i->str;
-            
+
             // Fixed strings don't contain extrachars.
             // Thus s.size() is safe.
             unsigned size = s.size();
-            
+
             if(size > i->width)
             {
 #if 0
@@ -846,16 +846,16 @@ void insertor::WriteFixedStrings()
 #endif
                 size = i->width;
             }
-            
+
             // Filler must be 255, or otherwise following problems occur:
             //     item listing goes zigzag
             //     12pix item/tech/mons text in battle has garbage (char 0 in font).
 
             vector<unsigned char> Buf(i->width, 255);
             if(size > i->width) size = i->width;
-            
+
             std::copy(s.begin(), s.begin()+size, Buf.begin());
-            
+
             /* & 0x3FFFFF removed from here */
             objects.AddLump(Buf, pos, "lstring");
         }
@@ -887,20 +887,20 @@ void insertor::WriteOtherStrings()
     map<unsigned, PagePtrList> pagemap;
     map<unsigned, PagePtrList> refmap;
     map<unsigned, PagePtrList> tabmap;
-    
+
     map<unsigned, ScriptStat> refstats;
     vector<ScriptStat> tables(table_counter);
-    
+
     for(stringlist::const_iterator i=strings.begin(); i!=strings.end(); ++i)
     {
         if(i->type == stringdata::zptr8
         || i->type == stringdata::zptr12)
         {
             MessageWorking();
-            
+
             const string s = GetString(i->str);
             vector<unsigned char> data(s.c_str(), s.c_str() + s.size() + 1);
-            
+
 #if 0
             fprintf(stderr, "String: '%s'", DispString(i->str).c_str());
             fprintf(stderr, "\n");
@@ -908,12 +908,12 @@ void insertor::WriteOtherStrings()
                 fprintf(stderr, " %02X", data[a]);
             fprintf(stderr, "\n");
 #endif
-            
+
             if(i->ref_id)
             {
                 refmap[i->ref_id].AddItem(data, i->address & 0xFFFF);
                 freespace.Add(i->address, 2);
-                
+
                 refstats[i->ref_id-1].Update(i->address);
             }
             else if(i->tab_id)
@@ -930,9 +930,9 @@ void insertor::WriteOtherStrings()
         i = pagemap.begin(); i != pagemap.end(); ++i)
     {
         MessageLoadingItem(format("page $%02X", i->first));
-        
+
         MessageWorking();
-        
+
         i->second.Create(*this, i->first, "zstring");
     }
 
@@ -940,19 +940,19 @@ void insertor::WriteOtherStrings()
         i = refmap.begin(); i != refmap.end(); ++i)
     {
         unsigned ref_id = i->first - 1;
-        
+
         //unsigned table_bytes = refstats[ref_id].size;
         unsigned table_start = refstats[ref_id].begin;
-        
+
         const std::string Symbol = format("reloc_ref_%u_zstring", ref_id);
         MessageLoadingItem(Symbol);
-        
+
         MessageWorking();
         i->second.Create(*this,
                          Symbol/*description*/,
                          table_start,
                          Symbol/*tablename*/);
-        
+
         const list<ReferMethod>& refs = refers[ref_id];
         for(list<ReferMethod>::const_iterator
             j = refs.begin(); j != refs.end(); ++j)
@@ -966,32 +966,32 @@ void insertor::WriteOtherStrings()
         i = tabmap.begin(); i != tabmap.end(); ++i)
     {
         unsigned tab_id = i->first - 1;
-        
+
         const std::string Symbol = format("reloc_tab_%u_zstring", tab_id);
         MessageLoadingItem(Symbol);
-        
+
         unsigned table_bytes = tables[tab_id].size;
         unsigned table_start = tables[tab_id].begin;
-        
+
         MessageWorking();
         i->second.Create(*this,
                          Symbol/*description*/,
                          table_start,
                          Symbol/*tablename*/);
-        
+
         if(table_bytes < 5)
         {
             fprintf(stderr, "Error: Table %u (at $%06X) is too small (%u), should be >=5!\n",
                 tab_id, table_start, table_bytes);
         }
-        
+
         freespace.Add(table_start + 5, table_bytes - 5);
-        
+
         O65 newtab;
         newtab.Resize(CODE, 5);
         newtab.DeclareWordRelocation(CODE, "RELOCATED_STRING_SIGNATURE", 0);
         newtab.DeclareLongRelocation(CODE, Symbol, 2);
-        
+
         string tmp = Symbol;
         objects.AddObject(newtab, tmp+" referer", table_start);
     }
@@ -1029,7 +1029,7 @@ void insertor::WriteCompressedStrings()
             const string s = GetString(i->str);
             const unsigned char* ptr = (const unsigned char*)s.data();
             vector<unsigned char> data = Compress(ptr, s.size());
-            
+
             std::string name = format("compr_data_%u", counter++);
             objects.AddLump(data, name, name);
             objects.AddReference(name, LongPtrFrom(i->address));
@@ -1039,7 +1039,7 @@ void insertor::WriteCompressedStrings()
             const string s = GetString(i->str);
             const unsigned char* ptr = (const unsigned char*)s.data();
             vector<unsigned char> data = Compress(ptr, s.size());
-            
+
             /* FIXME: Name the location events some other way to avoid confusion */
             std::string name = format("loc_event_%u", counter++);
             objects.AddLump(data, name, name);

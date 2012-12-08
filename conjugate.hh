@@ -30,16 +30,16 @@ public:
     public:
         form(): data(), func(), used(false), prefix(), maxwidth(0) { }
     };
-    
+
     typedef list<form> formlist;
 
 private:
     formlist forms;
-    
+
     typedef formlist::iterator formit;
 
     typedef hash_map<ctchar, formit> charmap_t;
-    
+
     charmap_t charmap;
 
     void AddForm(const form &form) { forms.push_back(form); }
@@ -47,10 +47,10 @@ private:
     void Load(const class insertor &ins);
 public:
     const formlist &GetForms() const { return forms; }
-    
+
     bool IsConjChar(ctchar c) const;
     void RedefineConjChar(ctchar was, ctchar is);
-    
+
     unsigned GetMaxWidth(ctchar c) const; // Max width caused by the conjugation char
 };
 

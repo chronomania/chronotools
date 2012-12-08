@@ -10,9 +10,9 @@ namespace
 {
     unsigned prev_sect_len = 0;
     bool     working       = false;
-    
+
     static const char backspace = (char)8;
-    
+
     void RenderCursor(char c)
     {
         fprintf(stderr, "%c%c", c, backspace);
@@ -20,12 +20,12 @@ namespace
     void Working()
     {
         static const char animation[4] = {'-', '\\', '|', '/' };
-        
+
         static unsigned shift   = 1;
         static unsigned curspos = 0;
         static int shift_estimatecount = 0, shift_threshold = 10;
         static time_t estimate_begintime;
-        
+
         if(!working)
         {
             // If we just restarted, ensure it won't take too long
@@ -40,7 +40,7 @@ namespace
             curspos = (curspos / shift) * shift;
         }
         working = true;
-        
+
         if(shift_estimatecount >= 0)
         {
             if(shift_estimatecount == 0)
@@ -48,7 +48,7 @@ namespace
                 estimate_begintime = time(NULL);
                 shift_threshold    = 10; // initial threshold.
             }
-            
+
             ++shift_estimatecount;
             if(shift_estimatecount > shift_threshold)
             {
@@ -67,17 +67,17 @@ namespace
                     shift = (unsigned) (shift_estimatecount / (elapsed*4));
                     /* Don't divide by zero */
                     if(shift <= 0) shift = 1;
-                    
+
                     /* Start new round */
                     shift_estimatecount = 0;
                 }
             }
         }
-        
+
         if(!(curspos%shift)) RenderCursor(animation[curspos/shift]);
         curspos = (curspos+1) % (4*shift);
     }
-    
+
     void Notworking()
     {
         if(working)
@@ -86,27 +86,27 @@ namespace
             working = false;
         }
     }
-    
+
     void NewBeginning()
     {
         prev_sect_len = 0;
         working       = false;
     }
-    
+
     void UndoSection()
     {
         Notworking();
-        
+
         std::stringstream str;
         for(unsigned a=0; a<prev_sect_len; ++a) str << backspace;
         for(unsigned a=0; a<prev_sect_len; ++a) str << ' ';
         for(unsigned a=0; a<prev_sect_len; ++a) str << backspace;
         fprintf(stderr, "%s", str.str().c_str());
         fflush(stderr);
-        
+
         NewBeginning();
     }
-    
+
     void SectionMessage(const std::string& header)
     {
         UndoSection();

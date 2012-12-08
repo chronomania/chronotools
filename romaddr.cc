@@ -4,12 +4,12 @@
 unsigned char ROM2SNESpage(unsigned char page)
 {
     //return 0x80 + page;
-    
+
     if(page < 0x40) return page | 0xC0;
-    
+
     /* Pages 00..3F have only their high part mirrored */
     /* Pages 7E..7F can not be used (they're RAM) */
-    
+
     if(page >= 0x7E) return page & 0x3F;
     return (page - 0x40) + 0x40;
 }
@@ -70,9 +70,9 @@ static int ScoreHiROM(const unsigned char* ROM, unsigned ROMsize)
 {
     int score = 0;
     int o = 0xFF00;
-    
+
     if(ROM[o + 0xd5] & 0x1)
-        score+=2;  
+        score+=2;
 
     //Mode23 is SA-1
     if(ROM[o + 0xd5] == 0x23)
@@ -88,32 +88,32 @@ static int ScoreHiROM(const unsigned char* ROM, unsigned ROMsize)
         if(0!=(ROM[o + 0xde] + (ROM[o + 0xdf] << 8)))
             score++;
     }
-    
+
     if (ROM[o + 0xda] == 0x33)
         score += 2;
     if ((ROM[o + 0xd5] & 0xf) < 4)
         score += 2;
     if (!(ROM[o + 0xfd] & 0x80))
-        score -= 6;                     
-    if ((ROM[o + 0xfc]|(ROM[o + 0xfd]<<8))>0xFFB0)   
+        score -= 6;
+    if ((ROM[o + 0xfc]|(ROM[o + 0xfd]<<8))>0xFFB0)
         score -= 2; //reduced after looking at a scan by Cowering
     if (ROMsize > 1024 * 1024 * 3)
         score += 4;
     if ((1 << (ROM[o + 0xd7] - 7)) > 48)
-        score -= 1;                             
+        score -= 1;
     if (!AllASCII (&ROM[o + 0xb0], 6))
-        score -= 1;                           
+        score -= 1;
     if (!AllASCII (&ROM[o + 0xc0], ROM_NAME_LEN - 1))
-        score -= 1;                                          
-    
+        score -= 1;
+
     return (score);
-}   
+}
 
 static int ScoreLoROM (const unsigned char* ROM, unsigned ROMsize)
 {
     int score = 0;
     int o = 0x7F00;
-    
+
     if(!(ROM[o + 0xd5] & 0x1))
         score+=3;
 
@@ -128,7 +128,7 @@ static int ScoreLoROM (const unsigned char* ROM, unsigned ROMsize)
         if(0!=(ROM[o + 0xde] + (ROM[o + 0xdf] << 8)))
             score++;
     }
-     
+
     if (ROM[o + 0xda] == 0x33)
         score += 2;
     if ((ROM[o + 0xd5] & 0xf) < 4)
@@ -145,7 +145,7 @@ static int ScoreLoROM (const unsigned char* ROM, unsigned ROMsize)
         score -= 1;
     if (!AllASCII (&ROM[o + 0xc0], ROM_NAME_LEN - 1))
         score -= 1;
-    
+
     return (score);
 }
 
@@ -153,7 +153,7 @@ bool GuessROMtype(const unsigned char* ROM, unsigned ROMsize)
 {
     int HiROMscore = ScoreHiROM(ROM, ROMsize);
     int LoROMscore = ScoreLoROM(ROM, ROMsize);
-    
+
     return HiROMscore >= LoROMscore;
 }
 

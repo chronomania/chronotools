@@ -25,7 +25,7 @@ const std::vector<ctstring>
      );
 
 // Load an array of fixed length strings
-const std::vector<ctstring> 
+const std::vector<ctstring>
     LoadFStrings(unsigned offset, unsigned len,
       const std::wstring& what,
       unsigned maxcount=0);

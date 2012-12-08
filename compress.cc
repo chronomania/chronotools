@@ -18,10 +18,10 @@
 /******
 
  Compression notes:
- 
+
   At any given moment, there are the following options:
-   
-    - Copy 8 bytes as-is. 
+
+    - Copy 8 bytes as-is.
       - Does not affect the counter.
       - Only available when (remaining_bytes) >= 8.
     - Assign a new counter between 1-63.
@@ -51,7 +51,7 @@ namespace
         for(; size > 0; --size)
             *out++ = *in++;
     }
-    
+
     static size_t MatchingLength
         (const unsigned char* in1,
          size_t size,
@@ -88,9 +88,9 @@ namespace
             Cache.clear(); Cache.resize(length);
             for(size_t pos=0; pos<length; ++pos) CachePos(pos);
         }
-        
+
         typedef CacheRecord QueryResult;
-        
+
         const QueryResult& Query(size_t pos) const
         {
             return Cache[pos];
@@ -103,26 +103,26 @@ namespace
             const size_t output_min = 3;
             const size_t output_max = std::min(Length-pos, MaxLength+3);
             const unsigned char* out_offs  = Data+pos;
-            
+
             size_t best_len = 0;
             size_t best_offs= 0;
-            
+
             for(size_t offs = min_offs; offs < max_offs; ++offs)
             {
                 const size_t len = MatchingLength(Data+offs, output_max, out_offs);
-                
+
                 if(len < output_min) continue;
-                
+
                 if(len > best_len)
                 {
                     best_len = len;
                     best_offs= pos - offs;
                 }
             }
-            
+
             //fprintf(stderr, "CachePos(%X (mi%X,ma%X)): len(%u),offs(%u)\n",
             //    pos, min_offs, max_offs, best_len, best_offs);
-            
+
             Cache[pos].len    = best_len;
             Cache[pos].offs   = best_offs;
         }
@@ -134,7 +134,7 @@ namespace
         const size_t MaxOffs;
         mutable std::vector<CacheRecord> Cache;
     };
-    
+
     class Compressor
     {
         class ResultStream: public vector<unsigned char>
@@ -144,7 +144,7 @@ namespace
             {
                 BeginPacket();
             }
-            
+
             void SendControl(unsigned char value)
             {
                 size_t endpos = (*this).size();
@@ -164,7 +164,7 @@ namespace
             {
                 packetbegin = (*this).size();
                 (*this).reserve(packetbegin + 1024);
-                
+
                 (*this).push_back(0);
                 (*this).push_back(0);
             }
@@ -185,11 +185,11 @@ namespace
                      )
         {
         }
-        
+
         const vector<unsigned char> Compress(unsigned MaxRecursion)
         {
             ResultStream result;
-            
+
             // For each byte in source.
             for(size_t pos=0; pos<Length; )
             {
@@ -204,7 +204,7 @@ namespace
                 }
 
                 size_t bitpos = result.size();
-                
+
                 unsigned char bits = 0xFF;
                 for(size_t a=0; a<best_counter; ++a)
                 {
@@ -230,7 +230,7 @@ namespace
                         unsigned word = 0;
                         word |= (res.offs);
                         word |= (res.len - 3) << OffsBits;
-                        
+
 #ifdef DEBUG_COMPRESS
                         fprintf(stderr, " %04X", word);
 #endif
@@ -242,7 +242,7 @@ namespace
 #ifdef DEBUG_COMPRESS
                 fprintf(stderr, "; %02X\n", bits);
 #endif
-                
+
                 result.insert(result.begin()+bitpos, 1, bits);
 /*
                 for(size_t a=0; a<result.size(); ++a)
@@ -250,10 +250,10 @@ namespace
                 fprintf(stderr, "\n");
 */
             }
-            
+
             // SendControl applies from now on, not to previous bytes.
             result.SendControl(ControlTemplate | 0x00); // Send end code.
-            
+
             return result;
         }
 
@@ -279,7 +279,7 @@ namespace
             std::vector<PickCacheType::record> data;
         } PickCache[MAX_RECURSION_DEPTH];
 #endif
-        
+
         /* For various number of recursions. */
         size_t PickCounter(size_t pos,
                            size_t& n_source,
@@ -303,12 +303,12 @@ namespace
             size_t best_counter  = 0;
             size_t best_n_source = 0;
             size_t best_n_result = 0;
-            
+
             size_t testpos       = pos;
             size_t this_n_result = 1; // The "bits" will be 1 byte.
-            
+
             unsigned char bits = 0xFF;
-            
+
             // for each bit, try and see what works.
             for(size_t counter=0x01; counter<=0x3F; ++counter)
             {
@@ -318,9 +318,9 @@ namespace
                     this_n_result -= 3; /* No header when counter=8. */
                 else if(counter == DefaultLength+1)
                     this_n_result += 3; /* Header is back. */
-                
+
                 if(testpos >= Length) { /* No more bytes. */ break; }
-                
+
                 if(counter > 8)
                 {
                     // Ate 1, encoded 1.
@@ -335,7 +335,7 @@ namespace
                         // Ate 1, encoded 1.
                         ++this_n_result;
                         ++testpos;
-                        
+
                         bits &= ~(1 << (counter-1));
                     }
                     else
@@ -345,11 +345,11 @@ namespace
                         testpos += res.len;
                     }
                 }
-                
+
                 // Calculate the value of this choice.
                 size_t evaluate_n_result = this_n_result;
                 size_t evaluate_n_source = testpos-pos; // how many bytes eaten.
-                
+
 #if MAX_RECURSION_DEPTH > 0
                 if(testpos < Length)
                 {
@@ -380,7 +380,7 @@ namespace
                     }
                 }
 #endif
-                
+
                 double goodness = evaluate_n_source / (double)evaluate_n_result;
                 if(goodness > best_goodness)
                 {
@@ -391,7 +391,7 @@ namespace
                 }
                 if(bits == 0x00) { /* No more tests: they wouldn't work. */ break; }
             }
-            
+
 #if MAX_RECURSION_DEPTH > 0
             if(MaxRecursion < MAX_RECURSION_DEPTH)
             {
@@ -408,22 +408,22 @@ namespace
             n_result = best_n_result;
             return best_counter;
         }
-        
+
         size_t PickCounter(size_t pos, size_t MaxRecursion)
         {
             size_t n_source=0;
             size_t n_result=0;
             return PickCounter(pos, n_source, n_result, MaxRecursion);
         }
-        
+
     private:
         static const size_t DefaultLength = 8;
-        
+
         const unsigned char* Data;
         const size_t Length;
         const size_t OffsBits;
         const unsigned char ControlTemplate;
-        
+
         const SavingMap Savings;
     };
 }
@@ -451,7 +451,7 @@ const vector<unsigned char> Compress(const unsigned char* data, size_t length)
     vector<unsigned char> result1 = Compress(data, length, 11);
     return result1;
     vector<unsigned char> result2 = Compress(data, length, 12);
-    
+
     return result1.size() <= result2.size() ? result1 : result2;
 }
 
@@ -462,18 +462,18 @@ size_t Uncompress                 /* Return value: compressed size */
     )
 {
     Target.clear();
-    
+
     size_t bytes_left = End-Memory;
     #define NEED_BYTES(n) \
         do { if(bytes_left < n) return 0; } while(0)
     #define ATE_BYTES(n) \
         do { Memory+=(n); bytes_left-=(n); } while(0)
-    
+
     #define READ_WORD(dest) \
         do { NEED_BYTES(2); (dest)=(Memory[0]) | (Memory[1] << 8); ATE_BYTES(2); } while(0)
     #define READ_BYTE(dest) \
         do { NEED_BYTES(1); (dest)=(Memory[0]); ATE_BYTES(1); } while(0)
-    
+
     #define READ_ENDPOS(dest) \
         do { size_t endtmp; READ_WORD(endtmp); dest = Begin + endtmp; } while(0)
 
@@ -483,36 +483,36 @@ size_t Uncompress                 /* Return value: compressed size */
         Target.resize(len+n); \
         copy_n(source, n, &Target[len]); \
     }
-    
+
     const unsigned char* const Begin = Memory;
     const unsigned char* Endpos = NULL;
-    
+
     READ_ENDPOS(Endpos); Endpos += 2;
 
     unsigned char Control = *Endpos;
 #ifdef DEBUG_DECOMPRESS
     fprintf(stderr, "Control @ $%03X = %02X\n", Endpos-Begin, Control);
 #endif
-    
+
     unsigned OffsetBits = (Control & 0xC0) ? 11 : 12;
     /* ^This setting determines the limit of offsets: 2048 or 4096. */
     /* And limit of lengths (2^(16-offsetbits)). */
-    
+
     const unsigned char counter_default = 8;
-    
+
     unsigned char counter = counter_default;
     for(;;)
     {
         while(Memory == Endpos)
         {
             READ_BYTE(counter);
-                
+
 #ifdef DEBUG_DECOMPRESS
             fprintf(stderr, "  $%03X: counter %02X\n", Memory-Begin-1, counter);
 #endif
             counter &= 0x3F;
             if(!counter) goto End;
-            
+
             READ_ENDPOS(Endpos);
 #ifdef DEBUG_DECOMPRESS
             fprintf(stderr, "        endpos %03X\n", Endpos-Begin);
@@ -521,8 +521,8 @@ size_t Uncompress                 /* Return value: compressed size */
 
         /* Fetch instructions */
         unsigned char bits;
-        READ_BYTE(bits);    
-        
+        READ_BYTE(bits);
+
         if(bits == 0)
         {
             /* bits $00 means always "copy 8 literal bytes", regardless of counter */
@@ -536,7 +536,7 @@ size_t Uncompress                 /* Return value: compressed size */
                 Memory[4],Memory[5],Memory[6],Memory[7],
                 Target.size()+8);
 #endif
-            
+
             /* Literal 8 bytes */
             NEED_BYTES(8);
             GENERATE_FROM(Memory, 8);
@@ -554,14 +554,14 @@ size_t Uncompress                 /* Return value: compressed size */
                     /* Fetch offset and length, copy. */
                     unsigned code;
                     READ_WORD(code);
-                    
+
                     size_t Length = (code >> OffsetBits) + 3;
                     size_t Offset = code & ((1 << OffsetBits) - 1);
 
 #ifdef DEBUG_DECOMPRESS
                     fprintf(stderr, " %04X(-%u,%u)", code, Offset, Length);
     #endif
-                    
+
                     GENERATE_FROM(&Target[len-Offset], Length); // len is defined in the macro.
                 }
                 else

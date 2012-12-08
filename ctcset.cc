@@ -19,16 +19,16 @@ namespace
     {
         hash_map<wchar_t, ctchar> revmap;
         std::vector<ctchar> revmapfirst;
-    
+
     private:
         void RebuildRevmap()
         {
             revmapfirst.clear();
             revmapfirst.resize( (unsigned) GetConf("font", "charcachesize"), 0);
-             
+
             std::wstring noncharstr = GetConf("font", "nonchar");
             wchar_t nonchar = noncharstr[0];
-            
+
             for(unsigned a = 0; a < cset.size(); ++a)
             {
                 wchar_t c = cset[a];
@@ -44,7 +44,7 @@ namespace
     protected:
         std::wstring cset;
         virtual void GetCSet() = 0;
-        
+
     public:
         CharacterSet() : revmap(), revmapfirst(), cset()
         {
@@ -52,13 +52,13 @@ namespace
         virtual ~CharacterSet()
         {
         }
-        
+
         void Rearrange(const Rearrangemap_t& rearrange)
         {
             std::wstring newcset(cset.size(), ilseq);
-            
+
             hash_set<ctchar> forbid;
-            
+
             for(Rearrangemap_t::const_iterator
                 i = rearrange.begin(); i != rearrange.end(); ++i)
             {
@@ -70,23 +70,23 @@ namespace
                     forbid.insert(i->first);  // Source has already been written
                 }
             }
-            
+
             for(unsigned a=0; a<cset.size(); ++a)
             {
                 if(forbid.find(a) != forbid.end()) continue;
                 newcset[a] = cset[a];
             }
-            
+
             cset = newcset;
-            
+
             RebuildRevmap();
         }
-       
+
         void Init()
         {
             GetCSet();
             /* "cset" now contains the oneway map. */
-            
+
             RebuildRevmap();
         }
         wchar_t operator[] (ctchar ind)
@@ -97,11 +97,11 @@ namespace
         ctchar find(wchar_t p)
         {
             if(p == ilseq)return 0;
-            
+
             if(cset.empty()) Init();
-            
+
             if((unsigned)p < revmapfirst.size()) return revmapfirst[(unsigned)p];
-            
+
             hash_map<wchar_t, ctchar>::const_iterator i;
             i = revmap.find(p);
             if(i == revmap.end())return 0;
@@ -162,14 +162,14 @@ namespace
             cset+= GetConf("font", "font12_2D0").SField();
             cset+= GetConf("font", "font12_2E0").SField();
             cset+= GetConf("font", "font12_2F0").SField();
-            
+
             if(cset.size() != 0x300)
             {
                 fprintf(stderr, "ctcset error: Configuration not set properly!\n");
             }
         }
     } cset12;
-    
+
     class CharacterSet8: public CharacterSet
     {
     private:
@@ -248,7 +248,7 @@ ctchar getctchar(wchar_t ch, cset_class cl)
             default: fprintf(stderr, " in unknown font class\n");
         }
     }
-    
+
     return result;
 }
 
@@ -262,14 +262,14 @@ unsigned get_font_begin()
 #if 0
 namespace std/*__gnu_cxx*/
 {
-  template<> 
+  template<>
   int char_traits<ctchar>::
   compare(const ctchar* s1, const ctchar* s2, std::size_t n)
   {
     for(unsigned c=0; c<n; ++c) if(s1[c] != s2[c]) return s1[c] < s2[c] ? -1 : 1;
     return 0;
   }
-  
+
   template<>
   ctchar* char_traits<ctchar>::
   copy(ctchar* s1, const ctchar* s2, size_t n)
@@ -277,7 +277,7 @@ namespace std/*__gnu_cxx*/
     for(unsigned c=0; c<n; ++c)s1[c] = s2[c];
     return s1;
   }
-  
+
   template<>
   ctchar* char_traits<ctchar>::
   move(ctchar* s1, const ctchar* s2, size_t n)
@@ -286,7 +286,7 @@ namespace std/*__gnu_cxx*/
     for(unsigned c=n; c-->0; )s1[c] = s2[c];
     return s1;
   }
-  
+
   template<>
   ctchar* char_traits<ctchar>::
   assign(ctchar* s, size_t n, ctchar a)

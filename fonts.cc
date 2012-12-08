@@ -30,9 +30,9 @@ namespace
     unsigned get_num_extra_chars()  // Get num of characters >= 0x100
     {
         unsigned end = font12_end;
-        
+
         if(end < 0x100) return 0;
-        
+
         return end - 0x100;
     }
 #endif
@@ -42,16 +42,16 @@ namespace
 void Font12data::LoadBoxAs(unsigned boxno, unsigned tileno, class TGAimage &image)
 {
     //fprintf(stderr, "%03X -> %03X\t", boxno, tileno + get_font_begin());
-    
+
     static const char palette[] = {0,0,1,2,3,0};
-    
+
     std::vector<unsigned char> box = image.getbox(boxno);
-    
+
     //fprintf(stderr, "Char $%X: dest index $%X\n", boxno, tileno);
 
     unsigned width=0;
     while(box[width] != 5 && width < 12)++width;
-    
+
     // Typefaces refer to original characters.
     for(unsigned t=0; t<Typefaces.size(); ++t)
     {
@@ -59,7 +59,7 @@ void Font12data::LoadBoxAs(unsigned boxno, unsigned tileno, class TGAimage &imag
         const unsigned begin   = Typefaces[t].get_begin();
         const unsigned end     = Typefaces[t].get_end();
         const unsigned condense= Typefaces[t].get_condense();
-        
+
         if(chronochar >= begin
         && chronochar < end
         && condense > 0
@@ -88,14 +88,14 @@ void Font12data::LoadBoxAs(unsigned boxno, unsigned tileno, class TGAimage &imag
     for(unsigned p=0; p<box.size(); ++p)
         if((unsigned char)box[p] < sizeof(palette))
             box[p] = palette[ static_cast<unsigned> (box[p]) ];
-    
+
     unsigned to  = 24*(tileno);
     unsigned to2 = 24*(tileno/2);
     unsigned po  = 0;
     for(unsigned y=0; y<12; ++y)
     {
         #define gb(n,v) ((box[po+n]&v)/v)
-        
+
         if(true)
         {
             unsigned char
@@ -136,13 +136,13 @@ void Font12data::LoadBoxAs(unsigned boxno, unsigned tileno, class TGAimage &imag
                   | (gb( 2,2) << 1)
                   | (gb( 3,2) << 0);
             if(!(tileno&1)) { byte3 *= 16; byte4 *= 16; }
-            
+
             tiletab2[to2++] |= byte3;
             tiletab2[to2++] |= byte4;
 
             po += 4;
         }
-        
+
         #undef gb
     }
 }
@@ -155,56 +155,56 @@ void Font12data::Reload(const Rearrangemap_t& arrange)
     {
         return;
     }
-    
+
     image.setboxsize(12, 12);
     image.setboxperline(32);
-    
+
     unsigned boxcount = image.getboxcount();
     unsigned boxstart = get_font_begin();
-    
+
     charcount = font12_end - get_font_begin();
-    
+
     tiletab1.clear();
     tiletab2.clear();
-    
+
     tiletab1.resize(charcount * 24, 0);
     tiletab2.resize(charcount * 12, 0);
-    
+
     widths.clear();
     widths.resize(charcount, 0);
-    
+
     hash_set<unsigned> forbid;
     for(Rearrangemap_t::const_iterator
         i = arrange.begin(); i != arrange.end(); ++i)
     {
         forbid.insert(i->second); // Target: may not be overwritten
         forbid.insert(i->first);  // Source: already written
-        
+
         unsigned newno = i->second - boxstart;
         if(newno >= charcount) continue;
-        
+
         LoadBoxAs(i->first, newno, image);
     }
 
     for(unsigned b=0; b<boxcount; ++b)
     {
         if(b < boxstart) continue;
-        
+
         if(forbid.find(b) != forbid.end()) continue;
-        
+
         unsigned newno = b - boxstart;
         if(newno >= charcount) continue;
-        
+
         LoadBoxAs(b, newno, image);
     }
-    
+
     //fprintf(stderr, "\n");
 }
 
 void Font12data::Load(const string &filename)
 {
     fn = filename;
-    
+
     Rearrangemap_t dummy;
     Reload(dummy);
 }
@@ -219,7 +219,7 @@ void Font8data::LoadBoxAs(unsigned boxno, unsigned tileno, class TGAimage &image
     static const char palette[] = {0,0,1,2,3,0};
 
     std::vector<unsigned char> box = image.getbox(boxno);
-    
+
     unsigned width=0;
     while(box[width] != 1 && width < 8)++width;
 
@@ -228,7 +228,7 @@ void Font8data::LoadBoxAs(unsigned boxno, unsigned tileno, class TGAimage &image
     for(unsigned p=0; p<box.size(); ++p)
         if((unsigned char)box[p] < sizeof(palette))
             box[p] = palette[ static_cast<unsigned> (box[p]) ];
-    
+
     unsigned to = tileno * 16;
     unsigned po = 0;
     for(unsigned y=0; y<8; ++y)
@@ -256,47 +256,47 @@ void Font8data::Reload(const Rearrangemap_t& arrange)
     {
         return;
     }
-    
+
     image.setboxsize(8, 8);
     image.setboxperline(32);
-    
+
     unsigned boxstart  = GetBegin();
     unsigned boxcount  = image.getboxcount();
     unsigned charcount = GetCount() - boxstart;
-    
+
     tiletable.clear();
     tiletable.resize(charcount * 16, 0);
-    
+
     widths.clear();
     widths.resize(charcount, 0);
-    
+
     hash_set<unsigned> forbid;
     for(Rearrangemap_t::const_iterator
         i = arrange.begin(); i != arrange.end(); ++i)
     {
         unsigned b = i->first;
         unsigned c = i->second;
-        
+
         if(c < boxstart) continue;
-        
+
         forbid.insert(c); // Target: may not be overwritten
         forbid.insert(b); // Source: already written
-        
+
         unsigned newno = c - boxstart;
         if(newno >= charcount) continue;
-        
+
         LoadBoxAs(i->first, newno, image);
     }
 
     for(unsigned b=0; b<boxcount; ++b)
     {
         if(b < boxstart) continue;
-        
+
         if(forbid.find(b) != forbid.end()) continue;
-        
+
         unsigned newno = b - boxstart;
         if(newno >= charcount) continue;
-        
+
         LoadBoxAs(b, newno, image);
     }
 }
@@ -304,7 +304,7 @@ void Font8data::Reload(const Rearrangemap_t& arrange)
 void Font8data::Load(const std::string &filename)
 {
     fn = filename;
-    
+
     Rearrangemap_t dummy;
     Reload(dummy);
 }
@@ -359,7 +359,7 @@ namespace
         for(unsigned a=0; a<elems.size(); ++a)
         {
             const std::wstring &str = elems[a];
-            
+
             if(!str.size())
             {
                 unsigned value = elems[a];
@@ -376,26 +376,26 @@ namespace
         }
         return result;
     }
-    
+
     struct UsageData
     {
         ctchar   ch;
         unsigned count;
-        
+
         bool operator< (const UsageData& b) const
         {
             return count < b.count;
         }
     };
-    
+
     typedef std::vector<UsageData> usagemap_t;
-    
+
     typedef hash_map<ctchar, unsigned> usagemap_by_char_t;
-    
+
     const usagemap_t LoadUsageMap(const usagemap_by_char_t& src)
     {
         usagemap_t result;
-        
+
         for(usagemap_by_char_t::const_iterator i=src.begin(); i!=src.end(); ++i)
         {
             UsageData tmp;
@@ -408,7 +408,7 @@ namespace
     }
 
     /* Rearrangemap_t is defined in fonts.hh */
-    
+
     void Arrange(Rearrangemap_t& result,
                  std::set<ctchar>& patients,
                  const charset_t& slots,
@@ -418,11 +418,11 @@ namespace
         {
             fprintf(stderr, "Error: Arrange(): More patients than doctors\n");
         }
-        
+
         std::set<ctchar> slots2;
         for(charset_t::const_iterator i = slots.begin(); i != slots.end(); ++i)
             slots2.insert(*i);
-        
+
         // Save first <n> slots, erase rest (the excess)
         unsigned n = 0;
         for(std::set<ctchar>::iterator b, a = slots2.begin(); a != slots2.end(); a = b)
@@ -430,22 +430,22 @@ namespace
             b = a; ++b;
             if(n++ >= patients.size()) slots2.erase(a);
         }
-        
+
         // Place the control codes at end of the slot list
         for(std::set<ctchar>::const_iterator b, a = patients.begin(); a != patients.end(); a = b)
         {
             b = a; ++b;
-            
+
             ctchar orig = *a;
 
             if(ControlCodes.find(orig) != ControlCodes.end())
             {
                 // Pick the last slot
-                
+
                 set<ctchar>::iterator dest = slots2.end(); --dest;
                 result[orig] = *dest;
                 slots2.erase(dest);
-                
+
                 patients.erase(a);
             }
         }
@@ -457,17 +457,17 @@ namespace
         for(std::set<ctchar>::iterator b, a = slots2.begin(); a != slots2.end(); a = b)
         {
             b = a; ++b;
-            
+
             set<ctchar>::iterator c = patients.find(*a);
             if(c == patients.end()) continue;
-            
+
             result[*c] = *a;
-            
+
             patients.erase(c);
             slots2.erase(a);
         }
 #endif
-        
+
         // Assign everything else straightforwardly
         std::set<ctchar>::const_iterator dest = slots2.begin();
         for(std::set<ctchar>::const_iterator j = patients.begin(); j != patients.end(); ++j)
@@ -483,32 +483,32 @@ namespace
                                    const std::set<ctchar>& ControlCodes)
     {
         Rearrangemap_t result;
-        
+
         charset_t OneByteSlots;
         charset_t TwoByteSlots;
-        
+
         /* Collect slots */
         for(charset_t::const_iterator i = free.begin(); i != free.end(); ++i)
         {
             if(*i < 0x100) OneByteSlots.insert(*i);
             else TwoByteSlots.insert(*i);
         }
-        
+
         /* Slots come from moved characters too */
         for(usagemap_t::const_iterator i = usages.end(); i-- != usages.begin(); )
         {
             ctchar ch = i->ch;
-            
+
             if(ch < 0x100) OneByteSlots.insert(ch);
             else TwoByteSlots.insert(ch);
         }
-        
+
         unsigned left1 = OneByteSlots.size();
         unsigned left2 = TwoByteSlots.size();
-        
+
         std::set<ctchar> OneBytePatients;
         std::set<ctchar> TwoBytePatients;
-        
+
         /* Allocate slots */
         for(usagemap_t::const_iterator i = usages.end(); i-- != usages.begin(); )
         {
@@ -528,7 +528,7 @@ namespace
             else
                 break;
         }
-        
+
 #if 0
         if(left1 || left2)
             fprintf(stderr, "%u 1byte and %u 2byte slots left free\n", left1, left2);
@@ -537,17 +537,17 @@ namespace
         /* Assign slots */
         Arrange(result, OneBytePatients, OneByteSlots, ControlCodes);
         Arrange(result, TwoBytePatients, TwoByteSlots, ControlCodes);
-        
+
         for(Rearrangemap_t::iterator b,a = result.begin(); a != result.end(); a=b)
         {
             b=a; ++b;
-            
+
             if(ControlCodes.find(a->first) == ControlCodes.end())
             {
                 // Mark this new location so that it won't be erased in the font
                 fixed.insert(a->second);
             }
-            
+
             /* Delete useless orders (attempts to not move char) */
             if(a->first == a->second) result.erase(a);
         }
@@ -565,12 +565,12 @@ namespace
          "movable control char", "locked+movable+ctrl=?"};
         const unsigned width = 16;
         bool used[8] = {false};
-        
+
         FILE *log = GetLogFile("font", "log_rearrange");
         if(!log) return;
-        
+
         unsigned ndec = map.size() > 256 ? 3 : 2;
-        
+
         std::vector<std::string> labels;
         std::vector<std::string> lines;
         std::vector<std::string> legend;
@@ -591,7 +591,7 @@ namespace
             used[(unsigned char)map[c]] = true;
             if(++col >= width)
             {
-                col=0; 
+                col=0;
                 labels.push_back(cur_label);
                 lines.push_back(cur_line);
             }
@@ -606,10 +606,10 @@ namespace
         for(unsigned a=0; a<lines.size(); ++a)
         {
             if(a+1 < lines.size() && lines[a+1] != lines[a]) continue;
-            
+
             unsigned hog = 0;
             while(a+2+hog < lines.size() && lines[a+2+hog] == lines[a]) ++hog;
-            
+
             if(hog > 0)
             {
                 labels[++a] = "...  ";
@@ -621,7 +621,7 @@ namespace
                 }
             }
         }
-        
+
         // Build the legend (include only used chars)
         for(unsigned a=0; a<8; ++a)
             if(used[a])
@@ -632,24 +632,24 @@ namespace
                 s += MapDescs[a];
                 legend.push_back(s);
             }
-        
+
         fprintf(log, "%s:\n", label.c_str());
         for(unsigned a=0; a<lines.size(); ++a)
         {
             fprintf(log, "%6s%-*s", labels[a].c_str(), width, lines[a].c_str());
-            if(a < legend.size()) fprintf(log, " %s", legend[a].c_str()); 
+            if(a < legend.size()) fprintf(log, " %s", legend[a].c_str());
             fprintf(log, "\n");
         }
         fprintf(log, "\n");
     }
-    
+
     void DumpMovableMaps(const usagemap_t& Usages, cset_class type, const std::string& what)
     {
         FILE *log = GetLogFile("font", "log_rearrange");
         if(!log) return;
-        
+
         const unsigned width = 3;
-        
+
         fprintf(log, "%s:\n", what.c_str());
         for(usagemap_t::const_iterator i = Usages.begin(); i != Usages.end(); ++i)
         {
@@ -661,23 +661,23 @@ namespace
         }
         fprintf(log, "\n");
     }
-    
+
     void DumpRearranges(const Rearrangemap_t& Rearranges,
                         const usagemap_by_char_t& usages,
                         const std::string& what)
     {
         FILE *log = GetLogFile("font", "log_rearrange");
         if(!log) return;
-        
+
         fprintf(log, "Rearranged %u %s symbols:\n", (unsigned) Rearranges.size(), what.c_str());
-        
+
         for(Rearrangemap_t::const_iterator i=Rearranges.begin(); i!=Rearranges.end(); ++i)
         {
             unsigned usetimes = 0;
-            
+
             usagemap_by_char_t::const_iterator j = usages.find(i->first);
             if(j != usages.end()) usetimes = j->second;
-        
+
             fprintf(log, "  %X(used %u times) moved to %X\n",
                 i->first,
                 usetimes,
@@ -693,24 +693,24 @@ void insertor::ReorganizeFonts()
 {
     charset_t Fixed_12 = LoadFixedMap("lock12syms", cset_12pix);
     charset_t Fixed_8  = LoadFixedMap("lock8syms", cset_8pix);
-    
+
     usagemap_by_char_t UsagesByChar_12;
     usagemap_by_char_t UsagesByChar_8;
-    
+
     MessageReorganizingFonts();
-    
+
     const ctchar font_begin = get_font_begin();
-    
+
     /* Dialog font: 0..0x20 are specials, 0x21..font_begin-1 is dictionary */
     for(unsigned c=0; c<font_begin; ++c) Fixed_12.insert(c);
-    
+
     /* Status screen font: 0..15 are specials, 16..159 are reserved */
     for(unsigned c=0; c<0xA0; ++c)       Fixed_8.insert(c);
 
     for(stringlist::const_iterator i=strings.begin(); i!=strings.end(); ++i)
     {
         const ctstring& str = i->str;
-        
+
         switch(i->type)
         {
             case stringdata::zptr8:
@@ -719,23 +719,23 @@ void insertor::ReorganizeFonts()
                 for(unsigned a=0; a<str.size(); ++a)
                 {
                     ctchar c = str[a];
-                    
+
                     if(c == 10)
                     {
                         attr = str[a+1];
                     }
-                    
+
                     extrasizemap_t::const_iterator j = Extras_8.find(c);
                     if(j != Extras_8.end()) a += j->second;
-                    
+
                     if(attr & 0x03)
                     {
                         // Don't count GFX
                         continue;
                     }
-                    
+
                     if(Fixed_8.find(c) != Fixed_8.end()) continue;
-                    
+
                     ++UsagesByChar_8[c];
                 }
                 break;
@@ -745,12 +745,12 @@ void insertor::ReorganizeFonts()
                 for(unsigned a=0; a<str.size(); ++a)
                 {
                     ctchar c = str[a];
-                    
+
                     extrasizemap_t::const_iterator j = Extras_12.find(c);
                     if(j != Extras_12.end()) a += j->second;
-                    
+
                     if(Fixed_12.find(c) != Fixed_12.end()) continue;
-                    
+
                     ++UsagesByChar_12[c];
                 }
                 break;
@@ -764,9 +764,9 @@ void insertor::ReorganizeFonts()
                 for(unsigned a=0; a<str.size(); ++a)
                 {
                     ctchar c = str[a];
-                    
+
                     if(Fixed_12.find(c) != Fixed_12.end()) continue;
-                    
+
                     ++UsagesByChar_12[c];
                 }
                 break;
@@ -775,36 +775,36 @@ void insertor::ReorganizeFonts()
                 ; // ignore, should not occur here.
         }
     }
-    
+
     usagemap_t Usages_12 = LoadUsageMap(UsagesByChar_12);
     usagemap_t Usages_8  = LoadUsageMap(UsagesByChar_8);
-    
+
     DumpMovableMaps(Usages_12, cset_12pix, "Movable 12pix chars");
     DumpMovableMaps(Usages_8,  cset_8pix,  "Movable 8x8 chars");
 
     charset_t Free_12;
     charset_t Free_8;
-    
+
     for(ctchar c=0; c<0x300; ++c)
     {
         if(Fixed_12.find(c) != Fixed_12.end()) continue;
-        
+
         // All symbols which can't be displayed
         // Or which are never used
-        
+
         if(getwchar_t(c, cset_12pix) == ilseq
         || UsagesByChar_12.find(c) == UsagesByChar_12.end())
         {
             // Can be redefined.
-            
+
             Free_12.insert(c);
         }
     }
-    
+
     for(ctchar c=0; c<0x100; ++c)
     {
         if(Fixed_8.find(c) != Fixed_8.end()) continue;
-        
+
         if(getwchar_t(c, cset_8pix) == ilseq
         || UsagesByChar_8.find(c) == UsagesByChar_8.end())
         {
@@ -827,18 +827,18 @@ void insertor::ReorganizeFonts()
             bool Fixed = Fixed_12.find(c) != Fixed_12.end();
             bool Usage = UsagesByChar_12.find(c) != UsagesByChar_12.end();
             bool Ctrl  = ControlCodes.find(c) != ControlCodes.end();
-            
+
             map += (char)(Fixed*1 + Usage*2 + Ctrl*4);
         }
         DumpFreeMap("12pix map", map);
-        
+
         map = "";
         for(ctchar c=0; c<0x100; ++c)
         {
             bool Fixed = Fixed_8.find(c) != Fixed_8.end();
             bool Usage = UsagesByChar_8.find(c) != UsagesByChar_8.end();
             bool Ctrl  = false;
-            
+
             map += (char)(Fixed*1 + Usage*2 + Ctrl*4);
         }
         DumpFreeMap("8x8 map", map);
@@ -846,16 +846,16 @@ void insertor::ReorganizeFonts()
 
     Rearrangemap_t Rearrange_12 = Rearrange(Usages_12, Free_12, Fixed_12, ControlCodes);
     DumpRearranges(Rearrange_12, UsagesByChar_12, "dialog");
-    
+
     ControlCodes.clear();
     Rearrangemap_t Rearrange_8  = Rearrange(Usages_8, Free_8, Fixed_8, ControlCodes);
     DumpRearranges(Rearrange_8, UsagesByChar_8, "status screen");
-    
+
     /* Proceed the rearrangements */
     for(stringlist::iterator i=strings.begin(); i!=strings.end(); ++i)
     {
         ctstring& str = i->str;
-        
+
         switch(i->type)
         {
             case stringdata::zptr8:
@@ -864,21 +864,21 @@ void insertor::ReorganizeFonts()
                 for(size_t a=0; a<str.size(); ++a)
                 {
                     const size_t aa = a; ctchar c = str[aa];
-                    
+
                     if(c == 10)
                     {
                         attr = str[a+1];
                     }
-                    
+
                     extrasizemap_t::const_iterator j = Extras_8.find(c);
                     if(j != Extras_8.end()) a += j->second;
-                    
+
                     if(attr & 0x03)
                     {
                         // Don't modify GFX
                         continue;
                     }
-                    
+
                     Rearrangemap_t::const_iterator k = Rearrange_8.find(c);
                     if(k != Rearrange_8.end()) str[aa] = k->second;
                 }
@@ -889,10 +889,10 @@ void insertor::ReorganizeFonts()
                 for(size_t a=0; a<str.size(); ++a)
                 {
                     const size_t aa = a; ctchar c = str[a];
-                    
+
                     extrasizemap_t::const_iterator j = Extras_12.find(c);
                     if(j != Extras_12.end()) a += j->second;
-                    
+
                     Rearrangemap_t::const_iterator k = Rearrange_12.find(c);
                     if(k != Rearrange_12.end()) str[aa] = k->second;
                 }
@@ -907,7 +907,7 @@ void insertor::ReorganizeFonts()
                 for(size_t a=0; a<str.size(); ++a)
                 {
                     const size_t aa = a; ctchar c = str[a];
-                    
+
                     if(Fixed_12.find(c) != Fixed_12.end()) continue;
 
                     Rearrangemap_t::const_iterator k = Rearrange_12.find(c);
@@ -919,7 +919,7 @@ void insertor::ReorganizeFonts()
                 ; // ignore, should not occur here.
         }
     }
-    
+
     /* Transform the dictionary characters */
     for(size_t d=0; d<dict.size(); ++d)
     {
@@ -931,19 +931,19 @@ void insertor::ReorganizeFonts()
             if(k != Rearrange_12.end()) dictword[a] = k->second;
         }
     }
-    
+
     for(Rearrangemap_t::const_iterator
         i = Rearrange_12.begin(); i != Rearrange_12.end(); ++i)
     {
         // FIXME: What happens if the conj-chars are swapped?
-        
+
         if(Conjugater->IsConjChar(i->first))
         {
             Conjugater->RedefineConjChar(i->first, i->second);
             continue;
         }
     }
-    
+
     font12_end = 0;
     for(charset_t::const_iterator i = Fixed_12.begin(); i != Fixed_12.end(); ++i)
         if(*i >= font12_end)
@@ -951,19 +951,19 @@ void insertor::ReorganizeFonts()
             font12_end = *i + 1;
             font8v_end = *i + 1;
         }
-    
+
     FILE *log = GetLogFile("font", "log_rearrange");
     if(log) fprintf(log, "Font12 end tag set at 0x%X\n\n", font12_end);
-    
+
     Font12.Reload(Rearrange_12);
     Font8.Reload(Rearrange_8);
     Font8v.Reload(Rearrange_12);
-    
+
     /* RearrangeCharSet() is found in ctcset.cc */
-    
+
     RearrangeCharset(cset_12pix, Rearrange_12);
     RearrangeCharset(cset_8pix, Rearrange_8);
-    
+
     MessageDone();
 }
 
@@ -983,7 +983,7 @@ void insertor::WriteVWF12()
 {
     const unsigned font_begin = get_font_begin();
     const unsigned tilecount  = Font12.GetCount();
-    
+
     /*
      C2:5E1E:
         0  A9 00          - lda a, $00
@@ -995,9 +995,9 @@ void insertor::WriteVWF12()
         9  18             - clc
        10  BF E6 60 C2    - lda $C2:($60E6+x)
        14
-       
+
        Will be changed to:
-           
+
         0  C2 20          - rep $20
         2  EA             - nop
         3  EA             - nop
@@ -1007,14 +1007,14 @@ void insertor::WriteVWF12()
         9  18             * clc
        10  BF E6 60 C2    * lda $C2:($60E6+x)
        14
-       
+
        Now widthtab may have more than 256 items.
        We may ignore VWF12_WIDTH_INDEX as it's no longer used.
     */
 
     // patch dialog engine
     PlaceByte(font_begin,  GetConst(CSET_BEGINBYTE), L"vwf12 beginbyte");
-    
+
     // patch font engine
     PlaceByte(0xC2, GetConst(VWF12_WIDTH_INDEX)-7, L"vwf12 patch"); // rep $20
     PlaceByte(0x20, GetConst(VWF12_WIDTH_INDEX)-6, L"vwf12 patch");
@@ -1035,10 +1035,10 @@ void insertor::WriteVWF12()
     objects.AddObject(widthblock, "VWF12_WIDTH_TABLE");
     objects.AddReference("VWF12_WIDTH_TABLE", OffsPtrFrom(GetConst(VWF12_WIDTH_OFFSET)));
     objects.AddReference("VWF12_WIDTH_TABLE", PagePtrFrom(GetConst(VWF12_WIDTH_SEGMENT)));
-    
+
     unsigned pagegroup = objects.CreateLinkageGroup();
     O65 block1, block2;
-    
+
     /* Create a patch for both tile tables. */
     block1.LoadSegFrom(CODE, Font12.GetTab1());
     block2.LoadSegFrom(CODE, Font12.GetTab2());
@@ -1047,13 +1047,13 @@ void insertor::WriteVWF12()
     block1.DeclareGlobal(CODE, "VWF12_TABLES", 0);
     block1.DeclareGlobal(CODE, "VWF12_TABLE1", font_begin*-24);
     block2.DeclareGlobal(CODE, "VWF12_TABLE2", font_begin*-12);
-    
+
     LinkageWish wish;
     wish.SetLinkageGroup(pagegroup);
-    
+
     objects.AddObject(block1, "VWF12_TABLE1", wish);
     objects.AddObject(block2, "VWF12_TABLE2", wish);
-    
+
     /*
      C2:5DCE:
          0        clc
@@ -1074,7 +1074,7 @@ void insertor::WriteVWF12()
     PlaceByte(0xA5, GetConst(VWF12_TAB1_OFFSET)+3, L"vwf12 patch"); // lda $35
     PlaceByte(0x35, GetConst(VWF12_TAB1_OFFSET)+4, L"vwf12 patch");
     PlaceByte(0x18, GetConst(VWF12_TAB1_OFFSET)+5, L"vwf12 patch"); // clc
-    
+
     objects.AddReference("VWF12_TABLE1", OffsPtrFrom(GetConst(VWF12_TAB1_OFFSET)-1));
     objects.AddReference("VWF12_TABLE2", OffsPtrFrom(GetConst(VWF12_TAB2_OFFSET)));
     objects.AddReference("VWF12_TABLES", PagePtrFrom(GetConst(VWF12_SEGMENT)));
@@ -1084,9 +1084,9 @@ void insertor::WriteVWF8()
 {
     objects.AddLump(Font8v.GetWidths(), "vwf8 widths",  "WIDTH_ADDR");
     objects.AddLump(Font8v.GetTiles(),  "vwf8 tiles",   "TILEDATA_ADDR");
-    
+
     const bool DisplayEqCount = GetConf("font", "display_eq_count");
-    
+
     objects.DefineSymbol("VWF8_DISPLAY_EQ_COUNT", DisplayEqCount ? 2 : 0);
 }
 

@@ -8,7 +8,7 @@ void DumpGFX_2bit(unsigned addr,
 
 void DumpGFX_4bit(unsigned addr,
                   unsigned xtile, unsigned ytile,
-                  const std::wstring& what, 
+                  const std::wstring& what,
                   const std::string& fn,
                   const unsigned *palette = NULL);
 

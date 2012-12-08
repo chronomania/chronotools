@@ -17,7 +17,7 @@ public:
     parammap_t params;
     // tag value
     std::wstring value;
-    
+
     class XMLTreeSet operator[] (const std::wstring&) const;
 
     template<typename Func>
@@ -30,7 +30,7 @@ class XMLTreeSet
 {
 public:
     const XMLTreeSet operator[] (const std::wstring&) const;
-    
+
     operator const std::wstring () const;
     //operator const XMLTreeP () const;
 
@@ -46,7 +46,7 @@ public:
             p[key].Iterate(f);
         }
     }
-    
+
     void Iterate(void (*func)(XMLTreeP)) const;
     void Iterate(void (*func)(const std::wstring& )) const;
 

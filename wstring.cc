@@ -90,7 +90,7 @@ wstringOut::~wstringOut()
     iconv_close(tester);
 #endif
 }
-    
+
 const std::string wstringOut::putc(wchar_t p) const
 {
 #if USE_ICONV
@@ -120,10 +120,10 @@ const std::string wstringOut::puts(const std::wstring &s) const
                               &left,
                               &outptr,
                               &outsize);
-        
+
         std::string tmp(OutBuf, outptr-OutBuf);
         result += tmp;
-        
+
         if(retval == (size_t)-1)
         {
             if(errno == E2BIG)
@@ -246,12 +246,12 @@ const std::wstring wstringIn::puts(const std::string &s) const
                               &left,
                               &outptr,
                               &outsize);
-        
+
         //unsigned bytes = (sizeof OutBuf) - outsize;
         unsigned bytes = outptr-OutBuf;
         std::wstring tmp((const wchar_t *)(&OutBuf), bytes / (sizeof(wchar_t)));
         result += tmp;
-        
+
         if(retval == (size_t)-1)
         {
             if(errno == E2BIG)
@@ -333,7 +333,7 @@ long atoi(const wchar_t *p, int base)
     for(; *p; ++p)
     {
         char c = WcharToAsc(*p);
-        
+
         int p = Whex(c);
         if(p == -1)break;
         ret = ret*base + p;

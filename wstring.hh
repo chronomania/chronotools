@@ -26,7 +26,7 @@ class wstringIn
 public:
     wstringIn();
     ~wstringIn();
-    
+
 #if USE_ICONV
     wstringIn(const char *setname);
     void SetSet(const char *setname);
@@ -52,14 +52,14 @@ class wstringOut
 public:
     wstringOut();
     ~wstringOut();
-    
+
 #if USE_ICONV
     wstringOut(const char *setname);
     void SetSet(const char *setname);
 #else
     inline void SetSet() {}
 #endif
-    
+
     const std::string putc(wchar_t p) const;
     const std::string puts(const std::wstring &s) const;
     bool isok(wchar_t p) const;

@@ -1,122 +1,113 @@
 #ifndef OMIT_IsVowel
 IsVowel:
-	sep #$20
-	.as : cmp #$C2
-	beq L36
-	bcs L33
-	cmp #$AE
-	beq L36
+	sep #$21
+	.as : sbc #$A0
+	cmp #$0
+	beq L33
+	cmp #$28
+	beq L33
 	bcs L31
-	cmp #$A4
-	beq L36
-	bcs L30
-	cmp #$A0
-	bne L37
-	bra L36
-L30:
-	cmp #$A8
-	bne L37
-	bra L36
-L31:
-	cmp #$B8
-	beq L36
-	bcs L32
-	cmp #$B4
-	bne L37
-	bra L36
-L32:
-	cmp #$BA
-	beq L36
-	cmp #$BE
-	bne L37
-	bra L36
-L33:
-	cmp #$D4
-	bcc L34
-	cmp #$DB
-	bcc L36
-	cmp #$E0
-	bcc L37
-	cmp #$E4
-	bcc L36
-	sbc #$F0
+	cmp #$14
+	beq L33
+	bcs L29
+	cmp #$8
+	beq L33
+	bcs L28
 	cmp #$4
-	bcs L37
-	bra L36
-L34:
-	cmp #$CE
-	beq L36
-	bcs L35
-	cmp #$C8
-	bne L37
-	bra L36
-L35:
-	cmp #$D2
-	bne L37
-L36:
+	bne L34
+	bra L33
+L28:
+	cmp #$E
+	bne L34
+	bra L33
+L29:
+	cmp #$1A
+	beq L33
+	bcs L30
+	cmp #$18
+	bne L34
+	bra L33
+L30:
+	cmp #$1E
+	beq L33
+	cmp #$22
+	bne L34
+	bra L33
+L31:
+	cmp #$34
+	bcc L32
+	cmp #$3B
+	bcc L33
+	sbc #$40
+	cmp #$4
+	bcc L33
+	sbc #$10
+	bcs L34
+	bra L33
+L32:
+	cmp #$2E
+	beq L33
+	cmp #$32
+	bne L34
+L33:
 	sec
 	rts
-L37:
+L34:
 	clc
 	rts
 #endif
 #ifndef OMIT_IsConso
 IsConso:
-	sep #$20
-	.as : cmp #$B9
-	beq L42
-	bcs L39
-	cmp #$A9
+	sep #$21
+	.as : sbc #$A1
+	cmp #$3
 	bcc L38
-	cmp #$AE
-	bcc L42
-	cmp #$AF
-	bcc L43
-	cmp #$B4
-	bcc L42
-	sbc #$B5
+	cmp #$1A
+	bcc L36
+	cmp #$1D
+	bcc L38
+	cmp #$28
+	bcc L35
+	cmp #$2D
+	bcc L38
+	sbc #$2E
 	cmp #$3
-	bcs L43
-	bra L42
-L38:
-	cmp #$A1
-	bcc L43
-	cmp #$A4
-	bcc L42
-	sbc #$A5
-	cmp #$3
-	bcs L43
-	bra L42
-L39:
-	cmp #$C3
-	bcc L41
-	cmp #$C8
-	bcc L42
-	cmp #$CF
-	bcc L40
-	cmp #$D2
-	bcc L42
-	cmp #$D3
-	bne L43
-	bra L42
-L40:
+	bcc L38
+	cmp #$4
+	bne L39
+	bra L38
+L35:
 	sec
-	sbc #$C9
-	cmp #$5
-	bcs L43
-	bra L42
-L41:
-	cmp #$BB
-	bcc L43
-	cmp #$BE
-	bcc L42
-	sbc #$BF
+	sbc #$1E
 	cmp #$3
-	bcs L43
-L42:
+	bcc L38
+	sbc #$4
+	cmp #$5
+	bcs L39
+	bra L38
+L36:
+	cmp #$E
+	bcc L37
+	cmp #$13
+	bcc L38
+	sbc #$14
+	cmp #$3
+	bcc L38
+	cmp #$4
+	bne L39
+	bra L38
+L37:
+	sec
+	sbc #$4
+	cmp #$3
+	bcc L38
+	sbc #$4
+	cmp #$5
+	bcs L39
+L38:
 	sec
 	rts
-L43:
+L39:
 	clc
 	rts
 #endif
@@ -128,15 +119,15 @@ OutWord:
 	sta $1,s
 	rep #$10
 	.xl : ldx #0
-L44:
+L40:
 	jsr LoopHelper
-	beq L46
+	beq L42
 	sta $2,s
 	lda $1,s
-	bne L45
+	bne L41
 	ply
 	rts
-L45:
+L41:
 	.as : lda #0
 	xba
 	lda $2,s
@@ -148,8 +139,8 @@ L45:
 	dec
 	sta $1,s
 	inx
-	bra L44
-L46:
+	bra L40
+L42:
 	ply
 	rts
 #endif
@@ -165,18 +156,18 @@ OutWordBut:
 	sta $1,s
 	rep #$10
 	.xl : ldx #0
-L47:
+L43:
 	jsr LoopHelper
-	beq L49
+	beq L45
 	sta $3,s
 	lda $1,s
 	cmp $2,s
-	bne L48
+	bne L44
 	ply
 	sep #$10
 	ply
 	rts
-L48:
+L44:
 	lda $1,s
 	dec
 	sta $1,s
@@ -188,8 +179,8 @@ L48:
 	jsr OutcHelper
 	plx
 	inx
-	bra L47
-L49:
+	bra L43
+L45:
 	ply
 	sep #$10
 	ply
@@ -203,15 +194,15 @@ Length:
 	sta $1,s
 	rep #$10
 	.xl : ldx #0
-L50:
+L46:
 	jsr LoopHelper
-	beq L51
+	beq L47
 	lda $1,s
 	inc
 	sta $1,s
 	inx
-	bra L50
-L51:
+	bra L46
+L47:
 	lda $1,s
 	sep #$10
 	ply
@@ -239,7 +230,7 @@ Do_Crononick:
 	jsr Length
 	sta $6,s
 	.as : cmp #$5
-	bne L54
+	bne L50
 	rep #$20
 	.al : lda #$0
 	rep #$10
@@ -264,10 +255,10 @@ Do_Crononick:
 	sta $5,s
 	lda $1,s
 	jsr IsConso
-	bcc L52
+	bcc L48
 	lda $2,s
 	jsr IsConso
-	bcc L52
+	bcc L48
 	lda $2,s
 	jsr UpCase
 	sep #$20
@@ -287,20 +278,20 @@ Do_Crononick:
 	ply
 	ply
 	brl OutcHelper
-L52:
+L48:
 	sep #$20
 	lda $5,s
 	jsr IsVowel
-	bcc L54
+	bcc L50
 	lda $3,s
 	cmp $4,s
-	bne L54
+	bne L50
 	lda $4,s
 	jsr IsConso
-	bcc L54
+	bcc L50
 	lda $2,s
 	jsr IsVowel
-	bcc L53
+	bcc L49
 	.as : lda #$3
 	jsr OutWord
 	lda #0
@@ -310,7 +301,7 @@ L52:
 	ply
 	ply
 	brl OutcHelper
-L53:
+L49:
 	lda #$1
 	jsr OutWord
 	lda #0
@@ -326,7 +317,7 @@ L53:
 	ply
 	ply
 	brl OutcHelper
-L54:
+L50:
 	sep #$20
 	lda $6,s
 	rep #$10

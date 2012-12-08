@@ -5,7 +5,7 @@
 
 // Bisqwit's 1d Bin Packing algorithm implementation (C++).
 // Version 1.1.0
-// 
+//
 // Copyright (C) 1992,2003 Bisqwit (http://iki.fi/bisqwit/)
 
 // This function organizes items to holes

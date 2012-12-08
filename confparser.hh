@@ -64,7 +64,7 @@ class ConfParser
         const std::wstring& SField() const;
 
         const std::vector<Element>& Fields() const { return elements; }
-        
+
         operator bool() const { return IField(); }
         operator double() const { return DField(); }
         operator unsigned() const { return IField(); }
@@ -101,7 +101,7 @@ class ConfParser
 //-----------------------------------------------------------------------
  private:
     class CharIStream;
-    
+
     void ParseSection(class CharIStream& is, const std::string& secName);
     bool ParseField(class CharIStream& is, Field& field, bool);
 

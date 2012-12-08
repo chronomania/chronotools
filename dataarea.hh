@@ -12,14 +12,14 @@ class DataArea
 private:
     map::iterator GetRef(unsigned offset);
     static void PrepareVec(vec&, unsigned offset);
-    
+
     void Optimize(map::iterator i);
 public:
     DataArea(): blobs() { }
-    
+
     void WriteByte(unsigned pos, unsigned char byte);
     unsigned char GetByte(unsigned pos) const;
-    
+
     unsigned GetBase() const;
     unsigned GetTop() const;
     unsigned GetSize() const { return GetTop() - GetBase(); }
@@ -27,7 +27,7 @@ public:
     unsigned FindNextBlob(unsigned where, unsigned& length) const;
 
     const std::vector<unsigned char> GetContent() const;
-    
+
     const std::vector<unsigned char> GetContent(unsigned begin, unsigned size) const;
 };
 

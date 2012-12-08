@@ -12,7 +12,7 @@ ROM::ROM(unsigned siz)
 
 ROM::~ROM()
 {
-    
+
 }
 
 void ROM::Write(unsigned pos, unsigned char value)
@@ -49,12 +49,12 @@ void ROM::AddPatch(const std::vector<unsigned char> &code,
                    unsigned addr, const std::wstring& what)
 {
     if(code.empty()) return;
-    
+
     //FILE *log = GetLogFile("mem", "log_addrs");
-    
+
     /* & 0x3FFFFF removed from here */
     const unsigned rompos = addr;
-    
+
     for(unsigned a=0; a<code.size(); ++a)
         Write(rompos+a, code[a]);
 

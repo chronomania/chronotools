@@ -7,14 +7,14 @@ namespace
 {
     typedef const struct { } xml_error;   // for throwing
     typedef const struct { } xml_end_tag; // for throwing
-    
+
     bool is_tag_char(char c)
     {
         return std::isalnum(c)
             || c == '_' || c == ':'
             || c == '-' || c == '.';
     }
-    
+
     wchar_t AscToWchar(char c)
     {
         return c;
@@ -39,9 +39,9 @@ namespace
         std::wstring result; result += AscToWchar(s[pos++]);
         return result;
     }
-    
+
     void ParseSubTree(XMLTree& result, const std::string& s, unsigned& pos);
-    
+
     void ParseTag(XMLTree& result, const std::string& s, unsigned& pos)
     {
         std::wstring tagname;
@@ -49,7 +49,7 @@ namespace
         bool meta_tag = false;
 
         //std::cerr << "input (" << s.substr(pos, 100) << ")\n";
-        
+
         if(pos < s.size() && s[pos] == '/') { begin_slash=true; ++pos; }
         if(pos < s.size() && s[pos] == '?') { meta_tag=true; ++pos; }
         if(pos < s.size() && s[pos] == '!')
@@ -71,14 +71,14 @@ namespace
             }
             return;
         }
-        
+
         XMLTreeP subtree = new XMLTree;
-        
+
         while(pos < s.size() && is_tag_char(s[pos]))
             tagname += AscToWchar(s[pos++]);
 
         //std::wcerr << L"tag: " << tagname << L"\n";
-    
+
         // Loop until the end of the tag has been reached
         bool found_trailing_slash = begin_slash;
         for(;;)
@@ -87,27 +87,27 @@ namespace
             if(pos >= s.size()) throw xml_error();
             if(meta_tag && s[pos] == '?') { ++pos; continue; }
             if(s[pos] == '>') { ++pos; break; }
-            
+
             if(s[pos] == '/' && !found_trailing_slash)
                 { found_trailing_slash=true; ++pos; continue; }
             if(!is_tag_char(s[pos])) throw xml_error();
-            
+
             std::wstring tagparamname;
             while(pos < s.size() && is_tag_char(s[pos]))
                 tagparamname += s[pos++];
-            
+
             //std::wcerr << L"param: " << tagparamname << L"\n";
-            
+
             while(pos < s.size() && std::isspace(s[pos])) ++pos;
             if(pos >= s.size()) throw xml_error();
             if(s[pos] != '=') throw xml_error();  ++pos;
-            
+
             while(pos < s.size() && std::isspace(s[pos])) ++pos;
             if(pos >= s.size()) throw xml_error();
-            
+
             if(s[pos] != '"' && s[pos] != '\'') throw xml_error();
             char terminator = s[pos++];
-            
+
             std::wstring tagparamvalue;
             for(;;)
             {
@@ -115,24 +115,24 @@ namespace
                 if(s[pos] == terminator) { ++pos; break; }
                 tagparamvalue += ParseEntity(s, pos);
             }
-            
+
             subtree->params.insert(std::make_pair(tagparamname, tagparamvalue));
-            
+
             //std::wcerr << "Got param (" << tagparamname << ")(" << tagparamvalue << ")\n";
         }
-        
+
         if(begin_slash)
         {
             throw xml_end_tag();
         }
-        
+
         if(!found_trailing_slash && !meta_tag)
             ParseSubTree(*subtree, s, pos);
-        
+
         if(!meta_tag)
             result.tags.insert(std::make_pair(tagname, subtree));
     }
-    
+
     void ParseSubTree(XMLTree& result, const std::string& s, unsigned& pos)
     {
         std::wstring spaces;
@@ -182,16 +182,16 @@ const XMLTree ParseXML(const std::string& s)
 XMLTreeSet XMLTree::operator[] (const std::wstring& key) const
 {
     XMLTreeSet result;
-    
+
     typedef tagmap_t::const_iterator tagcit;
     std::pair<tagcit, tagcit> tmp = tags.equal_range(key);
-    
+
     for(tagcit i=tmp.first; i!=tmp.second; ++i)
         result.AddTree(i->second);
-    
+
     typedef parammap_t::const_iterator paramcit;
     std::pair<paramcit, paramcit> tmp2 = params.equal_range(key);
-    
+
     for(paramcit i=tmp2.first; i!=tmp2.second; ++i)
         result.SetValue(i->second);
 
@@ -201,7 +201,7 @@ XMLTreeSet XMLTree::operator[] (const std::wstring& key) const
 const XMLTreeSet XMLTreeSet::operator[] (const std::wstring& key) const
 {
     XMLTreeSet result;
-    
+
     for(std::list<XMLTreeP>::const_iterator
         i = matching_trees.begin();
         i != matching_trees.end();
@@ -210,7 +210,7 @@ const XMLTreeSet XMLTreeSet::operator[] (const std::wstring& key) const
         const XMLTree& p = *(*i);
         result.Combine( p[key] );
     }
-    return result;    
+    return result;
 }
 
 void XMLTreeSet::AddTree(XMLTreeP p)

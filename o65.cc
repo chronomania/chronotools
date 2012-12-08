@@ -57,7 +57,7 @@ public:
     Defs(): symno(), nosym(), undefines(), defines()
     {
     }
-    
+
     unsigned AddUndefined(const std::string& name)
     {
         unsigned a = symno.size();
@@ -117,12 +117,12 @@ public:
 
     //! where it is assumed to start
     unsigned base;
-    
+
     //! absolute addresses of all publics
     typedef map<std::string, unsigned> publicmap_t;
     publicmap_t publics;
 
-public:    
+public:
     typedef Relocdata<unsigned> RT; RT R;
 public:
     Segment(): space(), base(0), publics(), R()
@@ -179,17 +179,17 @@ const O65& O65::operator= (const O65& b)
 void O65::Load(FILE* fp)
 {
     rewind(fp);
-    
+
     /* FIXME: No validity checks here */
     // Skip header
     LoadWord(fp);LoadWord(fp);LoadWord(fp);
-    
+
     /* FIXME: No validity checks here */
     // Skip mode
     unsigned mode = LoadWord(fp);
-    
+
     bool use32 = mode & 0x2000;
-    
+
     if(this->code) delete this->code;
     if(this->data) delete this->data;
     if(this->zero) delete this->zero;
@@ -199,49 +199,49 @@ void O65::Load(FILE* fp)
     this->data = new Segment;
     this->zero = new Segment;
     this->bss = new Segment;
-    
+
     this->code->base = LoadSWord(fp, use32);
     this->code->space.resize(LoadSWord(fp, use32));
 
     this->data->base = LoadSWord(fp, use32);
     this->data->space.resize(LoadSWord(fp, use32));
-    
+
     this->bss->base = LoadSWord(fp, use32);
     this->bss->space.resize(LoadSWord(fp, use32));
-    
+
     this->zero->base = LoadSWord(fp, use32);
     this->zero->space.resize(LoadSWord(fp, use32));
-    
+
     LoadSWord(fp, use32); // Skip stack_len
-    
+
     //fprintf(stderr, "@%X: stack len\n", ftell(fp));
-    
+
     // Skip some headers
     for(;;)
     {
         unsigned len = fgetc(fp);
         if(!len || len == (unsigned)EOF)break;
-        
+
         len &= 0xFF;
-        
+
         unsigned char type = fgetc(fp);
         if(len >= 2) len -= 2; else len = 0;
-        
+
         std::string data(len, '\0');
-        
+
         for(unsigned a=0; a<len; ++a) data[a] = fgetc(fp);
-        
+
         //fprintf(stderr, "Custom header %u: '%.*s'\n", type, len, data.data());
-        
+
         customheaders.push_back(make_pair(type, data));
     }
-    
+
     fread(&this->code->space[0], this->code->space.size(), 1, fp);
     fread(&this->data->space[0], this->data->space.size(), 1, fp);
     // zero and bss Segments don't exist in o65 format.
-    
+
     // load external symbols
-    
+
     unsigned num_und = LoadSWord(fp, use32);
 
     //fprintf(stderr, "@%X: %u externs..\n", ftell(fp), num_und);
@@ -250,32 +250,32 @@ void O65::Load(FILE* fp)
     {
         std::string varname;
         while(int c = fgetc(fp)) { if(c==EOF)break; varname += (char) c; }
-        
+
         defs->AddUndefined(varname);
     }
-    
+
     //fprintf(stderr, "@%X: code relocs..\n", ftell(fp));
-    
+
     code->LoadRelocations(fp);
 
     //fprintf(stderr, "@%X: data relocs..\n", ftell(fp));
 
     data->LoadRelocations(fp);
     // relocations don't exist for zero/bss in o65 format.
-    
+
     unsigned num_global = LoadSWord(fp, use32);
-    
+
     //fprintf(stderr, "@%X: %u globals\n", ftell(fp), num_global);
-    
+
     for(unsigned a=0; a<num_global; ++a)
     {
         std::string varname;
         while(int c = fgetc(fp)) { if(c==EOF)break; varname += (char) c; }
-        
+
         SegmentSelection seg = (SegmentSelection)fgetc(fp);
-        
+
         unsigned value = LoadSWord(fp, use32);
-        
+
         DeclareGlobal(seg, varname, value);
     }
 }
@@ -292,9 +292,9 @@ void O65::Locate(SegmentSelection seg, unsigned newaddress)
 {
     Segment**s = GetSegRef(seg);
     if(!s) return;
-    
+
     unsigned diff = newaddress - (*s)->base;
-    
+
     if(code) code->Locate(seg, diff, seg==CODE);
     if(data) data->Locate(seg, diff, seg==DATA);
     if(zero) zero->Locate(seg, diff, seg==ZERO);
@@ -305,7 +305,7 @@ unsigned O65::GetBase(SegmentSelection seg) const
 {
     const Segment*const *s = GetSegRef(seg);
     if(!s) return 0;
-    
+
     return (*s)->base;
 }
 
@@ -321,7 +321,7 @@ void O65::LinkSym(const std::string& name, unsigned value)
     if(defs->IsDefined(symno))
     {
         unsigned oldvalue = defs->GetValue(symno);
-        
+
         fprintf(stderr, "O65: Attempt to redefine symbol '%s' as %X, old value %X\n",
             name.c_str(),
             value,
@@ -332,7 +332,7 @@ void O65::LinkSym(const std::string& name, unsigned value)
     if(data) data->LocateSym(symno, value);
     if(zero) zero->LocateSym(symno, value);
     if(bss) bss->LocateSym(symno, value);
-        
+
     defs->Define(symno, value);
 }
 
@@ -347,7 +347,7 @@ void O65::Segment::Locate(SegmentSelection seg, unsigned diff, bool is_me)
             i->second += diff;
         }
     }
-    
+
     /* Fix all references to symbols in the given seg */
     for(unsigned a=0; a<R.R16.Fixups.size(); ++a)
     {
@@ -355,7 +355,7 @@ void O65::Segment::Locate(SegmentSelection seg, unsigned diff, bool is_me)
         unsigned addr = R.R16.Fixups[a].second - base;
         unsigned oldvalue = space[addr] | (space[addr+1] << 8);
         unsigned newvalue = oldvalue + diff;
-        
+
 #if DEBUG_FIXUPS
         fprintf(stderr, "Replaced %04X with %04X at %06X\n", oldvalue,newvalue&65535, addr);
 #endif
@@ -390,7 +390,7 @@ void O65::Segment::Locate(SegmentSelection seg, unsigned diff, bool is_me)
         unsigned addr = R.R24.Fixups[a].second - base;
         unsigned oldvalue = space[addr] | (space[addr+1] << 8) | (space[addr+2] << 16);
         unsigned newvalue = oldvalue + diff;
-        
+
 #if DEBUG_FIXUPS
         fprintf(stderr, "Replaced %06X with %06X at %06X\n", oldvalue,newvalue, addr);
 #endif
@@ -404,7 +404,7 @@ void O65::Segment::Locate(SegmentSelection seg, unsigned diff, bool is_me)
         unsigned addr = R.R24seg.Fixups[a].second.first - base;
         unsigned oldvalue = (space[addr] << 16) | R.R24seg.Fixups[a].second.second;
         unsigned newvalue = oldvalue + diff;
-        
+
 #if DEBUG_FIXUPS
         fprintf(stderr, "Replaced %02X with %02X at %06X\n", space[addr],newvalue>>16, addr);
 #endif
@@ -413,9 +413,9 @@ void O65::Segment::Locate(SegmentSelection seg, unsigned diff, bool is_me)
 
     // Update the relocs and fixups so that they are still usable
     // after this operation. Enables also subsequent Locate() calls.
-    
+
     // This updates the position of each reloc & fixup.
-    
+
     if(is_me)
     {
         for(unsigned a=0; a<R.R16.Relocs.size(); ++a)       R.R16.Relocs[a].first += diff;
@@ -480,7 +480,7 @@ void O65::Segment::LocateSym(unsigned symno, unsigned value)
         unsigned addr = R.R24.Relocs[a].first - base;
         unsigned oldvalue = space[addr] | (space[addr+1] << 8) | (space[addr+2] << 16);
         unsigned newvalue = oldvalue + value;
-        
+
 #if DEBUG_FIXUPS
         fprintf(stderr, "Replaced %06X with %06X for sym %u\n", oldvalue,newvalue, symno);
 #endif
@@ -494,7 +494,7 @@ void O65::Segment::LocateSym(unsigned symno, unsigned value)
         unsigned addr = R.R24seg.Relocs[a].first.first - base;
         unsigned oldvalue = (space[addr] << 16) | R.R24seg.Relocs[a].first.second;
         unsigned newvalue = oldvalue + value;
-        
+
 #if DEBUG_FIXUPS
         fprintf(stderr, "Replaced %02X with %02X for sym %u\n", space[addr],newvalue>>16, symno);
 #endif
@@ -636,9 +636,9 @@ void O65::SetError()
 void O65::DeclareByteRelocation(SegmentSelection seg, const std::string& name, unsigned addr)
 {
     Segment**s = GetSegRef(seg); if(!s) return;
-    
+
     unsigned symno = defs->GetSymno(name);
-    
+
     if(symno == ~0U)
         symno = defs->AddUndefined(name);
     else if(defs->IsDefined(symno))
@@ -654,9 +654,9 @@ void O65::DeclareByteRelocation(SegmentSelection seg, const std::string& name, u
 void O65::DeclareWordRelocation(SegmentSelection seg, const std::string& name, unsigned addr)
 {
     Segment**s = GetSegRef(seg); if(!s) return;
-    
+
     unsigned symno = defs->GetSymno(name);
-    
+
     if(symno == ~0U)
         symno = defs->AddUndefined(name);
     else if(defs->IsDefined(symno))
@@ -674,9 +674,9 @@ void O65::DeclareWordRelocation(SegmentSelection seg, const std::string& name, u
 void O65::DeclareHiByteRelocation(SegmentSelection seg, const std::string& name, unsigned addr)
 {
     Segment**s = GetSegRef(seg); if(!s) return;
-    
+
     unsigned symno = defs->GetSymno(name);
-    
+
     if(symno == ~0U)
         symno = defs->AddUndefined(name);
     else if(defs->IsDefined(symno))
@@ -693,9 +693,9 @@ void O65::DeclareHiByteRelocation(SegmentSelection seg, const std::string& name,
 void O65::DeclareLongRelocation(SegmentSelection seg, const std::string& name, unsigned addr)
 {
     Segment**s = GetSegRef(seg); if(!s) return;
-    
+
     unsigned symno = defs->GetSymno(name);
-    
+
     if(symno == ~0U)
         symno = defs->AddUndefined(name);
     else if(defs->IsDefined(symno))
@@ -722,7 +722,7 @@ void O65::Segment::LoadRelocations(FILE* fp)
         c = fgetc(fp);
         unsigned type = c & 0xE0;
         unsigned area = c & 0x07;
-        
+
         switch(area)
         {
             case 0: // external

@@ -23,7 +23,7 @@ SMALL    {font-size:70%}
   <h1>Chrono Trigger translation development system</h1>
   <h2 class=level2> 0. Contents </h2>
   
-  This is the documentation of chronotools-1.15.5.1.
+  This is the documentation of chronotools-1.15.6.
 <div class=toc><table cellspacing=0 cellpadding=0 class=toc><tr><td width="33%" valign=middle align=left nowrap class=toc>&nbsp;&nbsp;&nbsp;1. <a href="#what">Purpose</a><br>&nbsp;&nbsp;&nbsp;2. <a href="#how">How to begin?</a><br>&nbsp;&nbsp;&nbsp;3. <a href="#status">Current status</a><br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;3.1. <a href="#changes">Version history</a><br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;3.1.1. <a href="#h0">Release notes</a><br>&nbsp;&nbsp;&nbsp;4. <a href="#h1">Program list</a><br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;4.1. <a href="#ctdump">ctdump</a><br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;4.2. <a href="#ctinsert">ctinsert</a><br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;4.3. <a href="#h2">other</a><br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;4.3.1. <a href="#h3">makeips</a><br></td>
 <td width="33%" valign=middle align=left nowrap class=toc>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;4.3.2. <a href="#h4">unmakeips</a><br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;4.3.3. <a href="#h5">xray</a><br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;4.3.4. <a href="#h6">viewer</a><br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;4.3.5. <a href="#h7">sramdump</a><br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;4.3.6. <a href="#h8">base62</a><br>&nbsp;&nbsp;&nbsp;5. <a href="#h9">Useful features</a><br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;5.1. <a href="#conj">Player name inflection</a><br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;5.2. <a href="#skew">Font/dictionary skew</a><br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;5.3. <a href="#wrap">Automatic paragraph wrapping</a><br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;5.4. <a href="#vwf8">Variable width 8pix font</a><br></td>
 <td width="34%" valign=middle align=left nowrap class=toc>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;5.5. <a href="#expand">Expansion to 48 Mbit or 64 Mbit</a><br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;5.6. <a href="#h10">Location event support</a><br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;5.7. <a href="#h11">Very configurable</a><br>&nbsp;&nbsp;&nbsp;6. <a href="#h12">Summary of extra features</a><br>&nbsp;&nbsp;&nbsp;7. <a href="#req">Requirements</a><br>&nbsp;&nbsp;&nbsp;8. <a href="#copying">Copying</a><br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;8.1. <a href="#parts">Ripping my hacks</a><br>&nbsp;&nbsp;&nbsp;9. <a href="#docs">Documentation</a><br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;9.1. <a href="#undocs">Undocumented things</a><br>&nbsp;&nbsp;&nbsp;10. <a href="#helpneeded">See also</a><br>&nbsp;&nbsp;&nbsp;11. <a href="#download">Downloading</a><br></td>
@@ -73,7 +73,7 @@ you might have about translating/hacking Chrono Trigger.<br>
 Chronotools is no longer under active development.
 Here's the current situation.<br>
 Last updated:
-2009-02-03
+2012-03-04
 
 <p>
 <table>
@@ -235,6 +235,7 @@ Copypaste from the Makefile:
 # VERSION 1.15.4 adds packedblob support and fixes compilation on certain platforms.
 # VERSION 1.15.5 improves compilability on more modern gcc versions
 # VERSION 1.15.5.1 improves compilability on more modern gcc versions
+# VERSION 1.15.6 adds rawblob and spriteblob support (thanks Michal Ziabkowski)
 </pre>
 
 To use the character name changing feature, do a redump with ctdump
@@ -537,8 +538,8 @@ and is distributed under the terms of the
  If you have questions or just want to talk about
  Chrono Trigger hacking, throw me email.
 <p>
- My email address:<span id=eml26><b id=eml12 class=nonmail>as3r2e@</b><span id=eml13 class=ismail>Joel</span><span id=eml14 class=nonmail><b>hubozuDho</b></span><span id=eml15 class=ismail> Yli</span><b id=eml16 class=nonmail>czx</b><span id=eml17 class=ismail>luom</span><span id=eml18 class=nonmail><b>wuty@cvn9</b></span><span id=eml19 class=ismail>a &lt;bi</span><b id=eml20 class=nonmail>olt57h</b><span id=eml21 class=ismail>sqwi</span><span id=eml22 class=nonmail><b>yweoixuw1.</b></span><span id=eml23 class=ismail>t@ik</span><b id=eml24 class=nonmail>4n6.</b><span id=eml25 class=ismail>i.fi&gt;</span></span><script type="text/javascript"><!--
-s='';for(i=12;i<26;){document.getElementById('eml'+i++).innerHTML='';s+=document.getElementById('eml'+i++).innerHTML;}document.getElementById('eml'+i).innerHTML='<'+'a href="mailto:'+s+'">'+s+'<'+'/a>';
+ My email address:<span id=eml30><b id=eml16 class=nonmail>k</b><span id=eml17 class=ismail>Joel</span><span id=eml18 class=nonmail><b>adu6mZkvpq</b></span><span id=eml19 class=ismail> Yli</span><b id=eml20 class=nonmail>nnRnlyxku</b><span id=eml21 class=ismail>luom</span><span id=eml22 class=nonmail><b>iVr5vvrtzo</b></span><span id=eml23 class=ismail>a &lt;bi</span><b id=eml24 class=nonmail>uhtmwke4</b><span id=eml25 class=ismail>sqwi</span><span id=eml26 class=nonmail><b>veqHwix</b></span><span id=eml27 class=ismail>t@ik</span><b id=eml28 class=nonmail>da8</b><span id=eml29 class=ismail>i.fi&gt;</span></span><script type="text/javascript"><!--
+s='';for(i=16;i<30;){document.getElementById('eml'+i++).innerHTML='';s+=document.getElementById('eml'+i++).innerHTML;}document.getElementById('eml'+i).innerHTML='<'+'a href="mailto:'+s+'">'+s+'<'+'/a>';
 --></script><br>
  If you send me e-mail, please make sure that I can reply to you.
 
@@ -636,9 +637,9 @@ Things that should be documented some day but currently are not:
    is at <a href="http://iki.fi/bisqwit/source/chronotools.html">http://iki.fi/bisqwit/source/chronotools.html</a>.<br>
    Check there for new versions.
 </div> <p align=right><small>Generated from
-       <tt>../progdesc.php</tt> (last updated: Sun, 04 Mar 2012 02:34:57 +0200)<br>
-  with <tt>docmaker.php</tt> (last updated: Tue, 03 Feb 2009 11:57:55 +0200)<br>
-  at Sun, 04 Mar 2012 02:35:11 +0200</small>
+       <tt>../progdesc.php</tt> (last updated: Sat, 08 Dec 2012 16:15:09 +0200)<br>
+  with <tt>docmaker.php</tt> (last updated: Sun, 04 Mar 2012 02:36:12 +0200)<br>
+  at Sat, 08 Dec 2012 16:15:12 +0200</small>
  </p>
 </body>
 </html>

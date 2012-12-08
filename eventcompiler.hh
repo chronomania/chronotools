@@ -25,7 +25,7 @@ public:
 private:
     void operator=(const EventCompiler&);
     EventCompiler(const EventCompiler&);
-    
+
 private:
     void FinishCurrent();
 private:

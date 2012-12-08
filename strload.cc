@@ -22,9 +22,9 @@ namespace
         static const unsigned maxco = 4;
         unsigned col;
         FILE *log;
-        
+
         rangeset<unsigned> ranges;
-        
+
     public:
         TableDumper(const std::wstring& type, unsigned offset)
             : col(maxco), log(GetLogFile("mem", "log_addrs"))
@@ -45,9 +45,9 @@ namespace
                 }
                 if(col == maxco/2)fputc(' ', log);
                 fprintf(log, " $%04X-%04X", target, target+bytes-1);
-                
+
                 ranges.set(target, target+bytes);
-                
+
                 if(++col == maxco) { fprintf(log, "\n"); col=0; }
             }
         }
@@ -57,7 +57,7 @@ namespace
             {
                 if(col)fprintf(log, "\n");
                 fprintf(log, "-- Table ends at %06X\n", where);
-                
+
                 for(rangeset<unsigned>::const_iterator
                     i = ranges.begin();
                     i != ranges.end();
@@ -67,18 +67,18 @@ namespace
                         i->lower,
                         i->upper-1);
                 }
-                
+
                 fprintf(log, "\n");
 
                 fflush(log);
             }
         }
-    
+
     private:
         TableDumper(const TableDumper&);
         TableDumper& operator=(const TableDumper&);
     };
-    
+
     const ctstring LoadPString(unsigned offset,
                                unsigned& bytes,
                                const std::wstring& what)
@@ -113,26 +113,26 @@ const vector<ctstring> LoadPStrings(unsigned offset, unsigned count,
     result.reserve(count);
     const std::wstring what_p = what + L" pointers";
     const std::wstring what_d = what + L" data";
-    
+
 #if LOADP_DEBUG
     TableDumper logger(what_p, offset);
 #endif
-    
+
     MarkProt(offset, count*2, what_p);
     for(unsigned a=0; a<count; ++a)
     {
         unsigned stringptr = ROM[offset] + 256*ROM[offset + 1];
-        
+
         unsigned bytes;
         ctstring foundstring = LoadPString(stringptr+segment, bytes, what_d);
-        
+
 #if LOADP_DEBUG
         logger.AddPtr(a, offset, stringptr, bytes);
 #endif
-        
+
         result.push_back(foundstring);
         offset += 2;
-        
+
 #if LOADP_EXTRASPACE
         unsigned freebytepos=stringptr + result[a].size()+1;
         unsigned freebytecount=0;
@@ -161,11 +161,11 @@ const ctstring LoadZString(unsigned beginoffs,
     for(unsigned p=beginoffs; ; ++p)
     {
         endoffs=p+1;
-        
+
         if(ROM[p] == 0) break;
-        
+
         unsigned byte = ROM[p];
-        
+
         /* FIXME: Invent a better way to see this */
         if(extrasizes.size() == 1)
         {
@@ -174,9 +174,9 @@ const ctstring LoadZString(unsigned beginoffs,
                 byte = byte*256 + ROM[++p];
             }
         }
-        
+
         foundstring += (ctchar)byte;
-        
+
         extrasizemap_t::const_iterator i = extrasizes.find( (unsigned short) byte);
         if(i != extrasizes.end())
         {
@@ -185,16 +185,16 @@ const ctstring LoadZString(unsigned beginoffs,
                 foundstring += (char)ROM[++p];
         }
     }
-    
+
     bytes = endoffs - beginoffs;
-    
+
 #if 0
     printf("\n;Loaded %u bytes (%u characters) from $%06X\n",
         bytes, foundstring.size(), beginoffs);
 #endif
-    
+
     MarkFree(beginoffs, bytes, what);
-    
+
     return foundstring;
 }
 
@@ -204,7 +204,7 @@ const vector<ctstring> LoadZStrings(unsigned offset, unsigned count,
 {
     const std::wstring what_p = what + L" pointers";
     const std::wstring what_d = what + L" data";
-    
+
     bool relocated = false;
     unsigned real_offset = offset;
 
@@ -212,19 +212,19 @@ const vector<ctstring> LoadZStrings(unsigned offset, unsigned count,
     && ROM[offset+1] == 255)
     {
         /* relocated string table! */
-        
+
         unsigned new_offset = ROM[offset+2] | (ROM[offset+3] << 8) | (ROM[offset+4] << 16);
         new_offset = SNES2ROMaddr(new_offset);
-        
+
         FILE*log = GetLogFile("mem", "log_addrs");
         if(log)
             fprintf(log, "-- Table %06X seems to be relocated to %06X\n",
                 offset, new_offset);
-        
+
         relocated = true;
-        
+
         MarkProt(offset, 5, what_p);
-        
+
         offset = new_offset;
     }
 
@@ -234,7 +234,7 @@ const vector<ctstring> LoadZStrings(unsigned offset, unsigned count,
     vector<ctstring> result;
     result.reserve(count);
     set<unsigned> offsetlist;
-    
+
 #if LOADZ_DEBUG
     TableDumper logger(what_p, offset);
 #endif
@@ -243,21 +243,21 @@ const vector<ctstring> LoadZStrings(unsigned offset, unsigned count,
     for(unsigned a=0; !count || a<count; ++a, offset += 2, real_offset += 2)
     {
         const unsigned stringptr = ROM[offset] + 256*ROM[offset + 1];
-        
+
         // Jos tämä osoite on listattu jo kertaalleen, break.
         if(offsetlist.find(offset & 0xFFFF) != offsetlist.end())
             break;
-        
+
         last_offs = offset+2;
         offsetlist.insert(stringptr);
-        
+
         unsigned bytes;
         ctstring foundstring = LoadZString(stringptr+base, bytes, what_d, extrasizes);
 
 #if LOADZ_DEBUG
         logger.AddPtr(a, real_offset, stringptr, bytes);
 #endif
-        
+
 #if LOADZ_EXTRASPACE
         unsigned freebytepos=stringptr + base + bytes;
         unsigned freebytecount=0;
@@ -293,14 +293,14 @@ const vector<ctstring> LoadFStrings(unsigned offset, unsigned len,
     ctstring str;
     for(unsigned a=0; ROM[offset+a] && a<len*maxcount; ++a)
         str += (ctchar) ROM[offset+a];
-    
+
     unsigned count = str.size() / len + 1;
     if(maxcount && count > maxcount)count = maxcount;
     vector<ctstring> result(count);
     for(unsigned a=0; a<count; ++a)
         result[a] = str.substr(a*len, len);
-    
+
     MarkProt(offset, len*maxcount, what);
-    
+
     return result;
 }

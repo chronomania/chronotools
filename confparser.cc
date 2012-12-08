@@ -38,7 +38,7 @@ class ConfParser::CharIStream
     std::wstring cache;
     std::size_t cacheptr;
     wchar_t getC();
-    
+
     wchar_t nextChar;
     unsigned line;
  private:
@@ -62,12 +62,12 @@ wchar_t ConfParser::CharIStream::getC()
 {
     for(;;)
     {
-        if(cacheptr < cache.size())  
+        if(cacheptr < cache.size())
         {
             wchar_t result = cache[cacheptr++];
             return result;
         }
-        
+
         cache.clear();
         cacheptr = 0;
         while(cache.empty())
@@ -78,7 +78,7 @@ wchar_t ConfParser::CharIStream::getC()
             cache += conv.puts(std::string(Buf, n));
         }
         // So now cache may be of arbitrary size.
-        if(cache.empty()) return (wchar_t)EOF;      
+        if(cache.empty()) return (wchar_t)EOF;
     }
 }
 
@@ -159,7 +159,7 @@ ConfParser::operator[](const std::string& sectionName) const
     {
         throw invalid_section(sectionName);
     }
-    
+
     return iter->second;
 }
 
@@ -320,7 +320,7 @@ void ConfParser::ParseSection(CharIStream& is, const std::string& secName)
         std::wstring fieldNameString;
 
         wchar_t c = is.peekChar();
-        
+
         // Section name?
         if(is.equal(c, '[')) break;
 

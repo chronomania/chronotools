@@ -1,59 +1,59 @@
 #ifndef OMIT_IsVowel
 IsVowel:
-	sep #$20
-	.as : cmp #$BE
-	beq L128
-	bcs L125
-	cmp #$AE
-	beq L128
-	bcs L123
-	cmp #$A4
-	beq L128
+	sep #$21
+	.as : sbc #$A0
+	cmp #$0
+	beq L125
+	cmp #$22
+	beq L125
 	bcs L122
-	cmp #$A0
-	bne L129
-	bra L128
-L122:
-	cmp #$A8
-	bne L129
-	bra L128
-L123:
-	cmp #$B8
-	beq L128
-	bcs L124
-	cmp #$B4
-	bne L129
-	bra L128
-L124:
-	cmp #$BA
-	bne L129
-	bra L128
-L125:
-	cmp #$D2
-	beq L128
-	bcs L127
-	cmp #$C8
-	beq L128
-	bcs L126
-	cmp #$C2
-	bne L129
-	bra L128
-L126:
-	cmp #$CE
-	bne L129
-	bra L128
-L127:
-	cmp #$E0
-	bcc L129
-	cmp #$E4
-	bcc L128
-	sbc #$F0
+	cmp #$14
+	beq L125
+	bcs L120
+	cmp #$8
+	beq L125
+	bcs L119
 	cmp #$4
-	bcs L129
-L128:
+	bne L126
+	bra L125
+L119:
+	cmp #$E
+	bne L126
+	bra L125
+L120:
+	cmp #$1A
+	beq L125
+	bcs L121
+	cmp #$18
+	bne L126
+	bra L125
+L121:
+	cmp #$1E
+	bne L126
+	bra L125
+L122:
+	cmp #$40
+	bcc L123
+	cmp #$44
+	bcc L125
+	sbc #$50
+	cmp #$4
+	bcs L126
+	bra L125
+L123:
+	cmp #$2E
+	beq L125
+	bcs L124
+	cmp #$28
+	bne L126
+	bra L125
+L124:
+	cmp #$32
+	bne L126
+L125:
 	sec
 	rts
-L129:
+L126:
 	clc
 	rts
 #endif
@@ -63,20 +63,20 @@ IsVowelTypeChar:
 	pha
 	sta $1,s
 	jsr IsVowel
-	bcc L130
+	bcc L127
 	sep #$10
 	ply
 	rts
-L130:
+L127:
 	lda $1,s
 	sec
 	.as : sbc #$D4
 	cmp #$7
-	bcs L131
+	bcs L128
 	sep #$11
 	ply
 	rts
-L131:
+L128:
 	clc
 	sep #$10
 	ply
@@ -84,74 +84,102 @@ L131:
 #endif
 #ifndef OMIT_IsBackVowelTypeChar
 IsBackVowelTypeChar:
-	sep #$20
-	.as : cmp #$CE
-	beq L135
-	bcs L133
-	cmp #$B4
-	beq L135
-	bcs L132
-	cmp #$A0
-	beq L135
-	cmp #$AE
-	bne L136
-	bra L135
+	sep #$21
+	.as : sbc #$A0
+	cmp #$0
+	beq L132
+	cmp #$2E
+	beq L132
+	bcs L130
+	cmp #$14
+	beq L132
+	bcs L129
+	cmp #$E
+	bne L133
+	bra L132
+L129:
+	cmp #$1A
+	beq L132
+	cmp #$28
+	bne L133
+	bra L132
+L130:
+	cmp #$36
+	bcc L131
+	cmp #$38
+	bcc L132
+	cmp #$3A
+	beq L132
+	cmp #$3C
+	bne L133
+	bra L132
+L131:
+	cmp #$34
+	bne L133
 L132:
-	cmp #$BA
-	beq L135
-	cmp #$C8
-	bne L136
-	bra L135
-L133:
-	cmp #$D6
-	bcc L134
-	cmp #$D8
-	bcc L135
-	cmp #$DA
-	beq L135
-	cmp #$DC
-	bne L136
-	bra L135
-L134:
-	cmp #$D4
-	bne L136
-L135:
 	sec
 	rts
-L136:
+L133:
 	clc
 	rts
 #endif
 #ifndef OMIT_IsFrontVowelTypeChar
 IsFrontVowelTypeChar:
-	sep #$20
-	.as : cmp #$DB
-	beq L140
+	sep #$21
+	.as : sbc #$B8
+	cmp #$0
+	beq L137
+	cmp #$23
+	beq L137
+	bcs L135
+	cmp #$1D
+	beq L137
+	bcs L134
+	cmp #$1A
+	bne L138
+	bra L137
+L134:
+	sbc #$20
+	cmp #$2
 	bcs L138
-	cmp #$D5
+	bra L137
+L135:
+	cmp #$29
+	bcc L136
+	cmp #$2B
+	bcc L137
+	sbc #$39
+	cmp #$2
+	bcs L138
+	bra L137
+L136:
+	cmp #$25
+	bne L138
+L137:
+	sec
+	rts
+L138:
+	clc
+	rts
+#endif
+#ifndef OMIT_IsOtherVowelTypeChar
+IsOtherVowelTypeChar:
+	sep #$21
+	.as : sbc #$A4
+	cmp #$0
 	beq L140
-	bcs L137
-	cmp #$B8
+	cmp #$1E
 	beq L140
-	cmp #$D2
+	bcs L139
+	cmp #$4
+	beq L140
+	cmp #$1A
 	bne L141
 	bra L140
-L137:
-	sbc #$D8
-	cmp #$2
-	bcs L141
-	bra L140
-L138:
-	cmp #$E1
-	bcc L139
-	cmp #$E3
-	bcc L140
-	sbc #$F1
-	cmp #$2
-	bcs L141
-	bra L140
 L139:
-	cmp #$DD
+	cmp #$3F
+	beq L140
+	cmp #$4F
 	bne L141
 L140:
 	sec
@@ -160,71 +188,41 @@ L141:
 	clc
 	rts
 #endif
-#ifndef OMIT_IsOtherVowelTypeChar
-IsOtherVowelTypeChar:
-	sep #$20
-	.as : cmp #$BE
-	beq L144
-	bcs L142
-	cmp #$A4
-	beq L144
-	cmp #$A8
-	bne L145
-	bra L144
-L142:
-	cmp #$E3
-	beq L144
-	bcs L143
-	cmp #$C2
-	bne L145
-	bra L144
-L143:
-	cmp #$F3
-	bne L145
-L144:
-	sec
-	rts
-L145:
-	clc
-	rts
-#endif
 #ifndef OMIT_IsNumber
 IsNumber:
 	sep #$21
 	.as : sbc #$D4
 	cmp #$A
-	bcs L146
+	bcs L142
 	sec
 	rts
-L146:
+L142:
 	clc
 	rts
 #endif
 #ifndef OMIT_IsKPT
 IsKPT:
-	sep #$20
-	.as : cmp #$B3
-	beq L149
-	bcs L147
-	cmp #$AA
-	beq L149
-	cmp #$AF
-	bne L150
-	bra L149
-L147:
-	cmp #$C9
-	beq L149
-	bcs L148
-	cmp #$C4
-	bne L150
-	bra L149
-L148:
-	cmp #$CD
-	bne L150
-L149:
+	sep #$21
+	.as : sbc #$AA
+	cmp #$0
+	beq L144
+	cmp #$1A
+	beq L144
+	bcs L143
+	cmp #$5
+	beq L144
+	cmp #$9
+	bne L145
+	bra L144
+L143:
+	cmp #$1F
+	beq L144
+	cmp #$23
+	bne L145
+L144:
 	sec
 	rts
-L150:
+L145:
 	clc
 	rts
 #endif
@@ -241,9 +239,9 @@ IsFront:
 	sta $3,s
 	rep #$10
 	.xl : ldx #0
-L151:
+L146:
 	jsr LoopHelper
-	beq L160
+	beq L155
 	sta $4,s
 	lda #$1
 	sta $3,s
@@ -252,93 +250,95 @@ L151:
 	jsr IsBackVowelTypeChar
 	rep #$10
 	plx
-	bcc L152
+	bcc L147
 	lda #$1
 	sta $1,s
-L152:
+L147:
 	lda $4,s
 	phx
 	jsr IsFrontVowelTypeChar
 	rep #$10
 	plx
-	bcc L153
+	bcc L148
 	lda #$2
 	sta $1,s
-L153:
+L148:
 	lda $4,s
 	phx
 	jsr IsOtherVowelTypeChar
 	rep #$10
 	plx
-	bcc L154
+	bcc L149
 	lda #$1
 	sta $2,s
-L154:
+L149:
 	lda $4,s
-	cmp #$C1
-	beq L158
-	bcs L156
-	cmp #$AA
-	beq L158
-	bcs L155
-	cmp #$A7
-	bne L159
-	bra L158
-L155:
-	cmp #$B0
-	bne L159
-	bra L158
-L156:
-	cmp #$CA
-	beq L158
-	bcs L157
-	cmp #$C4
-	bne L159
-	bra L158
-L157:
-	cmp #$E0
-	beq L158
-	cmp #$F0
-	bne L159
-L158:
+	sec
+	sbc #$A7
+	cmp #$0
+	beq L153
+	cmp #$1D
+	beq L153
+	bcs L151
+	cmp #$9
+	beq L153
+	bcs L150
+	cmp #$3
+	bne L154
+	bra L153
+L150:
+	cmp #$1A
+	bne L154
+	bra L153
+L151:
+	cmp #$39
+	beq L153
+	bcs L152
+	cmp #$23
+	bne L154
+	bra L153
+L152:
+	cmp #$49
+	bne L154
+L153:
 	lda #$0
 	sta $3,s
-L159:
+L154:
 	inx
-	bra L151
-L160:
+	bra L146
+L155:
 	lda $1,s
 	cmp #$2
-	bne L161
+	bne L156
 	sec
 	ply
 	ply
 	rts
-L161:
+L156:
 	lda $1,s
 	cmp #$1
-	bne L162
+	bne L157
 	clc
 	ply
 	ply
 	rts
-L162:
+L157:
 	lda $2,s
 	cmp #$1
-	bne L163
+	bne L158
 	sec
 	ply
 	ply
 	rts
-L163:
+L158:
 	lda $3,s
 	cmp #$1
-	bne L164
+	bne L159
 	sec
 	ply
 	ply
 	rts
-L164:
+L159:
 	clc
 	ply
 	ply
@@ -352,15 +352,15 @@ Length:
 	sta $1,s
 	rep #$10
 	.xl : ldx #0
-L165:
+L160:
 	jsr LoopHelper
-	beq L166
+	beq L161
 	lda $1,s
 	inc
 	sta $1,s
 	inx
-	bra L165
-L166:
+	bra L160
+L161:
 	lda $1,s
 	sep #$10
 	ply
@@ -390,9 +390,9 @@ IsAbbrev:
 	sta $3,s
 	rep #$10
 	.xl : ldx #0
-L167:
+L162:
 	jsr LoopHelper
-	beq L171
+	beq L166
 	sta $5,s
 	lda $1,s
 	inc
@@ -404,39 +404,39 @@ L167:
 	jsr IsVowel
 	rep #$10
 	plx
-	bcc L168
+	bcc L163
 	lda #$1
 	sta $2,s
 	sta $3,s
 	lda #$0
 	sta $4,s
-L168:
+L163:
 	lda $5,s
 	phx
 	jsr IsNumber
 	rep #$10
 	plx
-	bcc L169
+	bcc L164
 	sep #$20
 	lda $3,s
 	cmp #$1
-	bne L169
+	bne L164
 	lda #$0
 	sta $2,s
-L169:
+L164:
 	sep #$20
 	lda $4,s
 	cmp #$1
-	bne L170
+	bne L165
 	lda #$0
 	sta $3,s
-L170:
+L165:
 	inx
-	bra L167
-L171:
+	bra L162
+L166:
 	lda $1,s
 	cmp #$1
-	bne L172
+	bne L167
 	sep #$11
 	ply
 	ply
@@ -444,9 +444,9 @@ L171:
 	ply
 	ply
 	rts
-L172:
+L167:
 	lda $2,s
-	bne L173
+	bne L168
 	sep #$11
 	ply
 	ply
@@ -454,7 +454,7 @@ L172:
 	ply
 	ply
 	rts
-L173:
+L168:
 	clc
 	sep #$10
 	ply
@@ -470,18 +470,20 @@ IsEs:
 	.as : lda #$1
 	jsr LastCharN
 	jsr IsVowelTypeChar
-	bcc L175
+	bcc L170
 	sep #$20
 	lda #$0
 	jsr LastCharN
-	cmp #$B2
-	beq L174
-	cmp #$CC
-	bne L175
-L174:
+	sec
+	sbc #$B2
+	cmp #$0
+	beq L169
+	cmp #$1A
+	bne L170
+L169:
 	sec
 	rts
-L175:
+L170:
 	clc
 	rts
 #endif
@@ -490,21 +492,25 @@ IsDe:
 	sep #$20
 	.as : lda #$1
 	jsr LastCharN
-	cmp #$A3
-	beq L176
-	cmp #$BD
-	bne L178
-L176:
+	sec
+	sbc #$A3
+	cmp #$0
+	beq L171
+	cmp #$1A
+	bne L173
+L171:
 	lda #$0
 	jsr LastCharN
-	cmp #$A4
-	beq L177
-	cmp #$BE
-	bne L178
-L177:
+	sec
+	sbc #$A4
+	cmp #$0
+	beq L172
+	cmp #$1A
+	bne L173
+L172:
 	sec
 	rts
-L178:
+L173:
 	clc
 	rts
 #endif
@@ -513,21 +519,25 @@ IsAlien:
 	sep #$20
 	.as : lda #$0
 	jsr LastCharN
-	cmp #$B6
-	beq L179
-	cmp #$D0
-	bne L181
-L179:
+	sec
+	sbc #$B6
+	cmp #$0
+	beq L174
+	cmp #$1A
+	bne L176
+L174:
 	lda #$1
 	jsr LastCharN
-	cmp #$AE
-	beq L180
-	cmp #$C8
-	bne L181
-L180:
+	sec
+	sbc #$AE
+	cmp #$0
+	beq L175
+	cmp #$1A
+	bne L176
+L175:
 	sec
 	rts
-L181:
+L176:
 	clc
 	rts
 #endif
@@ -537,9 +547,9 @@ EndWithVowel:
 	.as : lda #$0
 	jsr LastCharN
 	jsr IsVowelTypeChar
-	bcc L182
+	bcc L177
 	rts
-L182:
+L177:
 	rts
 #endif
 #ifndef OMIT_DoubleHard
@@ -547,7 +557,7 @@ DoubleHard:
 	sep #$20
 	pha
 	jsr EndWithVowel
-	bcc L183
+	bcc L178
 	sep #$20
 	.as : lda #$2
 	jsr LastCharN
@@ -555,13 +565,13 @@ DoubleHard:
 	lda #$1
 	jsr LastCharN
 	cmp $1,s
-	bne L183
+	bne L178
 	jsr IsKPT
-	bcc L183
+	bcc L178
 	sep #$10
 	ply
 	rts
-L183:
+L178:
 	clc
 	sep #$10
 	ply
@@ -572,35 +582,41 @@ AkiEnd:
 	sep #$20
 	.as : lda #$2
 	jsr LastCharN
-	cmp #$BA
-	beq L185
-	bcs L184
-	cmp #$A0
-	bne L188
-	bra L185
-L184:
-	cmp #$E1
-	beq L185
-	cmp #$F1
-	bne L188
-L185:
+	sec
+	sbc #$A0
+	cmp #$0
+	beq L180
+	cmp #$41
+	beq L180
+	bcs L179
+	cmp #$1A
+	bne L183
+	bra L180
+L179:
+	cmp #$51
+	bne L183
+L180:
 	lda #$1
 	jsr LastCharN
-	cmp #$AA
-	beq L186
-	cmp #$C4
-	bne L188
-L186:
+	sec
+	sbc #$AA
+	cmp #$0
+	beq L181
+	cmp #$1A
+	bne L183
+L181:
 	lda #$0
 	jsr LastCharN
-	cmp #$A8
-	beq L187
-	cmp #$C2
-	bne L188
-L187:
+	sec
+	sbc #$A8
+	cmp #$0
+	beq L182
+	cmp #$1A
+	bne L183
+L182:
 	sec
 	rts
-L188:
+L183:
 	clc
 	rts
 #endif
@@ -612,15 +628,15 @@ OutWord:
 	sta $1,s
 	rep #$10
 	.xl : ldx #0
-L189:
+L184:
 	jsr LoopHelper
-	beq L191
+	beq L186
 	sta $2,s
 	lda $1,s
-	bne L190
+	bne L185
 	ply
 	rts
-L190:
+L185:
 	lda $1,s
 	dec
 	sta $1,s
@@ -631,8 +647,8 @@ L190:
 	jsr OutcHelper
 	plx
 	inx
-	bra L189
-L191:
+	bra L184
+L186:
 	ply
 	rts
 #endif
@@ -647,18 +663,18 @@ OutWordBut:
 	sta $1,s
 	rep #$10
 	.xl : ldx #0
-L192:
+L187:
 	jsr LoopHelper
-	beq L194
+	beq L189
 	sta $3,s
 	lda $1,s
 	cmp $2,s
-	bne L193
+	bne L188
 	ply
 	sep #$10
 	ply
 	rts
-L193:
+L188:
 	lda $1,s
 	dec
 	sta $1,s
@@ -670,8 +686,8 @@ L193:
 	jsr OutcHelper
 	plx
 	inx
-	bra L192
-L194:
+	bra L187
+L189:
 	ply
 	sep #$10
 	ply
@@ -682,7 +698,7 @@ HardStem:
 	sep #$20
 	pha
 	jsr IsAlien
-	bcc L195
+	bcc L190
 	.as : lda #$0
 	jsr OutWordBut
 	rep #$20
@@ -692,9 +708,9 @@ HardStem:
 	sep #$10
 	ply
 	brl OutcHelper
-L195:
+L190:
 	jsr IsAbbrev
-	bcc L207
+	bcc L201
 	.as : lda #$0
 	jsr OutWordBut
 	rep #$20
@@ -703,96 +719,96 @@ L195:
 	lda #$0
 	jsr LastCharN
 	sta $1,s
-	.as : cmp #$C5
-	bcc L198
-	cmp #$C8
-	bcc L200
-	cmp #$D0
-	bcc L197
-	cmp #$D2
-	bcc L200
-	cmp #$DB
-	beq L200
-	bcs L196
-	cmp #$D8
-	bne L201
-	bra L200
-L196:
-	cmp #$DD
-	bne L201
-	bra L200
-L197:
 	sec
-	sbc #$CB
+	.as : sbc #$A5
+	cmp #$0
+	beq L195
+	cmp #$20
+	bcc L193
+	cmp #$23
+	bcc L195
+	cmp #$2B
+	bcc L192
+	cmp #$2D
+	bcc L195
+	cmp #$36
+	beq L195
+	bcs L191
+	cmp #$33
+	bne L196
+	bra L195
+L191:
+	cmp #$38
+	bne L196
+	bra L195
+L192:
+	sec
+	sbc #$26
 	cmp #$2
-	bcs L201
-	bra L200
-L198:
-	cmp #$B1
-	bcc L199
-	cmp #$B3
-	bcc L200
-	cmp #$B6
-	bcc L201
-	cmp #$B8
-	bcc L200
-	cmp #$BF
-	bne L201
-	bra L200
-L199:
-	cmp #$A5
-	beq L200
-	bcc L201
-	sbc #$AB
+	bcs L196
+	bra L195
+L193:
+	cmp #$C
+	bcc L194
+	cmp #$E
+	bcc L195
+	sbc #$11
+	cmp #$2
+	bcc L195
+	cmp #$9
+	bne L196
+	bra L195
+L194:
+	sec
+	sbc #$6
 	cmp #$3
-	bcs L201
-L200:
+	bcs L196
+L195:
 	rep #$20
 	.al : lda #$F1
 	sep #$10
 	ply
 	brl OutcHelper
-L201:
+L196:
 	sep #$20
 	lda $1,s
-	.as : cmp #$B9
-	beq L202
-	cmp #$D3
-	bne L203
-L202:
+	sec
+	.as : sbc #$B9
+	cmp #$0
+	beq L197
+	cmp #$1A
+	bne L198
+L197:
 	rep #$20
 	.al : lda #$BA
 	sep #$10
 	ply
 	brl OutcHelper
-L203:
+L198:
 	sep #$20
 	lda $1,s
-	.as : cmp #$D9
-	bcc L204
-	cmp #$DB
-	bcc L205
-	cmp #$DC
-	bne L206
-	bra L205
-L204:
 	sec
-	sbc #$D4
+	.as : sbc #$D4
 	cmp #$4
-	bcs L206
-L205:
+	bcc L199
+	sbc #$5
+	cmp #$2
+	bcc L199
+	cmp #$3
+	bne L200
+L199:
 	sep #$10
 	ply
 	rts
-L206:
+L200:
 	rep #$20
 	.al : lda #$CD
 	sep #$10
 	ply
 	brl OutcHelper
-L207:
+L201:
 	jsr IsEs
-	bcc L208
+	bcc L202
 	sep #$20
 	.as : lda #$0
 	jsr OutWordBut
@@ -800,9 +816,9 @@ L207:
 	.al : lda #$CD
 	ply
 	brl OutcHelper
-L208:
+L202:
 	jsr IsDe
-	bcc L209
+	bcc L203
 	.as : lda #$0
 	jsr OutWordBut
 	rep #$20
@@ -812,24 +828,24 @@ L208:
 	sep #$10
 	ply
 	brl OutcHelper
-L209:
+L203:
 	jsr EndWithVowel
-	bcc L211
+	bcc L205
 	jsr AkiEnd
-	bcc L210
+	bcc L204
 	.as : lda #$1
 	jsr OutWordBut
 	rep #$20
 	.al : lda #$BE
 	ply
 	brl OutcHelper
-L210:
+L204:
 	sep #$20
 	.as : lda #$0
 	sep #$10
 	ply
 	bra OutWordBut
-L211:
+L205:
 	sep #$20
 	lda #$0
 	jsr OutWordBut
@@ -841,23 +857,23 @@ L211:
 #ifndef OMIT_SoftStem
 SoftStem:
 	jsr IsAlien
-	bcc L212
+	bcc L206
 	.as : lda #$0
 	jsr OutWordBut
 	rep #$20
 	.al : lda #$F6
 	brl OutcHelper
-L212:
+L206:
 	jsr IsAbbrev
-	bcc L213
+	bcc L207
 	.as : lda #$0
 	jsr OutWordBut
 	rep #$20
 	.al : lda #$EA
 	brl OutcHelper
-L213:
+L207:
 	jsr IsEs
-	bcc L214
+	bcc L208
 	sep #$20
 	.as : lda #$1
 	jsr OutWordBut
@@ -868,9 +884,9 @@ L213:
 	jsr OutcHelper
 	lda #$BE
 	brl OutcHelper
-L214:
+L208:
 	jsr IsDe
-	bcc L215
+	bcc L209
 	.as : lda #$2
 	jsr OutWordBut
 	rep #$20
@@ -880,11 +896,11 @@ L214:
 	jsr OutcHelper
 	lda #$BE
 	brl OutcHelper
-L215:
+L209:
 	jsr EndWithVowel
-	bcc L218
+	bcc L212
 	jsr DoubleHard
-	bcc L216
+	bcc L210
 	sep #$20
 	.as : lda #$2
 	jsr OutWordBut
@@ -893,10 +909,74 @@ L215:
 	rep #$20
 	.al : and #$FF
 	brl OutcHelper
+L210:
+	jsr AkiEnd
+	bcc L211
+	.as : lda #$2
+	jsr OutWordBut
+	rep #$20
+	.al : lda #$BE
+	brl OutcHelper
+L211:
+	sep #$20
+	.as : lda #$0
+	bra OutWordBut
+L212:
+	sep #$20
+	lda #$0
+	jsr OutWordBut
+	rep #$20
+	.al : lda #$C2
+	brl OutcHelper
+#endif
+#ifndef OMIT_EssiveStem
+EssiveStem:
+	jsr IsAlien
+	bcc L213
+	.as : lda #$0
+	jsr OutWordBut
+	rep #$20
+	.al : lda #$F6
+	brl OutcHelper
+L213:
+	jsr IsAbbrev
+	bcc L214
+	.as : lda #$0
+	jsr OutWordBut
+	rep #$20
+	.al : lda #$EA
+	brl OutcHelper
+L214:
+	jsr IsEs
+	bcc L215
+	sep #$20
+	.as : lda #$1
+	jsr OutWordBut
+	rep #$20
+	.al : lda #$C4
+	jsr OutcHelper
+	lda #$CC
+	jsr OutcHelper
+	lda #$BE
+	brl OutcHelper
+L215:
+	jsr IsDe
+	bcc L216
+	.as : lda #$2
+	jsr OutWordBut
+	rep #$20
+	.al : lda #$CD
+	jsr OutcHelper
+	lda #$BE
+	jsr OutcHelper
+	lda #$BE
+	brl OutcHelper
 L216:
+	jsr EndWithVowel
+	bcc L218
 	jsr AkiEnd
 	bcc L217
-	.as : lda #$2
+	.as : lda #$1
 	jsr OutWordBut
 	rep #$20
 	.al : lda #$BE
@@ -913,14 +993,22 @@ L218:
 	.al : lda #$C2
 	brl OutcHelper
 #endif
-#ifndef OMIT_EssiveStem
-EssiveStem:
+#ifndef OMIT_IllativeStem
+IllativeStem:
+	sep #$20
+	pha
 	jsr IsAlien
 	bcc L219
 	.as : lda #$0
 	jsr OutWordBut
 	rep #$20
 	.al : lda #$F6
+	jsr OutcHelper
+	lda #$C1
+	jsr OutcHelper
+	lda #$CE
+	sep #$10
+	ply
 	brl OutcHelper
 L219:
 	jsr IsAbbrev
@@ -929,7 +1017,11 @@ L219:
 	jsr OutWordBut
 	rep #$20
 	.al : lda #$EA
-	brl OutcHelper
+	jsr OutcHelper
+	jsr Out_A
+	sep #$10
+	ply
+	bra Out_A
 L220:
 	jsr IsEs
 	bcc L221
@@ -942,6 +1034,10 @@ L220:
 	lda #$CC
 	jsr OutcHelper
 	lda #$BE
+	jsr OutcHelper
+	lda #$BE
+	sep #$10
+	ply
 	brl OutcHelper
 L221:
 	jsr IsDe
@@ -954,100 +1050,20 @@ L221:
 	lda #$BE
 	jsr OutcHelper
 	lda #$BE
+	jsr OutcHelper
+	lda #$CC
+	jsr OutcHelper
+	lda #$BE
+	jsr OutcHelper
+	lda #$BE
+	sep #$10
+	ply
 	brl OutcHelper
 L222:
 	jsr EndWithVowel
-	bcc L224
-	jsr AkiEnd
-	bcc L223
-	.as : lda #$1
-	jsr OutWordBut
-	rep #$20
-	.al : lda #$BE
-	brl OutcHelper
-L223:
-	sep #$20
-	.as : lda #$0
-	bra OutWordBut
-L224:
-	sep #$20
-	lda #$0
-	jsr OutWordBut
-	rep #$20
-	.al : lda #$C2
-	brl OutcHelper
-#endif
-#ifndef OMIT_IllativeStem
-IllativeStem:
-	sep #$20
-	pha
-	jsr IsAlien
 	bcc L225
-	.as : lda #$0
-	jsr OutWordBut
-	rep #$20
-	.al : lda #$F6
-	jsr OutcHelper
-	lda #$C1
-	jsr OutcHelper
-	lda #$CE
-	sep #$10
-	ply
-	brl OutcHelper
-L225:
-	jsr IsAbbrev
-	bcc L226
-	.as : lda #$0
-	jsr OutWordBut
-	rep #$20
-	.al : lda #$EA
-	jsr OutcHelper
-	jsr Out_A
-	sep #$10
-	ply
-	bra Out_A
-L226:
-	jsr IsEs
-	bcc L227
-	sep #$20
-	.as : lda #$1
-	jsr OutWordBut
-	rep #$20
-	.al : lda #$C4
-	jsr OutcHelper
-	lda #$CC
-	jsr OutcHelper
-	lda #$BE
-	jsr OutcHelper
-	lda #$BE
-	sep #$10
-	ply
-	brl OutcHelper
-L227:
-	jsr IsDe
-	bcc L228
-	.as : lda #$2
-	jsr OutWordBut
-	rep #$20
-	.al : lda #$CD
-	jsr OutcHelper
-	lda #$BE
-	jsr OutcHelper
-	lda #$BE
-	jsr OutcHelper
-	lda #$CC
-	jsr OutcHelper
-	lda #$BE
-	jsr OutcHelper
-	lda #$BE
-	sep #$10
-	ply
-	brl OutcHelper
-L228:
-	jsr EndWithVowel
-	bcc L231
 	jsr DoubleHard
-	bcc L229
+	bcc L223
 	sep #$20
 	.as : lda #$2
 	jsr OutWordBut
@@ -1062,9 +1078,9 @@ L228:
 	sep #$10
 	ply
 	brl OutcHelper
-L229:
+L223:
 	jsr AkiEnd
-	bcc L230
+	bcc L224
 	.as : lda #$2
 	jsr OutWordBut
 	rep #$20
@@ -1074,7 +1090,7 @@ L229:
 	sep #$10
 	ply
 	brl OutcHelper
-L230:
+L224:
 	sep #$20
 	.as : lda #$0
 	jsr OutWordBut
@@ -1086,7 +1102,7 @@ L230:
 	sep #$10
 	ply
 	brl OutcHelper
-L231:
+L225:
 	sep #$20
 	.as : lda #$0
 	jsr OutWordBut
@@ -1101,13 +1117,13 @@ L231:
 #if !defined(OMIT_Do_A) || !defined(OMIT_Do_LLA) || !defined(OMIT_Do_LTA) || !defined(OMIT_Do_NA) || !defined(OMIT_Do_SSA) || !defined(OMIT_Do_STA) || !defined(OMIT_Do_TTA) || !defined(OMIT_Out_A)
 Out_A:
 	jsr IsFront
-	bcc L232
+	bcc L226
 	rep #$20
 	.al : lda #$F1
 	brl OutcHelper
 #endif
 #ifndef OMIT_Out_A
-L232:
+L226:
 	rep #$20
 	.al : lda #$BA
 	brl OutcHelper

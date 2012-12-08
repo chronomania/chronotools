@@ -20,13 +20,13 @@ namespace
 void LoadDict(unsigned offs, unsigned len)
 {
     vector<ctstring> strings = LoadPStrings(offs, len, L"dictionary(p)");
-    
+
     for(unsigned a=0; a<strings.size(); ++a)
     {
         const ctstring &s = strings[a];
-        
+
         dict_unconverted[a + 0x21] = s;
-        
+
         std::wstring tmp(s.size(), 0);
         for(unsigned b=0; b<s.size(); ++b)
             tmp[b] = getwchar_t(s[b], cset_12pix);
@@ -46,27 +46,27 @@ void DumpDict()
         PutBase16Label(a);
         PutContent(s + L';', false);
     }
-    
+
     EndBlock();
 }
 
 const std::wstring Disp8Char(ctchar k)
 {
     const Symbols::revtype &symbols = Symbols.GetRev(2);
-    
+
     Symbols::revtype::const_iterator i = symbols.find(k);
-    
+
     if(i != symbols.end())
         return i->second;
 
     if(k == 0x2D) return L":";
-        
+
     wchar_t tmp = getwchar_t(k, cset_8pix);
     if(tmp == ilseq)
     {
         return wformat(L"[%02X]", k);
     }
-    
+
     std::wstring result;
     result += tmp;
     return result;
@@ -83,7 +83,7 @@ const std::wstring Disp12Char(ctchar k)
             [cls] is a screen clearing.
             [pause] is a pause, then clear screen.
         */
-    
+
         case 0x05: return L"[nl]\n";
         case 0x06: return L"[nl]\n   ";
         case 0x07: return L"[pausenl]\n";
@@ -93,11 +93,11 @@ const std::wstring Disp12Char(ctchar k)
         case 0x0B: return L"\n[pause]\n";
         case 0x0C: return L"\n[pause]\n   ";
     }
-    
+
     const Symbols::revtype &symbols = Symbols.GetRev(16);
-    
+
     Symbols::revtype::const_iterator i = symbols.find(k);
-    
+
     if(i != symbols.end())
         return i->second;
 
@@ -106,7 +106,7 @@ const std::wstring Disp12Char(ctchar k)
     // (Crono,Marle,Lucca,Robo,Frog,Ayla,Magus,Nadia,Epoch)
     // are quite obfuscated in the ROM. We use hardcoded
     // symbol map instead of trying to decipher the ROM.
-    
+
     if(k < 256 && !dict_converted[k].empty())
         return dict_converted[k];
 
@@ -132,16 +132,16 @@ namespace
         const ctchar excl   = getctchar('!');
         const ctchar lquo   = getctchar((unsigned char)'«');
         const ctchar rquo   = getctchar((unsigned char)'»');
-        
+
         ctstring space3(3, space);
-        
+
         bool line_firstword = true;
         bool first_line     = true;
         bool indented       = para.substr(0, 3) == space3;
         bool had_delimiter  = false;
-        
+
         const Symbols::revtype &symbols = Symbols.GetRev(16);
-        
+
         ctstring result = para;
         for(unsigned a=0; a<result.size(); ++a)
         {
@@ -151,7 +151,7 @@ namespace
                 result.replace(a, 1, dict_unconverted[k]);
                 k = result[a];
             }
-            
+
             if(k == 0x05 /* nl */
             || k == 0x07 /* pausenl */)
             {
@@ -160,13 +160,13 @@ namespace
                 {
                     had_delimiter = true;
                 }
-                
+
                 if(result.find(space3 + space3, a+1) != result.npos)
                 {
                     /* Abort wrapping - there's preformatted text following. */
                     return result;
                 }
-                
+
                 if(!had_delimiter && k != 0x07 && !line_firstword)
                 {
                     if(indented && result.substr(a+1, 3) == space3)
@@ -185,7 +185,7 @@ namespace
                 indented = result.substr(a+1, 3) == space3;
                 continue;
             }
-            
+
             had_delimiter =
                 k == colon || k == period
              || k == que || k == excl
@@ -195,7 +195,7 @@ namespace
              || k == 0x0D || k == 0x0E || k == 0x0F
              || k == rquo
                  ;
-            
+
             if(k == colon && line_firstword)
                 indented = true;
 
@@ -209,9 +209,9 @@ namespace
     {
         const bool Attempt = GetConf("dumper", "attempt_unwrap");
         if(!Attempt) return;
-        
+
         ctstring space3(3, getctchar(' '));
-        
+
         /* Replace all [nl3] with [nl] + 3 spaces and so on */
         for(unsigned a=0; a<line.size(); ++a)
         {
@@ -226,7 +226,7 @@ namespace
             line.insert(a+1, space3);
             a += space3.size();
         }
-        
+
         ctstring result;
         unsigned parabegin = 0;
         for(unsigned a=0; a<=line.size(); ++a)
@@ -242,12 +242,12 @@ namespace
         }
         line = result;
     }
-    
+
     const std::wstring Get12string(const ctstring& value, bool dolf)
     {
         ctstring s = value;
         std::wstring result;
-        
+
         if(dolf) AttemptUnwrap(s);
 
         for(unsigned b=0; b<s.size(); ++b)
@@ -278,16 +278,16 @@ namespace
         }
         return result;
     }
-    
+
     const std::wstring Get8string(const ctstring& value)
     {
         ctstring s = value;
         std::wstring result;
-        
+
         unsigned attr=0;
         for(unsigned b=0; b<s.size(); ++b)
         {
-            
+
 Retry:
             switch(s[b])
             {
@@ -322,19 +322,19 @@ Retry:
                     if(c1 >= 0x40 && (c1 < 0x7E || c1 >= 0x80))
                     {
                         unsigned addr = (SNES2ROMpage(c1) << 16) + c2;
-                        
+
                         unsigned bytes;
                         ctstring str = LoadZString(addr, bytes, L"substring", Extras_8);
-                        
+
                         //result += L'{'; //}
-                        
+
                         b -= 3;
                         s.erase(b, 4);
                         s.insert(b, str);
                         goto Retry;
                     }
 #endif
-                    
+
                     result += wformat(L"[substr,%02X%04X]", c1,c2);
                     break;
                 }
@@ -431,9 +431,9 @@ void DumpZStrings(const unsigned offs,
                   bool dolf)
 {
     MessageBeginDumpingStrings(offs);
-    
+
     const std::wstring what_tab = what + L"(z)";
-    
+
     vector<ctstring> strings = LoadZStrings(offs, len, what_tab, Extras_12);
 
     StartBlock(L"z", what);
@@ -443,10 +443,10 @@ void DumpZStrings(const unsigned offs,
         std::wstring line = Get12string(strings[a], dolf);
 
         PutBase62Label(offs + a*2);
-        
+
         PutContent(line, dolf);
     }
-    
+
     EndBlock();
     MessageDone();
 }
@@ -457,12 +457,12 @@ void DumpMZStrings(const unsigned offs,
                    bool dolf)
 {
     MessageBeginDumpingStrings(offs);
-    
+
     const std::wstring what_tab = what + L"(Z)";
-    
+
     vector<ctstring> strings = LoadZStrings(offs, len, what_tab, Extras_12);
 
-    StartBlock(L"z", what + L" (change this to *Z to allow free relocation)"); 
+    StartBlock(L"z", what + L" (change this to *Z to allow free relocation)");
 
     for(unsigned a=0; a<strings.size(); ++a)
     {
@@ -470,7 +470,7 @@ void DumpMZStrings(const unsigned offs,
         PutBase62Label(offs + a*2);
         PutContent(line, dolf);
     }
-    
+
     EndBlock();
     MessageDone();
 }
@@ -482,12 +482,12 @@ void DumpRZStrings(const std::wstring& what,
 {
     unsigned pageaddr = 0;
     unsigned offsaddr = 0;
-    
+
     std::wstring label = L"z";
-    
+
     va_list ap;
     va_start(ap, dolf);
-    
+
     for(;;)
     {
         char format = va_arg(ap, int);
@@ -505,11 +505,11 @@ void DumpRZStrings(const std::wstring& what,
                   | (ROM[offsaddr+1] << 8)
                   | (ROM[offsaddr  ]);
     offs = SNES2ROMaddr(offs);
-    
+
     MessageBeginDumpingStrings(offs);
-    
+
     const std::wstring what_tab = what + L"(zr)";
-    
+
     vector<ctstring> strings = LoadZStrings(offs, len, what_tab, Extras_12);
 
     StartBlock(label, what);
@@ -520,7 +520,7 @@ void DumpRZStrings(const std::wstring& what,
         PutBase62Label(offs + a*2);
         PutContent(line, dolf);
     }
-    
+
     EndBlock();
     MessageDone();
 }
@@ -532,36 +532,36 @@ void DumpC8String(const unsigned ptroffs,
                   | (ROM[ptroffs+1 ] << 8)
                   | (ROM[ptroffs+0 ]);
     offs = SNES2ROMaddr(offs);
-    
+
     MessageBeginDumpingStrings(offs);
-    
+
     vector<unsigned char> Buffer;
     unsigned orig_bytes = Uncompress(ROM+offs, Buffer, ROM+GetROMsize());
     unsigned new_bytes = Buffer.size();
-    
+
     MarkFree(offs, orig_bytes, what);
-    
+
     MessageBeginDumpingStrings(offs);
-    
+
     StartBlock(L"c", what);
-    
+
     /* The hardcoded numbers between 8A..B8
      * are for the character names that are
      * in the compressed block that comes
      * originally from address DB0000.
      */
-    
+
     PutBase62Label(ptroffs);
     std::wstring line;
     unsigned l=0;
     for(unsigned a=0; a<new_bytes; ++a)
     {
         unsigned l0 = line.size();
-        
+
         ctchar k = Buffer[a];
-        
+
         bool special_region = a >= 0x89 && a <= 0xB9;
-        
+
         wchar_t tmp = ilseq;
         if(special_region) tmp = getwchar_t(k, cset_8pix);
         if(tmp == ilseq)
@@ -580,7 +580,7 @@ void DumpC8String(const unsigned ptroffs,
         if(wrap) { line += L"\n"; l=0; }
     }
     PutContent(line, true);
-    
+
     EndBlock();
 
     MessageDone();
@@ -591,9 +591,9 @@ void Dump8Strings(const unsigned offs,
                   unsigned len)
 {
     MessageBeginDumpingStrings(offs);
-    
+
     const std::wstring what_tab = what + L"(r)";
-    
+
     vector<ctstring> strings = LoadZStrings(offs, len, what_tab, Extras_8);
 
     StartBlock(L"r", what);
@@ -615,11 +615,11 @@ void DumpFStrings(unsigned offs,
                   unsigned maxcount)
 {
     MessageBeginDumpingStrings(offs);
-    
+
     const std::wstring what_tab = what + L"(f)";
-    
+
     vector<ctstring> strings = LoadFStrings(offs, len, what_tab, maxcount);
-    
+
     StartBlock(L"l%u", what, len);
 
     for(unsigned a=0; a<strings.size(); ++a)

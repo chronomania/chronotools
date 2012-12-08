@@ -23,17 +23,17 @@ namespace
     void PutL(unsigned int w, std::FILE* fp)
     {
         // 24-bit msb-first IPS output.
-        PutC((w >> 16) & 0xFF, fp);
-        PutC((w >> 8) & 0xFF, fp);
-        PutC(w & 0xFF, fp);
+        PutC( (unsigned char) ( (w >> 16) & 0xFF ), fp);
+        PutC( (unsigned char) ( (w >>  8) & 0xFF ), fp);
+        PutC( (unsigned char) ( w & 0xFF ), fp);
     }
 
-    void PutMW(unsigned short w, std::FILE* fp)  
+    void PutMW(unsigned short w, std::FILE* fp)
     {
         // 16-bit msb-first IPS output.
-        PutC(w >> 8,  fp);
-        PutC(w & 0xFF, fp);
-    }                      
+        PutC( (unsigned char) ( w >> 8   ),  fp);
+        PutC( (unsigned char) ( w & 0xFF ), fp);
+    }
 
     void PutS(const void* s, unsigned n, std::FILE* fp)
     {
@@ -49,7 +49,7 @@ namespace
         In IPS format:
         Not-RLE: 3+2+N   (5+N)
         RLE:     3+2+2+1 (8)
-        
+
         RLE will only be used, if:
           The length of preceding chunk > A
           The length of successor chunk > B
@@ -64,7 +64,7 @@ namespace
         for(unsigned a=0; a<len; )
         {
             unsigned rle_len = 1;
-            
+
             if(addr+a != IPS_EOF_MARKER
             && addr+a != IPS_ADDRESS_EXTERN
             && addr+a != IPS_ADDRESS_GLOBAL)
@@ -72,17 +72,17 @@ namespace
                 while(a+rle_len < len && source[a+rle_len] == source[a]
                    && rle_len < 0xFFFF) ++rle_len;
             }
-            
+
             //unsigned size_before = a;
             //unsigned size_after  = len-(a+rle_len);
-            
+
             if((addr+a+rle_len == IPS_EOF_MARKER
              || addr+a+rle_len == IPS_ADDRESS_EXTERN
              || addr+a+rle_len == IPS_ADDRESS_GLOBAL)
             && rle_len > 1) { --rle_len; }
-            
+
             if(rle_len <= 8) { a += rle_len; continue; }
-            
+
             result.len  = rle_len;
             result.addr = a;
             break;
@@ -159,7 +159,7 @@ namespace
     void GeneratePatch(class ROM& ROM, unsigned offset, const string& fn)
     {
         fprintf(stderr, "Creating %s\n", fn.c_str());
-        
+
         /* Now write the patch */
         FILE *fp = fopen(fn.c_str(), "wb");
         if(!fp)
@@ -168,7 +168,7 @@ namespace
             return;
         }
         fwrite("PATCH", 1, 5, fp);
-        
+
         unsigned addr = 0;
         for(;;)
         {
@@ -183,25 +183,25 @@ namespace
         fwrite("EOF",   1, 3, fp);
         fclose(fp);
     }
-    
+
     void WriteGameName(class ROM& ROM)
     {
         const string Name = GetConf("general", "gamename");
-        
+
         /* Set game name */
         vector<unsigned char> Buf(21, ' ');
         for(unsigned a=0; a < Buf.size() && a < Name.size(); ++a)
             Buf[a] = Name[a];
-        
+
         ROM.AddPatch(Buf, 0xFFC0, L"game name");
     }
-    
+
     void WriteROMsize(class ROM& ROM)
     {
-        unsigned size = GetROMsize();
+        size_t size = GetROMsize();
         unsigned sizebyte = 0;
         for(sizebyte=0; (1 << sizebyte)*1024U < size; ++sizebyte) {}
-        
+
         if(size >= 0x600000)
         {
             ROM.Write(0xFFD5, 0x35, L"rom speed&type tag");
@@ -209,18 +209,18 @@ namespace
         }
         ROM.Write(0xFFD7, sizebyte, L"rom size tag");
     }
-    
+
     void GeneratePatches(class ROM& ROM)
     {
         WriteGameName(ROM);
         WriteROMsize(ROM);
-        
+
         /* Should there be a language code at $FFB5? */
         /* No - it would affect PAL/NTSC things */
-        
+
         GeneratePatch(ROM, 0,   GetConf("patch", "patchfn_nohdr"));
         GeneratePatch(ROM, 512, GetConf("patch", "patchfn_hdr"));
-        
+
         ShowProtMap2();
     }
 }
@@ -228,7 +228,7 @@ namespace
 const std::string DispString(const ctstring &s, unsigned symbols_type)
 {
     const Symbols::revtype &symbols = Symbols.GetRev(symbols_type);
-    
+
     std::wstring result;
     for(unsigned a=0; a<s.size(); ++a)
     {
@@ -285,27 +285,27 @@ int main(void)
     fprintf(stderr,
         "Chrono Trigger script insertor version "VERSION"\n"
         "Copyright (C) 1992,2005 Bisqwit (http://iki.fi/bisqwit/)\n");
-    
+
     Symbols.Load();
 
     insertor *ins = new insertor;
-    
+
     /* Ensure the ROM size */
     ins->ExpandROM();
-    
+
     const string font8fn  = GetConf("font",   "font8fn");
     const string font8vfn = GetConf("font",   "font8vfn");
     const string font12fn = GetConf("font",   "font12fn");
     const string scriptfn = GetConf("readin", "scriptfn");
-    
+
     LoadTypefaces();
-    
+
     // Font loading must happen before script loading,
     // or script won't be properly paragraph-wrapped.
     ins->LoadFont8(font8fn);
     ins->LoadFont8v(font8vfn);
     ins->LoadFont12(font12fn);
-    
+
     {FILE *fp = fopen(scriptfn.c_str(), "rt");
     if(!fp)
     {
@@ -315,19 +315,19 @@ int main(void)
     char Buf[8192];setvbuf(fp, Buf, _IOFBF, sizeof Buf);
     ins->LoadFile(fp);
     fclose(fp);}
-    
+
     ins->ReorganizeFonts();
-    
+
     ins->DictionaryCompress();
-    
+
     ins->ReportFreeSpace();
 
     fprintf(stderr, "--\n");
-    
+
     ins->WriteEverything();
-    
+
     fprintf(stderr, "--\n");
-    
+
     fprintf(stderr, "Creating a virtual ROM...\n");
     class ROM ROM(4194304);
 
@@ -335,12 +335,12 @@ int main(void)
 
     fprintf(stderr, "--\n");
     ins->ReportFreeSpace();
-    
+
     fprintf(stderr, "--\n");
     fprintf(stderr, "Unallocating insertor data...\n");
     delete ins; ins = NULL;
-    
+
     GeneratePatches(ROM);
-    
+
     return 0;
 }

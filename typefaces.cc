@@ -7,7 +7,7 @@ std::vector<Typeface> Typefaces;
 void LoadTypefaces()
 {
     const ConfParser::ElemVec& elems = GetConf("font", "typeface").Fields();
-    
+
     for(unsigned a=0; a<elems.size(); a += 6)
     {
         const std::wstring& begin_marker = elems[a];
@@ -16,7 +16,7 @@ void LoadTypefaces()
         unsigned begin  = elems[a+3];
         unsigned end    = elems[a+4];
         unsigned condense=elems[a+5];
-        
+
         bool empty = true;
         for(unsigned c=begin; c<end; ++c)
             if(getwchar_t(c, cset_12pix) != ilseq)
@@ -24,7 +24,7 @@ void LoadTypefaces()
                 empty = false;
                 break;
             }
-        
+
         if(!empty)
         {
             fprintf(stderr,
@@ -32,7 +32,7 @@ void LoadTypefaces()
                 "         some characters in the character set!\n",
                     begin, end);
         }
-        
+
         Typefaces.push_back(Typeface(begin_marker, end_marker, offset, begin, end, condense));
     }
 }
