@@ -1746,28 +1746,28 @@ namespace
             {
                 ++strpos; continue;
             }
-            
+
             /* Ignore spaces in the format string */
             while(*fmtptr == ' ') ++fmtptr;
-            
+
             if(*fmtptr == '%')
             {
                 /* Read the parameter name */
                 char paramname = *++fmtptr; ++fmtptr;
-                
+
                 unsigned param_begin = strpos;
-                
+
                 enum { mode_unknown,
                        mode_number,
                        mode_operator,
                        mode_dialogaddr,
                        mode_identifier,
                        mode_string } mode = mode_unknown;
-                
+
                 for(; strpos < string.size(); ++strpos)
                 {
                     wchar_t ch = string[strpos];
-                    
+
                     bool ok=true;
                     switch(mode)
                     {
@@ -1802,7 +1802,7 @@ namespace
                 params[paramname] = string.substr(param_begin, strpos-param_begin);
                 continue;
             }
-            
+
             if(*fmtptr != WcharToAsc(string[strpos]))
                 return false;
             ++fmtptr;
@@ -1813,7 +1813,7 @@ namespace
         /* Return 'true' (ok) if the format is now complete (end) */
         return *fmtptr == '\0';
     }
-    
+
     class MemoryAddressConstants
     {
         std::map<unsigned, std::wstring> per_addr;
@@ -1858,7 +1858,7 @@ namespace
         save_begin = n = ROM2SNESaddr(n);
         return L"$" + AscToWstr(EncodeBase62(n, 4));
     }
-    
+
     static const std::wstring FormatDialogAddr(unsigned n, unsigned saved_begin)
     {
         unsigned DialogAddr = saved_begin + n*2;
@@ -1873,7 +1873,7 @@ namespace
                                         L"&",  L"|"};
         return ops[op & 7];
     }
-    
+
     static const std::wstring FormatBlob(const std::vector<Byte>& data, bool has_text)
     {
         std::wstring result;
@@ -1908,7 +1908,7 @@ namespace
             unsigned offset=0;
             if(n.substr(0, 2) == L"0x") { offset=2; }
             else if(n.substr(0, 1) == L"$") { offset=1; }
-            
+
             unsigned result=0;
             while(offset < n.size())
                 if(!CumulateBase16(result, n[offset++]))
@@ -1916,7 +1916,7 @@ namespace
             return result;
         }
     }
-    
+
     static const std::vector<Byte> ScanBlob(const std::wstring& n)
     {
         std::vector<Byte> result;
@@ -1961,7 +1961,7 @@ namespace
         unsigned result=0;
         for(unsigned a=1; a<n.size(); ++a)
             if(!CumulateBase62(result, n[a])) throw false;
-        
+
         dialog_begin = result;
         return ROM2SNESaddr(result);
     }
@@ -1972,7 +1972,7 @@ namespace
         for(unsigned a=1; a<n.size(); ++a)
             if(!CumulateBase62(result, n[a]))
                 throw false;
-        
+
         result -= dialog_begin;
         if(result & 1) throw false;
         result >>= 1;
@@ -1993,9 +1993,9 @@ namespace
     struct range
     {
         keytype lower, upper; /* Both are inclusive. */
-        
+
         range(keytype l,keytype u): lower(l),upper(u) {}
-        
+
         bool operator< (const range& b) const
         {
             return lower < b.lower;
@@ -2004,7 +2004,7 @@ namespace
         {
             return lower==b.lower && upper==b.upper;
         }
-        
+
         bool Contains(keytype b) const { return lower<=b && upper>=b; }
     };
     template<typename keytype, typename valuetype>
@@ -2036,27 +2036,27 @@ private:
             t_dialogbegin,
             t_dialogaddr
         };
-    
+
         ElemData(unsigned nb, unsigned mi,unsigned ma,unsigned ad,int sh,typetype t=t_trivial)
             : bytepos(0), type(t),
               n_bytes(nb),min(mi),max(ma),add(ad),shift(sh),
               highbit_trick(false) {}
-        
+
         ElemData& DeclareHighbit()
         {
             highbit_trick = true;
-            return *this;            
+            return *this;
         }
-        
+
         ElemData& SetBytePos(unsigned n) { bytepos = n; return *this; }
         unsigned GetBytePos() const { return bytepos; }
-        
+
         ElemData& SetType(typetype t)
         {
             type   = t;
             return *this;
         }
-        
+
         bool KnowRange(unsigned pos) const
         {
             /* Returns true if GetMin() and GetMax() can be used */
@@ -2120,7 +2120,7 @@ private:
             }
             return 0xFF;
         }
-        
+
         const std::wstring Format() const
         {
             if(type != t_trivial)
@@ -2128,18 +2128,18 @@ private:
                 fprintf(stderr, "type(%u), not trivial\n", type);
                 throw false;
             }
-            
+
             return FormatNumeric(min, n_bytes*8);
         }
-        
+
         struct FormatResult
         {
             std::wstring text;
             unsigned maxoffs;
-            
+
             unsigned            goto_target;
             EventCode::gototype goto_type;
-            
+
         public:
             FormatResult() : maxoffs(0),goto_target(0),goto_type(EventCode::goto_none) { }
         };
@@ -2152,13 +2152,13 @@ private:
         public:
             explicit ScanResult(unsigned pos): targetpos(pos), is_goto(false) { }
         };
-        
+
         FormatResult Format
             (unsigned offs, const unsigned char* data, unsigned maxlen,
              EventCode::DecodingState& state) const
         {
             FormatResult result;
-            
+
             if(maxlen < bytepos)
             {
 #ifdef DEBUG_FORMAT
@@ -2167,7 +2167,7 @@ private:
                 throw false;
             }
             maxlen -= bytepos; data += bytepos;
-            
+
             switch(type)
             {
                 case t_trivial:
@@ -2182,7 +2182,7 @@ private:
                     }
                     unsigned value = 0;
                     for(unsigned n=0; n<n_bytes; ++n) value |= data[n] << (n*8);
-                    
+
                     /* When highbit trick is used, there are two rules:
                      * - The input _must_ have high bit set
                      * - The interpreted value must _not_ have it.
@@ -2199,7 +2199,7 @@ private:
                         }
                         value &= ~mask;
                     }
-                    
+
                     /* Check ranges. */
                     if(value < min || value > max)
                     {
@@ -2283,9 +2283,9 @@ private:
 #endif
                         throw false;
                     }
-                    
+
                     int sign = type==t_loop ? -1 : 1;
-                    
+
                     result.maxoffs     = bytepos+1;
                     result.goto_target = offs + data[0]*sign + bytepos;
                     result.goto_type   = type==t_loop ? EventCode::goto_backward
@@ -2401,7 +2401,7 @@ private:
                             throw false;
                         }
                     }
-                    
+
                     /* Check ranges. */
                     if(value < min || value > max)
                     { trivial_err:
@@ -2524,7 +2524,7 @@ private:
             fprintf(stderr, "Internal Error: Unreachable code reached\n");
             throw true;
         }
-        
+
         ScanResult Scan
             (const std::wstring& s,
              bool goto_backward,
@@ -2532,9 +2532,9 @@ private:
         {
             // Scanning function for params that
             // have a byte representation and appear in param list
-            
+
             ScanResult result(bytepos);
-            
+
             switch(type)
             {
                 case t_trivial:
@@ -2613,41 +2613,41 @@ private:
         }
     private:
         unsigned bytepos;
-        
+
         typetype type;
-        
+
         // byte, word, long, memory, dialog begin, dialog addr:
         unsigned n_bytes; // example: 1
         unsigned min;  // example: 0x00
         unsigned max;  // example: 0xFF
         unsigned add;  // example: 0x7F0200
         int      shift;// -2=/4, -1=/2, 0=*1, 1=*2, 2=*4
-        
+
         bool highbit_trick;
-        
+
         // nibble:
-        
+
         // else,loop,if:
-        
+
         // operator:
-        
+
         // blob:
     };
-    
+
 private:
     class OpcodeTree;
     class StringTree;
-    
+
     class Command
     {
     public:
         Command() {}
         explicit Command(const char* fmt) : format(fmt) { }
-    
+
         void Add(ElemData data, unsigned bytepos, char name)
         {
             if(!name) { Add(data, bytepos); return; }
-            
+
             data.SetBytePos(bytepos);
             AddPosData(name, data);
         }
@@ -2660,28 +2660,28 @@ private:
         {
             AddOtherData(name, data);
         }
-        
+
         void SetSize(unsigned nbytes)
         {
             min_size = nbytes;
         }
-        
+
         void PutInto(OpcodeTree& tree, unsigned bytepos=0)
         {
             /* Encodes the data into the opcode tree
              * for optimized retrieval */
-        
+
             // Find out which of the options defines the range
             // for this byte
             bool found=false;
-            
+
             for(list_t::const_iterator p = pos_data.begin(); p != pos_data.end(); ++p)
             {
                 const ElemData& elem = p->second;
                 if(elem.KnowRange(bytepos))
                 {
                     range<unsigned char> r(elem.GetMin(bytepos), elem.GetMax(bytepos));
-                    
+
                     OpcodeTree::maptype::iterator i = tree.data.find(r);
                     if(i == tree.data.end())
                     {
@@ -2704,12 +2704,12 @@ private:
         {
             /* Encodes the data into the character tree
              * for optimized retrieval */
-        
+
             bool found=false;
-            
+
             char c;
             while((c = format[characterpos]) == ' ') ++characterpos;
-            
+
             if(c != '%')
             {
                 StringTree::maptype::iterator i = tree.data.find(c);
@@ -2729,30 +2729,30 @@ private:
             // If there were no specialisations, use the current node.
             if(!found) tree.choices.push_back(*this);
         }
-        
+
         const EventCode::DecodeResult
         Format(unsigned offset, const unsigned char* data, unsigned length,
                EventCode::DecodingState& state) const
         {
             parammap params;
-            
+
             EventCode::DecodeResult result;
-            
+
             result.goto_type = EventCode::goto_none;
-            
+
             unsigned nbytes = 1;
             for(list_t::const_iterator p = pos_data.begin(); p != pos_data.end(); ++p)
             {
                 const char name      = p->first;
                 const ElemData& elem = p->second;
-                
+
                 /* Even if it doesn't have a name, it needs to be decoded
                  * to get the opcode length properly.
                  */
-                
+
                 ElemData::FormatResult
                     tmp = elem.Format(offset, data, length, state);
-                
+
                 if(name)
                 {
                     params[name] = tmp.text;
@@ -2769,7 +2769,7 @@ private:
             {
                 const char name      = p->first;
                 const ElemData& elem = p->second;
-                
+
                 if(!name)
                 {
                     fprintf(stderr, "No name on 'other_data'?\n");
@@ -2777,12 +2777,12 @@ private:
                 }
                 params[name] = elem.Format();
             }
-            
+
             result.code   = FormatString(format, params);
-            result.nbytes = nbytes; 
+            result.nbytes = nbytes;
             return result;
         }
-        
+
         const EventCode::EncodeResult
         Scan(const std::wstring& cmd, bool goto_backward,
              EventCode::EncodingState& state) const
@@ -2792,9 +2792,9 @@ private:
             {
                 throw false;
             }
-            
+
             EventCode::EncodeResult result;
-            
+
             /* For the parameters which have no byte representation,
              * verify the values of the parameters match.
              */
@@ -2803,7 +2803,7 @@ private:
             {
                 const char name      = p->first;
                 const ElemData& elem = p->second;
-                
+
                 if(!name)
                 {
                     fprintf(stderr, "No name on 'other_data'?\n");
@@ -2811,7 +2811,7 @@ private:
                 }
                 elem.Scan(params[name], goto_backward);
             }
-            
+
             /* Encode all parameters that contribute to the
              * byte representation.
              */
@@ -2819,11 +2819,11 @@ private:
             {
                 const char name      = p->first;
                 const ElemData& elem = p->second;
-                
+
                 ElemData::ScanResult tmp = name
                     ? elem.Scan(params[name], goto_backward, state)
                     : elem.Scan(goto_backward);
-                
+
                 if(tmp.is_goto)
                 {
                     result.goto_position = tmp.targetpos;
@@ -2833,11 +2833,11 @@ private:
                 {
                     result.result.resize(needed_size);
                 }
-                
+
                 for(unsigned a=0; a<tmp.bytes.size(); ++a)
                     result.result[tmp.targetpos+a] |= tmp.bytes[a];
             }
-            
+
             return result;
         }
     private:
@@ -2849,7 +2849,7 @@ private:
         {
             other_data.push_back(std::make_pair(name, elem));
         }
-        
+
     private:
         const char* format;
         unsigned min_size;
@@ -2857,18 +2857,18 @@ private:
         list_t pos_data;
         list_t other_data;
     };
-    
+
 private:
     typedef autoptr<class OpcodeTree> OpcodeTreePtr;
     class OpcodeTree: public ptrable
     {
     public:
         OpcodeTree() { }
-    
+
         typedef simple_rangemap<unsigned char, OpcodeTreePtr> maptype;
         maptype data;
         std::vector<Command> choices;
-        
+
         void Optimize()
         {
             /* Optimize all subtrees */
@@ -2890,7 +2890,7 @@ private:
                 }
             }
         }
-        
+
         void Dump(unsigned indent=0) const
         {
             if(!choices.empty())
@@ -2906,7 +2906,7 @@ private:
                 int lower = i->first.lower, upper = i->first.upper;
                 const OpcodeTreePtr& p = i->second;
                 const OpcodeTree& subtree = *p;
-                
+
                 std::fprintf(stderr, "%*s", indent, "");
                 std::fprintf(stderr, "subtree %02X-%02X:\n", lower,upper);
                 subtree.Dump(indent+2);
@@ -2919,11 +2919,11 @@ private:
     {
     public:
         StringTree() { }
-        
+
         typedef std::map<char, StringTreePtr> maptype;
         maptype data;
         std::vector<Command> choices;
-        
+
         void Optimize()
         {
             /* Optimize all subtrees */
@@ -2945,7 +2945,7 @@ private:
                 }
             }
         }
-        
+
         void Dump(unsigned indent=0) const
         {
             if(!choices.empty())
@@ -2960,14 +2960,14 @@ private:
             {
                 const StringTreePtr& p = i->second;
                 const StringTree& subtree = *p;
-                
+
                 std::fprintf(stderr, "%*s", indent, "");
                 std::fprintf(stderr, "subtree %c:\n", i->first ? i->first : '*');
                 subtree.Dump(indent+2);
             }
         }
     };
-    
+
 private:
     void FindChoices_aux
         (const OpcodeTree& tree,
@@ -2977,7 +2977,7 @@ private:
         if(length > 0)
         {
             unsigned char opcode = data[0];
-            
+
             OpcodeTree::maptype::const_iterator i;
             for(i = tree.data.begin(); i != tree.data.end(); ++i)
             {
@@ -3011,7 +3011,7 @@ private:
                 ++cmd; --length;
                 goto redo;
             }
-            
+
             StringTree::maptype::const_iterator i = tree.data.find(ch);
             if(i != tree.data.end())
             {
@@ -3028,7 +3028,7 @@ private:
         FindChoices_aux(STRTree, choices, cmd.data(), cmd.size());
         return choices;
     }
-    
+
 public:
     EvCommands()
     {
@@ -3038,14 +3038,14 @@ public:
         //OPTree.Dump();
         //STRTree.Dump();
     }
-    
+
     const EventCode::DecodeResult
     Format(unsigned offset, const unsigned char* data, unsigned maxlength,
            EventCode::DecodingState& State) const
     {
         std::list<Command> choices = FindChoices(data, maxlength);
         std::list<Command>::const_iterator i;
-        
+
         for(i=choices.begin(); i!=choices.end(); ++i)
         {
             try
@@ -3059,35 +3059,35 @@ public:
         std::string eep;
         for(unsigned a=0; a<6 && a<maxlength; ++a)
             eep += format(" %02X", data[a]);
-        
+
         fprintf(stderr, "No choices for %s\n", eep.c_str());
         throw false;
     }
-    
+
     const EventCode::EncodeResult
     Scan(const std::wstring& cmd, bool goto_backward,
          EventCode::EncodingState& State) const
     {
         std::list<Command> choices = FindChoices(cmd, goto_backward);
         std::list<Command>::const_iterator i;
-        
+
         EventCode::EncodeResult result;
         bool first=true;
-        
+
         //fprintf(stderr, "%u choices for '%s'...\n", choices.size(), WstrToAsc(cmd).c_str());
-        
+
         /* TODO: Thinkable speed optimization:
          *    Sort the choices in the order of expected length
          *    and pick the first one that works.
          */
-        
+
         for(i=choices.begin(); i!=choices.end(); ++i)
         {
             try
             {
                 EventCode::EncodeResult tmp = i->Scan(cmd, goto_backward, State);
                 //fprintf(stderr, "'%s' ok\n", WstrToAsc(cmd).c_str());
-                
+
                 if(first || tmp.result.size() < result.result.size())
                 {
                     result = tmp;
@@ -3105,7 +3105,7 @@ public:
         }
         return result;
     }
-    
+
 private:
     OpcodeTree OPTree;
     StringTree STRTree;

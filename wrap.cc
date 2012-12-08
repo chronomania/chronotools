@@ -11,17 +11,17 @@
 const ctstring insertor::WrapDialogLines(const ctstring &dialog) const
 {
     const ctstring &input = dialog;
-    
+
     // Standard defines that this'll be initialized upon the first call.
     static unsigned MaxTextWidth   = GetConf("wrap", "maxtextwidth");
     static const bool verify_wraps = GetConf("wrap", "verify_wraps");
-    
+
     FILE *log = GetLogFile("wrap", "log_wraps");
-    
+
     unsigned row=0, col=0;
-    
+
     ctstring result;
-    
+
     static const unsigned char spacechar = getctchar(' ', cset_12pix);
     static const unsigned char colonchar = getctchar(':', cset_12pix);
     static const unsigned char eightchar = getctchar('8', cset_12pix);
@@ -30,27 +30,27 @@ const ctstring insertor::WrapDialogLines(const ctstring &dialog) const
     unsigned space3width = (GetFont12width( spacechar ) ) * 3;
     unsigned num8width   = (GetFont12width( eightchar ) );
     unsigned w5width     = (GetFont12width( dblw_char ) ) * 5;
-    
+
     const unsigned fontbegin = get_font_begin();
     //const unsigned dictend   = fontbegin;
 
     unsigned wrappos = 0;
     unsigned wrapcol = 0;
-    
+
     bool wraps_happened = false;
     bool wrap_with_indent = false;
-    
+
     bool linelength_error = false;
     bool linecount_error = false;
-    
+
     for(unsigned a=0; a<input.size(); ++a)
     {
         ctchar c = input[a];
-        
+
         if(c == spacechar)
         {
             // MessageWorking(); - too much slowdown
-            
+
             if(!col) wrap_with_indent = true;
             wrappos = result.size();
             wrapcol = col;
@@ -145,7 +145,7 @@ const ctstring insertor::WrapDialogLines(const ctstring &dialog) const
                 col,row,DispString(result).c_str());
             */
             wraps_happened = true;
-            
+
             col -= wrapcol;
             if(wrap_with_indent)
             {
@@ -167,12 +167,12 @@ const ctstring insertor::WrapDialogLines(const ctstring &dialog) const
         if(row >= 4) linecount_error = true;
         if(col >= MaxTextWidth) linelength_error = true;
     }
-    
+
     if(linecount_error || linelength_error)
     {
         MessageTooLongText(input, result);
     }
-    
+
     if(wraps_happened)
     {
         if(log)
@@ -191,7 +191,7 @@ const ctstring insertor::WrapDialogLines(const ctstring &dialog) const
             result = WrapDialogLines(result);
         }
     }
-    
+
 #if 0
     if(log)
     {

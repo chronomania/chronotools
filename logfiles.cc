@@ -27,7 +27,7 @@ public:
         setup_t setup(sect, key);
         handles::const_iterator i = data.find(setup);
         if(i != data.end()) return i->second;
-        
+
         std::FILE *result = 0;
         std::wstring fn = GetConf(sect, key);
         if(!fn.empty())

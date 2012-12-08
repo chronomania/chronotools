@@ -34,13 +34,13 @@ unsigned freespacemap::Find(unsigned page, unsigned length)
 
     unsigned bestscore = 0;
     unsigned bestpos   = NOWHERE;
-    
+
     for(freespaceset::const_iterator reci = spaceset.begin();
         reci != spaceset.end(); ++reci)
     {
         const unsigned recpos = reci->lower;
         const unsigned reclen = reci->upper - recpos;
-        
+
         if(reclen == length)
         {
             bestpos = recpos;
@@ -52,10 +52,10 @@ unsigned freespacemap::Find(unsigned page, unsigned length)
             // Too small, not good.
             continue;
         }
-        
+
         // The smaller, the better.
         unsigned score = 0x7FFFFFF - reclen;
-        
+
         if(score > bestscore)
         {
             bestscore = score;
@@ -78,9 +78,9 @@ unsigned freespacemap::Find(unsigned page, unsigned length)
         }
         return NOWHERE;
     }
-    
+
     spaceset.erase(bestpos, bestpos+length);
-    
+
     return bestpos;
 }
 
@@ -94,7 +94,7 @@ void freespacemap::DumpPageMap(unsigned pagenum) const
     }
 
     const freespaceset &spaceset = mapi->second;
-    
+
     fprintf(stderr, "Map of page %02X:\n", pagenum);
     for(freespaceset::const_iterator
         reci = spaceset.begin(); reci != spaceset.end(); ++reci)
@@ -121,9 +121,9 @@ void freespacemap::VerboseDump() const
         {
             unsigned recpos = reci->lower;
             unsigned reclen = reci->upper - recpos;
-            
+
             unsigned pos = (page << 16) | recpos;
-            
+
             MarkFree(pos, reclen, L"free");
         }
     }
@@ -217,9 +217,9 @@ void freespacemap::Del(unsigned page, unsigned begin, unsigned length)
 {
     iterator i = find(page);
     if(i == end()) return;
-    
+
     freespaceset &spaceset = i->second;
-    
+
     spaceset.erase(begin, begin+length);
 }
 void freespacemap::Del(unsigned longaddr, unsigned length)
@@ -250,22 +250,22 @@ bool freespacemap::Organize(vector<freespacerec> &blocks, unsigned pagenum)
         }
         return true;
     }
-    
+
     const freespaceset &pagemap = i->second;
-    
+
     vector<unsigned> items;
     vector<unsigned> holes;
     vector<unsigned> holeaddrs;
-    
+
     items.reserve(blocks.size());
-    
+
     unsigned totalsize = 0;
     for(unsigned a=0; a<blocks.size(); ++a)
     {
         totalsize += blocks[a].len;
         items.push_back(blocks[a].len);
     }
-    
+
     unsigned totalspace = 0;
     holes.reserve(pagemap.size());
     holeaddrs.reserve(pagemap.size());
@@ -277,7 +277,7 @@ bool freespacemap::Organize(vector<freespacerec> &blocks, unsigned pagenum)
         holes.push_back(reclen);
         holeaddrs.push_back(recpos);
     }
-    
+
     if(totalspace < totalsize)
     {
         if(!quiet)
@@ -289,15 +289,15 @@ bool freespacemap::Organize(vector<freespacerec> &blocks, unsigned pagenum)
                 pagenum, totalsize, totalspace);
         }
     }
-    
+
     vector<unsigned> organization = PackBins(holes, items);
-    
+
     bool Errors = false;
     for(unsigned a=0; a<blocks.size(); ++a)
     {
         unsigned itemsize = blocks[a].len;
         unsigned holeid   = organization[a];
-        
+
         unsigned spaceptr = NOWHERE;
         if(holeid < holes.size()
         && holes[holeid] >= itemsize)
@@ -331,9 +331,9 @@ bool freespacemap::OrganizeToAnyPage(vector<freespacerec> &blocks)
     vector<unsigned> holes;
     vector<unsigned> holepages;
     vector<unsigned> holeaddrs;
-    
+
     items.reserve(blocks.size());
-    
+
     unsigned totalsize = 0;
     for(unsigned a=0; a<blocks.size(); ++a)
     {
@@ -356,7 +356,7 @@ bool freespacemap::OrganizeToAnyPage(vector<freespacerec> &blocks)
             holepages.push_back(pagenum);
         }
     }
-    
+
     if(totalspace < totalsize)
     {
         if(!quiet)
@@ -368,16 +368,16 @@ bool freespacemap::OrganizeToAnyPage(vector<freespacerec> &blocks)
                 totalsize, totalspace);
         }
     }
-    
+
     vector<unsigned> organization = PackBins(holes, items);
-    
+
     unsigned ErrorSize=0;
     unsigned ErrorCount=0;
     for(unsigned a=0; a<blocks.size(); ++a)
     {
         unsigned itemsize = blocks[a].len;
         unsigned holeid   = organization[a];
-        
+
         unsigned spaceptr = NOWHERE;
         if(holes[holeid] >= itemsize)
         {
@@ -409,10 +409,10 @@ bool freespacemap::OrganizeToAnySamePage(vector<freespacerec> &blocks, unsigned 
     // To do:
     //   1. Pick a page where they all fit the best
     //   2. Organize there.
-    
+
     freespacemap saved_this = *this;
     quiet = true;
-    
+
     unsigned bestpagenum = 0x3F; /* Guess */
     unsigned bestpagesize = 0;
     bool first = true;
@@ -420,17 +420,17 @@ bool freespacemap::OrganizeToAnySamePage(vector<freespacerec> &blocks, unsigned 
     for(const_iterator i=begin(); i!=end(); ++i)
     {
         unsigned pagenum = i->first;
-        
+
         vector<freespacerec> tmpblocks = blocks;
-        
+
         if(!Organize(tmpblocks, pagenum))
         {
             // candidate!
-            
+
             // Can't use previous reference because things have changed
             // FIXME: Is this really the case?
             const freespaceset &pagemap = find(pagenum)->second;
-            
+
             unsigned freesize = 0;
             for(freespaceset::const_iterator j=pagemap.begin();
                 j!=pagemap.end(); ++j)
@@ -445,15 +445,15 @@ bool freespacemap::OrganizeToAnySamePage(vector<freespacerec> &blocks, unsigned 
                 bestpagesize = freesize;
                 first = false;
             }
-            
+
             candidates = true;
         }
     }
-    
+
     *this = saved_this;
 
     page = bestpagenum;
-    
+
     if(!candidates)
     {
         fprintf(stderr, "Warning: All pages seem to be too small\n");
@@ -471,7 +471,7 @@ unsigned freespacemap::FindFromAnyPage(unsigned length)
     for(const_iterator i=begin(); i!=end(); ++i)
     {
         const freespaceset &pagemap = i->second;
-        
+
         for(freespaceset::const_iterator j=pagemap.begin();
             j!=pagemap.end(); ++j)
         {
@@ -500,12 +500,12 @@ unsigned freespacemap::FindFromAnyPage(unsigned length)
 void freespacemap::OrganizeO65linker(O65linker& objects, const SegmentSelection seg)
 {
     Compact();
-    
+
     std::vector<unsigned> sizes = objects.GetSizeList(seg);
     std::vector<unsigned> addrs = objects.GetAddrList(seg);
-    
+
     std::vector<LinkageWish> linkages = objects.GetLinkageList(seg);
-    
+
     std::map<unsigned, std::vector<unsigned> > destinies;
     std::map<unsigned, std::vector<unsigned> > groups;
     std::vector<unsigned> items;
@@ -531,12 +531,12 @@ void freespacemap::OrganizeO65linker(O65linker& objects, const SegmentSelection 
                 /* No linking, just convert the address, */
                 /* And ensure we won't overwrite it */
                 Del(addrs[a], sizes[a]);
-                
+
                 addrs[a] = ROM2SNESaddr(addrs[a]);
                 break;
             }
         }
-        
+
     /* FIRST link those which require specific pages */
 
     /* Link each page. */
@@ -545,16 +545,16 @@ void freespacemap::OrganizeO65linker(O65linker& objects, const SegmentSelection 
     {
         const unsigned page = i->first;
         const vector<unsigned>& items = i->second;
-        
+
         //fprintf(stderr, "Linking %u items to page $%02X:\n", items.size(), page);
-        
+
         vector<freespacerec> Organization(items.size());
-        
+
         for(unsigned c=0; c<items.size(); ++c)
             Organization[c].len = sizes[items[c]];
-        
+
         Organize(Organization, page);
-        
+
         for(unsigned c=0; c<items.size(); ++c)
         {
             unsigned addr = Organization[c].pos;
@@ -563,15 +563,15 @@ void freespacemap::OrganizeO65linker(O65linker& objects, const SegmentSelection 
                 addr |= (page << 16);
                 addr = ROM2SNESaddr(addr);
             }
-            
+
             unsigned objno = items[c];
-            
+
             //fprintf(stderr, "%5u: %06X (%s)\n", c, addr, objects.GetName(objno).c_str());
-            
+
             addrs[objno] = addr;
         }
     }
-    
+
     /* SECOND link those which require same pages */
 
     /* Link each group. */
@@ -580,17 +580,17 @@ void freespacemap::OrganizeO65linker(O65linker& objects, const SegmentSelection 
     {
         //const unsigned groupnum = i->first; /* unused */
         const vector<unsigned>& items = i->second;
-        
+
         vector<freespacerec> Organization(items.size());
 
         for(unsigned c=0; c<items.size(); ++c)
             Organization[c].len = sizes[items[c]];
-        
+
         unsigned page = NOWHERE;
         OrganizeToAnySamePage(Organization, page);
-        
+
         //fprintf(stderr, "Linking %u items to page $%02X (group %u)\n", items.size(), page, i->first);
-        
+
         for(unsigned c=0; c<items.size(); ++c)
         {
             unsigned addr = Organization[c].pos;
@@ -600,24 +600,24 @@ void freespacemap::OrganizeO65linker(O65linker& objects, const SegmentSelection 
                 addr = ROM2SNESaddr(addr);
             }
             unsigned objno = items[c];
-            
+
             //fprintf(stderr, "%5u: %06X (%s)\n", c, addr, objects.GetName(objno).c_str());
-            
+
             addrs[objno] = addr;
         }
     }
-    
+
     /* LAST link those which go anywhere */
 
     //fprintf(stderr, "Linking %u items to various addresses\n", items.size());
-    
+
     vector<freespacerec> Organization(items.size());
 
     for(unsigned c=0; c<items.size(); ++c)
         Organization[c].len = sizes[items[c]];
 
     OrganizeToAnyPage(Organization);
-    
+
     for(unsigned c=0; c<items.size(); ++c)
     {
         unsigned addr = Organization[c].pos;
@@ -626,12 +626,12 @@ void freespacemap::OrganizeO65linker(O65linker& objects, const SegmentSelection 
             addr = ROM2SNESaddr(addr);
         }
         unsigned objno = items[c];
-        
+
         //fprintf(stderr, "%5u: %06X (%s)\n", c, addr, objects.GetName(objno).c_str());
-        
+
         addrs[objno] = addr;
     }
-    
+
     /* Everything done. */
 
     objects.PutAddrList(addrs, seg);

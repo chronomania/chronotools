@@ -148,6 +148,7 @@ DEPDIRS = utils/
 # VERSION 1.15.4 adds packedblob support and fixes compilation on certain platforms.
 # VERSION 1.15.5 improves compilability on more modern gcc versions
 # VERSION 1.15.5.1 improves compilability on more modern gcc versions
+# VERSION 1.15.6 adds rawblob and spriteblob support (thanks Michal Ziabkowski)
 
 #OPTIM=-Os
 # -fshort-enums
@@ -164,7 +165,7 @@ CFLAGS += -I/usr/include/slang
 LDFLAGS += -L/usr/lib/slang
 
 
-VERSION=1.15.5.1
+VERSION=1.15.6
 ARCHFILES=utils/xray.cc utils/xray.h \
           utils/viewer.c utils/cp437-8x8 \
           utils/vwftest.cc \

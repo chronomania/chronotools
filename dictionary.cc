@@ -26,7 +26,7 @@ using namespace std;
 Jos selvitetään N kerralla:
   Kuinka monta erilaista N stringin yhdistelmää saadaan 1200000:sta...
 Valtava määrä.
-  
+
 */
 
 namespace
@@ -36,10 +36,10 @@ namespace
         // Superstrings should be placed first!
         if(a.find(b) != a.npos) return true;
         if(b.find(a) != b.npos) return false;
-        
+
         if(a.size() > b.size())return true;
         if(a.size() < b.size())return false;
-        
+
         return a < b;
     }
 
@@ -83,7 +83,7 @@ namespace
         {
             const ctstring& script = page.script;
             const ctstring str = script.substr(pos, len);
-            
+
 #if CAREFUL_TESTING
             bool needs_testing = false;
             for(unsigned b=1; b<str.size(); ++b)
@@ -105,31 +105,31 @@ namespace
                 */
                 lastpos_t& posmap = positions[page.pagenum];
                 lastpos_t::const_iterator i = posmap.find(str);
-                
+
                 if(i != posmap.end() && pos < i->second)  return;
-                
+
                 posmap[str] = pos + len;
             }
 #endif
             data[str] += page.urgency;
         }
-        
+
         void Finish()
         {
         }
-        
+
         typedef data_t::iterator iterator;
         typedef data_t::const_iterator const_iterator;
-        
+
         unsigned size() const { return data.size(); }
-        
+
         const iterator begin() { return data.begin(); }
         const iterator end()   { return data.end(); }
         const const_iterator begin() const { return data.begin(); }
         const const_iterator end() const   { return data.end(); }
-        
+
         void erase(iterator i) { data.erase(i); }
-        
+
         void clear()
         {
             data.clear();
@@ -160,7 +160,7 @@ namespace
         {
             return effectless.find(dictword) != effectless.end();
         }
-        
+
         size_t CalcSaving(const ctstring& word, const ctstring& where) const
         {
             size_t saving = 0;
@@ -168,9 +168,9 @@ namespace
             for(size_t a=0; a<where.size(); )
             {
                 size_t b = where.find(word, a);
-                
+
                 if(b == where.npos)break;
-                
+
                 saving += saved_length - 1;
 
                 a = b + word.size();
@@ -195,12 +195,12 @@ namespace
             static const unsigned MaxWordLen       = GetConf("dictionary", "max_word_length");
             static const unsigned MaxReuseCount    = GetConf("dictionary", "max_reuse_count");
             static const unsigned MaxSpacesPerWord = GetConf("dictionary", "max_spaces_per_word");
-            
+
             const unsigned dictbegin = 0x21;
             const unsigned dictend   = get_font_begin();
-            
+
             const ctchar spacechar = getctchar(' ', cset_12pix);
-            
+
             /* Substrings start from each position in the string */
             for(unsigned begin=0; begin<script.size(); ++begin)
             {
@@ -208,17 +208,17 @@ namespace
                 unsigned num_middlespaces = 0;
                 unsigned num_endspaces    = 0;
                 bool has_nonspace = false;
-                
+
                 unsigned maxpos = begin + MaxWordLen;
                 if(maxpos > script.size()) maxpos = script.size();
-                
+
                 // c=string length, b=position
                 for(unsigned length=0, pos=begin; pos<maxpos; ++pos)
                 {
                     ctchar ch = script[pos];
                     /* Dictionary words can't contain [nl] etc */
                     if(ch < dictbegin) break;
-                    
+
                     if(ch < dictend)
                     {
                         // Dictionary keys
@@ -229,7 +229,7 @@ namespace
                     {
                         // Don't allow conjugate-codes in dictionary keys
                         if(Conjugater->IsConjChar(ch)) break;
-                        
+
                         if(ch == spacechar)
                         {
                             if(has_nonspace)
@@ -253,9 +253,9 @@ namespace
                             }
                         }
                     }
-                    
+
                     if(ch >= 0x100) length += 2; else ++length;
-                    
+
                     if(length >= MinWordLen)
                     {
                         /* Cumulate the substring usage counter */
@@ -264,20 +264,20 @@ namespace
                 }
             }
         }
-        
+
     public:
         void MarkAsEffectless(const ctstring& dictword)
         {
             effectless.insert(dictword);
         }
 
-        
+
         const ctstring MakeDictWord(const ctstring& rep_word,
                                     const vector<ctstring>& dict)
         {
             const unsigned dictbegin = 0x21;
             const unsigned dictend   = get_font_begin();
-            
+
             /* dictword = the string to be displayed when the byte is met */
             ctstring dictword;
             for(unsigned a=0; a<rep_word.size(); ++a)
@@ -290,12 +290,12 @@ namespace
             }
             return dictword;
         }
-        
+
         const ctstring MakeReplaceWord(const ctstring& dictword,
                                        const vector<ctstring>& dict)
         {
             const unsigned dictbegin = 0x21;
-            
+
             /* dictword = the string to be displayed when the byte is met */
             ctstring rep_word = dictword;
             for(unsigned d=0; d<dict.size(); ++d)
@@ -305,7 +305,7 @@ namespace
             }
             return rep_word;
         }
-        
+
     public:
         void Do(const PageScriptList& uncompressed_pages,
                 const PageScriptList& compressed_pages,
@@ -315,22 +315,22 @@ namespace
                )
         {
             FILE *log = GetLogFile("dictionary", "outputfn");
-            
+
             const bool UseImproveTest = GetConf("dictionary", "use_improve_test");
-            
+
             const unsigned dictend   = get_font_begin();
-            
+
             // extrachars(0x100-0x2FF) ARE allowed in dictionary keys.
-            
+
             const ctchar spacechar = getctchar(' ', cset_12pix);
-            
+
             fprintf(stderr, " - time used: ");
             for(unsigned a=fprintf(stderr, "%15s",""); a-->0; )putc(8, stderr);
 
             substringtable substrings;
-            
+
             //unsigned pageno=0, pagecount=compressed_pages.size();
-            
+
             /* Find substrings from the compressed script */
             for(PageScriptList::const_iterator
                 i = compressed_pages.begin();
@@ -339,7 +339,7 @@ namespace
             {
                 //double totalpos = (pos + pageno++/(double)pagecount) / scale;
                 //if(totalpos==0.0)totalpos=1e-10;
-                
+
                 unsigned diffsec = (unsigned)(difftime(time(NULL), begintime));
                 // *(1.0/totalpos - 1));
                 for(unsigned a=fprintf(stderr,
@@ -348,23 +348,23 @@ namespace
                           (diffsec/60)%60,
                           diffsec%60);
                     a-->0; )putc(8, stderr);
-            
+
                 const PageScript& page = *i;
                 const ctstring& script = i->script;
-                
+
                 LoadSubstrings(substrings, page, script, Conjugater);
             }
-            
+
             fprintf(stderr, "\r>%7u substrings; ", substrings.size());
-            
+
             ctstring bestword;
-            
+
             /* Now find the substring that has the biggest score */
             if(true)
             {
                 substringtable::const_iterator j;
                 substringtable::const_iterator bestj = substrings.end();
-                
+
                 double bestscore = -1;
                 for(j = substrings.begin();
                     j != substrings.end();
@@ -385,22 +385,22 @@ namespace
                         bestscore = realscore;
                     }
                 }
-            
+
                 /* bestword = the substring to be replaced with one byte */
                 bestword = rep_word = bestj->first;
             }
-            
+
             /* Make it plain text */
             const ctstring dictword = MakeDictWord(bestword, dict);
-            
+
             double bestscore = 0, goodscore = 0;
 
             if(UseImproveTest)
             {
                 fprintf(stderr, "testing '%s'", DispString(dictword).c_str());
-                
+
                 substrings.clear();
-                
+
                 /* Find substrings from the plaintext script */
                 for(PageScriptList::const_iterator
                     i = uncompressed_pages.begin();
@@ -409,40 +409,40 @@ namespace
                 {
                     const PageScript& page = *i;
                     const ctstring& script = i->script;
-                    
+
                     for(size_t a=0;;)
                     {
                         size_t b = script.find(dictword, a);
                         if(b == script.npos) break;
-                        
+
                         //fprintf(stderr, ".");
-                    
+
                         const size_t maxbeg = 3;
                         const size_t maxend = 3;
-                    
+
                         bool begspace = dictword[0] == spacechar;
-                        
+
                         for(size_t beglen=0; ; ++beglen)
                         {
                             if(beglen > b) break;
-                            
+
                             size_t begin  = b-beglen;
                             size_t maxlen = script.size() - (begin + dictword.size());
                             if(maxlen > maxend) maxlen = maxend;
-                            
+
                             if(beglen > 0)
                             {
                                 const ctchar ch = script[b-beglen];
                                 if(ch < dictend) break;
-                                
+
                                 if(Conjugater->IsConjChar(ch)) break;
                                 if(ch == spacechar) begspace = true;
                             }
-                            
+
                             if(begspace && beglen >= maxbeg) break;
-                            
+
                             bool endspace = dictword[dictword.size()-1] == spacechar;
-                            
+
                             size_t length = dictword.size() + beglen;
                             for(size_t endlen=0; ; ++endlen, ++length)
                             {
@@ -453,9 +453,9 @@ namespace
                                     if(Conjugater->IsConjChar(ch)) break;
                                     if(ch == spacechar) endspace = true;
                                 }
-                                
+
                                 if(endspace && endlen >= maxend) break;
-                                
+
                                 /* Cumulate the substring usage counter */
                                 substrings.Collect(page, begin, length);
                             }
@@ -463,9 +463,9 @@ namespace
                         a = b + 1;
                     }
                 }
-                
+
                 fprintf(stderr, "\r%8u neostrings; ", substrings.size());
-                
+
                 list<ctstring> rejected;
 
     #if 1
@@ -473,16 +473,16 @@ namespace
                 for(size_t d=0; d<dict.size(); ++d)
                     rejected.push_back(dict[d]);
     #endif
-                
+
                 /* Now find again the substring that has the biggest score */
                 double bestscore=-1;
                 double goodscore=0;
-                
+
                 if(true)
                 {
                     substringtable::const_iterator j;
                     substringtable::const_iterator bestj = substrings.end();
-                    
+
                     for(j = substrings.begin();
                         j != substrings.end();
                         ++j)
@@ -506,12 +506,12 @@ namespace
                         // Will be replaced by one byte
                         size_t newbytes = 1;
                         size_t saving = oldbytes - newbytes;
-                        
+
                         double realscore = saving * j->second;
 
                         if(word == dictword)
                             goodscore = realscore;
-                        
+
                         if(realscore >= bestscore)
                         {
                             bool exists = false;
@@ -569,7 +569,7 @@ namespace
 
             dict_word = MakeDictWord(rep_word, dict);
             was_extended = dictword != dict_word;
-            
+
             if(was_extended && log)
             {
                 fprintf(log, ";Chose '%s'(%.2f) instead of '%s'(%.2f)\n",
@@ -578,7 +578,7 @@ namespace
                     DispString(dictword).c_str(),
                     goodscore);
             }
-            
+
             was_previously_effectless = WasEffectless(dict_word);
         }
     };
@@ -591,11 +591,11 @@ static void PreloadDict(vector<ctstring>& dict,
 {
     va_list ap;
     va_start(ap, arg);
-    
+
     while(arg)
     {
         dict.push_back(getctstring(arg));
-        
+
         arg = va_arg(ap, const wchar_t *);
     }
     va_end(ap);
@@ -615,9 +615,9 @@ void insertor::RebuildDictionary()
         "Rebuilding the dictionary. This will take probably a long time!\n"
         "> You should take a lunch break or something now.\n"
     );
-    
+
     fprintf(stderr, "> Building script for compression tests... ");
-    
+
     PageScriptList pages, saved_pages;
 
     if(true)
@@ -627,37 +627,37 @@ void insertor::RebuildDictionary()
             i = tmp.begin(); i != tmp.end(); ++i)
         {
             PageScript tmp;
-            
+
             tmp.pagenum   = i->first;
             tmp.script    = i->second;
-            
+
             //tmp.urgency   = 1.0 + (65536 - freespace.Size(tmp.pagenum)) / 65536.0;
             //tmp.urgency   = 1.0 / freespace.Size(tmp.pagenum);
             tmp.urgency   = 1;
-            
+
             //tmp.urgency *= freespace.Count(tmp.pagenum);
 
             pages.push_back(tmp);
         }
     }
-    
+
     saved_pages = pages;
-    
+
     fprintf(stderr, "%u bytes.\n", CalcScriptSize(pages));
-    
+
     const unsigned dictbegin = 0x21;
     const unsigned dictend   = get_font_begin();
 
     const unsigned dict_fullsize = dictend - dictbegin;
-    
+
     Finder Finder;
     Finder.begintime = begintime;
-    
+
     dict.clear();
-    
+
     unsigned num_restarts = 0;
     bool reapply = false;
-    
+
 #if PRELOAD_DICTIONARY_TEST
     PreloadDict(dict,
 L"tä ", L"itä ",
@@ -667,7 +667,7 @@ L"än ",L"   Kyllä.",L"Melchior",L"Kansleri: ",L"ta ",
 L"uningatar",L"an ",L"en ",L"on ",L"in ",
 NULL);
     num_restarts = dict.size();
-    PreloadDict(dict, 
+    PreloadDict(dict,
 L"      ",  L"e ",L"ta",L"in",L"a ",L": ",L"is",L", ",L"en",L"t ",L"i ",
 L"an",L"ä ",L"ll",L"ka",L"er",L"it",L"tä",L"   ",L"va",L"on",L"et",
 L"as",L"o ",L"es",L"tu",L"te",L"ik",L"al",L"ol",L"us",L"ut",L"ha",L"ma",
@@ -681,7 +681,7 @@ NULL);
 
     vector<ctstring> quick_regen;
     hash_map<ctstring, unsigned> latest_gains;
-    
+
     if(log)
     {
         fprintf(log,
@@ -692,20 +692,20 @@ NULL);
             ";------------\n"
                );
     }
-    
+
     while(dict.size() < dict_fullsize)
     {
         fprintf(stderr, "Finding substrs");
-        
+
         if(reapply)
         {
         ReReApply:
             pages = saved_pages;
-            
+
             unsigned prev_prev_saving = 0;
             unsigned prev_saving      = 0;
             ctstring prev_word;
-            
+
             for(unsigned d=0; d<dict.size(); ++d)
             {
                 const ctstring &dictword = dict[d];
@@ -719,7 +719,7 @@ NULL);
                     str_replace_inplace(rep_word, dict[a], replacement);
                 }
                 ctchar replacement = dictbegin + d;
-                
+
                 unsigned saving = 0;
                 PageScriptList::iterator i;
                 for(i=pages.begin(); i!=pages.end(); ++i)
@@ -731,7 +731,7 @@ NULL);
                 }
 
                 latest_gains[dictword] = saving;
-                
+
                 if(log)
                     fprintf(log, ";Applying:%s;saving: %u bytes\n",
                         DispString(dictword).c_str(), saving);
@@ -739,18 +739,18 @@ NULL);
                 if(saving <= CalcSize(dictword))
                 {
                     Finder.MarkAsEffectless(dictword);
-                    
+
                     if(log)
                     {
                         fprintf(log, ";Effectless dictionary word:%s;\n",
                             DispString(dictword).c_str());
                     }
-                    
+
                     if(d < num_restarts) --num_restarts;
                     dict.erase(dict.begin() + d);
                     --d;
                 }
-                
+
                 /* If this word gives way better saving than the previous word */
                 if(d >= 2
                 && prev_saving < saving/2
@@ -762,24 +762,24 @@ NULL);
                         fprintf(log, ";Effectless previous dictionary word:%s;\n",
                             DispString(prev_word).c_str());
                     }
-                    
+
                     --d;
                     if(d < num_restarts) --num_restarts;
                     Finder.MarkAsEffectless(dict[d]);
-                    
+
                     dict.erase(dict.begin() + d);
                     goto ReReApply;
                 }
-                
+
                 prev_prev_saving = prev_saving;
                 prev_saving = saving;
                 prev_word   = dictword;
             }
             reapply = false;
         }
-        
+
         ctstring testee;
-        
+
         if(UseQuickRegen)
             for(unsigned a=0; a<quick_regen.size(); ++a)
             {
@@ -788,7 +788,7 @@ NULL);
 
                 ctchar replacement = dictbegin + dict.size();
                 unsigned saving = 0;
-                
+
                 PageScriptList backup = pages;
                 PageScriptList::iterator i;
                 for(i=pages.begin(); i!=pages.end(); ++i)
@@ -798,18 +798,18 @@ NULL);
                     const unsigned size1 = CalcSize(i->script);
                     saving += size0 - size1;
                 }
-                
+
                 if(saving < latest_gains[dictword])
                 {
                     pages = backup;
-                    
+
                     testee = dictword;
-                    
+
                     fprintf(log,
                         ";Discarding '%s', saving(%u) doesn't match previous(%u)\n",
                         DispString(dictword).c_str(),
                         saving, latest_gains[dictword]);
-                    
+
                     quick_regen.erase(quick_regen.begin(),
                                       quick_regen.begin() + a + 1);
                     break;
@@ -822,16 +822,16 @@ NULL);
                 dict.push_back(dictword);
                 latest_gains[dictword] = saving;
             }
-        
+
         fprintf(stderr, "/%u bytes; %u/%u", (unsigned)CalcScriptSize(pages), (unsigned)dict.size(), (unsigned)dict_fullsize);
 
         Finder.Do(saved_pages, pages,
                   //dict.size(), dict_fullsize,
                   dict, Conjugater);
-        
+
         const ctstring& rep_word = Finder.rep_word;
         const ctstring& dictword = Finder.dict_word;
-        
+
         if(!testee.empty())
         {
             if(dictword != testee)
@@ -840,13 +840,13 @@ NULL);
             }
             testee.clear();
         }
-        
+
         /*
         printf(";Generated:%s;%u bytes\n",
             DispString(dictword).c_str(),
             CalcSize(rep_word));
         */
-        
+
         if(UseRedefine)
         {
             for(unsigned d=1; d<dict.size(); ++d)
@@ -860,24 +860,24 @@ NULL);
                     {
                         --num_restarts;
                     }
-                    
+
                     dict.erase(dict.begin() + d);
                     --d;
 
                     reapply = true;
                 }
         }
-        
+
         if(Finder.was_extended)
             reapply = true;
-        
+
         if(reapply)
         {
             if(log)
                 fprintf(log, ";Generated:%s;%u bytes\n",
                     DispString(dictword).c_str(),
                     CalcSize(rep_word));
-             
+
             if(Finder.was_previously_effectless)
             {
                 dict.push_back(dictword);
@@ -885,7 +885,7 @@ NULL);
             else
             {
                 dict.insert(dict.begin(), dictword);
-            
+
                 if(ManyRestarts)
                 {
                     ++num_restarts;
@@ -895,14 +895,14 @@ NULL);
                     if(log)
                         fprintf(log, ";Restarted the work at %u ($%02X)\n",
                                      restartpos, restartpos+dictbegin);
-                    
+
                     if(UseQuickRegen)
                     {
                         quick_regen.clear();
                         for(unsigned d=restartpos; d<dict.size(); ++d)
                             quick_regen.push_back(dict[d]);
                     }
-                    
+
                     dict.erase(dict.begin() + restartpos, dict.end());
                 }
             }
@@ -910,7 +910,7 @@ NULL);
         else
         {
             ctchar replacement = dictbegin + dict.size();
-            
+
             unsigned saving = 0;
 
             PageScriptList::iterator i;
@@ -921,7 +921,7 @@ NULL);
                 const unsigned size1 = CalcSize(i->script);
                 saving += size0 - size1;
             }
-            
+
             if(log)
                 fprintf(log, ";Applying:%s;saving: %u bytes\n",
                     DispString(dictword).c_str(), saving);
@@ -962,23 +962,23 @@ void insertor::ApplyDictionary()
     {
         MessageWorking();
         const ctstring &dictword = dict[d];
-        
+
         ctstring rep_word = dictword;
         for(unsigned a=0; a<d; ++a)
         {
             ctchar replacement = dictbegin + a;
             str_replace_inplace(rep_word, dict[a], replacement);
         }
-        
+
 #if APPLYD_DUMP
         fprintf(stderr, "'%s%*c",
             DispString(dictword).c_str(),
             dictword.size()-12, '\'');
         if(++col==6){col=0;putc('\n',stderr);}
 #endif
-        
+
         ctchar replacement = dictbegin + d;
-        
+
         for(stringlist::iterator i=strings.begin(); i!=strings.end(); ++i)
         {
             switch(i->type)
@@ -1002,12 +1002,12 @@ void insertor::ApplyDictionary()
 void insertor::DictionaryCompress()
 {
     const bool rebuild_dict = GetConf("dictionary", "rebuild");
-    
+
     const unsigned dictbegin = 0x21;
     const unsigned dictend   = get_font_begin();
 
     const size_t dict_fullsize = dictend - dictbegin;
-    
+
     if(dict_fullsize != dict.size() && !rebuild_dict)
     {
         fprintf(stderr,
@@ -1016,11 +1016,11 @@ void insertor::DictionaryCompress()
             (unsigned) dict_fullsize,
             (unsigned) dict.size());
     }
-    
+
     size_t origsize = CalculateScriptSize();
 
     if(rebuild_dict) RebuildDictionary();
-    
+
     const bool apply_dictionary = GetConf("dictionary", "apply");
     if(apply_dictionary)
     {
@@ -1031,7 +1031,7 @@ void insertor::DictionaryCompress()
 
     size_t dictbytes = 0;
     for(size_t a=0; a<dict.size(); ++a)dictbytes += CalcSize(dict[a]) + 1;
-    
+
     if(apply_dictionary)
     {
         fprintf(stderr, "> Original script size: %u bytes; new script size: %u bytes\n"
@@ -1046,7 +1046,7 @@ void insertor::DictionaryCompress()
     if(rebuild_dict)
     {
         if(!apply_dictionary) resultsize = CalculateScriptSize();
-        
+
         FILE *log = GetLogFile("dictionary", "outputfn");
 
         if(log)
@@ -1074,7 +1074,7 @@ void insertor::DictionaryCompress()
                     DispString(dict[d]).c_str());
             }
             fflush(log);
-            
+
             fprintf(stderr,
                 "Dictionary saved.\n"
                 "* If you want to reuse the generated dictionary, you can copypaste\n"
@@ -1094,22 +1094,22 @@ void insertor::WriteDictionary()
     MessageWritingDict();
 
     PagePtrList tmp;
-    
+
     for(size_t a=0; a<dict.size(); ++a)
     {
         const string s = GetString(dict[a]);
         vector<unsigned char> Buf(s.size() + 1);
         std::copy(s.begin(), s.begin()+s.size(), Buf.begin()+1);
         Buf[0] = s.size();
-        
+
         tmp.AddItem(Buf, a*2);
     }
-    
+
     tmp.Create(*this, "dict", "DICT_TABLE");
-    
+
     objects.AddReference("DICT_TABLE", OffsPtrFrom(GetConst(DICT_OFFSET)));
     objects.AddReference("DICT_TABLE", PagePtrFrom(GetConst(DICT_SEGMENT1)));
     objects.AddReference("DICT_TABLE", PagePtrFrom(GetConst(DICT_SEGMENT2)));
-    
+
     MessageDone();
 }

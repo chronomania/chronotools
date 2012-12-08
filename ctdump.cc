@@ -32,11 +32,12 @@ static void LoadDict()
     DictPtr = (unsigned)SNES2ROMaddr(DictPtr);
 
     unsigned char UpperLimit = ROM[GetConst(CSET_BEGINBYTE)];
-    
-    fprintf(stderr, "Dictionary end byte for this ROM is $%02X...\n", UpperLimit);
+
+    fprintf(stderr, "Dictionary end byte for this ROM is $%02X... Dictionary is at $%06X\n",
+        UpperLimit, DictPtr);
 
     unsigned dictsize = UpperLimit-0x21;  // For A0, that is 127.
-    
+
     /*
      * Note: In the English ROM, dict item 0xA0 is "...", which is never used.
      *       It is not loaded here, and not marked freed.
@@ -45,7 +46,7 @@ static void LoadDict()
 
     // unprotect the dictionary because it will be relocated.
     UnProt(DictPtr, dictsize*2);
-    
+
     MarkFree(DictPtr, dictsize*2, L"dictionary pointers");
 }
 
@@ -53,16 +54,16 @@ static void LoadDict()
 static void Dump12Font()
 {
     unsigned char A0 = ROM[GetConst(CSET_BEGINBYTE)];
-    
+
     unsigned Offset = ROM[GetConst(VWF12_WIDTH_INDEX)];
     if(Offset == 0x20) Offset = 0; // ctfin puts $20 here (sep $20 instead of sbc $A0)
-    
+
     unsigned WidthPtr = ROM[GetConst(VWF12_WIDTH_OFFSET)+0]
                      + (ROM[GetConst(VWF12_WIDTH_OFFSET)+1]<<8)
                      + (ROM[GetConst(VWF12_WIDTH_SEGMENT)] << 16)
                      - Offset;
     WidthPtr = (unsigned)SNES2ROMaddr(WidthPtr);
-    
+
     unsigned FontSeg = SNES2ROMpage(ROM[GetConst(VWF12_SEGMENT)]);
     unsigned FontPtr1 = ROM[GetConst(VWF12_TAB1_OFFSET)+0]
                      + (ROM[GetConst(VWF12_TAB1_OFFSET)+1] << 8)
@@ -70,7 +71,7 @@ static void Dump12Font()
     unsigned FontPtr2 = ROM[GetConst(VWF12_TAB2_OFFSET)+0]
                      + (ROM[GetConst(VWF12_TAB2_OFFSET)+1] << 8)
                      + (FontSeg << 16);
-    
+
 #if 0
     /* Nobody understands this message anyway. */
     if(FontPtr2 != FontPtr1 + 0x1800)
@@ -81,15 +82,15 @@ static void Dump12Font()
             "%06X != %06X+1800\n", FontPtr2, FontPtr1);
     }
 #endif
-    
+
     const std::wstring what = L"12pix font";
-    
+
     Dump12Font(0,0x2FF, FontPtr1, FontPtr2, WidthPtr);
-    
+
     // FIXME: Is it all really free??
     MarkFree(FontPtr1, 256*24, what + L" part 1");
     MarkFree(FontPtr2, 256*12, what + L" part 2");
-    
+
     // FIXME: 0x100 is not the upper limit in all roms!
     MarkFree(WidthPtr+A0, 0x100-A0, what + L" width table");
 }
@@ -113,7 +114,7 @@ namespace
         LoadROM(fp);
         fclose(fp);
     }
-    
+
     void DumpGFX()
     {
     {   static const unsigned pal[16] = {
@@ -197,7 +198,7 @@ namespace
     0xB4C5FF,0xB4EEFF,0x00299C,0xFFFFFF };
         DumpGFX_4bit(0x3FD8E4,  6, 2, L"elemental symbol 3", "elem3.tga", pal); //water
     }
-        
+
     {   static const unsigned pal[16] =
     {
     0x000000,0x080000,0x180808,0x181010,
@@ -277,7 +278,7 @@ namespace
 
     void DumpText()
     {
-        // 
+        //
         BlockComment(L";242 items (note: max length = 11 chars, [symbol] takes 1)\n");
         DumpFStrings(0x0C0B5E, L"items", 11, 242);
         BlockComment(L";242 item descriptions - remember to check for wrapping\n");
@@ -295,17 +296,17 @@ namespace
 
         BlockComment(L";tech/battle related strings\n");
         DumpZStrings(0x0C3AF3, L"bat misc", 4, false);
-        
+
         BlockComment(L";treasure box messages (are found elsewhere too)\n");
         DumpZStrings(0x1EFF00, L"tres msg", 3, false);
-        
+
         BlockComment(L";battle menu label: double member techniques\n");
         DumpFStrings(0x0CFB4C, L"bat", 16, 1);
         BlockComment(L";battle menu label: triple member techniques\n");
         DumpFStrings(0x0CFB5E, L"bat", 16, 1);
         BlockComment(L";battle menu labels. each label is 2 lines.\n");
         DumpFStrings(0x0CFA41, L"bat", 7, 12);
-        
+
         BlockComment(L";252 monster names\n");
         DumpFStrings(0x0C6500, L"mons", 11, 252); // monsters
 
@@ -313,27 +314,27 @@ namespace
         // REFERRED FROM:
         // $C2:567A A2 00 F4    LDX #$F400
         // $C2:5680 A9 C6       LDA #$C6
-        
+
         //DumpZStrings(0x06F400, L"places", 112, false);
         DumpRZStrings(L"places", 112, false,
                       '^', 0x025681,
                       '!', 0x02567B,
                       0);
-        
+
         BlockComment(L";era list\n");
         // REFERRED FROM:
         // $C2:D3D4 A2 96 D3    LDX #$D396
         // $C2:D3DA A9 FF       LDA #$FF
-        
+
         //DumpZStrings(0x3FD396, L"eraes", 8, false);
         DumpRZStrings(L"eraes", 8, false,
                       '^', 0x02D3DB,
                       '!', 0x02D3D5,
                       0);
-        
+
         BlockComment(L";episode list\n");
         DumpZStrings(0x3FD03E, L"eps", 27, false);
-        
+
         BlockComment(L";battle messages, part 1 (remember to check for wrapping)\n");
         // REFERRED FROM:
         // $CD:01B6 A2 11 EF    LDX #$EF11
@@ -347,14 +348,14 @@ namespace
                       '^', 0x0D02FA,
                       '!', 0x0D02F1,
                       0);
-        
+
         BlockComment(L";battle messages, part 2 (remember to check for wrapping)\n");
         DumpZStrings(0x0CCBC9, L"bat", 227, false);
-        
+
         BlockComment(L";600ad (castle, masa+mune, naga-ette)\n"
                      L";12kbc daltonstuff\n");
         DumpMZStrings(0x18D000, L"dialog", 78); //ok!
-        
+
         BlockComment(L";65Mbc\n");
         DumpMZStrings(0x18DD80, L"dialog", 254); //ok!
 
@@ -362,13 +363,13 @@ namespace
                      L";65Mbc azalastuff\n"
                      L";slideshow-ending\n");
         DumpMZStrings(0x1EC000, L"dialog", 187); //ok!
-        
+
         BlockComment(L";1000ad (towns, castle)\n"
                      L";600ad (towns)\n"
                      L";2300ad (factory)\n");
         DumpMZStrings(0x1EE300, L"dialog", 145); //ok!
 
-        BlockComment(L";1000ad (Lucca's home)\n" 
+        BlockComment(L";1000ad (Lucca's home)\n"
                      L";2300ad (factory)\n"
                      L";1000ad (rainbow shell trial)\n");
         DumpMZStrings(0x36A000, L"dialog", 106); //ok!
@@ -394,16 +395,16 @@ namespace
 
         BlockComment(L";end of time (gaspar's stories, Spekkio etc)\n");
         DumpMZStrings(0x374AE0, L"dialog", 178); //ok!
-        
+
         BlockComment(L";1999ad Lavos scenes\n");
         DumpMZStrings(0x374C44, L"dialog", 179); //ok!
-        
+
         BlockComment(L";12kbc (blackbird scenes)\n");
         DumpMZStrings(0x374DAA, L"dialog", 187); //ok!
 
         BlockComment(L";600ad castle scenes\n");
         DumpMZStrings(0x374F20, L"dialog", 244); //ok!
-        
+
         BlockComment(L";1000ad castle scenes\n");
         DumpMZStrings(0x375108, L"dialog", 175); //ok!
 
@@ -420,7 +421,7 @@ namespace
                      L";1000ad (Cyrus stuff)\n"
                      L";Black Omen\n");
         DumpMZStrings(0x384A50, L"dialog", 166); //ok!
-        
+
         BlockComment(L";600ad (Cathedral, other indoors)\n"
                      L";12kbc (out- and indoors)\n");
         DumpMZStrings(0x39B000, L"dialog", 197); //ok!
@@ -439,14 +440,14 @@ namespace
                      L";12kbc\n"
                      L";2300ad (death's peak)\n");
         DumpMZStrings(0x3CBB96, L"dialog", 196); //ok!
-        
+
 //        BlockComment(L";reptite ending"); // ASCII TEXT.
 //        DumpMZStrings(0x3DA000, L"dialog", 256);
 
         BlockComment(L";Dreamteam etc\n"
                      L";Forest scene\n");
         DumpMZStrings(0x3F4460, L"dialog", 81); //ok!
-        
+
         BlockComment(L";12kbc cities\n");
         DumpMZStrings(0x3F5860, L"dialog", 85); //ok!
 
@@ -456,8 +457,8 @@ namespace
 
         BlockComment(L";battle tutorials, Zeal stuff, fair stuff\n");
         DumpMZStrings(0x3F8400, L"dialog", 39); //ok!
-        
-        BlockComment(L";all kind of screens - be careful when editing.\n" 
+
+        BlockComment(L";all kind of screens - be careful when editing.\n"
                      L";These are the special symbols used here:\n"
                      L";  [next]      = jumps to the next column\n"
                      L";  [goto,w]    = jumps to the specified display address\n"
@@ -481,10 +482,10 @@ namespace
 
         BlockComment(L";some misc prompts\n");
         DumpZStrings(0x3FCF3B, L"prompts", 7);
-        
+
         BlockComment(L";configuration screen strings\n");
         DumpZStrings(0x3FD3FE, L"cfg", 50, false);
-        
+
 /*
         BlockComment(L";This block initializes some of the game RAM.\n"
                      L";It is compressed as whole, and thus requires the whole\n"
@@ -510,24 +511,24 @@ namespace
         DumpFStrings(0x3FD55E, L"buttons", 1, 1);
         DumpFStrings(0x3FD560, L"buttons", 1, 1);
     }
-    
+
     void DumpEvents()
     {
         const ConfParser::ElemVec& elems = GetConf("dumper", "dump_events").Fields();
         for(unsigned a=0; a<elems.size(); a += 1)
         {
             unsigned evno = elems[a];
-            
+
             /* Ignore non-existing events */
             if(evno >= 0x66 && evno <= 0x6E) continue;
             if(evno >= 0xE7 && evno <= 0xEB) continue;
             if(evno >=0x140 && evno <=0x142) continue;
             /* Ignore broken event (can not be dumped) */
             if(evno == 0x176) continue;
-            
+
             std::string comment = format(";*** Event %s\n", LocationEventNames[evno]);
             std::string evname  = format("event_%03X", evno);
-            
+
             BlockComment(AscToWstr(comment));
             MessageBeginDumpingEvent(evno);
             DumpEvent(GetConst(EVENT_TABLE_ADDR) + evno*3, AscToWstr(evname));
@@ -545,11 +546,11 @@ namespace
 int main(int argc, const char* const* argv)
 {
     SelectENGconst();
-    
+
     fprintf(stderr,
         "Chrono Trigger script dumper version "VERSION"\n"
         "Copyright (C) 1992,2005 Bisqwit (http://iki.fi/bisqwit/)\n");
-    
+
     Symbols.Load();
 
     if(argc != 2)
@@ -560,9 +561,9 @@ int main(int argc, const char* const* argv)
         );
         return -1;
     }
-    
+
     LoadROM(argv[1]);
-    
+
     OpenScriptFile(scriptoutfile);
 
     PutAscii(
@@ -610,11 +611,11 @@ int main(int argc, const char* const* argv)
         L";  *eNN  = location event - pointed from NN (base62)\n"
         L"\n"
           );
-    
+
     LoadDict();
-    
+
     fprintf(stderr, "Creating %s (all text content)...\n", scriptoutfile);
-    
+
     BlockComment(L";dictionary, used for compression. don't try to translate it.\n");
 
     DumpDict();
@@ -622,7 +623,7 @@ int main(int argc, const char* const* argv)
     DumpGFX();
     DumpText();
     DumpEvents();
-    
+
     FindEndSpaces();
 
     BlockComment(L";Next comes the map of free space in the ROM.\n"
@@ -633,13 +634,13 @@ int main(int argc, const char* const* argv)
     ListSpaces();
 
     PutAscii(L";end of free space list\n");
-    
+
     CloseScriptFile();
-    
+
     ShowProtMap();
-    
+
     fprintf(stderr, "%-60s\n", "All done");
-    
+
 #if 0
     scriptout = fopen(scriptoutfile, "rt");
     for(;;)
@@ -651,6 +652,6 @@ int main(int argc, const char* const* argv)
     fclose(scriptout);
     remove(scriptoutfile);
 #endif
-    
+
     return 0;
 }

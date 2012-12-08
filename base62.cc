@@ -10,9 +10,9 @@ const std::string EncodeBase62(unsigned n, unsigned min_digits)
         if(dig < 10) ch = '0' + dig;
         else if(dig < 36) ch = 'A' + (dig-10);
         else ch = 'a' + (dig-36);
-        
+
         result.insert(result.begin(), ch);
-        
+
         n /= 62;
     }
     while(result.size() < min_digits) result.insert(result.begin(), '0');

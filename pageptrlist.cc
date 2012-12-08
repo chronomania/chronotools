@@ -12,7 +12,7 @@ using namespace std;
 void PagePtrList::Combine(Data& a, const Data& b, unsigned offset) const
 {
     // Item "a" will eat item "b".
-    
+
     for(std::list<Reference>::const_iterator
         i = b.refs.begin(); i != b.refs.end(); ++i)
     {
@@ -63,50 +63,50 @@ namespace
 void PagePtrList::Combine()
 {
     items.sort(PagePtrListFriend::ItemLengthCompare);
-    
+
 #if 0
     unsigned n = 0, c = 0, t = 0;
 #endif
-    
+
     for(list<Data>::iterator a = items.begin(); a != items.end(); ++a)
     {
         Data& A = *a;
-        
+
         MessageWorking();
-        
+
 #if 0
         t += A.data.size();
 #endif
-        
+
         list<Data>::iterator next=a; ++next;
         while(next != items.end())
         {
             list<Data>::iterator b = next++;
             Data& B = *b;
-            
+
             const vector<unsigned char>& Haystack = A.data;
             const vector<unsigned char>& Needle   = B.data;
-            
+
             vector<unsigned char>::const_iterator
                 pos = std::search(Haystack.begin(), Haystack.end(),
                                   Needle.begin(),   Needle.end());
-            
+
             if(pos != Haystack.end())
             {
                 unsigned int_pos = pos - Haystack.begin();
-            
+
 #if 0
                 ++n;
                 c += Needle.size();
 #endif
-                
+
                 Combine(A, B, int_pos);
-                
+
                 items.erase(b);
             }
         }
     }
-    
+
 #if 0
     fprintf(stderr, "\n%u/%u strings combined, saving %u/%u bytes\n",
         n, items.size(), c, t);
@@ -153,7 +153,7 @@ const vector<unsigned char> PagePtrList::GetS() const
 struct PagePtrList::PagePtrInfo
 {
     enum { has_page, has_base, anonymous } type;
-    
+
     unsigned char page;
     unsigned base;
 };
@@ -166,7 +166,7 @@ void PagePtrList::Create(insertor& ins,
     PagePtrInfo info;
     info.type     = PagePtrInfo::has_page;
     info.page     = page;
-    
+
     Create(ins, what, tablename, info);
 }
 
@@ -180,7 +180,7 @@ void PagePtrList::Create(insertor& ins,
     info.base     = original_address;
 
     Create(ins, what, tablename,info);
-           
+
 }
 
 void PagePtrList::Create(insertor& ins,
@@ -191,7 +191,7 @@ void PagePtrList::Create(insertor& ins,
     info.type     = PagePtrInfo::anonymous;
 
     Create(ins, what, tablename,info);
-           
+
 }
 
 void PagePtrList::Create(insertor& ins,
@@ -200,9 +200,9 @@ void PagePtrList::Create(insertor& ins,
                          const PagePtrInfo& info)
 {
     Combine();
-    
+
     LinkageWish wish;
-    
+
     switch(info.type)
     {
         case PagePtrInfo::has_page:
@@ -213,30 +213,30 @@ void PagePtrList::Create(insertor& ins,
             wish.SetLinkageGroup(ins.objects.CreateLinkageGroup());
             break;
     }
-    
+
     map<unsigned short, string> NamedRefs;
-    
+
     const string objname = what + " data";
 
     for(list<Data>::const_iterator a = items.begin(); a != items.end(); ++a)
     {
         MessageWorking();
-        
+
         const Data& d = *a;
         if(d.data.empty()) continue;
-        
+
         O65 tmp;
         tmp.LoadSegFrom(CODE, d.data);
-        
+
         string detail = "";
-        
+
         for(std::list<Reference>::const_iterator
             i = d.refs.begin(); i != d.refs.end(); ++i)
         {
             const Reference& ref = *i;
-            
+
             string name;
-            
+
             switch(info.type)
             {
                 case PagePtrInfo::has_page:
@@ -249,13 +249,13 @@ void PagePtrList::Create(insertor& ins,
                     name = CreateRefName();
                     break;
             }
-            
+
             tmp.DeclareGlobal(CODE, name, ref.offset);
             NamedRefs[ref.ptraddr] = name;
-            
+
             detail += ' ';
             detail += name;
-            
+
 #if 0
             for(unsigned a=0; a<d.data.size(); ++a)
             {
@@ -263,23 +263,23 @@ void PagePtrList::Create(insertor& ins,
             }
 #endif
         }
-        
+
         ins.objects.AddObject(tmp, objname + detail, wish);
     }
-    
+
     for(map<unsigned short, string>::const_iterator
         i = NamedRefs.begin(); i != NamedRefs.end(); )
     {
         MessageWorking();
-        
+
         //fprintf(stderr, "Now: %u\t%s\n", i->first, i->second.c_str());
 
         O65 tmp;
-        
+
         unsigned first = i->first, prev = first;
-        
+
         map<unsigned short, string>::const_iterator last;
-        
+
         unsigned n=1;
         for(last=i, prev=first; ++last != NamedRefs.end(); ++n, prev = last->first)
         {
@@ -287,13 +287,13 @@ void PagePtrList::Create(insertor& ins,
         }
 
         tmp.Resize(CODE, n * 2);
-        
+
         for(unsigned a=0; a<n; ++a)
         {
             tmp.DeclareWordRelocation(CODE, i->second, a*2);
             ++i;
         }
-        
+
         if(!tablename.empty()) tmp.DeclareGlobal(CODE, tablename, 0);
 
         switch(info.type)
@@ -331,11 +331,11 @@ public:
             a != tmp.items.end(); ++a)
         {
             const PagePtrList::Data& d = *a;
-            
+
             printf("%.*s\n",
                 d.data.size(),
                 &d.data[0]);
-            
+
             for(std::list<PagePtrList::Reference>::const_iterator
                 i = d.refs.begin(); i != d.refs.end(); ++i)
             {
@@ -361,15 +361,15 @@ static const std::vector<unsigned char> Vec(const std::string& s)
 int main(void)
 {
     PagePtrList tmp;
-    
+
     tmp.AddItem(Vec("kissa"), 10);
     tmp.AddItem(Vec("kis"),   12);
     tmp.AddItem(Vec("koira"), 16);
     tmp.AddItem(Vec("sa"),    14);
-    
+
     Dump(tmp);
     tmp.Combine();
-    
+
     Dump(tmp);
 }
 #endif

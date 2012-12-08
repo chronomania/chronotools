@@ -8,11 +8,11 @@
 
 #include <ggi/ggi.h>
 
-static const unsigned WINDOW_WIDTH  = 1088;
-static const unsigned WINDOW_HEIGHT = 600;//768;
+static const unsigned WINDOW_WIDTH  = 768;
+static const unsigned WINDOW_HEIGHT = 512;//768;
 
-static const unsigned TILESPACE_X   = 960;
-static const unsigned TILESPACE_Y   = 600;//768;
+static const unsigned TILESPACE_X   = 512;
+static const unsigned TILESPACE_Y   = 512;//768;
 
 /*
  Copyright (C) 1992,2003 Bisqwit (http://iki.fi/bisqwit/)
@@ -42,6 +42,7 @@ typedef unsigned char byte;
 
 static ggi_visual_t vis;
 static ggi_color pal[256];
+static unsigned rgbpal[256];
 
 static byte font[256][8];
 
@@ -119,7 +120,11 @@ static void SetPal(void)
     pal[254].r=0x0400; pal[254].g=0x7FFF;pal[254].b=0x2000; /* position */
     pal[255].r=0xFFFF; pal[255].g=0x3000;pal[255].b=0xFFFF; /* help */
     
-    ggiSetPalette(vis, 0,256, pal);
+    //ggiSetPalette(vis, 0,256, pal);
+    for(unsigned a=0; a<256; ++a)
+        rgbpal[a] = (pal[a].r/256)*0x10000
+                  + (pal[a].g/256)*0x100
+                  + (pal[a].b/256)*0x1;
 }
 static void LoadPokeFont(FILE *fp)
 {
@@ -158,7 +163,7 @@ static void LoadPokeFont(FILE *fp)
     {
         byte b1 = font[ch][ay];
         for(ax=0; ax<8; ax++)
-            ggiPutPixel(vis, x+ax, y+ay, ((b1 >> (7-ax))&1) ? c : 15);
+            ggiPutPixel(vis, x+ax, y+ay, rgbpal[((b1 >> (7-ax))&1) ? c : 15]);
     }
 }*/
 
@@ -183,6 +188,8 @@ static void Disp(const char *s)
     unsigned ylimit=8;
     unsigned swapwidth=1, swapheight=1;
     
+    //ylimit=1; swapwidth=128/8; swapheight=96;
+
     if(!fp)return;
     
     static byte merk[50][80];
@@ -192,13 +199,13 @@ static void Disp(const char *s)
     
 Redraw:    
     memset(merk, ' ', sizeof(merk));
-    ggiSetGCBackground(vis, 15);
-    ggiSetGCForeground(vis, 15);  ggiDrawBox(vis, 0,0, WINDOW_WIDTH,240);
+    ggiSetGCBackground(vis, rgbpal[15]);
+    ggiSetGCForeground(vis, rgbpal[15]);  ggiDrawBox(vis, 0,0, WINDOW_WIDTH, 240);
 
-    ggiSetGCForeground(vis, 255); ggiDrawVLine(vis, 32*8, 0, 16*8);
-    ggiSetGCForeground(vis, 253); ggiDrawVLine(vis, 32*8+1, 0, 16*8);
+    ggiSetGCForeground(vis, rgbpal[255]); ggiDrawVLine(vis, 32*8,  0, 16*8);
+    ggiSetGCForeground(vis, rgbpal[253]); ggiDrawVLine(vis, 32*8+1, 0, 16*8);
     
-    ggiSetGCForeground(vis, 255);
+    ggiSetGCForeground(vis, rgbpal[255]);
     
     ggiPuts(vis,WINDOW_WIDTH-16*8,16+0*10, "a,d = shift");
     ggiPuts(vis,WINDOW_WIDTH-16*8,16+1*10, "arrows=move");
@@ -224,7 +231,7 @@ Redraw:
         for(unsigned sy=0; sy<sylimit; sy++)
             for(unsigned sx=0; sx<sxlimit; sx++)
             {
-                byte Buf[(32/*bits*/ * 128/*ylimit*/ + 7) / 8];
+                byte Buf[(256/*bits*/ * TILESPACE_Y/*ylimit*/ + 7) / 8];
                 
                 unsigned x, y;
                 
@@ -237,7 +244,7 @@ Redraw:
                 {
                     for(y=0; y<ylimit; y++)
                         for(x=0; x<8; x++)
-                            ggiPutPixel(vis, bx+x, by+y, 251);
+                            ggiPutPixel(vis, bx+x, by+y, rgbpal[251]);
                 }
                 else
                 {
@@ -314,6 +321,51 @@ Redraw:
                                               );
                                 }
                                 break;
+                            case 64: // 8-bit grayscale
+                                for(x=0; x<8; x++)
+                                {
+                                    unsigned value = Buf[(y*8+x)];
+                                    if(nes)
+                                    {
+                                        unsigned palvalue = (Buf[value*2+0]<<0)
+                                                          + (Buf[value*2+1]<<8);
+                                        unsigned r = (palvalue >>11) & 31;
+                                        unsigned g = (palvalue >> 6) & 63;
+                                        unsigned b = (palvalue >> 0) & 31;
+                                        ggiPutPixel(vis, bx+x, by+y,
+                                             (r*255/31)*0x10000
+                                           + (g*255/63)*0x100
+                                           + (b*255/31)*0x1);
+                                    }
+                                    else
+                                        ggiPutPixel(vis, bx+x, by+y, value * 0x010101);
+                                }
+                                break;
+                            case 128:
+                                for(x=0; x<8; x++)
+                                {
+                                    unsigned value = (Buf[(y*8+x)*2+0]<<8)
+                                                   + (Buf[(y*8+x)*2+1]<<0);
+                                    unsigned r = (value >>11) & 31;
+                                    unsigned g = (value >> 6) & 63;
+                                    unsigned b = (value >> 0) & 31;
+                                    ggiPutPixel(vis, bx+x, by+y,
+                                         (r*255/31)*0x10000
+                                       + (g*255/63)*0x100
+                                       + (b*255/31)*0x1);
+                                }
+                                break;
+                            case 256:
+                                for(x=0; x<8; x++)
+                                {
+                                    unsigned value = (Buf[(y*8+x)*4+0])
+                                                   + (Buf[(y*8+x)*4+1]<<8)
+                                                   + (Buf[(y*8+x)*4+2]<<16)
+                                                   + (Buf[(y*8+x)*4+3]<<24)
+                                                   ;
+                                    ggiPutPixel(vis, bx+x, by+y, value);
+                                }
+                                break;
                             case 8:
                                 for(x=0; x<8; x++)
                                     ggiPutPixel(vis, bx+x, by+y, PIXC[((b1 >> (7-x))&1)]);
@@ -323,12 +375,13 @@ Redraw:
             }
         
         ggiFlush(vis);
-        ggiSetGCForeground(vis, 255);
+        ggiSetGCForeground(vis, rgbpal[255]);
         
         {
           unsigned textpos=WINDOW_WIDTH/8-16;
           ggiPutc(vis,8*textpos++,0, 'B');
-          ggiPutc(vis,8*textpos++,0, bits==8?'1':bits==16?'2':'4');
+          ggiPutc(vis,8*textpos++,0, '0' + ((bits/8)/10) );
+          ggiPutc(vis,8*textpos++,0, '0' + ((bits/8)%10) );
           ggiPutc(vis,8*textpos++,0, 'N');
           ggiPutc(vis,8*textpos++,0, nes+'0');
           ggiPutc(vis,8*textpos++,0, 'Y');
@@ -343,7 +396,7 @@ Redraw:
           ggiPutc(vis,8*textpos++,0, '0'+(swapheight/1 )%10);
         }
         
-        ggiSetGCForeground(vis, 254);
+        ggiSetGCForeground(vis, rgbpal[254]);
         {char Buf[8];
          unsigned rom = posi | 0xC00000;
          sprintf(Buf, "%07X", posi);
@@ -388,7 +441,17 @@ Redraw:
                 case '2': if(swapheight<99)++swapheight;break;
                 case '6': if(swapwidth<99)++swapwidth;break;
                 
-                case 'b': bits=bits==8?16:bits==16?32:8; break;
+                case 'b':
+                    switch(bits)
+                    {
+                        case 8: bits = 16; break; // 1-bit
+                        case 16: bits = 32; break; // 2-bit
+                        case 32: bits = 64; break; // 8-bit
+                        case 64: bits = 128; break; // 16-bit
+                        case 128: bits = 256; break; // 16-bit
+                        case 256: bits = 8; break; // 32-bit
+                    }
+                    break;
                 case 'n': nes^=1; break;
                 case 'y': LoadPokeFont(fp); /* fall to ^L */
                 case '': goto Redraw;

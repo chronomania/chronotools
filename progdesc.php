@@ -215,6 +215,7 @@ Copypaste from the Makefile:
 # VERSION 1.15.4 adds packedblob support and fixes compilation on certain platforms.
 # VERSION 1.15.5 improves compilability on more modern gcc versions
 # VERSION 1.15.5.1 improves compilability on more modern gcc versions
+# VERSION 1.15.6 adds rawblob and spriteblob support (thanks Michal Ziabkowski)
 </pre>
 
 To use the character name changing feature, do a redump with ctdump

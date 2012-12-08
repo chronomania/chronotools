@@ -28,8 +28,8 @@ protected:
         or_mask(o), num_bytes(n), shr_by(s) { }
 public:
     unsigned Evaluate(unsigned value) const;
-    unsigned GetAddr() const { return ROM2SNESaddr(from_addr); }
-    unsigned GetSize() const { return num_bytes; }
+    unsigned long GetAddr() const { return ROM2SNESaddr(from_addr); }
+    unsigned char GetSize() const { return num_bytes; }
 };
 struct CallFrom: public ReferMethod
 {

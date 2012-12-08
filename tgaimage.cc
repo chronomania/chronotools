@@ -8,7 +8,7 @@ using namespace std;
 namespace
 {
     void TgaPutB(FILE *fp, unsigned c) { fputc(c, fp); }
-    void TgaPutW(FILE *fp, unsigned c) { fputc(c&255, fp); fputc(c >> 8, fp); } 
+    void TgaPutW(FILE *fp, unsigned c) { fputc(c&255, fp); fputc(c >> 8, fp); }
     void TgaPutP(FILE *fp, unsigned r,unsigned g,unsigned b)
     { TgaPutB(fp,r); TgaPutB(fp,g); TgaPutB(fp,b); }
 }
@@ -35,21 +35,21 @@ TGAimage::TGAimage(const string &filename)
         }
         return;
     }
-    
+
     int idlen = fgetc(fp);
     fgetc(fp); // color map type, should be 1
     fgetc(fp); // image type code, should be 1
     fgetc(fp); fgetc(fp); // palette start
-    
-    this->palsize = fgetc(fp); palsize += fgetc(fp)*256; 
-    
+
+    this->palsize = fgetc(fp); palsize += fgetc(fp)*256;
+
     int palbitness = fgetc(fp); // palette bitness, should be 24
     fgetc(fp); fgetc(fp);
     fgetc(fp); fgetc(fp);
 
     this->xdim=fgetc(fp); this->xdim += fgetc(fp)*256;
     this->ydim=fgetc(fp); this->ydim += fgetc(fp)*256;
-    
+
     pixbitness = fgetc(fp); // pixel bitness, should be 8
     fgetc(fp); // misc, should be 0
     if(idlen)fseek(fp, idlen, SEEK_CUR);
@@ -62,27 +62,27 @@ TGAimage::TGAimage(const string &filename)
                 unsigned B = fgetc(fp);
                 unsigned G = fgetc(fp);
                 unsigned R = fgetc(fp);
-                
+
                 unsigned color   = (B*32/256);
                 color = color*32 + (G*32/256);
                 color = color*32 + (R*32/256);
-                
+
                 color &= 0x7FFF;
-                
+
                 palette_in.push_back(color);
             }
         }
         else
             fseek(fp, palsize * ((palbitness+7)/8), SEEK_CUR);
     }
-    
+
     unsigned pixbyteness = pixbitness / 8;
 
     data.resize(xdim*ydim * pixbyteness);
-    
+
     for(unsigned y=ydim; y-->0; )
         fread(&data[y*xdim*pixbyteness], 1, xdim * pixbyteness, fp);
-    
+
     fclose(fp);
 }
 
@@ -100,11 +100,11 @@ void TGAimage::Save(const string &fn, palettetype paltype, const unsigned *palet
 {
     FILE *fp = fopen(fn.c_str(), "wb");
     if(!fp) { perror(fn.c_str()); return; }
-    
+
     vector<unsigned> FilePalette;
-    
+
     int imagetype = 1;
-    
+
     switch(paltype)
     {
         case pal_6color:
@@ -141,7 +141,7 @@ void TGAimage::Save(const string &fn, palettetype paltype, const unsigned *palet
             imagetype = 2;
             break;
     }
-    
+
     TgaPutB(fp, 0); // id field len
     TgaPutB(fp, FilePalette.size() > 0); // color map type
     TgaPutB(fp, imagetype); // image type code
@@ -151,22 +151,22 @@ void TGAimage::Save(const string &fn, palettetype paltype, const unsigned *palet
     TgaPutW(fp, 0);    TgaPutW(fp, 0);
     TgaPutW(fp, xdim); TgaPutW(fp, ydim);
     TgaPutB(fp, pixbitness); // pixel bitness
-    
+
     int misc = 0;
     if(pixbitness == 32) misc |= 8;
     TgaPutB(fp, misc); //misc
-    
+
     for(unsigned a=0; a<FilePalette.size(); ++a)
     {
         TgaPutB(fp, FilePalette[a] & 255);
         TgaPutB(fp, (FilePalette[a] >> 8) & 255);
         TgaPutB(fp, (FilePalette[a] >> 16) & 255);
     }
-    
+
     unsigned pixbyteness = pixbitness / 8;
     for(unsigned y=ydim; y-->0; )
         fwrite(&data[y*xdim * pixbyteness], 1, xdim * pixbyteness, fp);
-    
+
     fclose(fp);
 }
 
@@ -180,7 +180,7 @@ const vector<unsigned char> TGAimage::getbox(unsigned boxnum) const
         xsize, ysize,
         boxposx, boxposy,
         xdim, ydim, data.size());*/
-    
+
     vector<unsigned char> result(xsize*ysize);
     unsigned pos=0;
     for(unsigned ny=0; ny<ysize; ++ny)

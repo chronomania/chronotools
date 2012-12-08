@@ -20,9 +20,9 @@ private:
     std::string name;
 public:
     vector<std::string> extlist;
-    
+
     LinkageWish linkage;
-    
+
 public:
     Object(const O65& obj, const std::string& what, LinkageWish link)
     : object(obj),
@@ -31,7 +31,7 @@ public:
       linkage(link)
     {
     }
-    
+
     Object()
     : object(),
       name(),
@@ -39,14 +39,14 @@ public:
       linkage()
     {
     }
-    
+
     const std::string& GetName() const { return name; }
-    
+
     void Release()
     {
         //*this = Object();
     }
-    
+
     bool operator< (const Object& b) const
     {
         return linkage.GetAddress() < b.linkage.GetAddress();
@@ -83,7 +83,7 @@ public:
 class O65linker::SymCache
 {
     typedef hash_map<std::string, unsigned> cachetype;
-    
+
     cachetype sym_cache;
 public:
     /* Caches the symbols of a new object */
@@ -93,7 +93,7 @@ public:
         for(unsigned a=0; a<symlist.size(); ++a)
             sym_cache[symlist[a]] = objnum;
     }
-    
+
     /* Resolves which object is defining the given symbol */
     bool Find(const std::string& sym, unsigned& objnum) const
     {
@@ -113,9 +113,9 @@ void O65linker::AddObject(const O65& object, const std::string& what, LinkageWis
             " after linking already done\n", what.c_str());
         return;
     }
-    
+
     const vector<std::string> symlist = object.GetSymbolList(CODE);
-    
+
     bool clean = true;
     for(unsigned a=0; a<symlist.size(); ++a)
     {
@@ -127,14 +127,14 @@ void O65linker::AddObject(const O65& object, const std::string& what, LinkageWis
             //clean = false;
         }
     }
-    
+
     if(!clean)
     {
         return;
     }
-    
+
     Object *newobj = new Object(object, what, linkage);
-    
+
     objects.push_back(newobj);
 
     symcache->Update(*newobj, objects.size()-1);
@@ -273,7 +273,7 @@ void O65linker::FinishReference(const ReferMethod& reference,
     unsigned pos    = reference.GetAddr();
     unsigned value  = reference.Evaluate(target);
     unsigned nbytes = reference.GetSize();
-    
+
     if(nbytes < 4)
     {
         value &= (1 << (nbytes*8)) - 1;
@@ -287,7 +287,7 @@ void O65linker::FinishReference(const ReferMethod& reference,
         bytes.push_back(value & 255);
         value >>= 8;
     }
-    
+
     AddLump(bytes, pos, title);
 }
 
@@ -300,10 +300,10 @@ void O65linker::AddLump(const vector<unsigned char>& source,
     tmp.LoadSegFrom(CODE, source);
     tmp.Locate(CODE, address);
     if(!name.empty()) tmp.DeclareGlobal(CODE, name, address);
-    
+
     LinkageWish wish;
     wish.SetAddress(address);
-    
+
     AddObject(tmp, what, wish);
 }
 
@@ -325,7 +325,7 @@ void O65linker::Link()
         return;
     }
     linked = true;
-    
+
     MessageLinkingModules(objects.size());
 
     // For each module, satisfy each of their externs one by one.
@@ -337,22 +337,22 @@ void O65linker::Link()
             MessageModuleWithoutAddress(o.GetName(), CODE);
             continue;
         }
-        
+
         MessageLoadingItem(o.GetName());
-        
+
         for(unsigned b=0; b<o.extlist.size(); ++b)
         {
             const std::string& ext = o.extlist[b];
-            
+
             unsigned found=0, addr=0, defcount=0;
-            
+
             unsigned objnum;
             if(symcache->Find(ext, objnum))
             {
                 addr = objects[objnum]->object.GetSymAddress(CODE, ext);
                 ++found;
             }
-            
+
             // Or if it was an external definition.
             for(unsigned c=0; c<defines.size(); ++c)
             {
@@ -363,7 +363,7 @@ void O65linker::Link()
                     ++defcount;
                 }
             }
-            
+
             if(found == 0 && !defcount)
             {
                 MessageUndefinedSymbol(ext, o.GetName());
@@ -372,18 +372,18 @@ void O65linker::Link()
             {
                 MessageDuplicateDefinition(ext, found, defcount);
             }
-            
+
 /*
             if(found > 0)
                 fprintf(stderr, "Extern %u(%s) was resolved with linking\n", b, ext.c_str());
             if(defcount > 0)
                 fprintf(stderr, "Extern %u(%s) was resolved with a define\n", b, ext.c_str());
 */
-            
+
             if(found > 0 || defcount > 0)
             {
                 o.object.LinkSym(ext, addr);
-                
+
                 o.extlist.erase(o.extlist.begin() + b);
                 --b;
             }
@@ -402,17 +402,17 @@ void O65linker::Link()
         {
             const Object& o = *objects[objnum];
             if(o.linkage.type != LinkageWish::LinkHere) continue;
-            
+
             unsigned value = o.object.GetSymAddress(CODE, name);
-            
+
             // resolved referer
             FinishAndDeleteReference(a, value);
             --a;
         }
     }
-    
+
     MessageDone();
- 
+
     for(unsigned a=0; a<objects.size(); ++a)
         objects[a]->object.Verify();
 
@@ -420,7 +420,7 @@ void O65linker::Link()
     {
         //fprintf(stderr,
         //    "O65 linker: Leftover references found.\n");
-        
+
         // ERROR
         for(unsigned a=0; a<referers.size(); ++a)
             MessageUnresolvedSymbol(referers[a]->GetName());
@@ -468,7 +468,7 @@ namespace
         fread(Buf, 3, 1, fp);
         return (Buf[0] << 16) | (Buf[1] << 8) | Buf[2];
     }
-    
+
     struct IPS_item
     {
         unsigned addr;
@@ -477,7 +477,7 @@ namespace
      public:
         IPS_item(): addr(0) { }
     };
-    
+
     struct IPS_global: public IPS_item
     {
         std::string   name;
@@ -502,26 +502,26 @@ namespace
 void O65linker::LoadIPSfile(FILE* fp, const std::string& what)
 {
     rewind(fp);
-    
+
     /* FIXME: No validity checks here */
-    
+
     for(int a=0; a<5; ++a) fgetc(fp); // Skip header which should be "PATCH"
-    
+
     list<IPS_global> globals;
     list<IPS_extern> externs;
     list<IPS_lump> lumps;
-    
+
     for(;;)
     {
         unsigned addr = LoadIPSlong(fp);
         if(feof(fp) || addr == IPS_EOF_MARKER) break;
-        
+
         unsigned length = LoadIPSword(fp);
-        
+
         vector<unsigned char> Buf2(length);
         int c = fread(&Buf2[0], 1, length, fp);
         if(c < 0 || c != (int)length) break;
-        
+
         switch(addr)
         {
             case IPS_ADDRESS_GLOBAL:
@@ -529,13 +529,13 @@ void O65linker::LoadIPSfile(FILE* fp, const std::string& what)
                 std::string name((const char *)&Buf2[0], Buf2.size());
                 name = name.c_str();
                 unsigned addr = Buf2[name.size()+1]
-                             | (Buf2[name.size()+2] << 8)                       
+                             | (Buf2[name.size()+2] << 8)
                              | (Buf2[name.size()+3] << 16);
-                
+
                 IPS_global tmp;
                 tmp.name = name;
                 tmp.addr = addr;
-                
+
                 globals.push_back(tmp);
 
                 break;
@@ -545,7 +545,7 @@ void O65linker::LoadIPSfile(FILE* fp, const std::string& what)
                 std::string name((const char *)&Buf2[0], Buf2.size());
                 name = name.c_str();
                 unsigned addr = Buf2[name.size()+1]
-                             | (Buf2[name.size()+2] << 8)  
+                             | (Buf2[name.size()+2] << 8)
                              | (Buf2[name.size()+3] << 16);
                 unsigned size = Buf2[name.size()+4];
 
@@ -553,9 +553,9 @@ void O65linker::LoadIPSfile(FILE* fp, const std::string& what)
                 tmp.name = name;
                 tmp.addr = addr;
                 tmp.size = size;
-                
+
                 externs.push_back(tmp);
-                
+
                 break;
             }
             default:
@@ -563,36 +563,36 @@ void O65linker::LoadIPSfile(FILE* fp, const std::string& what)
                 IPS_lump tmp;
                 tmp.data = Buf2;
                 tmp.addr = addr;
-                
+
                 lumps.push_back(tmp);
-                
+
                 break;
             }
         }
     }
-    
+
     globals.sort();
     externs.sort();
     lumps.sort();
-    
+
     for(list<IPS_lump>::const_iterator next_lump,
         i = lumps.begin(); i != lumps.end(); i=next_lump)
     {
         next_lump = i; ++next_lump;
         const IPS_lump& lump = *i;
-        
+
         O65 tmp;
-        
+
         tmp.LoadSegFrom(CODE, lump.data);
         tmp.Locate(CODE, lump.addr);
-        
+
         bool last = next_lump == lumps.end();
 
         for(list<IPS_global>::iterator next_global,
             j = globals.begin(); j != globals.end(); j = next_global)
         {
             next_global = j; ++next_global;
-            
+
             if(last
             || (j->addr >= lump.addr && j->addr < lump.addr + lump.data.size())
               )
@@ -606,7 +606,7 @@ void O65linker::LoadIPSfile(FILE* fp, const std::string& what)
             j = externs.begin(); j != externs.end(); j = next_extern)
         {
             next_extern = j; ++next_extern;
-            
+
             if(last
             || (j->addr >= lump.addr && j->addr < lump.addr + lump.data.size())
               )
@@ -626,7 +626,7 @@ void O65linker::LoadIPSfile(FILE* fp, const std::string& what)
                 externs.erase(j);
             }
         }
-        
+
         LinkageWish wish;
         wish.SetAddress(lump.addr);
         AddObject(tmp, format("block $%06X of ", lump.addr) + what, wish);

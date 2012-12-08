@@ -24,7 +24,7 @@ DataArea::map::iterator DataArea::GetRef(unsigned offset)
 {
     map::iterator i = blobs.upper_bound(offset);
     if(i == blobs.begin()) i = blobs.end(); else --i;
-    
+
     if(i != blobs.end())
     {
         unsigned prev_top = i->first + i->second.size();
@@ -33,13 +33,13 @@ DataArea::map::iterator DataArea::GetRef(unsigned offset)
             return i;
         }
     }
-    
+
     return blobs.insert(std::make_pair(offset, vec())).first;
 }
 
 void DataArea::WriteByte(unsigned pos, unsigned char byte)
 {
-/*    
+/*
     fprintf(stderr, "GetRef($%X,$%02X) ", pos,byte);
 */
     map::iterator i = GetRef(pos);
@@ -51,7 +51,7 @@ void DataArea::WriteByte(unsigned pos, unsigned char byte)
     unsigned vecpos = pos - base;
     PrepareVec(vector, vecpos);
     vector[vecpos] = byte;
-    
+
     Optimize(i);
 }
 
@@ -59,7 +59,7 @@ unsigned char DataArea::GetByte(unsigned pos) const
 {
     map::const_iterator i = blobs.upper_bound(pos);
     if(i == blobs.begin()) i = blobs.end(); else --i;
-    
+
     if(i != blobs.end())
     {
         unsigned prev_top = i->first + i->second.size();
@@ -116,7 +116,7 @@ const std::vector<unsigned char> DataArea::GetContent(unsigned begin, unsigned s
 /*
         fprintf(stderr, "Blob at $%X is %u bytes\n", i->first, i->second.size());
 */
-        
+
         /* If we don't want the first bytes of this block */
         if(begin > begin_offset)
         {
@@ -136,13 +136,13 @@ const std::vector<unsigned char> DataArea::GetContent(unsigned begin, unsigned s
         {
             continue;
         }
-        
+
         /* Ensure we don't copy too much */
         if(count > size-target)
         {
             count = size-target;
         }
-        
+
         unsigned pos = begin_offset - i->first;
 
 /*
@@ -172,7 +172,7 @@ unsigned DataArea::FindNextBlob(unsigned where, unsigned& length) const
 void DataArea::Optimize(map::iterator i)
 {
     /* This function joins consequent blocks. */
-    
+
     if(i != blobs.end())
     {
         /* Check if the next block follows this block immediately. */

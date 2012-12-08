@@ -14,13 +14,13 @@ class ROM
 public:
     ROM(unsigned siz);
     ~ROM();
-    
+
     unsigned size() const { return length; }
 
     unsigned FindNextBlob(unsigned where, unsigned& length) const;
-    
+
     const std::vector<unsigned char> GetContent() const;
-    
+
     const std::vector<unsigned char> GetContent(unsigned begin, unsigned size) const;
 
     void AddPatch(const std::vector<unsigned char>& code,
@@ -36,7 +36,7 @@ public:
      */
 private:
     void Write(unsigned pos, unsigned char value);
-    
+
     unsigned char operator[] (unsigned pos) const { return Data.GetByte(pos); }
 
 };

@@ -23,10 +23,10 @@ void Symbols::Load()
 
     // Define bracketed macro
     #define defbsym(sym, c) defsym([sym], c)
-    
+
     // 8pix symbols;  *xx:xxxx:Lxx
     // 16pix symbols; *xx:xxxx:Zxx
-    
+
     targets=16;
     // 0x01: characters 256-511
     // 0x02: characters 512-767
@@ -47,12 +47,12 @@ void Symbols::Load()
     defbsym(num8,        0x0D)
     defbsym(num16,       0x0E)
     defbsym(num32,       0x0F)
-    
+
     // 0x10 is used for special meaning, but what?
     // (See $C2:58CB in assembler code)
-    
+
     defbsym(member,      0x11) // Varies, user definable
-    
+
     // 0x12 is tech/monster, handled elseway
     defsym(Crono,        0x13) // User definable
     defsym(Marle,        0x14) // User definable
@@ -66,15 +66,15 @@ void Symbols::Load()
     defbsym(member1,     0x1B) // Varies, user definable
     defbsym(member2,     0x1C) // Varies, user definable
     defbsym(member3,     0x1D) // Varies, user definable
-    defsym(Nadia,        0x1E) 
+    defsym(Nadia,        0x1E)
     defbsym(item,        0x1F)
     defsym(Epoch,        0x20) // User definable
-    
+
     // 0x21+ are dictionary and font and optionally conjugate-codebytes
-    
+
     #undef defsym
     #undef defbsym
-    
+
     /* Load user-definable some symbols */
     { const ConfParser::ElemVec& elems = GetConf("font", "def8sym").Fields();
       for(unsigned a=0; a<elems.size(); a+=2)
@@ -85,7 +85,7 @@ void Symbols::Load()
           AddSym(sym, static_cast<ctchar> (value), 2+8);
       }
     }
-    
+
     { const ConfParser::ElemVec& elems = GetConf("font", "def12sym").Fields();
       for(unsigned a=0; a<elems.size(); a+=2)
       {

@@ -48,12 +48,12 @@ void StartBlock(const std::wstring& blocktype, const std::wstring& reason)
 {
     bool newlabel = true;//CurLabel != Buf;
     bool comment = !CurLabelComment.empty();
-    
+
     if(newlabel)
     {
         if(!CurLabel.empty()) PutAscii(L"\n\n");
     }
-    
+
     if(newlabel)
     {
         // FIXME: iconv here

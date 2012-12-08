@@ -19,7 +19,7 @@ namespace
 
     rommap space, protect;
     reasonmap reasons;
-    
+
     size_t known_romsize = 0;
 }
 
@@ -39,20 +39,20 @@ namespace
                         const char* type)
     {
         std::set<size_t>::const_iterator i;
-        
+
         bool begun=false;
         size_t first=0;
         size_t prev=0;
-        
+
         for(i=errlist.begin(); ; ++i)
         {
             if(i == errlist.end() || (begun && prev < *i-1))
             {
                 fprintf(stderr, "%s: %06X-%06X already marked %s by %ls\n",
                                 msgtype, (unsigned)first, (unsigned)prev, type, why.c_str());
-                
+
                 std::set<std::wstring> users;
-                
+
                 /* Find the first element that begins after the given address */
 
                 reasonmap::const_iterator j = reasons.lower_bound(first);
@@ -80,11 +80,11 @@ namespace
                     }
                     fprintf(stderr, "\n");
                 }
-                
+
                 begun = false;
                 if(i == errlist.end()) break;
             }
-            
+
             if(!begun) { begun = true; first = *i; }
             prev = *i;
         }
@@ -99,22 +99,22 @@ namespace
     {
         MarkingMessage("Warning", errlist, why, type);
     }
-    
+
     void SetReasons(size_t begin, size_t length, const std::wstring& what)
     {
         reasons.set(begin, begin+length, what);
     }
-    
+
     void ExplainProtMap(FILE *log,
                         size_t begin, size_t length,
                         const char* type)
     {
         size_t endpos = begin+length;
-        
+
         reasonmap contents;
-        
+
         contents.set(begin, endpos, L"");
-        
+
         reasonmap::const_iterator j = reasons.lower_bound(begin);
         if(j->lower > begin)
         {
@@ -142,12 +142,12 @@ namespace
                 (unsigned) (i->upper - 1),
                 (unsigned) (i->upper - i->lower),
                 type);
-            
+
             fprintf(log, "%s\n", WstrToAsc(i->value).c_str());
             fflush(log);
         }
     }
-    
+
     size_t GetRomSize()
     {
         size_t romsize = known_romsize;
@@ -163,23 +163,23 @@ namespace
         }
         return romsize;
     }
-    
+
     void Do_ShowProtMap(FILE *log,
                         const char *const *prot_types)
     {
         bool begun=false;
-        
+
         size_t romsize = GetRomSize();
-        
+
         std::vector<unsigned char> types(romsize+1);
-        
+
         for(rommap::const_iterator i = space.begin(); i != space.end(); ++i)
             for(size_t a = i->lower; a < i->upper; ++a)
                 types[a] |= 1;
         for(rommap::const_iterator i = protect.begin(); i != protect.end(); ++i)
             for(size_t a = i->lower; a < i->upper; ++a)
                 types[a] |= 2;
-        
+
         size_t first=0;
         unsigned lasttype=0;
         for(size_t a=0; a<=romsize; ++a)
@@ -209,7 +209,7 @@ void ShowProtMap()
     {
         return;
     }
-    
+
     fprintf(log,
         "This file lists the memory map of your\n"
         "Chrono Trigger ROM, as detected by ctdump.\n"
@@ -218,9 +218,9 @@ void ShowProtMap()
         "   begin-end     size/bytes type     use\n");
 
     static const char *const types[4] = {"?","free","protected","ERROR"};
-    
+
     Do_ShowProtMap(log, types);
-    
+
     fprintf(log,
         "\n"
         "%-10s: will be used by insertor\n"
@@ -239,7 +239,7 @@ void ShowProtMap2()
     {
         return;
     }
-    
+
     fprintf(log,
         "This file lists the memory map of your\n"
         "Chrono Trigger ROM, as created by ctinsert.\n"
@@ -248,9 +248,9 @@ void ShowProtMap2()
         "   begin-end     size/bytes type     use\n");
 
     static const char *const types[4] = {"protected","free","patched","ERROR"};
-    
+
     Do_ShowProtMap(log, types);
-    
+
     fprintf(log,
         "\n"
         "%-10s: was unused.\n"
@@ -266,25 +266,25 @@ void MarkFree(size_t begin, size_t length, const std::wstring& reason)
 {
     std::set<size_t> error;
     //fprintf(stderr, "Marking %u bytes free at %06X\n", length, begin);
-    
+
     for(size_t n=0; n<length; ++n)
     {
         if(protect.find(begin+n) != protect.end())
             error.insert(begin+n);
     }
     space.set(begin, begin+length);
-    
+
     // refreeing is not dangerous. It's common when subwstrings are reused.
-    
+
     if(!error.empty()) MarkingError(error, reason, "protected, attempted to free");
-    
+
     if(length > 0) SetReasons(begin, length, reason);
 }
 
 void MarkProt(size_t begin, size_t length, const std::wstring& reason)
 {
     std::set<size_t> error, warning;
-    
+
     //fprintf(stderr, "Marking %u bytes protected at %06X\n", length, begin);
     for(size_t n=0; n<length; ++n)
     {
@@ -297,7 +297,7 @@ void MarkProt(size_t begin, size_t length, const std::wstring& reason)
 
     if(!error.empty()) MarkingError(error, reason, "free, attempted to protect");
     if(!warning.empty()) MarkingWarning(warning, reason, "protected, attempted to reprotect");
-    
+
     if(length > 0) SetReasons(begin, length, reason);
 }
 
@@ -320,7 +320,7 @@ void ListSpaces(void)
     {
         size_t begin = i->lower;
         size_t end   = i->upper;
-        
+
         while(begin < end)
         {
             size_t page = begin & 0xFF0000;
@@ -333,12 +333,12 @@ void ListSpaces(void)
 
     //fprintf(stderr, "Dumping free space list...");
     StartBlock(L"", L"free space");
-    
+
     for(map<size_t, rommap>::const_iterator
         i = freemap.begin(); i != freemap.end(); ++i)
     {
         PutAscii(wformat(L"*s%02X\n", i->first));
-         
+
         for(rommap::const_iterator
             j = i->second.begin(); j != i->second.end(); ++j)
         {
@@ -382,13 +382,13 @@ void LoadROM(FILE *fp)
     else
         fprintf(stderr, " memmap succesful (%p),", (const void *)ROM);
     fprintf(stderr, " done");
-    
+
     space.clear();
     protect.clear();
     reasons.clear();
-    
+
     known_romsize = romsize;
-    
+
     fprintf(stderr, "\n");
 }
 

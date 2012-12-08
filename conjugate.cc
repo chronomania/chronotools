@@ -26,23 +26,23 @@ void Conjugatemap::Load(const insertor &ins)
         const wstring &func  = elems[a];
         const wstring &data  = elems[a+1];
         const wstring &width = elems[a+2];
-        
+
         tmp.func   = func;
         tmp.used   = false;
         tmp.prefix = 0;
-        
+
         tmp.maxwidth = 0;
         for(size_t b=0; b<width.size(); ++b)
         {
             ctchar c = getctchar(width[b], cset_12pix);
             tmp.maxwidth += 1 + ins.GetFont12width(c);
         }
-        
+
         for(size_t b=0; b<data.size(); ++b)
         {
             if(data[b] == ' ' || data[b] == '\n'
             || data[b] == '\r' || data[b] == '\t') continue;
-            
+
             ctchar person = 0x13;
             switch(WcharToAsc(data[b]))
             {
@@ -63,11 +63,11 @@ void Conjugatemap::Load(const insertor &ins)
             }
             size_t c = ++b;
             while(b < data.size() && WcharToAsc(data[b]) != ',') ++b;
-            
+
             wstring s = data.substr(c, b-c);
-            
+
             const wstring &name = Symbols.GetRev(16).find(person)->second;
-            
+
             ctstring key;
             for(size_t a=0; a<s.size(); ++a)
                 if(s.compare(a, name.size(), name) == 0)
@@ -77,10 +77,10 @@ void Conjugatemap::Load(const insertor &ins)
                 }
                 else
                     key += getctchar(s[a], cset_12pix);
-            
+
             tmp.data[key] = person;
         }
-        
+
         AddForm(tmp);
     }
 }
@@ -96,7 +96,7 @@ void Conjugatemap::Work(ctstring &s, formit fit)
         {
             size_t b = s.find(i->first, a);
             if(b == s.npos) break;
-            
+
             if(!form.used)
             {
                 unsigned byte = 0x2FF;
@@ -106,7 +106,7 @@ void Conjugatemap::Work(ctstring &s, formit fit)
                     if(getwchar_t(byte, cset_12pix) != ilseq) continue;
 
                     bool used = false;
-                    
+
                     const ConfParser::ElemVec& elems = GetConf("font", "typeface").Fields();
                     for(size_t a=0; a<elems.size(); a += 6)
                     {
@@ -118,9 +118,9 @@ void Conjugatemap::Work(ctstring &s, formit fit)
                             break;
                         }
                     }
-                    
+
                     if(used) continue;
-                    
+
                     for(formlist::const_iterator j=forms.begin(); j!=forms.end(); ++j)
                         if(j->used
                         && j->prefix == byte)
@@ -130,7 +130,7 @@ void Conjugatemap::Work(ctstring &s, formit fit)
                         }
                     if(!used) break;
                 }
-                
+
                 form.used   = true;
                 form.prefix = byte;
 
@@ -139,16 +139,16 @@ void Conjugatemap::Work(ctstring &s, formit fit)
                     form.prefix,
                     WstrToAsc(form.func).c_str());
 #endif
-                
+
                 charmap[form.prefix] = fit;
             }
-            
+
             ctstring tmp;
             tmp += form.prefix; // conjugater id
             tmp += i->second;   // character id
-            
+
             // a = b + i->first.size();
-            
+
             s.erase(b, i->first.size());
             s.insert(b, tmp);
             a = b + tmp.size();
@@ -198,7 +198,7 @@ void Conjugatemap::Work(ctstring &s)
 void insertor::WriteConjugator()
 {
     const Conjugatemap::formlist &forms = Conjugater->GetForms();
-    
+
     Conjugatemap::formlist::const_iterator i;
     for(i=forms.begin(); i!=forms.end(); ++i)
     {

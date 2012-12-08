@@ -19,13 +19,13 @@ void insertor::ClearROM(class ROM& ROM) const
     for(set<unsigned>::const_iterator i = pages.begin(); i != pages.end(); ++i)
     {
         freespaceset list = freespace.GetList(*i);
-        
+
         for(freespaceset::const_iterator j = list.begin(); j != list.end(); ++j)
         {
             const unsigned recpos = j->lower;
             const unsigned reclen = j->upper - recpos;
             unsigned offs = (*i << 16) | recpos;
-            
+
             ROM.SetZero(offs, reclen, L"clear free space");
         }
     }
@@ -34,9 +34,9 @@ void insertor::ClearROM(class ROM& ROM) const
 void insertor::PatchROM(class ROM& ROM) const
 {
     ClearROM(ROM);
-    
+
     fprintf(stderr, "Inhabitating the ROM image...\n");
-    
+
     /* Then write everything. */
 
     const vector<unsigned> o65addrs = objects.GetAddrList();
@@ -44,7 +44,7 @@ void insertor::PatchROM(class ROM& ROM) const
     {
         unsigned snesaddr = o65addrs[a];
         if(snesaddr == NOWHERE) continue;
-        
+
         /* The addresses in linker are all SNES-based
          * for linking to function properly.
          * Convert them to ROM-based for writing.
@@ -57,11 +57,11 @@ void insertor::PatchROM(class ROM& ROM) const
             romaddr,
             objects.GetName(a).c_str());
         */
-        
+
         ROM.AddPatch(objects.GetCode(a), romaddr, AscToWstr(objects.GetName(a)));
         //objects.Release(a);
     }
-    
+
     /* FIXME:
      *   This function used to MarkFree() all unused space.
      *   It was not good practice. Replace with something else.
@@ -79,12 +79,12 @@ void insertor::WriteEverything()
     WriteConjugator();
     WriteUserCode();
     WriteDictionary();
-    
+
     const bool UseThinNumbers = GetConf("font", "use_thin_numbers");
-    
+
     // Patch the name entry function
     //  FIXME: Make this read the pointers from "strings" instead
-    
+
     if(UseThinNumbers)
     {
         PlaceByte(0x73, 0x02F21B, L"thin '0'");
@@ -95,10 +95,10 @@ void insertor::WriteEverything()
     }
 
     /* Everything has been written. */
-    
+
     /* Now organize them. */
     freespace.OrganizeO65linker(objects);
-    
+
     /* Resolve all references. */
     objects.Link();
 }
