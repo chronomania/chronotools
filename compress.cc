@@ -364,7 +364,6 @@ const vector<unsigned char> Compress
 const vector<unsigned char> Compress(const unsigned char* data, size_t length)
 {
     vector<unsigned char> result1 = Compress(data, length, 11);
-    return result1;
     vector<unsigned char> result2 = Compress(data, length, 12);
 
     return result1.size() <= result2.size() ? result1 : result2;
