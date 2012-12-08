@@ -7,8 +7,9 @@
 //#define DEBUG_DECOMPRESS
 //#define DEBUG_COMPRESS
 
-#define DEEP_RUN_FORWARD        2048
-#define MAX_EIGHTBYTE_SEQUENCES 0
+#define DEEP_RUN_FORWARD          1024
+#define TRY_DIFFERENT_REDUCTIONS  false
+//#define MAX_EIGHTBYTE_SEQUENCES   1
 
 /******
 
@@ -113,72 +114,33 @@ namespace
                         else
                             { size_as_is += 1; ++p; }
                     }
-                    std::size_t size_dummied = 0, q;
-                    for(q=0; a+q < end && q<DEEP_RUN_FORWARD; )
+                    for(std::size_t dummied_size = Cache[a].len; dummied_size > 0; )
                     {
-                        if(Cache[a+q].len && q)
-                            { size_dummied += 2; q += Cache[a+q].len; }
+                        if(dummied_size > 3 && TRY_DIFFERENT_REDUCTIONS)
+                            --dummied_size;
                         else
-                            { size_dummied += 1; ++q; }
+                            dummied_size = 0;
+
+                        std::size_t size_dummied = 0, q;
+                        for(q=0; a+q < end && q<DEEP_RUN_FORWARD; )
+                        {
+                            std::size_t size = q ? Cache[a+q].len : dummied_size;
+                            if(size)
+                                { size_dummied += 2; q += size; }
+                            else
+                                { size_dummied += 1; ++q; }
+                        }
+                        double factor_before = size_as_is   / double(p);
+                        double factor_after  = size_dummied / double(q);
+                        if(factor_before > factor_after)
+                        {
+                            // Dummy out this element
+                            Cache[a].len  = dummied_size;
+                            p          = q;
+                            size_as_is = size_dummied;
+                        }
                     }
-                    double factor_before = size_as_is   / double(p);
-                    double factor_after  = size_dummied / double(q);
-                    if(factor_before > factor_after)
-                    {
-                        // Dummy out this element
-                        Cache[a].len  = 0;
-                        Cache[a].offs = 0;
-                    }
-                    else
-                        a += Cache[a].len-1;
-                }
-            }
-            return;
-
-            // TODO: Prune out those we don't want to use,
-            // by going backwards and erasing those elements
-            // that are superseded by later ones.
-            // E.g. if we get rep20 dummy rep30,
-            // we better ignore that rep20 because rep30
-            // conveys it so much better.
-
-            // Sort the matches in order of length,
-            // beginning from the largest, and mark them
-            // as occupied.
-
-            std::vector<std::pair< std::size_t/*length*/, std::size_t/*where*/> > lore;
-
-            for(size_t pos=begin; pos<end; ++pos)
-                if(Cache[pos].len)
-                    lore.push_back(std::make_pair( ~Cache[pos].len, pos) );
-            std::sort(lore.begin(), lore.end());
-
-            std::vector<bool> occupied(length);
-
-            for(std::size_t a=0; a<lore.size(); ++a)
-            {
-                const std::pair<std::size_t,std::size_t>& r = lore[a];
-                std::size_t len = ~r.first;
-
-                // Is this record occupied?
-                bool is_occupied = false;
-                for(std::size_t b = 0; b < len; ++b)
-                    if(occupied[ r.second + b - begin])
-                    {
-                        is_occupied = true;
-                        break;
-                    }
-                if(!is_occupied)
-                {
-                    // Not occupied. Mark occupied!
-                    for(std::size_t b = 0; b < len; ++b)
-                        occupied[ r.second + b - begin] = true;
-                }
-                else
-                {
-                    // Is occupied. Dummy out this record.
-                    Cache[r.second].len  = 0;
-                    Cache[r.second].offs = 0;
+                    if(Cache[a].len) a += Cache[a].len-1;
                 }
             }
         }
@@ -297,8 +259,8 @@ namespace
                     if(!found_compressable)
                     {
                         n_eights_ignored   = p/8;
-                        if(n_eights_ignored > MAX_EIGHTBYTE_SEQUENCES)
-                            n_eights_ignored = MAX_EIGHTBYTE_SEQUENCES;
+                        //if(n_eights_ignored > MAX_EIGHTBYTE_SEQUENCES)
+                        //    n_eights_ignored = MAX_EIGHTBYTE_SEQUENCES;
                         found_compressable = true;
                     }
                     unsigned offset = count - n_eights_ignored*8;
