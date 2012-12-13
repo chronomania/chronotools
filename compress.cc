@@ -248,7 +248,7 @@ namespace
                 // that is farther than 8 elements away.
                 unsigned n_eights_ignored = 0;
                 bool found_compressable = false;
-                unsigned length = 8, count = 0;
+                unsigned length = DefaultLength, count = 0;
 
                 //Savings.Anvil(pos, pos+32);
 
@@ -273,7 +273,12 @@ namespace
                     p += Savings.Query(pos+p).len;
                     ++count;
                 }
-                if(length < 0x20) length = 8;
+                if(length < 0x20)
+                {
+                    // This condition is experimental. Length=8 encodes into
+                    // nothing. A threshold of 0x20 seems to give good results.
+                    length = DefaultLength;
+                }
                 if(length > count) length = count;
 
                 while(n_eights_ignored--)
