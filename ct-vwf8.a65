@@ -1025,10 +1025,10 @@ BattleItemFunc:
 .)
 
 BattleTechHelper:
-	.as
-	lda #$03
-	sta $87
-	rtl
+        .as
+        lda #$03
+        sta $87
+        rtl
 
 BattleTechFunc:
 .(
@@ -1219,6 +1219,7 @@ DoTilenumber_8line:
           tax
           lda @TileNumberList,x
          plx
+         jsr ShopItemSelectCheck
          sta W_TILENUM
          lda #Write
          sta W_WRITEOFS
@@ -1288,21 +1289,21 @@ TileNumberListInBattle:
 
 
 CalculateClockDifference:
-	; This calculates the difference between current clock
-	; and the saved clock.
-	; The result has the units of frames. 60 frames equals 1 second.
-	; The calculation is a little sloppy, because we never
-	; need the very exact value.
-	; The following shortcuts are taken:
-	; If there is difference in hours, we return 200.
-	; If there is difference in minutes, we return 200.
-	; If there is difference in seconds, we return 200.
-	; Otherwise we return number of frames.
-	; Since the caller only cares of numbers smaller than 15,
-	; these optimizations are ok.
-	
-	; This function may use A, Y, W_VRAMADDR
-	; Returns the result in A.
+        ; This calculates the difference between current clock
+        ; and the saved clock.
+        ; The result has the units of frames. 60 frames equals 1 second.
+        ; The calculation is a little sloppy, because we never
+        ; need the very exact value.
+        ; The following shortcuts are taken:
+        ; If there is difference in hours, we return 200.
+        ; If there is difference in minutes, we return 200.
+        ; If there is difference in seconds, we return 200.
+        ; Otherwise we return number of frames.
+        ; Since the caller only cares of numbers smaller than 15,
+        ; these optimizations are ok.
+        
+        ; This function may use A, Y, W_VRAMADDR
+        ; Returns the result in A.
         .al
         
         lda $0404 : cmp W_CLOCKW3 : bne +
@@ -1311,13 +1312,32 @@ CalculateClockDifference:
         lda $0400 : sec : sbc W_CLOCKW1
         and #$00FF
         rts
-+	lda #200
-	rts
++       lda #200
+        rts
         
  
 SaveClock:
-	; May use A, Y
-	lda $0400 : sta W_CLOCKW1
-	lda $0402 : sta W_CLOCKW2
-	lda $0404 : sta W_CLOCKW3
-	rts
+        ; May use A, Y
+        lda $0400 : sta W_CLOCKW1
+        lda $0402 : sta W_CLOCKW2
+        lda $0404 : sta W_CLOCKW3
+        rts
+
+ShopItemSelectCheck:
+        ; Input variables: A (tile index)
+        ; Returns the result in A
+        .al
+        pha
+
+         ; Check if called from selected item routine
+         lda $1E,s
+         cmp #$DFA6
+         bne +
+
+         ; If so, load different tile index
+        pla
+        lda #$0001
+        rts
+
++       pla
+        rts
