@@ -815,7 +815,19 @@ EquipRightItemFunc:        ;also used in shop
          ; This works
          sta W_TILENUM
          
-        pla
+         ; The buybuy-lister in shop must not ignore lines.
+         lda 6,s
+         cmp #$DD65: beq ignoreclockcheck
+
+         jsr CalculateClockDifference
+         cmp #3
+         bcc + ; Too small difference to ignore
+         cmp #15
+         bcc IgnoreItemListVWF8Right ; Okay to ignore
+         ; Not ignored
+         jsr SaveClock
+      ignoreclockcheck:
+      + pla
         SET_16_BIT_AX()
         
         jsr GetItemName
@@ -832,7 +844,7 @@ EquipRightItemFunc:        ;also used in shop
         bra DisplayFuncCommon_4bit
 .)
 
-IgnoreItemListVWF8:
+IgnoreItemListVWF8Right:
 .(
         .al
         .xl
