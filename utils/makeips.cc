@@ -1,6 +1,7 @@
 #include <cstdio>
 #include <unistd.h>
 #include <cstring>
+#include <cstdlib>
 
 #ifndef WIN32
 /* We use memory mapping in Linux. It's fast. */
@@ -11,8 +12,6 @@
 #define IPS_EOF_MARKER 0x454F46
 #define IPS_ADDRESS_EXTERN 0x01
 #define IPS_ADDRESS_GLOBAL 0x02
-
-using namespace std;
 
 static void Put24(unsigned v)
 {
@@ -76,7 +75,7 @@ static RLE FindRLE(const char* source, const unsigned len, unsigned addr)
 
 static void PutChunk(unsigned addr, unsigned nbytes, const char* source, bool recursed=false)
 {
-    if(!recursed)fprintf(stderr, "$%06X: $%X bytes: ", addr, nbytes);
+    if(!recursed) std::fprintf(stderr, "$%06X: $%X bytes: ", addr, nbytes);
     const char*sep = "";
     while(nbytes > 0)
     {
@@ -85,14 +84,14 @@ static void PutChunk(unsigned addr, unsigned nbytes, const char* source, bool re
         {
             if(rle.addr > 0)
             {
-                fprintf(stderr, "%s", sep);
+                std::fprintf(stderr, "%s", sep);
                 PutChunk(addr, rle.addr, source, true); sep=", ";
                 addr   += rle.addr;
                 source += rle.addr;
                 nbytes -= rle.addr;
             }
 
-            fprintf(stderr, "%s%u*%02X", sep, rle.len, (unsigned char)*source); sep=", ";
+            std::fprintf(stderr, "%s%u*%02X", sep, rle.len, (unsigned char)*source); sep=", ";
             Put24(addr);
             Put16(0);
             Put16(rle.len);
@@ -118,52 +117,53 @@ static void PutChunk(unsigned addr, unsigned nbytes, const char* source, bool re
         
         Put24(addr);
         Put16(eat);
-        fwrite(source, eat, 1, stdout);
+        std::fwrite(source, eat, 1, stdout);
         
-        fprintf(stderr, "%s%u raw", sep,eat); sep=", ";
+        std::fprintf(stderr, "%s%u raw", sep,eat); sep=", ";
 
         addr   += eat;
         source += eat;
         nbytes -= eat;
     }
-    if(!recursed) fprintf(stderr, "\n");
+    if(!recursed) std::fprintf(stderr, "\n");
 }
 
 int main(int argc, const char *const *argv)
 {
     if(argc != 3)
     {
-        printf("makeips: A simple IPS patch maker with next to no error checks\n"
+        std::printf("makeips: A simple IPS patch maker with next to no error checks\n"
                "Copyright (C) 1992,2005 Bisqwit (http://iki.fi/bisqwit/)\n"
                "Usage: makeips oldfile newfile > patch.ips\n"
                "Don't forget the \">\"!\n");
         return -1;
     }
-    FILE *f1 = fopen(argv[1], "rb");
-    FILE *f2 = fopen(argv[2], "rb");
-    if(!f1) { perror(argv[1]); }
-    if(!f2) { perror(argv[2]); }
-    if(!f1 || !f2) { if(f1)fclose(f1); if(f2)fclose(f2); return -1; }
+    FILE *f1 = std::fopen(argv[1], "rb");
+    FILE *f2 = std::fopen(argv[2], "rb");
+    if(!f1) { std::perror(argv[1]); }
+    if(!f2) { std::perror(argv[2]); }
+    if(!f1 || !f2) { if(f1)std::fclose(f1);
+                     if(f2)std::fclose(f2); return -1; }
     
-    fseek(f1, 0, SEEK_END); unsigned d1size = ftell(f1);
-    fseek(f2, 0, SEEK_END); unsigned d2size = ftell(f2);
+    std::fseek(f1, 0, SEEK_END); unsigned d1size = std::ftell(f1);
+    std::fseek(f2, 0, SEEK_END); unsigned d2size = std::ftell(f2);
 
 #if USE_MMAP
     char *d1 = (char *)mmap(NULL, d1size, PROT_READ, MAP_PRIVATE, fileno(f1), 0);
     char *d2 = (char *)mmap(NULL, d2size, PROT_READ, MAP_PRIVATE, fileno(f2), 0);
 #else
     char *d1 = new char[d1size];
-    rewind(f1); fread(d1, d1size, 1, f1);
+    std::rewind(f1); std::fread(d1, d1size, 1, f1);
 
     char *d2 = new char[d2size];
-    rewind(f2); fread(d2, d2size, 1, f1);
+    std::rewind(f2); std::fread(d2, d2size, 1, f1);
 #endif
     
-    printf("PATCH");
+    std::printf("PATCH");
     
     const unsigned thres = 5;
     
-    unsigned size = ftell(f1);
+    unsigned size = std::ftell(f1);
     for(unsigned a=0; a<size; )
     {
         unsigned diff_size = 0;
@@ -198,16 +198,16 @@ int main(int argc, const char *const *argv)
     }
     
 #ifdef USE_MMAP
-    munmap(d1, ftell(f1)); fclose(f1);
-    munmap(d2, ftell(f2)); fclose(f2);
+    munmap(d1, std::ftell(f1)); std::fclose(f1);
+    munmap(d2, std::ftell(f2)); std::fclose(f2);
 #else
-    delete[] d1; fclose(f1);
-    delete[] d2; fclose(f2);
+    delete[] d1; std::fclose(f1);
+    delete[] d2; std::fclose(f2);
 #endif
     
-    printf("EOF");
+    std::printf("EOF");
     
-    fflush(stdout);
+    std::fflush(stdout);
     
     return 0;
 }
