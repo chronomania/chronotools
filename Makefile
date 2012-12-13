@@ -288,6 +288,8 @@ PROGS=\
 	utils/makeips \
 	utils/unmakeips \
 	utils/fixchecksum \
+	utils/makeups \
+	utils/makebeat \
 	utils/compile \
 	utils/deasm \
 	utils/base62 \
@@ -339,10 +341,13 @@ eventdata.inc: DOCS/eventdata.xml utils/eventsynmake
 
 # Patch generator
 utils/makeips: utils/makeips.cc
-	$(CXX) $(LDOPTS) -o $@ $^
+	$(CXX) $(LDOPTS) $(CXXFLAGS) -o $@ $^
 
 utils/makeups: utils/makeups.cc crc32.o
-	$(CXX) $(LDOPTS) -o $@ $^
+	$(CXX) $(LDOPTS) $(CXXFLAGS) -o $@ $^
+
+utils/makebeat: utils/makebeat.cc crc32.o
+	$(CXX) $(LDOPTS) $(CXXFLAGS) -o $@ $^
 
 # Patch applier
 utils/unmakeips: utils/unmakeips.cc crc32.o
