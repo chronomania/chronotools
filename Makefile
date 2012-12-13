@@ -442,24 +442,24 @@ ct-conj1.a65: ct-conj.code utils/compile
 	utils/compile $< $@
 # ct-conj.o65 is build in a strange way.
 ct-conj.o65: ct-conj1.a65 ct-conj.a65
-	sed 's/#\([^a-z]\)/§\1/g;s/;.*//' < ct-conj1.a65 > .tmptmp
-	sed 's§<CONJUGATER>§#include ".tmptmp"§' < ct-conj.a65 | \
-		snescom -E - | sed 's/§/#/g' > .tmptmp2
-	snescom -J -Wall -o $@ .tmptmp2 && rm -f .tmptmp .tmptmp2
+	sed 's/#\([^a-z]\)/§\1/g;s/;.*//' < ct-conj1.a65 > .tmptmpC
+	sed 's§<CONJUGATER>§#include ".tmptmpC"§' < ct-conj.a65 | \
+		snescom -E - | sed 's/§/#/g' > .tmptmpC2
+	snescom -J -Wall -o $@ .tmptmp2 && rm -f .tmptmpC .tmptmpC2
 
 # Rules for creating ct-crononick.o65
 ct-crononick1.a65: ct-crononick.code utils/compile
 	utils/compile $< $@
 ct-crononick.o65: ct-crononick1.a65 ct-crononick.a65
-	sed 's/#\([^a-z]\)/§\1/g;s/;.*//' < ct-crononick1.a65 > .tmptmp
-	sed 's§<CONJUGATER>§#include ".tmptmp"§' < ct-crononick.a65 | \
-		snescom -E - | sed 's/§/#/g' > .tmptmp2
-	snescom -J -Wall -o $@ .tmptmp2 && rm -f .tmptmp .tmptmp2
+	sed 's/#\([^a-z]\)/§\1/g;s/;.*//' < ct-crononick1.a65 > .tmptmpI
+	sed 's§<CONJUGATER>§#include ".tmptmpI"§' < ct-crononick.a65 | \
+		snescom -E - | sed 's/§/#/g' > .tmptmpI2
+	snescom -J -Wall -o $@ .tmptmp2 && rm -f .tmptmpI .tmptmpI2
 
 
 
 DOCS/%: FORCE
-	@+ make -s "ARCHNAME=${ARCHNAME}" -C DOCS `echo $@|sed 's|^[^/]*/||'`
+	@+ $(MAKE) -s "ARCHNAME=${ARCHNAME}" -C DOCS `echo $@|sed 's|^[^/]*/||'`
 
 #ct.txt: ctdump chrono-dumpee.smc
 #	./ctdump chrono-dumpee.smc >ct_tmp.txt || rm -f ct_tmp.txt && false
