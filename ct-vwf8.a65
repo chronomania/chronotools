@@ -766,13 +766,30 @@ EquipLeftItemFunc:
 
         ALLOCATE()
         pha
-         lda W_TILENUM
+        jsr CalculateClockDifference
+         cmp #3
+         bcc + ; Too small difference to ignore
+         cmp #15
+         bcc IgnoreItemListVWF8 ; Okay to ignore
+         ; Not ignored
+         jsr SaveClock
+
+         + - lda W_TILENUM
          jsr DoTilenumber_8line
          
          lda #$7000
          sta W_VRAMADDR
         pla
         jsr DrawS_2bit
+        bra DisplayFuncCommonEnd
+
+        IgnoreItemListVWF8:
+        ; Don't ignore if the cursor is on the left side or else scrolling breaks
+        lda $54 : and #$00FF
+        cmp #4
+        bcs -
+
+        pla
         bra DisplayFuncCommonEnd
 .)
 
@@ -798,19 +815,7 @@ EquipRightItemFunc:        ;also used in shop
          ; This works
          sta W_TILENUM
          
-         ; The buybuy-lister in shop must not ignore lines.
-         lda 6,s
-         cmp #$DD65: beq ignoreclockcheck
-
-         jsr CalculateClockDifference
-         cmp #3
-         bcc + ; Too small difference to ignore
-         cmp #15
-         bcc IgnoreItemListVWF8 ; Okay to ignore
-         ; Not ignored
-         jsr SaveClock
-      ignoreclockcheck:
-      + pla
+        pla
         SET_16_BIT_AX()
         
         jsr GetItemName
