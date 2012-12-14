@@ -140,8 +140,24 @@ int main(int argc, char** argv)
     uint_fast32_t crc1 = crc32_calc( (const unsigned char*) d1, d1size );
     uint_fast32_t crc2 = crc32_calc( (const unsigned char*) d2, d2size );
 
-    static std::vector<std::size_t> d1map[0x10000];
-    static std::vector<std::size_t> d2map[0x10000];
+    /*
+    #define HASH_SIZE 0x10000
+    #define HASH(buffer,pos,size) \
+        (buffer[pos] \
+        + (((pos+1) < (size)) ? 256*buffer[(pos)+1] : 0) \
+        )
+    */
+
+    #define HASH_SIZE  0x100000
+    #define HASH_LIMIT 0x100000
+    #define HASH(buffer,pos,size) \
+        ((buffer[pos] \
+        + (((pos+1) < (size)) ? 256*buffer[(pos)+1] : 0) \
+        + (((pos+2) < (size)) ? 65536*(buffer[(pos)+2] & 0xF) : 0) \
+        ))
+
+    static std::vector<std::size_t> d1map[HASH_SIZE];
+    static std::vector<std::size_t> d2map[HASH_SIZE];
 
     long sourceRelativeOffset=0;
     long targetRelativeOffset=0;
@@ -151,35 +167,34 @@ int main(int argc, char** argv)
     {
         // Precalculate hash counts, so we don't need to waste
         // time for reallocations during the main loop.
-
-        std::size_t counts[0x10000] = { 0 };
+        unsigned limit = HASH_LIMIT;
+        std::vector<std::size_t> counts(limit);
 
         for(std::size_t a=0; a<d1size; ++a)
         {
-            const unsigned symbol = d1[a] + ((a+1) < d1size ? 256*d1[a+1] : 0);
+            const unsigned symbol = HASH(d1,a,d1size);
             ++counts[symbol];
         }
-        for(unsigned a=0; a<0x10000; ++a)
+        for(unsigned a=0; a<limit; ++a)
             d1map[a].reserve(counts[a]);
 
         if(optimize)
         {
-            for(unsigned a=0; a<0x10000; ++a)
-                counts[a] = 0;
+            std::memset(&counts[0], 0, counts.size()*sizeof(counts[0]));
 
             for(std::size_t a=0; a<d2size; ++a)
             {
-                const unsigned symbol = d2[a] + ((a+1) < d2size ? 256*d2[a+1] : 0);
+                const unsigned symbol = HASH(d2,a,d2size);
                 ++counts[symbol];
             }
-            for(unsigned a=0; a<0x10000; ++a)
+            for(unsigned a=0; a<limit; ++a)
                 d2map[a].reserve(counts[a]);
         }
     }
 
     for(std::size_t a=0; a<d1size; ++a)
     {
-        const unsigned symbol = d1[a] + ((a+1) < d1size ? 256*d1[a+1] : 0);
+        const unsigned symbol = HASH(d1,a,d1size);
         d1map[symbol].push_back(a);
     }
 
@@ -191,7 +206,7 @@ int main(int argc, char** argv)
         std::size_t maxLength = 1, maxOffset = 0;
         double best_cost = 1.0;
 
-        const unsigned symbol = d2[pos] + (pos+1 < d2size ? 256*d2[pos+1] : 0);
+        const unsigned symbol = HASH(d2,pos,d2size);
         std::size_t remains = d2size-pos;
 
         // sourceRead
@@ -289,7 +304,7 @@ int main(int argc, char** argv)
         if(pos < d2size)
         for(std::size_t p = oldpos; p < pos; ++p)
         {
-            const unsigned symbol = d2[p] + ((p+1) < d2size ? 256*d2[p+1] : 0);
+            const unsigned symbol = HASH(d2,p,d2size);
             d2map[symbol].push_back(p);
             if(!optimize)
             {
@@ -310,8 +325,8 @@ int main(int argc, char** argv)
     OutL32(out_crc ^ crc32_startvalue);
 
 #ifdef USE_MMAP
-    munmap(d1, ftell(f1)); std::fclose(f1);
-    munmap(d2, ftell(f2)); std::fclose(f2);
+    munmap(d1, std::ftell(f1)); std::fclose(f1);
+    munmap(d2, std::ftell(f2)); std::fclose(f2);
 #else
     delete[] d1; std::fclose(f1);
     delete[] d2; std::fclose(f2);
