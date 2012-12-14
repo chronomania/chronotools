@@ -347,7 +347,7 @@ utils/makeups: utils/makeups.cc crc32.o
 	$(CXX) $(LDOPTS) $(CXXFLAGS) -o $@ $^
 
 utils/makebeat: utils/makebeat.cc crc32.o
-	$(CXX) $(LDOPTS) $(CXXFLAGS) -o $@ $^
+	$(CXX) $(LDOPTS) $(CXXFLAGS) -o $@ $^ -fopenmp
 
 # Patch applier
 utils/unmakeips: utils/unmakeips.cc crc32.o

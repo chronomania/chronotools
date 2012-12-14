@@ -11,7 +11,17 @@
 #define USE_MMAP 1
 #endif
 
+#define PRECALC 0
+
 #include "../crc32.h"
+
+#ifdef __GNUC__
+# define likely(x)       __builtin_expect(!!(x), 1)
+# define unlikely(x)     __builtin_expect(!!(x), 0)
+#else
+# define likely(x)   (x)
+# define unlikely(x) (x)
+#endif
 
 static crc32_t out_crc = crc32_startvalue;
 
@@ -82,6 +92,32 @@ static size_t MatchingLength
     return len;
 }
 
+#define HASH_SIZE  0x100000
+#define HASH_LIMIT 0x100000
+
+static unsigned HASH(const unsigned char* buffer, std::size_t pos, std::size_t size)
+{
+  #if 1
+    unsigned result = buffer[pos];
+    if(unlikely(pos+1 >= size)) return result;
+    result += (buffer[pos+1] << 8);
+    if(unlikely(pos+2 >= size)) return result;
+    result += ((buffer[pos+2] & 0xF) << 16);
+    return result;
+  #else
+    unsigned char byte1 = buffer[pos];
+    unsigned result     = byte1;
+    if(pos+1 < size) result += 0x100 * buffer[pos+1];
+    unsigned p=1, q=0;
+    for(; pos+p < size && buffer[pos+p] == byte1; ++p) { }
+    while(p > 1) { ++q; p >>= 1; }
+    if(q > 15) q = 15;
+    result += 0x10000 * q;
+    return result;
+  #endif
+}
+
+
 int main(int argc, char** argv)
 {
     bool optimize = false;
@@ -147,14 +183,6 @@ int main(int argc, char** argv)
         )
     */
 
-    #define HASH_SIZE  0x100000
-    #define HASH_LIMIT 0x100000
-    #define HASH(buffer,pos,size) \
-        ((buffer[pos] \
-        + (((pos+1) < (size)) ? 256*buffer[(pos)+1] : 0) \
-        + (((pos+2) < (size)) ? 65536*(buffer[(pos)+2] & 0xF) : 0) \
-        ))
-
     static std::vector<std::size_t> d1map[HASH_SIZE];
     static std::vector<std::size_t> d2map[HASH_SIZE];
 
@@ -171,7 +199,7 @@ int main(int argc, char** argv)
 
         for(std::size_t a=0; a<d1size; ++a)
         {
-            const unsigned symbol = HASH(d1,a,d1size);
+            const unsigned symbol = HASH(&d1[0],a,d1size);
             ++counts[symbol];
         }
         for(unsigned a=0; a<limit; ++a)
@@ -183,7 +211,7 @@ int main(int argc, char** argv)
 
             for(std::size_t a=0; a<d2size; ++a)
             {
-                const unsigned symbol = HASH(d2,a,d2size);
+                const unsigned symbol = HASH(&d2[0],a,d2size);
                 ++counts[symbol];
             }
             for(unsigned a=0; a<limit; ++a)
@@ -193,11 +221,58 @@ int main(int argc, char** argv)
 
     for(std::size_t a=0; a<d1size; ++a)
     {
-        const unsigned symbol = HASH(d1,a,d1size);
+        const unsigned symbol = HASH(&d1[0],a,d1size);
         d1map[symbol].push_back(a);
     }
 
     enum { sourceRead, targetRead, sourceCopy, targetCopy } mode;
+
+#if PRECALC
+    fprintf(stderr, "Hashing 2...\n");
+    for(std::size_t a=0; a<d2size; ++a)
+    {
+        const unsigned symbol = HASH(&d2[0],a,d2size);
+        d2map[symbol].push_back(a);
+    }
+
+    std::vector< std::pair<std::size_t,std::size_t> > Best_D1match(d2size);
+    std::vector< std::pair<std::size_t,std::size_t> > Best_D2match(d2size);
+    fprintf(stderr, "Matching 1 and 2...\n");
+    #pragma omp parallel for schedule(dynamic,256)
+    for(std::size_t pos=0; pos<d2size; ++pos)
+    {
+        if(pos%256==0) fprintf(stderr, "\r%lu", (unsigned long)pos);
+        unsigned symbol = HASH(&d2[0],pos,d2size);
+        // Similarity against source file
+        std::pair<std::size_t,std::size_t> BestMatch(0,0);
+        for(std::size_t b=d1map[symbol].size(), a=b; a-- > 0; )
+        {
+            std::size_t offs = d1map[symbol][a];
+            std::size_t limit = std::min(d2size-pos, d1size-offs);
+            //if((offs>pos ? offs-pos : (pos-offs)) > 4096) limit = std::min(limit, std::size_t(32));
+            std::size_t len =
+                MatchingLength(&d2[pos], limit, &d1[offs]);
+            if(len > BestMatch.first)
+                BestMatch = std::pair<std::size_t,std::size_t>(len,offs);
+        }
+        Best_D1match[pos] = BestMatch;
+        // Similarity against itself
+        BestMatch.first = 0;
+        for(std::size_t b=d2map[symbol].size(), a=b; a-- > 0; )
+        {
+            std::size_t offs = d2map[symbol][a];
+            if(offs >= pos) continue;
+            std::size_t limit = std::min(d2size-pos, d2size-offs);
+            //if(pos-offs > 4096) limit = std::min(limit, std::size_t(32));
+            std::size_t len =
+                MatchingLength(&d2[pos], limit, &d2[offs]);
+            if(len > BestMatch.first)
+                BestMatch = std::pair<std::size_t,std::size_t>(len,offs);
+        }
+        Best_D2match[pos] = BestMatch;
+    }
+    fprintf(stderr, "Done...\n");
+#endif
 
     for(std::size_t pos=0; pos<d2size; )
     {
@@ -205,12 +280,13 @@ int main(int argc, char** argv)
         std::size_t maxLength = 1, maxOffset = 0;
         double best_cost = 1.0;
 
-        const unsigned symbol = HASH(d2,pos,d2size);
+        const unsigned symbol = HASH(&d2[0],pos,d2size);
         std::size_t remains = d2size-pos;
 
         // sourceRead
         if(pos < d1size)
         do{ std::size_t len = MatchingLength(&d1[pos], std::min(d2size-pos, d1size-pos), &d2[pos]);
+          if(len < 2) continue;
           std::size_t benefit = len;
           std::size_t cost    = VcostU( (len-1)*4 + sourceRead );
           if(cost > benefit) continue;
@@ -227,6 +303,7 @@ int main(int argc, char** argv)
           {
               std::size_t offs = d2map[symbol][a];
               std::size_t len = MatchingLength(&d2[offs], d2size-pos, &d2[pos]);
+              //if(len < 2) continue; -- Because of hash, always matches at least some
               std::size_t benefit = len;
               std::size_t cost    = VcostU( (len-1)*4 + targetCopy )
                                   + VcostI( long(offs)-targetRelativeOffset );
@@ -247,6 +324,7 @@ int main(int argc, char** argv)
           {
               std::size_t offs = d1map[symbol][a];
               std::size_t len = MatchingLength(&d1[offs], std::min(d2size-pos, d1size-offs), &d2[pos]);
+              //if(len < 2) continue; -- Because of hash, always matches at least some
               std::size_t benefit = len;
               std::size_t cost    = VcostU( (len-1)*4 + sourceCopy )
                                   + VcostI( long(offs)-sourceRelativeOffset );
@@ -303,8 +381,19 @@ int main(int argc, char** argv)
         if(pos < d2size)
         for(std::size_t p = oldpos; p < pos; ++p)
         {
-            const unsigned symbol = HASH(d2,p,d2size);
-            d2map[symbol].push_back(p);
+            const unsigned symbol = HASH(&d2[0],p,d2size);
+
+            // This "if" condition avoids a pathological case where
+            // long sequences of 0x00 will slow down the program by
+            // a great deal. In such situations, only log the first
+            // position.
+            if(p==oldpos
+            || p+1537 >= d2size
+            || std::memcmp(&d2[p], &d2[p+1], 1536) != 0)
+            {
+                d2map[symbol].push_back(p);
+            }
+
             if(!optimize)
             {
                 break; // <--Remove this line to improve compression
