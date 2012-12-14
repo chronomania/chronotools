@@ -58,8 +58,7 @@ static unsigned VcostU(size_t n) // # bytes consumed by unsigned number
 }
 static unsigned VcostI(long n) // # bytes consumed by signed number
 {
-    if(n < 0) n = -n;
-    return VcostU(n*2+1);
+    return VcostU( n<0 ? (-n*2+1) : (n*2) );
 }
 
 static size_t MatchingLength
@@ -98,7 +97,7 @@ int main(int argc, char** argv)
     {
         std::printf("makebps: A simple Beat patch maker with next to no error checks\n"
                "Copyright (C) 1992,2012 Bisqwit (http://iki.fi/bisqwit/)\n"
-               "Usage: makebeat [-O<optimizationlevel>] oldfile newfile > patch.beat\n"
+               "Usage: makebeat [-O<optimizationlevel>] oldfile newfile > patch.bps\n"
                "Don't forget the \">\"!\n");
         return -1;
     }
@@ -129,7 +128,7 @@ int main(int argc, char** argv)
     std::rewind(f2); std::fread(d2, d2size, 1, f1);
 #endif
 
-    Output((const unsigned char*)"BPS1", 4);
+    Output("BPS1", 4);
     OutV(d1size);
     OutV(d2size);
 
