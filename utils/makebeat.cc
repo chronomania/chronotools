@@ -15,16 +15,13 @@
 
 static crc32_t out_crc = crc32_startvalue;
 
-static void Output(const unsigned char* buf, size_t n)
+static void Output(const void* p, size_t n)
 {
+    const unsigned char* buf = reinterpret_cast<const unsigned char*>(p);
     std::fwrite(buf, 1, n, stdout);
     while(n--) out_crc = crc32_update(out_crc, *buf++);
 }
-static void Output(const char* buf, size_t n)
-{
-    std::fwrite(buf, 1, n, stdout);
-    while(n--) out_crc = crc32_update(out_crc, (unsigned char)*buf++);
-}
+
 static void OutL32(size_t n)
 {
     unsigned char Buf[4] =
@@ -156,6 +153,7 @@ int main(int argc, char** argv)
         // time for reallocations during the main loop.
 
         std::size_t counts[0x10000] = { 0 };
+
         for(std::size_t a=0; a<d1size; ++a)
         {
             const unsigned symbol = d1[a] + ((a+1) < d1size ? 256*d1[a+1] : 0);
@@ -189,10 +187,9 @@ int main(int argc, char** argv)
 
     for(std::size_t pos=0; pos<d2size; )
     {
-        //fprintf(stderr, "\n%lu", (unsigned long)pos);
-        std::size_t maxLength = 1, maxOffset = 0;
-        double best_cost = 1;//5e30f;
         mode = targetRead;
+        std::size_t maxLength = 1, maxOffset = 0;
+        double best_cost = 1.0;
 
         const unsigned symbol = d2[pos] + (pos+1 < d2size ? 256*d2[pos+1] : 0);
         std::size_t remains = d2size-pos;
@@ -206,25 +203,10 @@ int main(int argc, char** argv)
           double relative_cost = double(cost) / double(benefit);
           if(relative_cost < best_cost)
           //if(len > maxLength)
-            { best_cost = relative_cost; maxLength = len; mode = sourceRead; }
+            { best_cost = relative_cost;
+              maxLength = len;
+              mode = sourceRead; }
         }while(0);
-
-        // sourceCopy
-        { for(std::size_t b=d1map[symbol].size(), a=b; a-- > 0; )
-          {
-              std::size_t offs = d1map[symbol][a];
-              std::size_t len = MatchingLength(&d1[offs], std::min(d2size-pos, d1size-offs), &d2[pos]);
-              std::size_t benefit = len;
-              std::size_t cost    = VcostU( (len-1)*4 + sourceCopy )
-                                  + VcostI( long(offs)-sourceRelativeOffset );
-              if(cost > benefit) continue;
-              double relative_cost = double(cost) / double(benefit);
-              if(relative_cost < best_cost)
-              //if(len > maxLength)
-                { best_cost = relative_cost; maxLength = len; maxOffset = offs; mode = sourceCopy;
-                  if(len >= remains) break;
-                }
-        } }
 
         // targetCopy
         { for(std::size_t b=d2map[symbol].size(), a=b; a-- > 0; )
@@ -238,7 +220,30 @@ int main(int argc, char** argv)
               double relative_cost = double(cost) / double(benefit);
               if(relative_cost < best_cost)
               //if(len > maxLength)
-                { best_cost = relative_cost; maxLength = len; maxOffset = offs; mode = targetCopy;
+                { best_cost = relative_cost;
+                  maxLength = len;
+                  maxOffset = offs;
+                  mode = targetCopy;
+                  if(len >= remains) break;
+                }
+        } }
+
+        // sourceCopy
+        { for(std::size_t b=d1map[symbol].size(), a=b; a-- > 0; )
+          {
+              std::size_t offs = d1map[symbol][a];
+              std::size_t len = MatchingLength(&d1[offs], std::min(d2size-pos, d1size-offs), &d2[pos]);
+              std::size_t benefit = len;
+              std::size_t cost    = VcostU( (len-1)*4 + sourceCopy )
+                                  + VcostI( long(offs)-sourceRelativeOffset );
+              if(cost > benefit) continue;
+              double relative_cost = double(cost) / double(benefit);
+              if(relative_cost < best_cost)
+              //if(len > maxLength)
+                { best_cost = relative_cost;
+                  maxLength = len;
+                  maxOffset = offs;
+                  mode = sourceCopy;
                   if(len >= remains) break;
                 }
         } }
@@ -246,7 +251,7 @@ int main(int argc, char** argv)
         /*fprintf(stderr, "@%7u Best %.4f, len %u, offs %u, mode %u\n",
             (unsigned)pos, best_cost, (unsigned)maxLength, (unsigned)maxOffset, mode);*/
 
-        //if(maxLength < 4) { maxLength = 1; mode = targetRead; }
+        //if(maxLength < 4 && mode != sourceRead) { maxLength = 1; mode = targetRead; }
 
         if(mode != targetRead && targetReadLength > 0)
         {

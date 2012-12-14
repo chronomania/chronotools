@@ -12,7 +12,7 @@ using namespace std;
 #define IPS_ADDRESS_EXTERN 0x01
 #define IPS_ADDRESS_GLOBAL 0x02
 
-static size_t Improvize(char* buf, size_t n)
+static size_t Improvize(char* buf, size_t n, size_t at)
 {
     static bool warned = false;
     if(!warned)
@@ -20,8 +20,12 @@ static size_t Improvize(char* buf, size_t n)
         fprintf(stderr, "Warning: Output file will be larger than original.\n");
         warned = true;
     }
+
+    // Instead of filling the content with zero, fill with a 01234..pattern.
+    // This helps make BPS patch creation a lot faster than without.
     for(size_t a=0; a<n; ++a)
-        buf[a] = 0;
+        buf[a] = (at+a) % 0x100;
+
     return n;
 }
 
@@ -51,20 +55,20 @@ int main(int argc, const char *const *argv)
     const char *patchfn = argv[1];
     const char *origfn = argv[2];
     const char *resfn = argv[3];
-    
+
     FILE *fp = fopen(patchfn, "rb");
     if(!fp) { perror(patchfn); }
-    
+
     FILE *original = fopen(origfn, "rb");
     if(!original) { if(!strcmp(origfn, "-")) original = stdin;
                     else perror(origfn); }
-    
+
     FILE *resultfile = fopen(resfn, "wb");
     if(!resultfile) { perror(resfn); }
-    
+
     if(!fp || !original || !resultfile)
         return -1;
-    
+
     unsigned char Buf[5];
     fread(Buf, 1, 5, fp);
 
@@ -82,7 +86,7 @@ int main(int argc, const char *const *argv)
             fseek(original, 0, SEEK_END);
             size_t origsize = ftell(original);
             rewind(original);
-            
+
             if(origsize == newsize)
                 { fprintf(stderr, "Reverse patch detected\n");
                   std::swap(oldsize, newsize); }
@@ -95,7 +99,7 @@ int main(int argc, const char *const *argv)
             /*size_t inpos = ftell(fp);*/
             size_t patchpos = ReadV(fp) + oldpos;
             if(oldpos > 0) ++patchpos;
-            
+
             size_t plainlen = patchpos-oldpos;
             /*fprintf(stderr, "patchpos: %lX @ %lX,%lX (plain %lX); old(%lX)new(%lX)\n",
                 patchpos, inpos,oldpos, plainlen,
@@ -106,7 +110,7 @@ int main(int argc, const char *const *argv)
                 size_t bytes = plainlen; if(bytes > sizeof(tmp)) bytes = sizeof(tmp);
                 size_t c = fread(tmp, 1, bytes, original);
                 if(c <= 0 && ferror(original)) goto inferr;
-                if(!c) c = Improvize(tmp, bytes);
+                if(!c) c = Improvize(tmp, bytes, ftell(resultfile));
                 size_t c2 = fwrite(tmp, 1, c, resultfile);
                 if(c2 <= 0 && ferror(resultfile)) goto outferr;
                 if(c2 != c) goto outfeof;
@@ -130,12 +134,12 @@ int main(int argc, const char *const *argv)
         ftruncate(fileno(resultfile), newsize);
         goto Created;
     }
-    
+
     setbuf(fp, NULL);
     setbuf(original, NULL);
     setbuf(resultfile, NULL);
-    
-    
+
+
     if(strncmp((const char *)Buf, "PATCH", 5))
     {
         fprintf(stderr, "This isn't a patch!\n"); arf:fclose(fp);
@@ -148,7 +152,7 @@ int main(int argc, const char *const *argv)
         fclose(resultfile);
         return -1;
     }
-    
+
    {multimap<size_t, vector<char> > lumps;
    {size_t col=0;
     for(;;)
@@ -168,7 +172,7 @@ int main(int argc, const char *const *argv)
         if(c < (wanted=2)) { goto ipseof; }
         size_t len = (((size_t)Buf[0]) << 8)
                     | ((size_t)Buf[1]);
-        
+
         if(len==0)
         {
             rle=true;
@@ -182,9 +186,9 @@ int main(int argc, const char *const *argv)
         }
         else
             fprintf(stderr, "%06lX <- %-5lu ", pos, len);
-        
+
         if(++col == 5) { fprintf(stderr, "\n"); col=0; }
-        
+
         vector<char> Buf2(len);
         if(rle)
         {
@@ -200,7 +204,7 @@ int main(int argc, const char *const *argv)
             if(c <= 0 && ferror(fp)) { goto ipserr; }
             if(c != (wanted = len)) { goto ipseof; }
         }
-        
+
         if(pos == IPS_ADDRESS_EXTERN || pos == IPS_ADDRESS_GLOBAL)
         {
             /* Ignore these */
@@ -212,7 +216,7 @@ int main(int argc, const char *const *argv)
     }
     if(col) fprintf(stderr, "\n");
    }fclose(fp);
-    
+
     size_t curpos=0;
     char tmp[4096];
     multimap<size_t, vector<char> >::const_iterator i;
@@ -227,7 +231,7 @@ int main(int argc, const char *const *argv)
             size_t bytes = plainlen; if(bytes > sizeof(tmp)) bytes = sizeof(tmp);
             size_t c = fread(tmp, 1, bytes, original);
             if(c <= 0 && ferror(original)) goto inferr;
-            if(!c) c = Improvize(tmp, bytes);
+            if(!c) c = Improvize(tmp, bytes, ftell(resultfile));
             size_t c2 = fwrite(tmp, 1, c, resultfile);
             if(c2 <= 0 && ferror(resultfile)) goto outferr;
             if(c2 != c) goto outfeof;
@@ -240,7 +244,7 @@ int main(int argc, const char *const *argv)
             size_t bytes = skiplen; if(bytes > sizeof(tmp)) bytes = sizeof(tmp);
             size_t c = fread(tmp, 1, bytes, original);
             if(c <= 0 && ferror(original)) goto inferr;
-            if(!c) c = Improvize(tmp, bytes);
+            if(!c) c = Improvize(tmp, bytes, ftell(resultfile));
             skiplen -= c;
         }
         size_t c = fwrite(&i->second[0], 1, patchlen, resultfile);
@@ -257,12 +261,12 @@ int main(int argc, const char *const *argv)
         if(c2 <= 0 && ferror(resultfile)) goto outferr;
         if(c2 != c) goto outfeof;
    }}
-    
+
 Created:
     fprintf(stderr, "%s created successfully. %s not modified.\n", resfn, origfn);
-    
+
     fclose(original);
     fclose(resultfile);
-    
+
     return 0;
 }
