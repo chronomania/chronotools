@@ -12,6 +12,8 @@ using namespace std;
 #define IPS_ADDRESS_EXTERN 0x01
 #define IPS_ADDRESS_GLOBAL 0x02
 
+static bool optimize = false;
+
 static size_t Improvize(char* buf, size_t n, size_t at)
 {
     static bool warned = false;
@@ -23,8 +25,12 @@ static size_t Improvize(char* buf, size_t n, size_t at)
 
     // Instead of filling the content with zero, fill with a 01234..pattern.
     // This helps make BPS patch creation a lot faster than without.
-    for(size_t a=0; a<n; ++a)
-        buf[a] = (at+a) % 0x100;
+    if(optimize)
+        for(size_t a=0; a<n; ++a)
+            buf[a] = (at+a) % 0x100;
+    else
+        for(size_t a=0; a<n; ++a)
+            buf[a] = 0;
 
     return n;
 }
@@ -43,8 +49,15 @@ static size_t ReadV(FILE* fp)
     return result;
 }
 
-int main(int argc, const char *const *argv)
+int main(int argc, char** argv)
 {
+    if(argv[1][0]=='-' && argv[1][1] == 'O')
+    {
+        optimize = true;
+        for(int p=1; p<argc; ++p) argv[p]=argv[p+1];
+        --argc;
+    }
+
     if(argc != 1+3)
     {
         fprintf(stderr, "unmakeips: A simple IPS/UPS patcher with lots of error checks\n"
