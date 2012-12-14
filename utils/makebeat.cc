@@ -76,22 +76,32 @@ static size_t MatchingLength
     // by comparing sizeof(unsigned) bytes at time instead
     // of 1 byte at time.
     size_t len = 0;
-    const size_t intsize = sizeof(unsigned);
-    const unsigned*const p1 = reinterpret_cast<const unsigned*>(in1);
-    const unsigned*const p2 = reinterpret_cast<const unsigned*>(in2);
+    typedef unsigned long inttype;
+    const size_t intsize = sizeof(inttype);
+    const inttype*const p1 = reinterpret_cast<const inttype*>(in1);
+    const inttype*const p2 = reinterpret_cast<const inttype*>(in2);
     while(size >= intsize && p1[len] == p2[len]) { ++len; size -= intsize; }
     len *= intsize;
     while(size > 0 && in1[len] == in2[len]) { --size; ++len; }
     return len;
 }
 
-int main(int argc, const char *const *argv)
+int main(int argc, char** argv)
 {
+    bool optimize = false;
+
+    if(argv[1][0]=='-' && argv[1][1] == 'O')
+    {
+        optimize = true;
+        for(int p=1; p<argc; ++p) argv[p]=argv[p+1];
+        --argc;
+    }
+
     if(argc != 3)
     {
         std::printf("makebps: A simple Beat patch maker with next to no error checks\n"
                "Copyright (C) 1992,2012 Bisqwit (http://iki.fi/bisqwit/)\n"
-               "Usage: makebeat oldfile newfile > patch.beat\n"
+               "Usage: makebeat [-O<optimizationlevel>] oldfile newfile > patch.beat\n"
                "Don't forget the \">\"!\n");
         return -1;
     }
@@ -133,8 +143,8 @@ int main(int argc, const char *const *argv)
     uint_fast32_t crc1 = crc32_calc( (const unsigned char*) d1, d1size );
     uint_fast32_t crc2 = crc32_calc( (const unsigned char*) d2, d2size );
 
-    std::vector<std::size_t> d1map[0x10000];
-    std::vector<std::size_t> d2map[0x10000];
+    static std::vector<std::size_t> d1map[0x10000];
+    static std::vector<std::size_t> d2map[0x10000];
 
     long sourceRelativeOffset=0;
     long targetRelativeOffset=0;
@@ -152,10 +162,11 @@ int main(int argc, const char *const *argv)
     {
         //fprintf(stderr, "\n%lu", (unsigned long)pos);
         std::size_t maxLength = 1, maxOffset = 0;
-        float best_cost = 1;//5e30f;
+        double best_cost = 1;//5e30f;
         mode = targetRead;
 
         const unsigned symbol = d2[pos] + (pos+1 < d2size ? 256*d2[pos+1] : 0);
+        std::size_t remains = d2size-pos;
 
         // sourceRead
         if(pos < d1size)
@@ -163,7 +174,7 @@ int main(int argc, const char *const *argv)
           std::size_t benefit = len;
           std::size_t cost    = VcostU( (len-1)*4 + sourceRead );
           if(cost > benefit) continue;
-          float relative_cost = float(cost) / float(benefit);
+          double relative_cost = double(cost) / double(benefit);
           if(relative_cost < best_cost)
           //if(len > maxLength)
             { best_cost = relative_cost; maxLength = len; mode = sourceRead; }
@@ -178,10 +189,12 @@ int main(int argc, const char *const *argv)
               std::size_t cost    = VcostU( (len-1)*4 + sourceCopy )
                                   + VcostI( long(offs)-sourceRelativeOffset );
               if(cost > benefit) continue;
-              float relative_cost = float(cost) / float(benefit);
+              double relative_cost = double(cost) / double(benefit);
               if(relative_cost < best_cost)
               //if(len > maxLength)
-                { best_cost = relative_cost; maxLength = len; maxOffset = offs; mode = sourceCopy; }
+                { best_cost = relative_cost; maxLength = len; maxOffset = offs; mode = sourceCopy;
+                  if(len >= remains) break;
+                }
         } }
 
         // targetCopy
@@ -193,10 +206,12 @@ int main(int argc, const char *const *argv)
               std::size_t cost    = VcostU( (len-1)*4 + targetCopy )
                                   + VcostI( long(offs)-targetRelativeOffset );
               if(cost > benefit) continue;
-              float relative_cost = float(cost) / float(benefit);
+              double relative_cost = double(cost) / double(benefit);
               if(relative_cost < best_cost)
               //if(len > maxLength)
-                { best_cost = relative_cost; maxLength = len; maxOffset = offs; mode = targetCopy; }
+                { best_cost = relative_cost; maxLength = len; maxOffset = offs; mode = targetCopy;
+                  if(len >= remains) break;
+                }
         } }
 
         /*fprintf(stderr, "@%7u Best %.4f, len %u, offs %u, mode %u\n",
@@ -241,7 +256,10 @@ int main(int argc, const char *const *argv)
         {
             const unsigned symbol = d2[p] + ((p+1) < d2size ? 256*d2[p+1] : 0);
             d2map[symbol].push_back(p);
-            break;
+            if(!optimize)
+            {
+                break; // <--Remove this line to improve compression
+            }
         }
     }
 
