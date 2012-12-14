@@ -150,6 +150,35 @@ int main(int argc, char** argv)
     long targetRelativeOffset=0;
     std::size_t targetReadLength=0;
 
+    if(true)
+    {
+        // Precalculate hash counts, so we don't need to waste
+        // time for reallocations during the main loop.
+
+        std::size_t counts[0x10000] = { 0 };
+        for(std::size_t a=0; a<d1size; ++a)
+        {
+            const unsigned symbol = d1[a] + ((a+1) < d1size ? 256*d1[a+1] : 0);
+            ++counts[symbol];
+        }
+        for(unsigned a=0; a<0x10000; ++a)
+            d1map[a].reserve(counts[a]);
+
+        if(optimize)
+        {
+            for(unsigned a=0; a<0x10000; ++a)
+                counts[a] = 0;
+
+            for(std::size_t a=0; a<d2size; ++a)
+            {
+                const unsigned symbol = d2[a] + ((a+1) < d2size ? 256*d2[a+1] : 0);
+                ++counts[symbol];
+            }
+            for(unsigned a=0; a<0x10000; ++a)
+                d2map[a].reserve(counts[a]);
+        }
+    }
+
     for(std::size_t a=0; a<d1size; ++a)
     {
         const unsigned symbol = d1[a] + ((a+1) < d1size ? 256*d1[a+1] : 0);
@@ -252,6 +281,7 @@ int main(int argc, char** argv)
         std::size_t oldpos = pos;
         pos += maxLength;
 
+        if(pos < d2size)
         for(std::size_t p = oldpos; p < pos; ++p)
         {
             const unsigned symbol = d2[p] + ((p+1) < d2size ? 256*d2[p+1] : 0);
