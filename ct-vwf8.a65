@@ -17,6 +17,11 @@
 ; Note - This file is not really as big as it seems.
 ;        It only has lots of comments and some unrolled loops!
 
+; Things that can be rendered in VWF8:
+; *i = Item list
+; *l1 = Item types? -- used in battle, not currently rendered in vwf
+; *t11 = Techniques
+
 
 ; Variable addresses:
 #define W_DATASIZE $10
@@ -575,6 +580,8 @@ DrawS_init_common:
 Trans:
         ; Font8v has been shrunk a bit.
         ; This function translates characters to font indices...
+        ;   20..2F  becomes 00..0F
+        ;   A0..17F becomes 20..FF
         
         .al
         ; We are 16-bit here

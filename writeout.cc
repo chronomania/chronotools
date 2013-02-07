@@ -76,6 +76,10 @@ void insertor::WriteEverything()
     WriteImages();
     WriteStrings();
     WriteFonts();
+
+    if(GetConf("font", "prerender_vwf8"))
+        WriteVWF8_Strings();
+
     WriteConjugator();
     WriteUserCode();
     WriteDictionary();

@@ -12,6 +12,7 @@ void MessageReorganizingFonts();
 void MessageLinkingModules(unsigned count);
 void MessageWritingStrings();
 void MessageWritingDict();
+void MessageRenderingVWF8();
 
 void MessageLoadingItem(const std::string& header);
 void MessageZSection(const std::string& header);

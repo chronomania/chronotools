@@ -106,6 +106,7 @@ private:
     void WriteFonts();
     void WriteVWF12();
     void WriteVWF8();
+    void WriteVWF8_Strings();
     void WriteFont8();
     void WriteConjugator();
     void WriteUserCode();

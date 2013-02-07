@@ -237,7 +237,7 @@ int main(int argc, char** argv)
     {
         size_t newpos = i->first;
         if(newpos < curpos)
-          { fprintf(stderr, "Malformed patch (overlapping chunks)!\n"); goto arf2; }
+          { fprintf(stderr, "Malformed patch (overlapping chunks at %lX)!\n", (unsigned long)newpos); goto arf2; }
         size_t plainlen = newpos-curpos;
         while(plainlen > 0)
         {
