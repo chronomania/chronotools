@@ -1096,8 +1096,10 @@ void insertor::WriteVWF8_Strings()
 {
     MessageRenderingVWF8();
 
-    std::vector<unsigned char> ItemGFX;
-    std::vector<unsigned char> TechGFX;
+    std::vector<unsigned char> ItemGFX_2bpp;
+    std::vector<unsigned char> TechGFX_2bpp;
+    std::vector<unsigned char> ItemGFX_4bpp;
+    std::vector<unsigned char> TechGFX_4bpp;
 
     const unsigned n_chars = 0x280;
     const unsigned space   = 0x7F;
@@ -1228,11 +1230,13 @@ void insertor::WriteVWF8_Strings()
         || i->type == stringdata::tech)
         {
             const ctstring& str = i->str;
-            std::vector<unsigned char>& tgt = (i->type == stringdata::item) ? ItemGFX : TechGFX;
+            std::vector<unsigned char>& tgt_2bpp = (i->type == stringdata::item) ? ItemGFX_2bpp : TechGFX_2bpp;
+            std::vector<unsigned char>& tgt_4bpp = (i->type == stringdata::item) ? ItemGFX_4bpp : TechGFX_4bpp;
 
             //printf("<%s>\n", GetString(i->str).c_str());
 
-            std::vector<unsigned char> PixelBuffer(16 * 16);
+            std::vector<unsigned char> PixelBuffer_2bpp(16 * 16);
+            std::vector<unsigned char> PixelBuffer_4bpp(16 * 32);
 
             unsigned xpos = 0, prev_c = 0;
             for(size_t a=0; a<str.size(); ++a)
@@ -1256,25 +1260,41 @@ void insertor::WriteVWF8_Strings()
                         unsigned char color = b2*2 + b1;
                         if(!color) continue;
 
-                        unsigned char& newbyte0 = PixelBuffer[ (newx/8) * 16 + y * 2 + 0];
-                        unsigned char& newbyte1 = PixelBuffer[ (newx/8) * 16 + y * 2 + 1];
+                        unsigned char& newbyte0 = PixelBuffer_2bpp[ (newx/8) * 16 + y * 2 + 0];
+                        unsigned char& newbyte1 = PixelBuffer_2bpp[ (newx/8) * 16 + y * 2 + 1];
 
                         newbyte0 |= b1 << (7 - newx%8);
                         newbyte1 |= b2 << (7 - newx%8);
+
+                        unsigned char& newbyte0b = PixelBuffer_4bpp[ (newx/8) * 32 + y * 2 + 0];
+                        unsigned char& newbyte1b = PixelBuffer_4bpp[ (newx/8) * 32 + y * 2 + 1];
+
+                        newbyte0b |= b1 << (7 - newx%8);
+                        newbyte1b |= b2 << (7 - newx%8);
                     }
                 }
 
                 prev_c = c;
             }
 
-            tgt.insert(tgt.end(), PixelBuffer.begin(), PixelBuffer.end());
+            tgt_2bpp.insert(tgt_2bpp.end(), PixelBuffer_2bpp.begin(), PixelBuffer_2bpp.end());
+            tgt_4bpp.insert(tgt_4bpp.end(), PixelBuffer_4bpp.begin(), PixelBuffer_4bpp.end());
         }
     }
 
     MessageDone();
 
-    objects.AddLump(ItemGFX, "vwf8 items", "VWF8_ITEMS");
-    objects.AddLump(TechGFX, "vwf8 techs", "VWF8_TECHS");
+    objects.AddLump(TechGFX_2bpp, "vwf8 techs 2bpp", "VWF8_TECHS_2BPP");
+    objects.AddLump(TechGFX_4bpp, "vwf8 techs 4bpp", "VWF8_TECHS_4BPP");
+
+    std::vector<unsigned char> Item_2bpp_part2;
+    std::vector<unsigned char> Item_4bpp_part2( ItemGFX_4bpp.begin() + 65536, ItemGFX_4bpp.end() );
+    ItemGFX_4bpp.erase( ItemGFX_4bpp.begin() + 65536, ItemGFX_4bpp.end() );
+
+    objects.AddLump(ItemGFX_2bpp,    "vwf8 items 2bpp part1", "VWF8_ITEMS_2BPP_PART1");
+    objects.AddLump(ItemGFX_4bpp,    "vwf8 items 4bpp part1", "VWF8_ITEMS_4BPP_PART1");
+    objects.AddLump(Item_2bpp_part2, "vwf8 items 2bpp part2", "VWF8_ITEMS_2BPP_PART2");
+    objects.AddLump(Item_4bpp_part2, "vwf8 items 4bpp part2", "VWF8_ITEMS_4BPP_PART2");
 }
 
 Font8data::Font8data(): tiletable(), widths(), fn() { }
