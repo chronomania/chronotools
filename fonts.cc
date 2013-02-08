@@ -1102,7 +1102,7 @@ void insertor::WriteVWF8_Strings()
     std::vector<unsigned char> TechGFX_4bpp;
 
     const unsigned n_chars = 0x280;
-    const unsigned space   = 0x7F;
+    const unsigned space   = getctchar(' ') - 0x80;
 
     const std::vector<unsigned char>& FontData = Font8v.GetTiles();
     /* ^ original font data */
@@ -1135,7 +1135,8 @@ void insertor::WriteVWF8_Strings()
     // Colors: 0=empty, 1=shadow, 2=smooth curve, 3=solid
 #endif
 
-    // Calculate the margins for the characters
+    // Could calculate the margins for the characters
+    // But won't do that, because our font is already completely left-aligned
     /*for(unsigned c=0; c<n_chars; ++c)
     {
         unsigned margin_left = 8, margin_right = 8;
@@ -1176,7 +1177,6 @@ void insertor::WriteVWF8_Strings()
                 unsigned byte1 = FontData[c1 * 16 + y1 * 2 + 0];
                 unsigned byte2 = FontData[c1 * 16 + y1 * 2 + 1];
 
-                // For the purposes of collision checking, space is always a vertical colum
                 for(int x1=0; x1<8; ++x1)
                 {
                     unsigned char b1 = (byte1 >> (7-x1)) & 1;
@@ -1191,7 +1191,7 @@ void insertor::WriteVWF8_Strings()
                         unsigned byte1b = FontData[c2 * 16 + y2 * 2 + 0];
                         unsigned byte2b = FontData[c2 * 16 + y2 * 2 + 1];
 
-                        // For the purposes of collision checking, space is always a vertical colum
+                        // For the purposes of collision checking, space is always a vertical column
                         if(c2 == space) { byte1b = byte2b = 0x18; }
 
                         int x2 = x1-offset;
@@ -1210,7 +1210,6 @@ void insertor::WriteVWF8_Strings()
             best_touches = num_touches;
             best_offset  = offset;
         }
-        if(c2 == space) best_offset += 2; // For space, add extra pixel
         if(c1 == 0x4B0/16 // 'r'
         && c2 == 0x680/16) // '.'
         {
@@ -1219,6 +1218,8 @@ void insertor::WriteVWF8_Strings()
 
         // Don't do kerning with the weapon/item icons:
         if(c1 < 0x20) best_offset = 7;
+
+        if(c1 == space) best_offset = 4; // For space, add extra pixel
 
         KerningTable[c1][c2] = best_offset + 1;
     }
@@ -1284,12 +1285,12 @@ void insertor::WriteVWF8_Strings()
 
     MessageDone();
 
-    objects.AddLump(TechGFX_2bpp, "vwf8 techs 2bpp", "VWF8_TECHS_2BPP");
-    objects.AddLump(TechGFX_4bpp, "vwf8 techs 4bpp", "VWF8_TECHS_4BPP");
-
     std::vector<unsigned char> Item_2bpp_part2;
     std::vector<unsigned char> Item_4bpp_part2( ItemGFX_4bpp.begin() + 65536, ItemGFX_4bpp.end() );
     ItemGFX_4bpp.erase( ItemGFX_4bpp.begin() + 65536, ItemGFX_4bpp.end() );
+
+    objects.AddLump(TechGFX_2bpp, "vwf8 techs 2bpp", "VWF8_TECHS_2BPP");
+    objects.AddLump(TechGFX_4bpp, "vwf8 techs 4bpp", "VWF8_TECHS_4BPP");
 
     objects.AddLump(ItemGFX_2bpp,    "vwf8 items 2bpp part1", "VWF8_ITEMS_2BPP_PART1");
     objects.AddLump(ItemGFX_4bpp,    "vwf8 items 4bpp part1", "VWF8_ITEMS_4BPP_PART1");
