@@ -62,12 +62,9 @@ void insertor::PatchROM(class ROM& ROM) const
         //objects.Release(a);
     }
 
-    /* FIXME:
-     *   This function used to MarkFree() all unused space.
-     *   It was not good practice. Replace with something else.
-     *
-     * freespace.VerboseDump();
+    /* Note: VerboseDump() will also MarkFree() all unused space.
      */
+    freespace.VerboseDump();
 }
 
 void insertor::WriteEverything()
