@@ -5,8 +5,6 @@
 
 #include <unistd.h> // for ftruncate and fileno
 
-#include "../crc32.h"
-
 using namespace std;
 
 #define IPS_ADDRESS_EXTERN 0x01
@@ -51,7 +49,7 @@ static size_t ReadV(FILE* fp)
 
 int main(int argc, char** argv)
 {
-    if(argv[1][0]=='-' && argv[1][1] == 'O')
+    if(argc > 1 && argv[1][0]=='-' && argv[1][1] == 'O')
     {
         optimize = true;
         for(int p=1; p<argc; ++p) argv[p]=argv[p+1];
@@ -105,7 +103,7 @@ int main(int argc, char** argv)
                   std::swap(oldsize, newsize); }
             else if(origsize != oldsize)
                 { fprintf(stderr, "What are you patching? Input is %lu bytes, should be %lu or %lu\n",
-                    origsize, oldsize, newsize); }
+                    (unsigned long)origsize, (unsigned long)oldsize, (unsigned long)newsize); }
         }
         while( (size_t)ftell(fp) < patchsize - 12)
         {
@@ -151,7 +149,9 @@ int main(int argc, char** argv)
     setbuf(fp, NULL);
     setbuf(original, NULL);
     setbuf(resultfile, NULL);
-
+    fseek(fp,5,SEEK_SET);
+    rewind(original);
+    rewind(resultfile);
 
     if(strncmp((const char *)Buf, "PATCH", 5))
     {
@@ -177,11 +177,12 @@ int main(int argc, char** argv)
                     fprintf(stderr, "Unexpected end of file (%s) - wanted %d, got %d\n", patchfn, (int)wanted, (int)c);
                     goto arf; }
         if(!strncmp((const char *)Buf, "EOF", 3))break;
+        //fprintf(stderr, "%ld %02X %02X %02X %ld\n", (long)c, Buf[0],Buf[1],Buf[2], (long)ftell(fp));
         size_t pos = (((size_t)Buf[0]) << 16)
                      |(((size_t)Buf[1]) << 8)
                      | ((size_t)Buf[2]);
         c = fread(Buf, 1, 2, fp);
-        if(c <= 0 && ferror(fp)) { fprintf(stderr, "Got pos %lX\n", pos); goto ipserr; }
+        if(c <= 0 && ferror(fp)) { fprintf(stderr, "Got pos %lX\n", (unsigned long)pos); goto ipserr; }
         if(c < (wanted=2)) { goto ipseof; }
         size_t len = (((size_t)Buf[0]) << 8)
                     | ((size_t)Buf[1]);
@@ -190,15 +191,15 @@ int main(int argc, char** argv)
         {
             rle=true;
             c = fread(Buf, 1, 2, fp);
-            if(c <= 0 && ferror(fp)) { fprintf(stderr, "Got pos %lX\n", pos); goto ipserr; }
+            if(c <= 0 && ferror(fp)) { fprintf(stderr, "Got pos %lX\n", (unsigned long)pos); goto ipserr; }
             if(c < (wanted=2)) { goto ipseof; }
             len = (((size_t)Buf[0]) << 8)
                  | ((size_t)Buf[1]);
 
-            fprintf(stderr, "%06lX <= %-5lu ", pos, len);
+            fprintf(stderr, "%06lX <= %-5lu ", (unsigned long)pos, (unsigned long)len);
         }
         else
-            fprintf(stderr, "%06lX <- %-5lu ", pos, len);
+            fprintf(stderr, "%06lX <- %-5lu ", (unsigned long)pos, (unsigned long)len);
 
         if(++col == 5) { fprintf(stderr, "\n"); col=0; }
 

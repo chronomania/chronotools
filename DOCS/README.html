@@ -23,8 +23,15 @@ SMALL    {font-size:70%}
   <h1>Chrono Trigger translation development system</h1>
   <h2 class=level2> 0. Contents </h2>
   
-  This is the documentation of chronotools-1.15.6.1.
-<div class=toc><table cellspacing=0 cellpadding=0 class=toc><tr><td width="33%" valign=middle align=left nowrap class=toc>&nbsp;&nbsp;&nbsp;1. <a href="#what">Purpose</a><br>&nbsp;&nbsp;&nbsp;2. <a href="#how">How to begin?</a><br>&nbsp;&nbsp;&nbsp;3. <a href="#status">Current status</a><br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;3.1. <a href="#changes">Version history</a><br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;3.1.1. <a href="#h0">Release notes</a><br>&nbsp;&nbsp;&nbsp;4. <a href="#h1">Program list</a><br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;4.1. <a href="#ctdump">ctdump</a><br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;4.2. <a href="#ctinsert">ctinsert</a><br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;4.3. <a href="#h2">other</a><br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;4.3.1. <a href="#h3">makeips</a><br></td>
+  This is the documentation of chronotools-1.15.7.
+<script type="text/javascript" src="http://sc5.github.com/copyright-campaign/copyright-campaign.js" charset="UTF-8"></script>
+<script type="text/javascript" charset="UTF-8">
+copyrightCampaign({ onCampaignDayOnly: true,
+                    showOnlyOnce: false,
+                    title: 'Järkeä<br>tekijänoikeuslakiin?',
+                    bigText: 'Allekirjoita <a href="https://www.kansalaisaloite.fi/fi/aloite/70">kansalaisaloite kohtuullisemman tekijänoikeuslain puolesta</a>.',
+                    smallText: 'Katso myös: <a href="#">Internetin musta päivä 23.4.</a>'});
+</script><div class=toc><table cellspacing=0 cellpadding=0 class=toc><tr><td width="33%" valign=middle align=left nowrap class=toc>&nbsp;&nbsp;&nbsp;1. <a href="#what">Purpose</a><br>&nbsp;&nbsp;&nbsp;2. <a href="#how">How to begin?</a><br>&nbsp;&nbsp;&nbsp;3. <a href="#status">Current status</a><br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;3.1. <a href="#changes">Version history</a><br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;3.1.1. <a href="#h0">Release notes</a><br>&nbsp;&nbsp;&nbsp;4. <a href="#h1">Program list</a><br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;4.1. <a href="#ctdump">ctdump</a><br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;4.2. <a href="#ctinsert">ctinsert</a><br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;4.3. <a href="#h2">other</a><br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;4.3.1. <a href="#h3">makeips</a><br></td>
 <td width="33%" valign=middle align=left nowrap class=toc>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;4.3.2. <a href="#h4">unmakeips</a><br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;4.3.3. <a href="#h5">xray</a><br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;4.3.4. <a href="#h6">viewer</a><br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;4.3.5. <a href="#h7">sramdump</a><br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;4.3.6. <a href="#h8">base62</a><br>&nbsp;&nbsp;&nbsp;5. <a href="#h9">Useful features</a><br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;5.1. <a href="#conj">Player name inflection</a><br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;5.2. <a href="#skew">Font/dictionary skew</a><br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;5.3. <a href="#wrap">Automatic paragraph wrapping</a><br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;5.4. <a href="#vwf8">Variable width 8pix font</a><br></td>
 <td width="34%" valign=middle align=left nowrap class=toc>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;5.5. <a href="#expand">Expansion to 48 Mbit or 64 Mbit</a><br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;5.6. <a href="#h10">Location event support</a><br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;5.7. <a href="#h11">Very configurable</a><br>&nbsp;&nbsp;&nbsp;6. <a href="#h12">Summary of extra features</a><br>&nbsp;&nbsp;&nbsp;7. <a href="#req">Requirements</a><br>&nbsp;&nbsp;&nbsp;8. <a href="#copying">Copying</a><br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;8.1. <a href="#parts">Ripping my hacks</a><br>&nbsp;&nbsp;&nbsp;9. <a href="#docs">Documentation</a><br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;9.1. <a href="#undocs">Undocumented things</a><br>&nbsp;&nbsp;&nbsp;10. <a href="#helpneeded">See also</a><br>&nbsp;&nbsp;&nbsp;11. <a href="#download">Downloading</a><br></td>
 </tr></table></div><H2 id="what" class="level2"><a name="what"></a>1. Purpose</H2><div class="level2" id="divwhat">
@@ -237,6 +244,7 @@ Copypaste from the Makefile:
 # VERSION 1.15.5.1 improves compilability on more modern gcc versions
 # VERSION 1.15.6 adds rawblob and spriteblob support (thanks Michal Ziabkowski)
 # VERSION 1.15.6.1 improves the LZ-variant compression a little.
+# VERSION 1.15.7 improves compilability on more modern gcc versions
 </pre>
 
 To use the character name changing feature, do a redump with ctdump
@@ -539,8 +547,8 @@ and is distributed under the terms of the
  If you have questions or just want to talk about
  Chrono Trigger hacking, throw me email.
 <p>
- My email address:<span id=eml23><b id=eml9 class=nonmail>Zzeeiiw</b><span id=eml10 class=ismail>Joel</span><span id=eml11 class=nonmail><b>an7fUgHke</b></span><span id=eml12 class=ismail> Yli</span><b id=eml13 class=nonmail>chozk</b><span id=eml14 class=ismail>luom</span><span id=eml15 class=nonmail><b>q</b></span><span id=eml16 class=ismail>a &lt;bi</span><b id=eml17 class=nonmail>cqmfwcwpE</b><span id=eml18 class=ismail>sqwi</span><span id=eml19 class=nonmail><b>ezegnuv5</b></span><span id=eml20 class=ismail>t@ik</span><b id=eml21 class=nonmail>pSbuey1</b><span id=eml22 class=ismail>i.fi&gt;</span></span><script type="text/javascript"><!--
-s='';for(i=9;i<23;){document.getElementById('eml'+i++).innerHTML='';s+=document.getElementById('eml'+i++).innerHTML;}document.getElementById('eml'+i).innerHTML='<'+'a href="mailto:'+s+'">'+s+'<'+'/a>';
+ My email address:<span id=eml35><b id=eml21 class=nonmail>H8n08</b><span id=eml22 class=ismail>Joel</span><span id=eml23 class=nonmail><b>x5</b></span><span id=eml24 class=ismail> Yli</span><b id=eml25 class=nonmail>9tke16nyw</b><span id=eml26 class=ismail>luom</span><span id=eml27 class=nonmail><b>cfexmBnf1</b></span><span id=eml28 class=ismail>a &lt;bi</span><b id=eml29 class=nonmail>ue</b><span id=eml30 class=ismail>sqwi</span><span id=eml31 class=nonmail><b>376ZvNh3.</b></span><span id=eml32 class=ismail>t@ik</span><b id=eml33 class=nonmail>C</b><span id=eml34 class=ismail>i.fi&gt;</span></span><script type="text/javascript"><!--
+s='';for(i=21;i<35;){document.getElementById('eml'+i++).innerHTML='';s+=document.getElementById('eml'+i++).innerHTML;}document.getElementById('eml'+i).innerHTML='<'+'a href="mailto:'+s+'">'+s+'<'+'/a>';
 --></script><br>
  If you send me e-mail, please make sure that I can reply to you.
 
@@ -638,9 +646,9 @@ Things that should be documented some day but currently are not:
    is at <a href="http://iki.fi/bisqwit/source/chronotools.html">http://iki.fi/bisqwit/source/chronotools.html</a>.<br>
    Check there for new versions.
 <p>Additionally, the most recent source code (bleeding edge) for chronotools can also be downloaded by cloning the Git repository by:<ul style="margin-left:3em;margin-top:0px"><li><code> git clone <a href="git://bisqwit.iki.fi/chronotools.git">git://bisqwit.iki.fi/chronotools.git</a></code></li><li><code> git checkout origin/release -b release</code></li><li><code> git checkout origin/master  -b master</code></li></ul></p></div> <p align=right><small>Generated from
-       <tt>../progdesc.php</tt> (last updated: Sat, 08 Dec 2012 20:06:23 +0200)<br>
+       <tt>../progdesc.php</tt> (last updated: Tue, 03 Nov 2015 10:06:58 +0200)<br>
   with <tt>docmaker.php</tt> (last updated: Sat, 08 Dec 2012 16:18:10 +0200)<br>
-  at Sat, 08 Dec 2012 20:06:24 +0200</small>
+  at Tue, 03 Nov 2015 10:07:02 +0200</small>
  </p>
 </body>
 </html>

@@ -1,4 +1,4 @@
-#include <boost/regex.hpp>
+#include <regex>
 
 /* Example mask:
  *    [Goto:%0 [If:%1]]
@@ -56,18 +56,18 @@ bool Match(const std::basic_string<CharT>& input,
         }
     regexp += '$';
 
-    boost::match_results<typename std::basic_string<CharT>::const_iterator> what;
-    boost::basic_regex<CharT> exp(regexp);
-    
-    if(!boost::regex_match(input, what, exp)) return false;
-    
+    std::match_results<typename std::basic_string<CharT>::const_iterator> what;
+    std::basic_regex<CharT> exp(regexp);
+
+    if(!std::regex_match(input, what, exp)) return false;
+
     if(has_0)p0.assign(what[has_0].first, what[has_0].second);
     if(has_1)p1.assign(what[has_1].first, what[has_1].second);
     return true;
 #else
     typedef std::basic_string<CharT> strt;
     typedef typename strt::size_type size;
-    
+
     size inputroot = 0; // how many items of input are already handled
     size maskroot  = 0; // how many items of mask are already handled
     size beginpos  = 0;
@@ -80,7 +80,7 @@ find_more:
         return mask.compare(maskroot, mask.npos,
                             inputroot, input.npos, input) == 0;
     }
-    
+
     if(mask[pros_pos+1] == '0')
     {
         beginpos = pros_pos+2;
@@ -97,14 +97,11 @@ find_more:
 #endif
 }
 
-#ifndef WIN32
-
 template<typename CharT>
 void RegexReplace(const std::basic_string<CharT>& pattern,
                   const std::basic_string<CharT>& replacement,
                   std::basic_string<CharT>& subject)
 {
-    boost::basic_regex<CharT> exp(pattern);
-    subject = boost::regex_replace(subject, exp, replacement, boost::format_sed);
+    std::basic_regex<CharT> exp(pattern);
+    subject = std::regex_replace(subject, exp, replacement, std::regex_constants::format_sed);
 }
-#endif

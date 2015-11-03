@@ -218,6 +218,7 @@ Copypaste from the Makefile:
 # VERSION 1.15.5.1 improves compilability on more modern gcc versions
 # VERSION 1.15.6 adds rawblob and spriteblob support (thanks Michal Ziabkowski)
 # VERSION 1.15.6.1 improves the LZ-variant compression a little.
+# VERSION 1.15.7 improves compilability on more modern gcc versions
 </pre>
 
 To use the character name changing feature, do a redump with ctdump

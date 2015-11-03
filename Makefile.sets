@@ -11,7 +11,7 @@ CXXOPTS=$(WARNINGS) $(CXXWARNINGS)
 
 
 # Optimization
-OPTIM=-O3
+OPTIM=-Ofast
 #-march=pentiumpro
 
 # Flags.
@@ -30,11 +30,12 @@ LDFLAGS=-g
 #
 CC=gcc
 CPP=cpp
-CXX=g++
-OPTIM +=  -ftree-vectorize -ffast-math -minline-stringops-dynamically -mmmx -msse -msse2
-CPPFLAGS +=   -DUSE_PTHREADS=0 -DHASH_MAP=1
+CXX=g++ -std=c++14
+OPTIM +=  -ftree-vectorize -ffast-math
+CPPFLAGS += 
 LDFLAGS +=  
-WARNINGS +=  -Wall -Wundef -Wcast-qual -Wpointer-arith -Wconversion -Wwrite-strings -Wsign-compare -Wredundant-decls -Winit-self -Wextra -Wcast-align -Wformat
+WARNINGS +=  -Wall -Wundef -Wcast-qual -Wpointer-arith -Wwrite-strings -Wsign-compare -Wredundant-decls -Winit-self -Wextra -Wcast-align -Wformat
+# -Wconversion
 CWARNINGS +=  -Waggregate-return -Wshadow -Winline -Wstrict-prototypes -Wmissing-prototypes
 CXXWARNINGS +=  -Woverloaded-virtual
 

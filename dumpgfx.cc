@@ -98,9 +98,9 @@ void DumpGFX_Compressed_4bit(unsigned addr,
 {
     vector<unsigned char> Target;
 
-    unsigned origsize = Uncompress(ROM + (addr), Target,
-                                   ROM + GetROMsize());
-    unsigned size = Target.size();
+    unsigned origsize = (unsigned) Uncompress(ROM + (addr), Target,
+                                              ROM + GetROMsize());
+    unsigned size = (unsigned) Target.size();
 
     if(!origsize)
     {

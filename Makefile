@@ -9,19 +9,21 @@ include Makefile.sets
 #LDFLAGS += -Lwinlibs -liconv
 
 # Or:
-#HOST=/usr/local/mingw32/bin/i586-mingw32msvc-
-#LDOPTS = -L/usr/local/mingw32/lib
+#HOST=i686-w64-mingw32-
 
 
 # Building for native:
 HOST=
-LDFLAGS += -lboost_regex
+LDFLAGS += 
 
 
 # Which compiler to use
 CXX=$(HOST)g++
 CC=$(HOST)gcc
 CPP=$(HOST)gcc
+
+CXX += -std=c++14
+CPP += -std=c++11
 
 #CPPFLAGS += -Wno-effc++ -Werror -Wno-conversion
 
@@ -150,6 +152,7 @@ DEPDIRS = utils/
 # VERSION 1.15.5.1 improves compilability on more modern gcc versions
 # VERSION 1.15.6 adds rawblob and spriteblob support (thanks Michal Ziabkowski)
 # VERSION 1.15.6.1 improves the LZ-variant compression a little.
+# VERSION 1.15.7 improves compilability on more modern gcc versions
 
 #OPTIM=-Os
 # -fshort-enums
@@ -158,7 +161,7 @@ DEPDIRS = utils/
 #OPTIM=-O1 -pg
 #OPTIM=-O3 -pg
 #LDFLAGS += -pg
-OPTIM=-O3
+OPTIM=-Ofast
 #OPTIM=-O1 -g
 
 CXXFLAGS += -I.
@@ -166,7 +169,7 @@ CFLAGS += -I/usr/include/slang
 LDFLAGS += -L/usr/lib/slang
 
 
-VERSION=1.15.6.1
+VERSION=1.15.7
 ARCHFILES=utils/xray.cc utils/xray.h \
           utils/viewer.c utils/cp437-8x8 \
           utils/vwftest.cc \
@@ -294,10 +297,11 @@ PROGS=\
 	utils/deasm \
 	utils/base62 \
 	utils/viewer \
-	utils/xray \
 	utils/facegenerator \
 	utils/o65test \
 	utils/dumpo65
+
+#	utils/xray
 
 all: $(PROGS)
 

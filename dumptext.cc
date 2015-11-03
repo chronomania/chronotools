@@ -213,7 +213,7 @@ namespace
         ctstring space3(3, getctchar(' '));
 
         /* Replace all [nl3] with [nl] + 3 spaces and so on */
-        for(unsigned a=0; a<line.size(); ++a)
+        for(std::size_t a=0; a<line.size(); ++a)
         {
             switch(line[a])
             {
@@ -403,7 +403,7 @@ Retry:
                         result += L"[gfx";
                         while(b < s.size())
                         {
-                            unsigned char byte = s[b];
+                            unsigned byte = s[b];
                             if(byte <= 12) { --b; break; }
 
                             result += wformat(L",%02X", byte);
@@ -490,7 +490,7 @@ void DumpRZStrings(const std::wstring& what,
 
     for(;;)
     {
-        char format = va_arg(ap, int);
+        char format = static_cast<char> (va_arg(ap, int));
         if(!format) break;
         label += L':';
         label += AscToWchar(format);
@@ -536,8 +536,8 @@ void DumpC8String(const unsigned ptroffs,
     MessageBeginDumpingStrings(offs);
 
     vector<unsigned char> Buffer;
-    unsigned orig_bytes = Uncompress(ROM+offs, Buffer, ROM+GetROMsize());
-    unsigned new_bytes = Buffer.size();
+    unsigned orig_bytes = (unsigned) Uncompress(ROM+offs, Buffer, ROM+GetROMsize());
+    unsigned new_bytes = (unsigned) Buffer.size();
 
     MarkFree(offs, orig_bytes, what);
 
@@ -553,10 +553,10 @@ void DumpC8String(const unsigned ptroffs,
 
     PutBase62Label(ptroffs);
     std::wstring line;
-    unsigned l=0;
+    std::size_t l=0;
     for(unsigned a=0; a<new_bytes; ++a)
     {
-        unsigned l0 = line.size();
+        std::size_t l0 = line.size();
 
         ctchar k = Buffer[a];
 

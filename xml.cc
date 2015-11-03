@@ -30,9 +30,9 @@ namespace
         {
             const char* begin = s.c_str()+pos;
             const char* end;
-            wchar_t code = std::strtol(begin+2, const_cast<char**> (&end), 10);
+            wchar_t code = (wchar_t) std::strtol(begin+2, const_cast<char**> (&end), 10);
             std::wstring result; result += code;
-            pos += (end-begin) + 2;
+            pos += (unsigned)(end-begin) + 2;
             if(s[pos] == ';') ++pos;
             return result;
         }

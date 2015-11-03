@@ -592,7 +592,7 @@ private:
         std::set<unsigned> objects;
         std::set<unsigned> functions;
 
-        unsigned n_objs = pointers.size() / 16;
+        unsigned n_objs = (unsigned) (pointers.size() / 16);
         for(unsigned a=0; a<n_objs; ++a)
         {
             unsigned ptrno = a*16;
@@ -643,8 +643,8 @@ void DumpEvent(const unsigned ptroffs, const std::wstring& what)
     romaddr = SNES2ROMaddr(romaddr);
 
     std::vector<unsigned char> Data;
-    unsigned orig_bytes = Uncompress(ROM+romaddr, Data, ROM+GetROMsize());
-    //unsigned new_bytes  = Data.size();
+    unsigned orig_bytes = (unsigned) Uncompress(ROM+romaddr, Data, ROM+GetROMsize());
+    //unsigned new_bytes  = (unsigned) Data.size();
 
     if(Data.empty()) return;
 
@@ -684,7 +684,7 @@ void DumpEvent(const unsigned ptroffs, const std::wstring& what)
         std::wstring text;
 
         EventCode::DecodeResult tmp;
-        tmp = decoder.DecodeBytes(address, &Data[address], Data.size()-address);
+        tmp = decoder.DecodeBytes(address, &Data[address], (unsigned)Data.size()-address);
 
         text += tmp.code;
         offs += tmp.nbytes;
