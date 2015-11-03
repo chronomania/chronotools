@@ -122,7 +122,7 @@ static void PerformanceTest(unsigned n)
 {
     RecompressTests(n);
     vector<unsigned char> result = Compress(n);
-    fprintf(stderr, "Recompressed as %u bytes (from %u bytes)", result.size(), n);
+    fprintf(stderr, "Recompressed as %zu bytes (from %u bytes)", result.size(), n);
 
     vector<unsigned char> data;
     size_t origsize = Uncompress(&result[0], data);
@@ -187,6 +187,7 @@ static void DumpGFX(unsigned addr)
     fclose(fp);
 }
 
+/*
 int main(void)
 {
     FILE *fp = fopen("FIN/chrono-nohdr.smc", "rb");
@@ -242,31 +243,27 @@ int main(void)
 #endif
     
 #if 0
-    /*
-    
-    Time gauge:
-     C38000 (pointed from C27220 (offset) and C2738C (page)) = gfx
-       - read to 9000
-     C6FB00 (pointed from C27224 (offset) and C273DB (page)) = ?
-       - read to 7F:8C00
-       - copied to 7E:C000
-       - copied to 00:0920 = PALETTE
-     C62000 (pointed from C27228 (offset) and C27407 (page)) = ?
-       - read to 7F:9000
-       - looks like tile table.
-       - of the bg image.
-     At C2:7361
-      - loads bytes from $C6F700+x
-        stores them to $7F9000
-          hi nibble first, then lo nibble
-         totalling $400 bytes to $800 bytes.
-      - could be the bg image..
-    
-    */
+    //     Time gauge:
+    //      C38000 (pointed from C27220 (offset) and C2738C (page)) = gfx
+    //        - read to 9000
+    //      C6FB00 (pointed from C27224 (offset) and C273DB (page)) = ?
+    //        - read to 7F:8C00
+    //        - copied to 7E:C000
+    //        - copied to 00:0920 = PALETTE
+    //      C62000 (pointed from C27228 (offset) and C27407 (page)) = ?
+    //        - read to 7F:9000
+    //        - looks like tile table.
+    //        - of the bg image.
+    //      At C2:7361
+    //       - loads bytes from $C6F700+x
+    //         stores them to $7F9000
+    //           hi nibble first, then lo nibble
+    //          totalling $400 bytes to $800 bytes.
+    //       - could be the bg image..
     DumpGFX(0xC38000);
 #endif
 
-    /* Character names and other miscellaneous data: */
+    // Character names and other miscellaneous data:
     //DumpGFX(0xDB0000);
 
 #if 0
@@ -275,5 +272,50 @@ int main(void)
     for(unsigned a=0; a<n; ++a) putchar(Data[a]);
 #endif
 
+    return 0;
+}
+*/
+
+int main(int argc, const char *const *argv)
+{
+    if(argc != 2 && argc != 3)
+    {
+        fprintf(stderr, "Usage: comprtest <input-uncompressedfile> <result-compressedfile>\n");
+        return 0;
+    }
+    FILE *fp = fopen(argv[1], "rb");
+    if(!fp) { perror(argv[1]); return -1; }
+    fseek(fp,0,SEEK_END);
+    long size = ftell(fp);
+    rewind(fp);
+    ROM = new unsigned char[size];
+    fread(ROM,1,size, fp);
+    fclose(fp);
+    vector<unsigned char> data(ROM, ROM+size);
+
+    if(argc == 2)
+    {
+        std::vector<unsigned char> buf;
+        Uncompress(&data[0], buf, &data[0]+data.size());
+
+        fprintf(stderr, "Decompressed to %u bytes\n", (unsigned) buf.size());
+        fwrite(&buf[0], 1, buf.size(), stdout);
+    }
+    else
+    {
+        std::vector<unsigned char> data1 = Compress(&data[0], data.size(), 11);
+        std::vector<unsigned char> data2 = Compress(&data[0], data.size(), 12);
+
+        fprintf(stderr, "%u bytes with setting 11, %u bytes with setting 12\n",
+            (unsigned) data1.size(),
+            (unsigned) data2.size() );
+
+        if(data1.size() < data2.size()) data.swap(data1); else data.swap(data2);
+
+        fp = fopen(argv[2], "wb");
+        if(!fp) { perror(argv[2]); return -1; }
+        fwrite(&data[0], 1, data.size(), fp);
+        fclose(fp);
+    }
     return 0;
 }

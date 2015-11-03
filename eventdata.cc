@@ -1905,13 +1905,13 @@ namespace
         }
         catch(bool)
         {
-            unsigned offset=0;
+            std::size_t offset=0;
             if(n.substr(0, 2) == L"0x") { offset=2; }
             else if(n.substr(0, 1) == L"$") { offset=1; }
 
             unsigned result=0;
             while(offset < n.size())
-                if(!CumulateBase16(result, n[offset++]))
+                if(!CumulateBase16(result, static_cast<char> (n[offset++])))
                     throw false;
             return result;
         }
@@ -1921,9 +1921,9 @@ namespace
     {
         std::vector<Byte> result;
         if(n.size() < 2) throw false;
-        unsigned endpos = n.size()-1;
+        std::size_t endpos = n.size()-1;
         if(n[0] != L'"' || n[endpos] != L'"') throw false;
-        for(unsigned a=1; a<endpos; ++a)
+        for(std::size_t a=1; a<endpos; ++a)
         {
             if(n[a] == L'[')
             {
@@ -1931,14 +1931,14 @@ namespace
                 if(a+2 >= endpos || n[a+2] != L']') throw false;
                 unsigned code = ScanNumeric(n.substr(a,2));
                 if(code > 0xFF) throw false;
-                result.push_back(code);
+                result.push_back( (Byte) code );
                 a += 2;
             }
             else
             {
                 ctchar c = getctchar(n[a], cset_8pix);
                 if(c == 0 || c >= 0x100) throw false;
-                result.push_back(c & 0xFF);
+                result.push_back( (Byte) (c & 0xFF) );
             }
         }
         return result;
@@ -1959,8 +1959,8 @@ namespace
     {
         if(n.size() != 5 || n[0] != L'$') throw false;
         unsigned result=0;
-        for(unsigned a=1; a<n.size(); ++a)
-            if(!CumulateBase62(result, n[a])) throw false;
+        for(std::size_t a=1; a<n.size(); ++a)
+            if(!CumulateBase62(result, (char) n[a])) throw false;
 
         dialog_begin = result;
         return ROM2SNESaddr(result);
@@ -1969,8 +1969,8 @@ namespace
     {
         if(n.size() != 5 || n[0] != L'$') throw false;
         unsigned result=0;
-        for(unsigned a=1; a<n.size(); ++a)
-            if(!CumulateBase62(result, n[a]))
+        for(std::size_t a=1; a<n.size(); ++a)
+            if(!CumulateBase62(result, (char) n[a]))
                 throw false;
 
         result -= dialog_begin;
@@ -2303,7 +2303,7 @@ private:
                         throw false;
                     }
                     unsigned value = data[0];
-                    result.text    = FormatOperator(value);
+                    result.text    = FormatOperator( (unsigned char) value );
                     result.maxoffs = bytepos+1;
                     break;
                 }
@@ -2443,7 +2443,7 @@ private:
 #endif
                         throw false;
                     }
-                    return value;
+                    return (unsigned) value;
                 }
                 case t_orbit:
                 case t_andbit:
@@ -2549,20 +2549,20 @@ private:
                 {
                     unsigned value = Scan(s, goto_backward);
                     if(type == t_nibble_hi) value <<= 4;
-                    result.bytes.push_back(value);
+                    result.bytes.push_back( (unsigned char) value );
                     break;
                 }
                 case t_orbit:
                 case t_andbit:
                 {
                     unsigned bit = Scan(s, goto_backward);
-                    result.bytes.push_back(bit);
+                    result.bytes.push_back( (unsigned char) bit );
                     break;
                 }
                 case t_operator:
                 {
                     unsigned op = Scan(s, goto_backward);
-                    result.bytes.push_back(op);
+                    result.bytes.push_back( (unsigned char) op );
                     break;
                 }
                 case t_textblob:
@@ -2571,9 +2571,9 @@ private:
                     try
                     {
                         std::vector<unsigned char> blob = ScanBlob(s);
-                        unsigned length = blob.size() + 2;
-                        result.bytes.push_back(length & 0xFF);
-                        result.bytes.push_back(length >> 8);
+                        std::size_t length = blob.size() + 2;
+                        result.bytes.push_back( (unsigned char)( length & 0xFF ) );
+                        result.bytes.push_back( (unsigned char)( length >> 8 ) );
                         result.bytes.insert(result.bytes.end(), blob.begin(), blob.end());
                     }
                     catch(bool)

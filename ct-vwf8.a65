@@ -17,6 +17,11 @@
 ; Note - This file is not really as big as it seems.
 ;        It only has lots of comments and some unrolled loops!
 
+; Things that can be rendered in VWF8:
+; *i = Item list
+; *l1 = Item types? -- used in battle, not currently rendered in vwf
+; *t11 = Techniques
+
 
 ; Variable addresses:
 #define W_DATASIZE $10
@@ -575,6 +580,8 @@ DrawS_init_common:
 Trans:
         ; Font8v has been shrunk a bit.
         ; This function translates characters to font indices...
+        ;   20..2F  becomes 00..0F
+        ;   A0..17F becomes 20..FF
         
         .al
         ; We are 16-bit here
@@ -766,13 +773,30 @@ EquipLeftItemFunc:
 
         ALLOCATE()
         pha
-         lda W_TILENUM
+        jsr CalculateClockDifference
+         cmp #3
+         bcc + ; Too small difference to ignore
+         cmp #15
+         bcc IgnoreItemListVWF8 ; Okay to ignore
+         ; Not ignored
+         jsr SaveClock
+
+         + - lda W_TILENUM
          jsr DoTilenumber_8line
          
          lda #$7000
          sta W_VRAMADDR
         pla
         jsr DrawS_2bit
+        bra DisplayFuncCommonEnd
+
+        IgnoreItemListVWF8:
+        ; Don't ignore if the cursor is on the left side or else scrolling breaks
+        lda $54 : and #$00FF
+        cmp #4
+        bcs -
+
+        pla
         bra DisplayFuncCommonEnd
 .)
 
@@ -806,7 +830,7 @@ EquipRightItemFunc:        ;also used in shop
          cmp #3
          bcc + ; Too small difference to ignore
          cmp #15
-         bcc IgnoreItemListVWF8 ; Okay to ignore
+         bcc IgnoreItemListVWF8Right ; Okay to ignore
          ; Not ignored
          jsr SaveClock
       ignoreclockcheck:
@@ -827,7 +851,7 @@ EquipRightItemFunc:        ;also used in shop
         bra DisplayFuncCommon_4bit
 .)
 
-IgnoreItemListVWF8:
+IgnoreItemListVWF8Right:
 .(
         .al
         .xl
@@ -1020,10 +1044,10 @@ BattleItemFunc:
 .)
 
 BattleTechHelper:
-	.as
-	lda #$03
-	sta $87
-	rtl
+        .as
+        lda #$03
+        sta $87
+        rtl
 
 BattleTechFunc:
 .(
@@ -1214,6 +1238,7 @@ DoTilenumber_8line:
           tax
           lda @TileNumberList,x
          plx
+         jsr ShopItemSelectCheck
          sta W_TILENUM
          lda #Write
          sta W_WRITEOFS
@@ -1283,21 +1308,21 @@ TileNumberListInBattle:
 
 
 CalculateClockDifference:
-	; This calculates the difference between current clock
-	; and the saved clock.
-	; The result has the units of frames. 60 frames equals 1 second.
-	; The calculation is a little sloppy, because we never
-	; need the very exact value.
-	; The following shortcuts are taken:
-	; If there is difference in hours, we return 200.
-	; If there is difference in minutes, we return 200.
-	; If there is difference in seconds, we return 200.
-	; Otherwise we return number of frames.
-	; Since the caller only cares of numbers smaller than 15,
-	; these optimizations are ok.
-	
-	; This function may use A, Y, W_VRAMADDR
-	; Returns the result in A.
+        ; This calculates the difference between current clock
+        ; and the saved clock.
+        ; The result has the units of frames. 60 frames equals 1 second.
+        ; The calculation is a little sloppy, because we never
+        ; need the very exact value.
+        ; The following shortcuts are taken:
+        ; If there is difference in hours, we return 200.
+        ; If there is difference in minutes, we return 200.
+        ; If there is difference in seconds, we return 200.
+        ; Otherwise we return number of frames.
+        ; Since the caller only cares of numbers smaller than 15,
+        ; these optimizations are ok.
+        
+        ; This function may use A, Y, W_VRAMADDR
+        ; Returns the result in A.
         .al
         
         lda $0404 : cmp W_CLOCKW3 : bne +
@@ -1306,13 +1331,32 @@ CalculateClockDifference:
         lda $0400 : sec : sbc W_CLOCKW1
         and #$00FF
         rts
-+	lda #200
-	rts
++       lda #200
+        rts
         
  
 SaveClock:
-	; May use A, Y
-	lda $0400 : sta W_CLOCKW1
-	lda $0402 : sta W_CLOCKW2
-	lda $0404 : sta W_CLOCKW3
-	rts
+        ; May use A, Y
+        lda $0400 : sta W_CLOCKW1
+        lda $0402 : sta W_CLOCKW2
+        lda $0404 : sta W_CLOCKW3
+        rts
+
+ShopItemSelectCheck:
+        ; Input variables: A (tile index)
+        ; Returns the result in A
+        .al
+        pha
+
+         ; Check if called from selected item routine
+         lda $1E,s
+         cmp #$DFA6
+         bne +
+
+         ; If so, load different tile index
+        pla
+        lda #$0001
+        rts
+
++       pla
+        rts

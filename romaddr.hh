@@ -1,12 +1,12 @@
 #ifndef bqtRomAddrHH
 #define bqtRomAddrHH
 
-unsigned char ROM2SNESpage(unsigned char page);
-unsigned char SNES2ROMpage(unsigned char page);
-unsigned long ROM2SNESaddr(unsigned long addr);
-unsigned long SNES2ROMaddr(unsigned long addr);
+unsigned char ROM2SNESpage(unsigned /*char*/ page);
+unsigned char SNES2ROMpage(unsigned /*char*/ page);
+unsigned ROM2SNESaddr(unsigned addr);
+unsigned SNES2ROMaddr(unsigned addr);
 
-bool IsSNESbased(unsigned long addr);
+bool IsSNESbased(unsigned addr);
 
 /* Returns true if the given ROM is probably a HiROM */
 bool GuessROMtype(const unsigned char* ROM, unsigned ROMsize);

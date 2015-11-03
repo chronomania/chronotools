@@ -171,7 +171,7 @@ namespace
 
         size_t romsize = GetRomSize();
 
-        std::vector<unsigned char> types(romsize+1);
+        std::vector<unsigned char> types(romsize+1, 0x00);
 
         for(rommap::const_iterator i = space.begin(); i != space.end(); ++i)
             for(size_t a = i->lower; a < i->upper; ++a)

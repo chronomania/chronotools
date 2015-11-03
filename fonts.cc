@@ -10,6 +10,8 @@
 #include "config.hh"
 #include "hash.hh"
 
+#include <utility>
+
 #define NO_GAINLESS_SHUFFLING_AROUND 1
 #define FONT12_DEBUG_LOADING         0
 
@@ -1090,6 +1092,211 @@ void insertor::WriteVWF8()
     objects.DefineSymbol("VWF8_DISPLAY_EQ_COUNT", DisplayEqCount ? 2 : 0);
 }
 
+void insertor::WriteVWF8_Strings()
+{
+    MessageRenderingVWF8();
+
+    std::vector<unsigned char> ItemGFX_2bpp;
+    std::vector<unsigned char> TechGFX_2bpp;
+    std::vector<unsigned char> ItemGFX_4bpp;
+    std::vector<unsigned char> TechGFX_4bpp;
+
+    const unsigned n_chars = 0x280;
+    const unsigned space   = getctchar(' ') - 0x80;
+
+    const std::vector<unsigned char>& FontData = Font8v.GetTiles();
+    /* ^ original font data */
+
+    //std::pair<unsigned/*left*/,unsigned/*right*/> CharacterMargins[n_chars];
+
+    unsigned/*n_pixels*/ KerningTable[n_chars/*left*/][n_chars/*right*/];
+    /* ^ How many pixels to add to X coordinate after left-char, when right-char is next. */
+
+#if 0
+    for(unsigned c=0; c<n_chars; ++c)
+    {
+        printf("%02X:\n", c);
+        for(unsigned y=0; y<8; ++y)
+        {
+            unsigned byte1 = FontData[c * 16 + y * 2 + 0];
+            unsigned byte2 = FontData[c * 16 + y * 2 + 1];
+            if(c == space) { byte1 = byte2 = 0x10; }
+
+            for(unsigned x=0; x<8; ++x)
+            {
+                unsigned char b1 = (byte1 >> (7-x)) & 1;
+                unsigned char b2 = (byte2 >> (7-x)) & 1;
+                printf("%c", " .c#"[ b2*2 + b1 ]);
+            }
+            putchar('\n');
+        }
+        puts("---");
+    }
+    // Colors: 0=empty, 1=shadow, 2=smooth curve, 3=solid
+#endif
+
+    // Could calculate the margins for the characters
+    // But won't do that, because our font is already completely left-aligned
+    /*for(unsigned c=0; c<n_chars; ++c)
+    {
+        unsigned margin_left = 8, margin_right = 8;
+        for(unsigned y=0; y<8; ++y)
+        {
+            unsigned byte1 = FontData[c * 16 + y * 2 + 0];
+            unsigned byte2 = FontData[c * 16 + y * 2 + 1];
+            if(c == space) { byte1 = byte2 = 0x10; }
+
+            for(unsigned x=0; x<8; ++x)
+            {
+                unsigned char b1 = (byte1 >> (7-x)) & 1;
+                unsigned char b2 = (byte2 >> (7-x)) & 1;
+                unsigned char color = b2*2 + b1;
+
+                if(!color) continue;
+                if(margin_left > x) margin_left = x;
+                unsigned m = 7-x;
+                if(margin_right > m) margin_right = m;
+            }
+        }
+        CharacterMargins[c] = std::pair<unsigned,unsigned> (margin_left, margin_right);
+    }*/
+
+    // Create a kerning table
+    for(unsigned c1=0; c1<n_chars; ++c1)
+    for(unsigned c2=0; c2<n_chars; ++c2)
+    {
+        int best_offset  = 8;
+        int best_touches = 99999;
+        for(int offset = 8; offset > 0; --offset)
+        {
+            // Test if the bitmaps collide if offseted this way
+            int num_touches = 0;
+            for(int y1=0; y1<8; ++y1)
+            {
+                // For each pixel of the left character, 
+                unsigned byte1 = FontData[c1 * 16 + y1 * 2 + 0];
+                unsigned byte2 = FontData[c1 * 16 + y1 * 2 + 1];
+
+                for(int x1=0; x1<8; ++x1)
+                {
+                    unsigned char b1 = (byte1 >> (7-x1)) & 1;
+                    unsigned char b2 = (byte2 >> (7-x1)) & 1;
+                    unsigned char color = b2*2 + b1;
+                    if(color <= 1) continue;
+
+                    // Left character has a pixel here
+                    for(int y2 = y1-1; y2 <= y1+1; ++y2)
+                    {
+                        if(y2 < 0 || y2 >= 8) continue;
+                        unsigned byte1b = FontData[c2 * 16 + y2 * 2 + 0];
+                        unsigned byte2b = FontData[c2 * 16 + y2 * 2 + 1];
+
+                        // For the purposes of collision checking, space is always a vertical column
+                        if(c2 == space) { byte1b = byte2b = 0x18; }
+
+                        int x2 = x1-offset;
+                        if(x2 >= 0 && x2 < 8)
+                        {
+                            unsigned char b1b = (byte1b >> (7-x2)) & 1;
+                            unsigned char b2b = (byte2b >> (7-x2)) & 1;
+                            unsigned char colorb = b2b*2 + b1b;
+                            if(colorb > 1)
+                                ++num_touches;
+                        }
+                    }
+                }
+            }
+            if(num_touches > best_touches) break;
+            best_touches = num_touches;
+            best_offset  = offset;
+        }
+        if(c1 == 0x4B0/16 // 'r'
+        && c2 == 0x680/16) // '.'
+        {
+            best_offset = 4; // Add some space between r and .
+        }
+
+        // Don't do kerning with the weapon/item icons:
+        if(c1 < 0x20) best_offset = 7;
+
+        if(c1 == space) best_offset = 4; // For space, add extra pixel
+
+        KerningTable[c1][c2] = best_offset + 1;
+    }
+
+    for(stringlist::const_iterator i=strings.begin(); i!=strings.end(); ++i)
+    {
+        MessageWorking();
+        if(i->type == stringdata::item
+        || i->type == stringdata::tech)
+        {
+            const ctstring& str = i->str;
+            std::vector<unsigned char>& tgt_2bpp = (i->type == stringdata::item) ? ItemGFX_2bpp : TechGFX_2bpp;
+            std::vector<unsigned char>& tgt_4bpp = (i->type == stringdata::item) ? ItemGFX_4bpp : TechGFX_4bpp;
+
+            //printf("<%s>\n", GetString(i->str).c_str());
+
+            std::vector<unsigned char> PixelBuffer_2bpp(16 * 16);
+            std::vector<unsigned char> PixelBuffer_4bpp(16 * 32);
+
+            unsigned xpos = 0, prev_c = 0;
+            for(size_t a=0; a<str.size(); ++a)
+            {
+                const unsigned c = str[a] - (str[a] < 0x30 ? 0x20 : 0x80);
+                // ^ This does the same as Trans: does in ct-vwf8.a65.
+
+                if(a > 0) xpos += KerningTable[prev_c][c];
+
+                for(unsigned y=0; y<8; ++y)
+                {
+                    unsigned byte1 = FontData[c * 16 + y * 2 + 0];
+                    unsigned byte2 = FontData[c * 16 + y * 2 + 1];
+
+                    int newx = xpos;
+
+                    for(unsigned x=0; x<8; ++x, ++newx)
+                    {
+                        unsigned char b1 = (byte1 >> (7-x)) & 1;
+                        unsigned char b2 = (byte2 >> (7-x)) & 1;
+                        unsigned char color = b2*2 + b1;
+                        if(!color) continue;
+
+                        unsigned char& newbyte0 = PixelBuffer_2bpp[ (newx/8) * 16 + y * 2 + 0];
+                        unsigned char& newbyte1 = PixelBuffer_2bpp[ (newx/8) * 16 + y * 2 + 1];
+
+                        newbyte0 |= b1 << (7 - newx%8);
+                        newbyte1 |= b2 << (7 - newx%8);
+
+                        unsigned char& newbyte0b = PixelBuffer_4bpp[ (newx/8) * 32 + y * 2 + 0];
+                        unsigned char& newbyte1b = PixelBuffer_4bpp[ (newx/8) * 32 + y * 2 + 1];
+
+                        newbyte0b |= b1 << (7 - newx%8);
+                        newbyte1b |= b2 << (7 - newx%8);
+                    }
+                }
+
+                prev_c = c;
+            }
+
+            tgt_2bpp.insert(tgt_2bpp.end(), PixelBuffer_2bpp.begin(), PixelBuffer_2bpp.end());
+            tgt_4bpp.insert(tgt_4bpp.end(), PixelBuffer_4bpp.begin(), PixelBuffer_4bpp.end());
+        }
+    }
+
+    MessageDone();
+
+    std::vector<unsigned char> Item_2bpp_part2;
+    std::vector<unsigned char> Item_4bpp_part2( ItemGFX_4bpp.begin() + 65536, ItemGFX_4bpp.end() );
+    ItemGFX_4bpp.erase( ItemGFX_4bpp.begin() + 65536, ItemGFX_4bpp.end() );
+
+    objects.AddLump(TechGFX_2bpp, "vwf8 techs 2bpp", "VWF8_TECHS_2BPP");
+    objects.AddLump(TechGFX_4bpp, "vwf8 techs 4bpp", "VWF8_TECHS_4BPP");
+
+    objects.AddLump(ItemGFX_2bpp,    "vwf8 items 2bpp part1", "VWF8_ITEMS_2BPP_PART1");
+    objects.AddLump(ItemGFX_4bpp,    "vwf8 items 4bpp part1", "VWF8_ITEMS_4BPP_PART1");
+    objects.AddLump(Item_2bpp_part2, "vwf8 items 2bpp part2", "VWF8_ITEMS_2BPP_PART2");
+    objects.AddLump(Item_4bpp_part2, "vwf8 items 4bpp part2", "VWF8_ITEMS_4BPP_PART2");
+}
 
 Font8data::Font8data(): tiletable(), widths(), fn() { }
 Font8data::~Font8data() {}

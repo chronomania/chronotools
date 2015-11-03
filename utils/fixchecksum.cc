@@ -16,13 +16,13 @@ namespace
 {
     vector<unsigned char> ROM;
     vector<bool> Touched;
-    
+
     void WriteByte(unsigned addr, unsigned char value)
     {
         ROM[addr]     = value;
         Touched[addr] = true;
     }
-    
+
     void WriteShort(unsigned addr, unsigned short value)
     {
         unsigned oldvalue = ROM[addr] | (ROM[addr+1] << 8);
@@ -30,11 +30,11 @@ namespace
         WriteByte(addr, value & 255);
         WriteByte(addr+1, value >> 8);
     }
-    
+
     void WriteCheckSumPair(unsigned addr, unsigned sum1)
     {
         sum1 &= 0xFFFF;
-        
+
         WriteShort(addr+2, sum1);
         WriteShort(addr+0, sum1 ^ 0xFFFF);
     }
@@ -52,23 +52,23 @@ int main(int argc, const char *const *argv)
     const char *patchfn = argv[1];
     const char *origfn = argv[2];
     const char *resfn = argv[3];
-    
+
     FILE *fp = fopen(patchfn, "rb");
     if(!fp) { perror(patchfn); }
-    
+
     FILE *original = fopen(origfn, "rb");
     if(!original) { if(!strcmp(origfn, "-")) original = stdin;
                     else perror(origfn); }
-    
+
     if(!fp || !original)
         return -1;
-    
+
     setbuf(fp, NULL);
     setbuf(original, NULL);
-    
+
     unsigned char Buf[5];
     fread(Buf, 1, 5, fp);
-    
+
     if(strncmp((const char *)Buf, "PATCH", 5))
     {
         fprintf(stderr, "This isn't a patch!\n"); arf:fclose(fp);
@@ -76,19 +76,19 @@ int main(int argc, const char *const *argv)
         if(original)fclose(original);
         return -1;
     }
-    
+
     while(!feof(original))
     {
         char tmp[4096];
         int c = fread(tmp, 1, sizeof tmp, original);
         if(c < 0 && ferror(original)) { perror("fread"); goto arf2; }
         if(!c) break;
-        
+
         ROM.insert(ROM.end(), tmp, tmp+c);
     }
     fclose(original); original=NULL;
     Touched.resize(ROM.size());
-    
+
 //    unsigned col=0;
     for(;;)
     {
@@ -107,7 +107,7 @@ int main(int argc, const char *const *argv)
         if(c < (wanted=2)) { goto ipseof; }
         unsigned len = (((unsigned)Buf[0]) << 8)
                       | ((unsigned)Buf[1]);
-        
+
         if(len==0)
         {
             rle=true;
@@ -117,10 +117,10 @@ int main(int argc, const char *const *argv)
             len = (((unsigned)Buf[0]) << 8)
                  | ((unsigned)Buf[1]);
         }
-        
+
 //        fprintf(stderr, "%06X <- %-5u ", pos, len);
 //        if(++col == 5) { fprintf(stderr, "\n"); col=0; }
-        
+
         vector<char> Buf2(len);
         if(rle)
         {
@@ -136,7 +136,7 @@ int main(int argc, const char *const *argv)
             if(c < 0 && ferror(fp)) { goto ipserr; }
             if(c != (wanted=(int)len)) { goto ipseof; }
         }
-        
+
         if(pos == IPS_ADDRESS_EXTERN || pos == IPS_ADDRESS_GLOBAL)
         {
             /* Ignore these */
@@ -146,8 +146,8 @@ int main(int argc, const char *const *argv)
             if(pos+len > ROM.size())
             {
                 unsigned newsize = pos+len;
-                fprintf(stderr, "Warning: ROM will grow from %u to %u (%u+%u)\n",
-                    ROM.size(), newsize, pos,len);
+                fprintf(stderr, "Warning: ROM will grow from %lu to %u (%u+%u)\n",
+                    (unsigned long) ROM.size(), newsize, pos,len);
                 Touched.resize(newsize);
                 ROM.resize(newsize);
             }
@@ -156,9 +156,9 @@ int main(int argc, const char *const *argv)
     }
 //    if(col) fprintf(stderr, "\n");
     fclose(fp);
-    
+
     unsigned CalculatedSize = (ROM.size() / 0x2000) * 0x2000;
-    unsigned size = CalculatedSize; 
+    unsigned size = CalculatedSize;
     for(unsigned power2=0; ; ++power2)
         if(!(size >>= 1)) { size = 1 << power2; break; }
     unsigned sum1=0, remainder=CalculatedSize-size;
@@ -182,19 +182,19 @@ int main(int argc, const char *const *argv)
         // Multiply because of mirroring
         sum1 += sum2 * (size / remainder);
     }
-    
+
     WriteCheckSumPair(offset + 0xFFDC, sum1);
     if(CalculatedSize >= 0x410000)
     {
         WriteCheckSumPair(offset + 0x40FFDC, sum1);
     }
-    
-    fprintf(stderr, "ROM size $%X (calculated $%X, 2pow $%X, remainder $%X, offset $%X)\n",
-        ROM.size(), CalculatedSize, size, remainder, offset);
-    
+
+    fprintf(stderr, "ROM size $%lX (calculated $%X, 2pow $%X, remainder $%X, offset $%X)\n",
+        (unsigned long) ROM.size(), CalculatedSize, size, remainder, offset);
+
     FILE *resultfile = fopen(resfn, "wb");
     if(!resultfile) { perror(resfn); return -1; }
-    
+
     fprintf(resultfile, "PATCH");
 
     const unsigned MaxHunkSize = 20000;
@@ -204,17 +204,17 @@ int main(int argc, const char *const *argv)
     {
         if(!Touched[a])continue;
 
-        putc((a >>16)&255, resultfile);                        
+        putc((a >>16)&255, resultfile);
         putc((a >> 8)&255, resultfile);
         putc((a     )&255, resultfile);
-        
+
         unsigned offs=a, c=0;
         while(a < ROM.size() && Touched[a])
         {
             if(c == MaxHunkSize) { --a; break; }
             ++c, ++a;
         }
-        
+
         putc((c>> 8)&255, resultfile);
         putc((c    )&255, resultfile);
         int ret = fwrite(&ROM[offs], 1, c, resultfile);
@@ -228,6 +228,6 @@ int main(int argc, const char *const *argv)
     }
     fwrite("EOF",   1, 3, resultfile);
     fclose(resultfile);
-    
+
     return 0;
 }

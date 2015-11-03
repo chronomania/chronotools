@@ -1,54 +1,59 @@
 #include "romaddr.hh"
 #include <stdio.h>
 
-unsigned char ROM2SNESpage(unsigned char page)
+unsigned char ROM2SNESpage(unsigned /*char*/ page)
 {
     //return 0x80 + page;
 
-    if(page < 0x40) return page | 0xC0;
+    if(page < 0x40) return page | 0xC0;  // C0..FF
+    if(page < 0x7E) return page;         // 40..7D
 
     /* Pages 00..3F have only their high part mirrored */
     /* Pages 7E..7F can not be used (they're RAM) */
 
-    if(page >= 0x7E) return page & 0x3F;
-    return (page - 0x40) + 0x40;
+    return page & 0x3F;
 }
 
-unsigned char SNES2ROMpage(unsigned char page)
+unsigned char SNES2ROMpage(unsigned /*char*/ page)
 {
     //return page - 0x80;
     if(page == 0 || page >= 0x80) return page & 0x3F;
     return (page & 0x3F) + 0x40;
 }
 
-static unsigned long ROM2SNESaddr_(unsigned long addr)
+static unsigned ROM2SNESaddr_(unsigned addr)
 {
     return (addr & 0xFFFF) | (ROM2SNESpage(addr >> 16) << 16);
 }
 
-static unsigned long SNES2ROMaddr_(unsigned long addr)
+static unsigned SNES2ROMaddr_(unsigned addr)
 {
     return (addr & 0xFFFF) | (SNES2ROMpage(addr >> 16) << 16);
 }
 
-unsigned long ROM2SNESaddr(unsigned long addr)
+unsigned ROM2SNESaddr(unsigned addr)
 {
-    unsigned long ret = ROM2SNESaddr_(addr);
+    unsigned ret = ROM2SNESaddr_(addr);
     //printf("ROM %X -> SNES %X\n", addr, ret);
     return ret;
 }
 
-unsigned long SNES2ROMaddr(unsigned long addr)
+unsigned SNES2ROMaddr(unsigned addr)
 {
-    unsigned long ret = SNES2ROMaddr_(addr);
+    unsigned ret = SNES2ROMaddr_(addr);
     //printf("SNES %X -> ROM %X\n", addr, ret);
     return ret;
 }
 
 
-bool IsSNESbased(unsigned long addr)
+bool IsSNESbased(unsigned addr)
 {
-    return addr >= 0xC00000;
+    static const bool is[16] =
+    { false,false,false,false,
+      true,true,true,false,    // 4..6
+      false,false,false,false,
+      true,true,true,true };   // C..F
+    return is[ (addr / 0x100000) & 0xF ];
 }
 
 

@@ -548,7 +548,7 @@ int main(int argc, const char* const* argv)
     SelectENGconst();
 
     fprintf(stderr,
-        "Chrono Trigger script dumper version "VERSION"\n"
+        "Chrono Trigger script dumper version " VERSION "\n"
         "Copyright (C) 1992,2005 Bisqwit (http://iki.fi/bisqwit/)\n");
 
     Symbols.Load();

@@ -9,19 +9,21 @@ include Makefile.sets
 #LDFLAGS += -Lwinlibs -liconv
 
 # Or:
-#HOST=/usr/local/mingw32/bin/i586-mingw32msvc-
-#LDOPTS = -L/usr/local/mingw32/lib
+#HOST=i686-w64-mingw32-
 
 
 # Building for native:
 HOST=
-LDFLAGS += -lboost_regex
+LDFLAGS += 
 
 
 # Which compiler to use
 CXX=$(HOST)g++
 CC=$(HOST)gcc
 CPP=$(HOST)gcc
+
+CXX += -std=c++14
+CPP += -std=c++11
 
 #CPPFLAGS += -Wno-effc++ -Werror -Wno-conversion
 
@@ -149,6 +151,8 @@ DEPDIRS = utils/
 # VERSION 1.15.5 improves compilability on more modern gcc versions
 # VERSION 1.15.5.1 improves compilability on more modern gcc versions
 # VERSION 1.15.6 adds rawblob and spriteblob support (thanks Michal Ziabkowski)
+# VERSION 1.15.6.1 improves the LZ-variant compression a little.
+# VERSION 1.15.7 improves compilability on more modern gcc versions
 
 #OPTIM=-Os
 # -fshort-enums
@@ -157,7 +161,7 @@ DEPDIRS = utils/
 #OPTIM=-O1 -pg
 #OPTIM=-O3 -pg
 #LDFLAGS += -pg
-OPTIM=-O3
+OPTIM=-Ofast
 #OPTIM=-O1 -g
 
 CXXFLAGS += -I.
@@ -165,7 +169,7 @@ CFLAGS += -I/usr/include/slang
 LDFLAGS += -L/usr/lib/slang
 
 
-VERSION=1.15.6
+VERSION=1.15.7
 ARCHFILES=utils/xray.cc utils/xray.h \
           utils/viewer.c utils/cp437-8x8 \
           utils/vwftest.cc \
@@ -287,14 +291,17 @@ PROGS=\
 	utils/makeips \
 	utils/unmakeips \
 	utils/fixchecksum \
+	utils/makeups \
+	utils/makebeat \
 	utils/compile \
 	utils/deasm \
 	utils/base62 \
 	utils/viewer \
-	utils/xray \
 	utils/facegenerator \
 	utils/o65test \
 	utils/dumpo65
+
+#	utils/xray
 
 all: $(PROGS)
 
@@ -338,10 +345,13 @@ eventdata.inc: DOCS/eventdata.xml utils/eventsynmake
 
 # Patch generator
 utils/makeips: utils/makeips.cc
-	$(CXX) $(LDOPTS) -o $@ $^
+	$(CXX) $(LDOPTS) $(CXXFLAGS) -o $@ $^
 
 utils/makeups: utils/makeups.cc crc32.o
-	$(CXX) $(LDOPTS) -o $@ $^
+	$(CXX) $(LDOPTS) $(CXXFLAGS) -o $@ $^
+
+utils/makebeat: utils/makebeat.cc crc32.o
+	$(CXX) $(LDOPTS) $(CXXFLAGS) -o $@ $^ -fopenmp
 
 # Patch applier
 utils/unmakeips: utils/unmakeips.cc crc32.o
@@ -441,24 +451,24 @@ ct-conj1.a65: ct-conj.code utils/compile
 	utils/compile $< $@
 # ct-conj.o65 is build in a strange way.
 ct-conj.o65: ct-conj1.a65 ct-conj.a65
-	sed 's/#\([^a-z]\)/§\1/g;s/;.*//' < ct-conj1.a65 > .tmptmp
-	sed 's§<CONJUGATER>§#include ".tmptmp"§' < ct-conj.a65 | \
-		snescom -E - | sed 's/§/#/g' > .tmptmp2
-	snescom -J -Wall -o $@ .tmptmp2 && rm -f .tmptmp .tmptmp2
+	sed 's/#\([^a-z]\)/§\1/g;s/;.*//' < ct-conj1.a65 > .tmptmpC
+	sed 's§<CONJUGATER>§#include ".tmptmpC"§' < ct-conj.a65 | \
+		snescom -E - | sed 's/§/#/g' > .tmptmpC2
+	snescom -J -Wall -o $@ .tmptmp2 && rm -f .tmptmpC .tmptmpC2
 
 # Rules for creating ct-crononick.o65
 ct-crononick1.a65: ct-crononick.code utils/compile
 	utils/compile $< $@
 ct-crononick.o65: ct-crononick1.a65 ct-crononick.a65
-	sed 's/#\([^a-z]\)/§\1/g;s/;.*//' < ct-crononick1.a65 > .tmptmp
-	sed 's§<CONJUGATER>§#include ".tmptmp"§' < ct-crononick.a65 | \
-		snescom -E - | sed 's/§/#/g' > .tmptmp2
-	snescom -J -Wall -o $@ .tmptmp2 && rm -f .tmptmp .tmptmp2
+	sed 's/#\([^a-z]\)/§\1/g;s/;.*//' < ct-crononick1.a65 > .tmptmpI
+	sed 's§<CONJUGATER>§#include ".tmptmpI"§' < ct-crononick.a65 | \
+		snescom -E - | sed 's/§/#/g' > .tmptmpI2
+	snescom -J -Wall -o $@ .tmptmp2 && rm -f .tmptmpI .tmptmpI2
 
 
 
 DOCS/%: FORCE
-	@+ make -s "ARCHNAME=${ARCHNAME}" -C DOCS `echo $@|sed 's|^[^/]*/||'`
+	@+ $(MAKE) -s "ARCHNAME=${ARCHNAME}" -C DOCS `echo $@|sed 's|^[^/]*/||'`
 
 #ct.txt: ctdump chrono-dumpee.smc
 #	./ctdump chrono-dumpee.smc >ct_tmp.txt || rm -f ct_tmp.txt && false

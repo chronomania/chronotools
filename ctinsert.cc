@@ -283,7 +283,7 @@ int main(void)
     std::set_terminate (__gnu_cxx::__verbose_terminate_handler);
 
     fprintf(stderr,
-        "Chrono Trigger script insertor version "VERSION"\n"
+        "Chrono Trigger script insertor version " VERSION "\n"
         "Copyright (C) 1992,2005 Bisqwit (http://iki.fi/bisqwit/)\n");
 
     Symbols.Load();

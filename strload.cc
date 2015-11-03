@@ -294,10 +294,10 @@ const vector<ctstring> LoadFStrings(unsigned offset, unsigned len,
     for(unsigned a=0; ROM[offset+a] && a<len*maxcount; ++a)
         str += (ctchar) ROM[offset+a];
 
-    unsigned count = str.size() / len + 1;
+    std::size_t count = str.size() / len + 1;
     if(maxcount && count > maxcount)count = maxcount;
     vector<ctstring> result(count);
-    for(unsigned a=0; a<count; ++a)
+    for(std::size_t a=0; a<count; ++a)
         result[a] = str.substr(a*len, len);
 
     MarkProt(offset, len*maxcount, what);

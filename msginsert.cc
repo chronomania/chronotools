@@ -162,6 +162,11 @@ void MessageWritingDict()
     fprintf(stderr, "Writing dictionary... ");
     NewBeginning();
 }
+void MessageRenderingVWF8()
+{
+    fprintf(stderr, "Rendering VWF8 tiles... ");
+    NewBeginning();
+}
 
 void MessageLoadingItem(const std::string& header)
 {
